@@ -1,7 +1,7 @@
 #include <memory>
 #include "PlatformApi.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 struct WinSocketGuard
 {

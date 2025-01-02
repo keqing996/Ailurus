@@ -6,7 +6,7 @@
 
 #include "Ailurus/PlatformDefine.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 namespace Ailurus::Spectrum
 {

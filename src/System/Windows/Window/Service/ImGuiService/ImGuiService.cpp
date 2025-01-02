@@ -1,6 +1,6 @@
 #include "Ailurus/Platform/Windows/Window/Service/ImGuiService/ImGuiService.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include <locale>
 #include <imgui/imgui_internal.h>

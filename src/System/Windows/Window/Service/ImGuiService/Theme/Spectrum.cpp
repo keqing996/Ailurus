@@ -1,6 +1,6 @@
 #include "Ailurus/Platform/Windows/Window/Service/ImGuiService/Theme/Spectrum.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include <imgui/imgui.h>
 

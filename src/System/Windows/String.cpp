@@ -1,6 +1,6 @@
 #include "Ailurus/PlatformDefine.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include "Ailurus/Utility/String.h"
 #include "Ailurus/Platform/Windows/WindowsDefine.h"

@@ -1,6 +1,6 @@
 #include "Ailurus/Platform/Windows/Window/Service/InputService/InputService.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include <cstdint>
 #include "Ailurus/Platform/Windows/WindowsDefine.h"

@@ -3,7 +3,7 @@
 
 #include "Ailurus/PlatformDefine.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include <utility>
 #include "InputEnum.h"

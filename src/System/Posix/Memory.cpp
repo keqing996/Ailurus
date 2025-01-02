@@ -1,12 +1,12 @@
 #include "Ailurus/PlatformDefine.h"
 
-#if PLATFORM_SUPPORT_POSIX
+#if AILURUS_PLATFORM_SUPPORT_POSIX
 
 #include <sys/mman.h>
 #include <unistd.h>
 #include "Ailurus/System/Memory.h"
 
-#if PLATFORM_IOS || PLATFORM_MAC
+#if AILURUS_PLATFORM_IOS || AILURUS_PLATFORM_MAC
 #include <mach/vm_page_size.h>
 #endif
 
@@ -30,7 +30,7 @@ namespace Ailurus
 
     size_t Memory::CurrentPageSize()
     {
-#if PLATFORM_IOS || PLATFORM_MAC
+#if AILURUS_PLATFORM_IOS || AILURUS_PLATFORM_MAC
         return vm_page_size;
 #else
         return ::sysconf(_SC_PAGE_SIZE);

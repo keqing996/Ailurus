@@ -1,6 +1,6 @@
 #include "Ailurus/Platform/Windows/Console.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include <iostream>
 #include "Ailurus/Platform/Windows/WindowsDefine.h"

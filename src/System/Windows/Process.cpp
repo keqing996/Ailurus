@@ -1,7 +1,7 @@
 #include <cstdint>
 #include "Ailurus/PlatformDefine.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include "Ailurus/Platform/Windows/WindowsDefine.h"
 #include "Ailurus/System/Process.h"

@@ -93,7 +93,7 @@ namespace Ailurus
 
     void Logger::LogStd(Level level, const char* tag, const char* message)
     {
-#if PLATFORM_ANDROID
+#if AILURUS_PLATFORM_ANDROID
         // todo.
 #else
         const char* levelStr = nullptr;
@@ -118,7 +118,7 @@ namespace Ailurus
             }
         }
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
         if (level == Level::Warning)
             Console::SetStdOutColor(Console::Color::Yellow, Console::Color::Black);
         else if (level == Level::Error)

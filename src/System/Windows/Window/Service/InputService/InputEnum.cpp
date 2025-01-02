@@ -1,6 +1,6 @@
 #include "Ailurus/Platform/Windows/Window/Service/InputService/InputEnum.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 namespace Ailurus
 {

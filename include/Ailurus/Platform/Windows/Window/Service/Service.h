@@ -2,7 +2,7 @@
 
 #include "Ailurus/PlatformDefine.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include <vector>
 #include <cstdint>

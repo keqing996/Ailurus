@@ -1,6 +1,6 @@
 #include "Ailurus/Platform/Windows/Window/Service/OpenGLService/OpenGLService.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include "Ailurus/Platform/Windows/Window/Window.h"
 #include <glad/gl.h>

@@ -1,6 +1,6 @@
 #include "Ailurus/Platform/Windows/Window/Service/ImGuiService/ImGuiOpenGLService.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include <glad/gl.h>
 #include <imgui/backends/imgui_impl_opengl3.h>

@@ -1,7 +1,7 @@
 
 #include "../../PlatformDefine.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 // disable min max cacro in Windows.h
 #ifndef NOMINMAX

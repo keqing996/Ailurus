@@ -1,6 +1,6 @@
 #include "PlatformApi.h"
 
-#if PLATFORM_SUPPORT_POSIX
+#if AILURUS_PLATFORM_SUPPORT_POSIX
 
 namespace Ailurus
 {

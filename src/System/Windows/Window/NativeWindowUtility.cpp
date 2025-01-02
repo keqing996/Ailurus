@@ -1,6 +1,6 @@
 #include "NativeWindowUtility.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include "Ailurus/Utility/ScopeGuard.h"
 

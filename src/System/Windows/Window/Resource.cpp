@@ -1,7 +1,7 @@
 
 #include "Ailurus/Platform/Windows/Window/Detail/Resource.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include "Ailurus/Platform/Windows/WindowsDefine.h"
 

@@ -2,7 +2,7 @@
 
 #include "Ailurus/PlatformDefine.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include <imgui/imgui.h>
 #include <string>

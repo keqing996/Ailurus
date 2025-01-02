@@ -1,7 +1,7 @@
 
 #include "Ailurus/PlatformDefine.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>

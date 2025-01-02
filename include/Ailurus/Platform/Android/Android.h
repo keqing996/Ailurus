@@ -2,7 +2,7 @@
 
 #include "../../PlatformDefine.h"
 
-#if PLATFORM_ANDROID
+#if AILURUS_PLATFORM_ANDROID
 
 namespace Ailurus
 {

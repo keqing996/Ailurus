@@ -1,7 +1,7 @@
 
 #include "Ailurus/Platform/Windows/Window/Service/Service.h"
 
-#if PLATFORM_WINDOWS
+#if AILURUS_PLATFORM_WINDOWS
 
 #include <unordered_map>
 

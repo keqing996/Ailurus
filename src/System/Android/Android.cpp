@@ -1,7 +1,7 @@
 
 #include "Ailurus/Platform/Android/Android.h"
 
-#if PLATFORM_ANDROID
+#if AILURUS_PLATFORM_ANDROID
 
 #include <string>
 #include <android/log.h>

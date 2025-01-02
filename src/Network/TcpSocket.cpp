@@ -47,7 +47,7 @@ namespace Ailurus
         ::setsockopt(Npi::ToNativeHandle(socket._handle), SOL_SOCKET, TCP_NODELAY,
             reinterpret_cast<char*>(&flagDisableNagle), sizeof(flagDisableNagle));
 
-#if PLATFORM_MAC
+#if AILURUS_PLATFORM_MAC
         // Ignore SigPipe on macos.
         // https://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
         int flagDisableSigPipe = 1;
