@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 #include <vector>
 #include <cstdint>
 
@@ -53,3 +57,5 @@ namespace Ailurus
     };
 
 }
+
+#endif

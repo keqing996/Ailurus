@@ -1,7 +1,9 @@
-#include <cstdint>
-#include <unordered_map>
-#include "Ailurus/Platform/Windows/Window/Utility/WindowsInclude.h"
 #include "Ailurus/Platform/Windows/Window/Service/InputService/InputService.h"
+
+#if PLATFORM_WINDOWS
+
+#include <cstdint>
+#include "Ailurus/Platform/Windows/WindowsDefine.h"
 
 namespace Ailurus
 {
@@ -392,3 +394,5 @@ namespace Ailurus
         return reinterpret_cast<void*>(newWParam);
     }
 }
+
+#endif

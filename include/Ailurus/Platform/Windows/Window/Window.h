@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -7,13 +11,13 @@
 
 #include "Detail/WindowStyle.h"
 #include "Service/Service.h"
-#include "Ailurus/Platform/Windows/Window/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonCopyable.h"
 
 namespace Ailurus
 {
     class NativeWindowUtility;
 
-    class Window final: Utility::NonCopyable
+    class Window final: NonCopyable
     {
     public:
         Window();
@@ -230,3 +234,5 @@ namespace Ailurus
         return reinterpret_cast<T*>(GetServiceInternal(T::ServiceType()));
     }
 }
+
+#endif

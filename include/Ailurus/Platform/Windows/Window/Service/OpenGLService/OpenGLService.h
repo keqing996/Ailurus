@@ -1,6 +1,9 @@
 #pragma once
 
-#include <array>
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 #include "../Service.h"
 
 namespace Ailurus
@@ -21,3 +24,5 @@ namespace Ailurus
         void* _hGLContext = nullptr;
     };
 }
+
+#endif

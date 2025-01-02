@@ -1,5 +1,8 @@
 #include "NativeWindowUtility.h"
-#include "Ailurus/Platform/Windows/Window/Utility/ScopeGuard.h"
+
+#if PLATFORM_WINDOWS
+
+#include "Ailurus/Utility/ScopeGuard.h"
 
 namespace Ailurus
 {
@@ -47,7 +50,7 @@ namespace Ailurus
         if (pShcodeDll == nullptr)
             return false;
 
-        Utility::ScopeGuard pShcodeDllReleaseGuard = [&pShcodeDll]()
+        ScopeGuard pShcodeDllReleaseGuard = [&pShcodeDll]()
         {
             ::FreeLibrary(pShcodeDll);
         };
@@ -79,7 +82,7 @@ namespace Ailurus
         if (pUser32Dll == nullptr)
             return false;
 
-        Utility::ScopeGuard pShcodeDllReleaseGuard = [&pUser32Dll]()
+        ScopeGuard pShcodeDllReleaseGuard = [&pUser32Dll]()
         {
             ::FreeLibrary(pUser32Dll);
         };
@@ -97,3 +100,5 @@ namespace Ailurus
         return true;
     }
 }
+
+#endif

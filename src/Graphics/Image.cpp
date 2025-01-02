@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-#include "../ThirdParty/stb_image.h"
+#include "stb/stb_image.h"
 
 namespace Ailurus
 {

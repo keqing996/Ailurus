@@ -1,8 +1,10 @@
+#include "Ailurus/Platform/Windows/Window/Service/ImGuiService/ImGuiOpenGLService.h"
+
+#if PLATFORM_WINDOWS
 
 #include <glad/gl.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include "Ailurus/Platform/Windows/Window/Window.h"
-#include "Ailurus/Platform/Windows/Window/Service/ImGuiService/ImGuiOpenGLService.h"
 
 namespace Ailurus
 {
@@ -42,3 +44,5 @@ namespace Ailurus
         _clearColor[3] = a;
     }
 }
+
+#endif

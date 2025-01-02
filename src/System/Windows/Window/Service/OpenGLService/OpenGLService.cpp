@@ -1,5 +1,8 @@
-#include "Ailurus/Platform/Windows/Window/Window.h"
 #include "Ailurus/Platform/Windows/Window/Service/OpenGLService/OpenGLService.h"
+
+#if PLATFORM_WINDOWS
+
+#include "Ailurus/Platform/Windows/Window/Window.h"
 #include <glad/gl.h>
 #include <glad/wgl.h>
 
@@ -80,3 +83,5 @@ namespace Ailurus
     }
 
 }
+
+#endif

@@ -1,6 +1,10 @@
 
 #pragma once
 
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 #include <utility>
 #include "InputEnum.h"
 
@@ -43,3 +47,5 @@ namespace Ailurus
     };
 
 }
+
+#endif

@@ -1,6 +1,9 @@
 
-#include <unordered_map>
 #include "Ailurus/Platform/Windows/Window/Service/Service.h"
+
+#if PLATFORM_WINDOWS
+
+#include <unordered_map>
 
 namespace Ailurus
 {
@@ -74,3 +77,5 @@ namespace Ailurus
         return nullptr;
     }
 }
+
+#endif

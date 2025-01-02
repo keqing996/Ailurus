@@ -1,6 +1,8 @@
+#include "Ailurus/Platform/Windows/Window/Service/ImGuiService/Theme/Spectrum.h"
+
+#if PLATFORM_WINDOWS
 
 #include <imgui/imgui.h>
-#include "Ailurus/Platform/Windows/Window/Service/ImGuiService/Theme/Spectrum.h"
 
 namespace Ailurus::Spectrum
 {
@@ -272,3 +274,5 @@ namespace Ailurus::Spectrum
     }
 
 }
+
+#endif

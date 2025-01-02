@@ -1,10 +1,12 @@
 
 #include <iostream>
-#include <NativeWindow/Window.h>
+#include <Ailurus/Platform/Windows/Window/Window.h>
+#include <Ailurus/Platform/Windows/Window/Service/InputService/InputService.h>
 
 int main()
 {
-    NativeWindow::Window window;
+    Ailurus::Window window;
+    window.AddService<Ailurus::InputService>();
 
     window.SetCallbackOnWindowCreated([]()->void
     {
@@ -57,23 +59,16 @@ int main()
         std::cout << (visible ? "Cursor visible" : "Cursor hide") << std::endl;
     });
 
-    window.Create(800, 600, "Test", NativeWindow::WindowStyle::DefaultStyle());
+    window.Create(800, 600, "Test", Ailurus::WindowStyle::DefaultStyle());
 
-    while (true)
+    window.Loop([&]()-> void
     {
-        bool finish;
-        window.Loop(&finish);
-        if (finish)
-            break;
-
-        if (window.GetInput().IsButtonPressed(NativeWindow::ButtonType::KeyboardU))
+        if (window.GetService<Ailurus::InputService>()->IsButtonPressed(Ailurus::ButtonType::KeyboardU))
         {
             bool currentCursorVisible = window.IsCursorVisible();
             window.SetCursorVisible(!currentCursorVisible);
         }
-    }
-
-    system("pause");
+    });
 
     return 0;
 }

@@ -1,6 +1,8 @@
 #pragma once
 
-#include <string>
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
 
 namespace Ailurus
 {
@@ -106,3 +108,5 @@ namespace Ailurus
         static const char* GetName(ButtonType type);
     };
 }
+
+#endif

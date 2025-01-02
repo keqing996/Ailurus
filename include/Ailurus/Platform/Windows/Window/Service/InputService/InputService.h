@@ -1,6 +1,10 @@
 
 #pragma once
 
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 #include <functional>
 #include <unordered_set>
 #include <vector>
@@ -52,3 +56,5 @@ namespace Ailurus
         std::function<void(ButtonType)> _onButtonReleased = nullptr;
     };
 }
+
+#endif

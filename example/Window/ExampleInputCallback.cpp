@@ -1,6 +1,6 @@
 #include <iostream>
-#include <NativeWindow/Window.h>
-#include <NativeWindow/Service/InputService/InputService.h>
+#include <Ailurus/Platform/Windows/Window/Window.h>
+#include <Ailurus/Platform/Windows/Window/Service/InputService/InputService.h>
 
 using namespace Ailurus;
 
@@ -42,8 +42,6 @@ int main()
             window.SetCursorVisible(!currentCursorVisible);
         }
     });
-
-    system("pause");
 
     return 0;
 }

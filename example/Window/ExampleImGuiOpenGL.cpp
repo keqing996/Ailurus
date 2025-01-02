@@ -1,6 +1,6 @@
 #include <iostream>
-#include <NativeWindow/Window.h>
-#include <NativeWindow/Service/ImGuiService/ImGuiOpenGLService.h>
+#include <Ailurus/Platform/Windows/Window/Window.h>
+#include <Ailurus/Platform/Windows/Window/Service/ImGuiService/ImGuiOpenGLService.h>
 
 using namespace Ailurus;
 
@@ -43,8 +43,6 @@ int main()
 
         ImGui::End();
     });
-
-    system("pause");
 
     return 0;
 }

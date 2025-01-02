@@ -1,7 +1,11 @@
 #pragma once
 
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 #include "Ailurus/Platform/Windows/Window/Window.h"
-#include "Ailurus/Platform/Windows/Window/Utility/WindowsInclude.h"
+#include "Ailurus/Platform/Windows/WindowsDefine.h"
 
 namespace Ailurus
 {
@@ -23,3 +27,5 @@ namespace Ailurus
         static bool FixProcessDpiBySetProcessDPIAware();
     };
 }
+
+#endif

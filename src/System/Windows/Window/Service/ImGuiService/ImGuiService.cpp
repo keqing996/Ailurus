@@ -1,9 +1,12 @@
-#include <locale>
-#include <imgui_internal.h>
-#include <backends/imgui_impl_win32.h>
-#include "Ailurus/Platform/Windows/Window/Window.h"
-#include "Ailurus/Platform/Windows/Window/Utility/WindowsInclude.h"
 #include "Ailurus/Platform/Windows/Window/Service/ImGuiService/ImGuiService.h"
+
+#if PLATFORM_WINDOWS
+
+#include <locale>
+#include <imgui/imgui_internal.h>
+#include <imgui/backends/imgui_impl_win32.h>
+#include "Ailurus/Platform/Windows/Window/Window.h"
+#include "Ailurus/Platform/Windows/WindowsDefine.h"
 #include "Ailurus/Platform/Windows/Window/Service/ImGuiService/Theme/Spectrum.h"
 #include "Ailurus/Platform/Windows/Window/Service/ImGuiService/Font/SansProRegular.h"
 
@@ -127,3 +130,5 @@ namespace Ailurus
     }
 
 }
+
+#endif

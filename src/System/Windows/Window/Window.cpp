@@ -1,11 +1,12 @@
+#include "Ailurus/Platform/Windows/Window/Window.h"
+
+#if PLATFORM_WINDOWS
 
 #include <unordered_set>
-#include <iostream>
 #include <vector>
 
-#include "Ailurus/Platform/Windows/Window/Utility/WindowsInclude.h"
-#include "Ailurus/Platform/Windows/Window/Utility/String.h"
-#include "Ailurus/Platform/Windows/Window/Window.h"
+#include "Ailurus/Platform/Windows/WindowsDefine.h"
+#include "Ailurus/Utility/String.h"
 #include "NativeWindowUtility.h"
 #include "Ailurus/Platform/Windows/Window/Service/InputService/InputService.h"
 #include "Ailurus/Platform/Windows/Window/Service/OpenGLService/OpenGLService.h"
@@ -64,7 +65,7 @@ namespace Ailurus
         auto [adjustWidth, adjustHeight] = NativeWindowUtility::CalculateAdjustWindowSize(width, height, win32Style);
 
         // Create window
-        const auto titleInWideStr = Utility::StringToWideString(title);
+        const auto titleInWideStr = String::StringToWideString(title);
         const wchar_t* titleWide = titleInWideStr.c_str();
         auto hWindow = ::CreateWindowW(
                 gWindowRegisterName,
@@ -435,7 +436,7 @@ namespace Ailurus
         if (_hWindow == nullptr)
             return;
 
-        const auto titleInWideStr = Utility::StringToWideString(title);
+        const auto titleInWideStr = String::StringToWideString(title);
         const wchar_t* titleWide = titleInWideStr.c_str();
         ::SetWindowTextW(GetWindowHandle<HWND>(), titleWide);
     }
@@ -800,3 +801,5 @@ namespace Ailurus
     }
 
 }
+
+#endif

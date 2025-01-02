@@ -1,6 +1,10 @@
 #pragma once
 
-#include <imgui.h>
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
+#include <imgui/imgui.h>
 #include <string>
 #include "../Service.h"
 
@@ -28,3 +32,5 @@ namespace Ailurus
         ImFont* CreateImGuiFont(const std::string& ttfPath, int fontSize);
     };
 }
+
+#endif

@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 namespace Ailurus
 {
     class WindowStyle
@@ -43,3 +47,5 @@ namespace Ailurus
         Config config;
     };
 }
+
+#endif

@@ -1,5 +1,7 @@
 #include "Ailurus/Platform/Windows/Window/Service/InputService/InputEnum.h"
 
+#if PLATFORM_WINDOWS
+
 namespace Ailurus
 {
     const char* ButtonTypeUtility::GetName(ButtonType type)
@@ -141,3 +143,5 @@ namespace Ailurus
         }
     }
 }
+
+#endif

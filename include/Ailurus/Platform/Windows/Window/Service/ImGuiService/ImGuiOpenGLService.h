@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 #include <array>
 #include "ImGuiService.h"
 
@@ -21,3 +25,5 @@ namespace Ailurus
         std::array<float, 4> _clearColor = { 0.75f, 0.75f, 0.75f, 1.00f };
     };
 }
+
+#endif

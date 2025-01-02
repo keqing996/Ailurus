@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 #include <cstdint>
 
 namespace Ailurus
@@ -35,3 +39,6 @@ namespace Ailurus
         T LoadResource(int id);
     };
 }
+
+#endif
+

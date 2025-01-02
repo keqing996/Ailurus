@@ -1,6 +1,9 @@
-#include <vector>
-#include "Ailurus/Platform/Windows/Window/Utility/WindowsInclude.h"
+
 #include "Ailurus/Platform/Windows/Window/Detail/Resource.h"
+
+#if PLATFORM_WINDOWS
+
+#include "Ailurus/Platform/Windows/WindowsDefine.h"
 
 namespace Ailurus
 {
@@ -54,3 +57,5 @@ namespace Ailurus
         return { hCursor };
     }
 }
+
+#endif

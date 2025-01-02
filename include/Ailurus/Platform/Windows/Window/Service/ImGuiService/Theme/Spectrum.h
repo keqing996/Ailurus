@@ -4,6 +4,10 @@
 // https://github.com/adobe/imgui/blob/master/imgui_spectrum.cpp
 // all colors are from http://spectrum.corp.adobe.com/color.html
 
+#include "Ailurus/PlatformDefine.h"
+
+#if PLATFORM_WINDOWS
+
 namespace Ailurus::Spectrum
 {
     // a list of changes introduced to change the look of the widgets.
@@ -172,3 +176,5 @@ namespace Ailurus::Spectrum
         static unsigned int PURPLE700;
     };
 }
+
+#endif

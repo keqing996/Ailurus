@@ -1,11 +1,11 @@
 
 #include <Windows.h>
 #include <iostream>
-#include <NativeWindow/Window.h>
+#include <Ailurus/Platform/Windows/Window/Window.h>
 
 int main()
 {
-    NativeWindow::Window window;
+    Ailurus::Window window;
     window.SetCallbackOnWindowMessagePreProcess([](uint32_t msg, void* wpara, void* lpara, int* result) -> bool
     {
         WPARAM wParam = reinterpret_cast<WPARAM>(wpara);
@@ -47,17 +47,8 @@ int main()
         return false;
     });
 
-    window.Create(800, 600, "Test", NativeWindow::WindowStyle::DefaultStyle());
-
-    while (true)
-    {
-        bool finish;
-        window.Loop(&finish);
-        if (finish)
-            break;
-    }
-
-    system("pause");
+    window.Create(800, 600, "Test", Ailurus::WindowStyle::DefaultStyle());
+    window.Loop(nullptr);
 
     return 0;
 }
