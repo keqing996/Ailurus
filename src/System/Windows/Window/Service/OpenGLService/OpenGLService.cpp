@@ -6,8 +6,6 @@
 #include <glad/gl.h>
 #include <glad/wgl.h>
 
-#pragma comment(lib, "opengl32.lib")
-
 namespace Ailurus
 {
     OpenGLService::OpenGLService(Window* pWindow)

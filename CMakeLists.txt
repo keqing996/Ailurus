@@ -32,7 +32,9 @@ target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURC
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/) # for imgui source
 
 if (WIN32)
-    target_link_libraries   (${AILURUS_TARGET_NAME} wsock32 ws2_32)
+    target_link_libraries   (${AILURUS_TARGET_NAME} wsock32 ws2_32) # for socket
+    target_link_libraries   (${AILURUS_TARGET_NAME} opengl32) # for windows opengl
+    target_link_libraries   (${AILURUS_TARGET_NAME} dwmapi) # to fix some 'DwmXXX' link errors under mingw
 endif ()
 
 # Test code
