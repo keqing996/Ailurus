@@ -1,5 +1,7 @@
 #include "SocketUtil.h"
 
+#include <cstring>
+
 namespace Ailurus
 {
     int SocketUtil::GetAddressFamily(IpAddress::Family family)
