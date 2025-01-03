@@ -29,12 +29,12 @@
 
 #ifdef __APPLE__
 #   include <TargetConditionals.h>
-#   ifdef AILURUS_TARGET_OS_IPHONE
+#   ifdef TARGET_OS_IPHONE
 #       define AILURUS_PLATFORM_IOS 1
 #   else
 #       define AILURUS_PLATFORM_IOS 0
 #   endif
-#   ifdef AILURUS_TARGET_OS_MAC
+#   ifdef TARGET_OS_MAC
 #       define AILURUS_PLATFORM_MAC 1
 #   else
 #       define AILURUS_PLATFORM_MAC 0

@@ -107,13 +107,17 @@ namespace Ailurus
             case Level::Warning:
             {
                 levelStr = "[W] ";
+#if AILURUS_PLATFORM_WINDOWS
                 Console::SetStdOutColor(Console::Color::Yellow, Console::Color::Black);
+#endif
                 break;
             }
             case Level::Error:
             {
                 levelStr = "[E] ";
+#if AILURUS_PLATFORM_WINDOWS
                 Console::SetStdOutColor(Console::Color::Red, Console::Color::Black);
+#endif
                 break;
             }
         }
