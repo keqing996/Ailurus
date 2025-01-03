@@ -41,26 +41,40 @@ endif ()
 option (AILURUS_ENABLE_TEST OFF)
 
 if (AILURUS_ENABLE_TEST)
-    add_subdirectory(test)
+    # todo
 endif ()
 
 # Example code
 option (AILURUS_ENABLE_EXAMPLE OFF)
 
-if (WIN32 AND AILURUS_ENABLE_EXAMPLE)
-    add_executable          (ailurus_example_window_create example/Window/ExampleWindowCreate.cpp)
-    target_link_libraries   (ailurus_example_window_create PUBLIC ${AILURUS_TARGET_NAME})
-    set_target_properties   (ailurus_example_window_create PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+if (AILURUS_ENABLE_EXAMPLE)
+    add_executable          (ailurus_example_cmd_parse example/ExampleCmdLine.cpp)
+    target_link_libraries   (ailurus_example_cmd_parse PUBLIC ${AILURUS_TARGET_NAME})
 
-    add_executable          (ailurus_example_window_msg_recv example//Window/ExampleMessageReceived.cpp)
-    target_link_libraries   (ailurus_example_window_msg_recv PUBLIC ${AILURUS_TARGET_NAME})
+    add_executable          (ailurus_example_network_dns example/Network/ExampleDNS.cpp)
+    target_link_libraries   (ailurus_example_network_dns PUBLIC ${AILURUS_TARGET_NAME})
 
-    add_executable          (ailurus_example_window_callback example//Window/ExampleWindowCallback.cpp)
-    target_link_libraries   (ailurus_example_window_callback PUBLIC ${AILURUS_TARGET_NAME})
+    add_executable          (ailurus_example_network_tcp_send example/Network/ExampleTcpSocketSend.cpp)
+    target_link_libraries   (ailurus_example_network_tcp_send PUBLIC ${AILURUS_TARGET_NAME})
 
-    add_executable          (ailurus_example_input_callback example//Window/ExampleInputCallback.cpp)
-    target_link_libraries   (ailurus_example_input_callback PUBLIC ${AILURUS_TARGET_NAME})
+    add_executable          (ailurus_example_network_tcp_recv example/Network/ExampleTcpSocketReceive.cpp)
+    target_link_libraries   (ailurus_example_network_tcp_recv PUBLIC ${AILURUS_TARGET_NAME})
 
-    add_executable          (ailurus_example_imgui_opengl example//Window/ExampleImGuiOpenGL.cpp)
-    target_link_libraries   (ailurus_example_imgui_opengl PUBLIC ${AILURUS_TARGET_NAME})
+    if (WIN32)
+        add_executable          (ailurus_example_window_create example/Window/ExampleWindowCreate.cpp)
+        target_link_libraries   (ailurus_example_window_create PUBLIC ${AILURUS_TARGET_NAME})
+        set_target_properties   (ailurus_example_window_create PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+
+        add_executable          (ailurus_example_window_msg_recv example/Window/ExampleMessageReceived.cpp)
+        target_link_libraries   (ailurus_example_window_msg_recv PUBLIC ${AILURUS_TARGET_NAME})
+
+        add_executable          (ailurus_example_window_callback example/Window/ExampleWindowCallback.cpp)
+        target_link_libraries   (ailurus_example_window_callback PUBLIC ${AILURUS_TARGET_NAME})
+
+        add_executable          (ailurus_example_input_callback example/Window/ExampleInputCallback.cpp)
+        target_link_libraries   (ailurus_example_input_callback PUBLIC ${AILURUS_TARGET_NAME})
+
+        add_executable          (ailurus_example_imgui_opengl example/Window/ExampleImGuiOpenGL.cpp)
+        target_link_libraries   (ailurus_example_imgui_opengl PUBLIC ${AILURUS_TARGET_NAME})
+    endif ()
 endif ()
