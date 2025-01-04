@@ -15,13 +15,13 @@ jobs:
         include:
           - c_compiler: gcc
             cpp_compiler: g++
-            generator: "Ninja"
+            generator: Ninja
           - c_compiler: cl
             cpp_compiler: cl
-            generator: "Visual Studio 17 2022"
+            generator: Visual Studio 17 2022
           - c_compiler: clang
             cpp_compiler: clang++
-            generator: "Ninja"
+            generator: Ninja
     steps:
       - name: Install Ninja on Windows
         run: choco install ninja --yes
@@ -37,7 +37,7 @@ jobs:
       - name: Configure CMake
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -G ${{ matrix.generator }}
+          -G "${{ matrix.generator }}"
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=Release
