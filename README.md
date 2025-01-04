@@ -1,6 +1,8 @@
 # Ailurus Infrastructure Kit 
 
-[![Build](https://github.com/keqing996/Ailurus/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/keqing996/Ailurus/actions/workflows/cmake-multi-platform.yml)
+[![Build](https://github.com/keqing996/Ailurus/actions/workflows/cmake-windows.yml/badge.svg)](https://github.com/keqing996/Ailurus/actions/workflows/cmake-windows.yml)
+[![Build](https://github.com/keqing996/Ailurus/actions/workflows/cmake-linux.yml/badge.svg)](https://github.com/keqing996/Ailurus/actions/workflows/cmake-linux.yml)
+[![Build](https://github.com/keqing996/Ailurus/actions/workflows/cmake-macos.yml/badge.svg)](https://github.com/keqing996/Ailurus/actions/workflows/cmake-macos.yml)
 
 ## Enable test
 
