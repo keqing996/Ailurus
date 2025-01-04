@@ -1,4 +1,7 @@
+#include <sstream>
+#include <iostream>
 #include "Ailurus/Utility/CommandLine.h"
+#include "Ailurus/Assert.h"
 
 namespace Ailurus
 {
@@ -18,131 +21,54 @@ namespace Ailurus
         return std::nullopt;
     }
 
-    CommandLine::~CommandLine()
+    void CommandLine::SetUserDefinedHelpMessage(const std::string& message)
     {
-        for (auto& pOption: _allOptions)
-            delete pOption;
+        _userDefinedHelpMessage = message;
     }
 
-    CommandLine::Option::Option(const std::string& desc)
-        : _desc(desc)
-        , _settle(false)
+    void CommandLine::AddOption(const std::string& fullName, char shortName, const std::string& desc)
     {
+        ASSERT_MSG(_fullNameOptionMap.find(fullName) == _fullNameOptionMap.end(), "Command line duplicate full name option");
+        ASSERT_MSG(_shortNameOptionMap.find(shortName) == _shortNameOptionMap.end(), "Command line duplicate short name option");
+
+        auto pOption = std::make_unique<Option>();
+        pOption->fullname = fullName;
+        pOption->shortName = shortName;
+        pOption->description = desc;
+
+        _fullNameOptionMap[fullName] = pOption.get();
+        _shortNameOptionMap[shortName] = pOption.get();
+        _allOptions.push_back(std::move(pOption));
     }
 
-    const std::string& CommandLine::Option::GetDesc()
+    void CommandLine::AddOption(const std::string& fullName, const std::string& desc)
     {
-        return _desc;
+        ASSERT_MSG(_fullNameOptionMap.find(fullName) == _fullNameOptionMap.end(), "Command line duplicate full name option");
+
+        auto pOption = std::make_unique<Option>();
+        pOption->fullname = fullName;
+        pOption->shortName = std::nullopt;
+        pOption->description = desc;
+
+        _fullNameOptionMap[fullName] = pOption.get();
+        _allOptions.push_back(std::move(pOption));
     }
 
-    bool CommandLine::Option::Settle() const
+    std::string CommandLine::GenerateHelpMsg() const
     {
-        return _settle;
-    }
+        std::stringstream outputStream;
+        outputStream << "Options:" << std::endl;
+        for (const auto& pOption: _allOptions)
+        {
+            outputStream << "\t--" << pOption->fullname;
 
-    void CommandLine::Option::SetFullName(const std::string& fullName)
-    {
-        _fullName = fullName;
-    }
+            if (pOption->shortName.has_value())
+                outputStream << ", -" << pOption->shortName.value();
 
-    void CommandLine::Option::SetShortName(char shortName)
-    {
-        _shortName = shortName;
-    }
+            outputStream << "\t\t= " << pOption->description << std::endl;
+        }
 
-    const std::optional<std::string>& CommandLine::Option::GetFullName() const
-    {
-        return _fullName;
-    }
-
-    const std::optional<char>& CommandLine::Option::GetShortName() const
-    {
-        return _shortName;
-    }
-
-    CommandLine::OptionNoValue::OptionNoValue(const std::string& desc): Option(desc)
-    {
-    }
-
-    bool CommandLine::OptionNoValue::HasValue()
-    {
-        return false;
-    }
-
-    CmdOptionType CommandLine::OptionNoValue::Type()
-    {
-        return CmdOptionType::NoValue;
-    }
-
-    bool CommandLine::OptionNoValue::Set()
-    {
-        _settle = true;
-        return true;
-    }
-
-    CommandLine::OptionSingleValue::OptionSingleValue(const std::string& desc): Option(desc)
-    {
-    }
-
-    bool CommandLine::OptionSingleValue::HasValue()
-    {
-        return true;
-    }
-
-    CmdOptionType CommandLine::OptionSingleValue::Type()
-    {
-        return CmdOptionType::SingleValue;
-    }
-
-    void CommandLine::OptionSingleValue::SetValue(const std::string& str)
-    {
-        _value = str;
-        _settle = true;
-    }
-
-    CommandLine::OptionMultiValue::OptionMultiValue(const std::string& desc): Option(desc)
-    {
-    }
-
-    bool CommandLine::OptionMultiValue::HasValue()
-    {
-        return true;
-    }
-
-    CmdOptionType CommandLine::OptionMultiValue::Type()
-    {
-        return CmdOptionType::MultiValue;
-    }
-
-    void CommandLine::OptionMultiValue::AddValue(const std::string& str)
-    {
-        _values.push_back(str);
-        _settle = true;
-    }
-
-    size_t CommandLine::OptionMultiValue::ValueCount() const
-    {
-        return _values.size();
-    }
-
-    const std::vector<std::string>& CommandLine::OptionMultiValue::GetValuesStringRaw() const
-    {
-        return _values;
-    }
-
-    void CommandLine::SetExitWhenErrorInput(bool doAbort)
-    {
-        _exitWhenErrorInput = doAbort;
-    }
-
-    void CommandLine::SetErrorInputExitCode(int code)
-    {
-        _errorInputExitCode = code;
-    }
-
-    void CommandLine::SetHelpPrintMessageFunc(const std::function<void()>& func)
-    {
-        _printHelpMessageFunc = func;
+        return outputStream.str();
     }
 
     const std::vector<std::string>& CommandLine::GetInvalidInput() const
@@ -150,7 +76,20 @@ namespace Ailurus
         return _invalidInputRecord;
     }
 
-    void CommandLine::Parse(int argc, char** argv)
+    const CommandLine::Result* CommandLine::operator[](const std::string& fullname) const
+    {
+        auto itr = _fullNameOptionMap.find(fullname);
+        if (itr == _fullNameOptionMap.end())
+            return nullptr;
+
+        const Option& option = *itr->second;
+        if (!option.hit)
+            return nullptr;
+
+        return &option.result;
+    }
+
+    void CommandLine::Parse(int argc, const char** argv)
     {
         if (argc == 1)
         {
@@ -169,38 +108,15 @@ namespace Ailurus
 
         auto ProcessOption = [&](Option* pOption) -> void
         {
-            switch (pOption->Type())
+            pOption->hit = true;
+            while (index + 1 < argc)
             {
-                case CmdOptionType::NoValue:
-                {
-                    auto* pNoValueOption = dynamic_cast<OptionNoValue*>(pOption);
-                    pNoValueOption->Set();
+                std::string next(argv[index + 1]);
+                if (GetFullName(next) || GetShortName(next))
                     break;
-                }
-                case CmdOptionType::SingleValue:
-                {
-                    auto* pSingleValueOption = dynamic_cast<OptionSingleValue*>(pOption);
-                    if (index + 1 < argc)
-                    {
-                        pSingleValueOption->SetValue(argv[index + 1]);
-                        index++;
-                    }
-                    break;
-                }
-                case CmdOptionType::MultiValue:
-                {
-                    auto* pMultiValueOption = dynamic_cast<OptionMultiValue*>(pOption);
-                    while (index + 1 < argc)
-                    {
-                        std::string next(argv[index + 1]);
-                        if (GetFullName(next) || GetShortName(next))
-                            break;
 
-                        pMultiValueOption->AddValue(next);
-                        index++;
-                    }
-                    break;
-                }
+                pOption->result.values.push_back(next);
+                index++;
             }
         };
 
@@ -212,19 +128,9 @@ namespace Ailurus
 
             const auto& key = *fullName;
             if (const auto itr = _fullNameOptionMap.find(key); itr == _fullNameOptionMap.end())
-            {
-                if (_exitWhenErrorInput)
-                {
-                    std::cout << "Invalid option: " << key << std::endl;
-                    std::exit(_errorInputExitCode);
-                }
-
-                _invalidInputRecord.push_back(str);
-            }
+                return false;
             else
-            {
                 ProcessOption(itr->second);
-            }
 
             return true;
         };
@@ -237,19 +143,9 @@ namespace Ailurus
 
             const auto key = *fullName;
             if (const auto itr = _shortNameOptionMap.find(key); itr == _shortNameOptionMap.end())
-            {
-                if (_exitWhenErrorInput)
-                {
-                    std::cout << "Invalid option: " << key << std::endl;
-                    std::exit(_errorInputExitCode);
-                }
-
-                _invalidInputRecord.push_back(str);
-            }
+                return false;
             else
-            {
                 ProcessOption(itr->second);
-            }
 
             return true;
         };
@@ -270,33 +166,9 @@ namespace Ailurus
 
     void CommandLine::PrintHelpMessage() const
     {
-        if (!_printHelpMessageFunc)
-            _printHelpMessageFunc();
+        if (!_userDefinedHelpMessage)
+            std::cout << *_userDefinedHelpMessage << std::endl;
         else
-        {
-            std::stringstream outputStream;
-            outputStream << "Options" << std::endl;
-            for (const auto pOption: _allOptions)
-            {
-                auto fullName = pOption->GetFullName();
-                auto shortName = pOption->GetShortName();
-
-                outputStream << "\t";
-
-                if (fullName && shortName)
-                    outputStream << fullName.value() << ", " << shortName.value();
-                else
-                {
-                    if (fullName)
-                        outputStream << fullName.value();
-                    if (shortName)
-                        outputStream << shortName.value();
-                }
-
-                outputStream << "\t\t" << pOption->GetDesc() << std::endl;
-            }
-
-            std::cout << outputStream.str();
-        }
+            std::cout << GenerateHelpMsg();
     }
 }
