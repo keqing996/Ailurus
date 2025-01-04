@@ -21,6 +21,7 @@ namespace Ailurus
 
         void AddOption(const std::string& fullName, char shortName, const std::string& desc);
         void AddOption(const std::string& fullName, const std::string& desc);
+        std::string GenerateHelpMsg() const;
 
         void Parse(int argc, const char** argv);
         const std::vector<std::string>& GetInvalidInput() const;

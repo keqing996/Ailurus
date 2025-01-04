@@ -54,6 +54,23 @@ namespace Ailurus
         _allOptions.push_back(std::move(pOption));
     }
 
+    std::string CommandLine::GenerateHelpMsg() const
+    {
+        std::stringstream outputStream;
+        outputStream << "Options:" << std::endl;
+        for (const auto& pOption: _allOptions)
+        {
+            outputStream << "\t--" << pOption->fullname;
+
+            if (pOption->shortName.has_value())
+                outputStream << ", -" << pOption->shortName.value();
+
+            outputStream << "\t\t= " << pOption->description << std::endl;
+        }
+
+        return outputStream.str();
+    }
+
     const std::vector<std::string>& CommandLine::GetInvalidInput() const
     {
         return _invalidInputRecord;
@@ -152,20 +169,6 @@ namespace Ailurus
         if (!_userDefinedHelpMessage)
             std::cout << *_userDefinedHelpMessage << std::endl;
         else
-        {
-            std::stringstream outputStream;
-            outputStream << "Options" << std::endl;
-            for (const auto& pOption: _allOptions)
-            {
-                outputStream << "\t" << pOption->fullname;
-
-                if (pOption->shortName.has_value())
-                    outputStream << ", " << pOption->shortName.value() << '\n';
-
-                outputStream << "\t\t" << pOption->description << std::endl;
-            }
-
-            std::cout << outputStream.str();
-        }
+            std::cout << GenerateHelpMsg();
     }
 }
