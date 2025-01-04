@@ -12,11 +12,11 @@ jobs:
     strategy:
       matrix:
         c_compiler: [gcc, clang]
-      include:
-        - c_compiler: gcc
-          cpp_compiler: g++
-        - c_compiler: clang
-          cpp_compiler: clang++
+        include:
+          - c_compiler: gcc
+            cpp_compiler: g++
+          - c_compiler: clang
+            cpp_compiler: clang++
     steps:
       - uses: actions/checkout@v4
       - name: Set reusable strings
