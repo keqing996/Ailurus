@@ -8,15 +8,13 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        c_compiler: [gcc, cl, clang]
+        c_compiler: [gcc, clang]
       include:
         - c_compiler: gcc
           cpp_compiler: g++
-        - c_compiler: cl
-          cpp_compiler: cl
         - c_compiler: clang
           cpp_compiler: clang++
     steps:
