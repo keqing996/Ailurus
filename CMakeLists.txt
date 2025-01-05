@@ -74,7 +74,7 @@ if (AILURUS_ENABLE_EXAMPLE)
         add_executable          (ailurus_example_input_callback example/Window/ExampleInputCallback.cpp)
         target_link_libraries   (ailurus_example_input_callback PUBLIC ${AILURUS_TARGET_NAME})
 
-        add_executable          (ailurus_example_imgui_opengl example/Window/ExampleImGuiOpenGL.cpp)
+        add_executable          (ailurus_example_imgui_opengl example/Window/ExampleImGuiOpenGL.cpp thirdparty/imgui/imgui_demo.cpp)
         target_link_libraries   (ailurus_example_imgui_opengl PUBLIC ${AILURUS_TARGET_NAME})
     endif ()
 endif ()

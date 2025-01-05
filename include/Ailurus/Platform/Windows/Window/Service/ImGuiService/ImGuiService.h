@@ -26,10 +26,11 @@ namespace Ailurus
     public:
         // Dpi
         float GetDpiScale();
+
         // Font
         int GetDefaultFontSize();
-        ImFont* CreateImGuiFont(void* fontData, int fontDataSize, int fontSize, bool transferDataOwnership = true);
-        ImFont* CreateImGuiFont(const std::string& ttfPath, int fontSize);
+        ImFont* CreateImGuiFont(void* fontData, int fontDataSize, int fontSize = -1, bool transferDataOwnership = true, const ImWchar* glyphRanges = nullptr);
+        ImFont* CreateImGuiFont(const std::string& ttfPath, int fontSize = -1, const ImWchar* glyphRanges = nullptr);
     };
 }
 
