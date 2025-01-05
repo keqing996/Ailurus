@@ -48,9 +48,11 @@ endif ()
 option (AILURUS_ENABLE_EXAMPLE OFF)
 
 if (AILURUS_ENABLE_EXAMPLE)
+    # Command line
     add_executable          (ailurus_example_cmd_parse example/ExampleCmdLine.cpp)
     target_link_libraries   (ailurus_example_cmd_parse PUBLIC ${AILURUS_TARGET_NAME})
 
+    # Network
     add_executable          (ailurus_example_network_dns example/Network/ExampleDNS.cpp)
     target_link_libraries   (ailurus_example_network_dns PUBLIC ${AILURUS_TARGET_NAME})
 
@@ -59,6 +61,10 @@ if (AILURUS_ENABLE_EXAMPLE)
 
     add_executable          (ailurus_example_network_tcp_recv example/Network/ExampleTcpSocketReceive.cpp)
     target_link_libraries   (ailurus_example_network_tcp_recv PUBLIC ${AILURUS_TARGET_NAME})
+
+    # System
+    add_executable          (ailurus_example_system example/ExampleSystem.cpp)
+    target_link_libraries   (ailurus_example_system PUBLIC ${AILURUS_TARGET_NAME})
 
     if (WIN32)
         # Native window
