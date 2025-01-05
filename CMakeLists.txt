@@ -61,6 +61,7 @@ if (AILURUS_ENABLE_EXAMPLE)
     target_link_libraries   (ailurus_example_network_tcp_recv PUBLIC ${AILURUS_TARGET_NAME})
 
     if (WIN32)
+        # Native window
         add_executable          (ailurus_example_window_create example/Window/ExampleWindowCreate.cpp)
         target_link_libraries   (ailurus_example_window_create PUBLIC ${AILURUS_TARGET_NAME})
         set_target_properties   (ailurus_example_window_create PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
@@ -76,5 +77,9 @@ if (AILURUS_ENABLE_EXAMPLE)
 
         add_executable          (ailurus_example_imgui_opengl example/Window/ExampleImGuiOpenGL.cpp thirdparty/imgui/imgui_demo.cpp)
         target_link_libraries   (ailurus_example_imgui_opengl PUBLIC ${AILURUS_TARGET_NAME})
+
+        # Console
+        add_executable          (ailurus_example_console example/ExampleConsole.cpp)
+        target_link_libraries   (ailurus_example_console PUBLIC ${AILURUS_TARGET_NAME})
     endif ()
 endif ()

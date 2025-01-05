@@ -135,9 +135,9 @@ namespace Ailurus
 #endif
 
         if (tag != nullptr)
-            std::cout << '[' << tag << "] " << levelStr << message;
+            std::cout << '[' << tag << "] " << levelStr << message << '\n';
         else
-            std::cout << levelStr << message;
+            std::cout << levelStr << message << '\n';
 #endif
     }
 }
