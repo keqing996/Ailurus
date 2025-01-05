@@ -48,9 +48,11 @@ endif ()
 option (AILURUS_ENABLE_EXAMPLE OFF)
 
 if (AILURUS_ENABLE_EXAMPLE)
+    # Command line
     add_executable          (ailurus_example_cmd_parse example/ExampleCmdLine.cpp)
     target_link_libraries   (ailurus_example_cmd_parse PUBLIC ${AILURUS_TARGET_NAME})
 
+    # Network
     add_executable          (ailurus_example_network_dns example/Network/ExampleDNS.cpp)
     target_link_libraries   (ailurus_example_network_dns PUBLIC ${AILURUS_TARGET_NAME})
 
@@ -60,7 +62,12 @@ if (AILURUS_ENABLE_EXAMPLE)
     add_executable          (ailurus_example_network_tcp_recv example/Network/ExampleTcpSocketReceive.cpp)
     target_link_libraries   (ailurus_example_network_tcp_recv PUBLIC ${AILURUS_TARGET_NAME})
 
+    # System
+    add_executable          (ailurus_example_system example/ExampleSystem.cpp)
+    target_link_libraries   (ailurus_example_system PUBLIC ${AILURUS_TARGET_NAME})
+
     if (WIN32)
+        # Native window
         add_executable          (ailurus_example_window_create example/Window/ExampleWindowCreate.cpp)
         target_link_libraries   (ailurus_example_window_create PUBLIC ${AILURUS_TARGET_NAME})
         set_target_properties   (ailurus_example_window_create PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
@@ -74,7 +81,11 @@ if (AILURUS_ENABLE_EXAMPLE)
         add_executable          (ailurus_example_input_callback example/Window/ExampleInputCallback.cpp)
         target_link_libraries   (ailurus_example_input_callback PUBLIC ${AILURUS_TARGET_NAME})
 
-        add_executable          (ailurus_example_imgui_opengl example/Window/ExampleImGuiOpenGL.cpp)
+        add_executable          (ailurus_example_imgui_opengl example/Window/ExampleImGuiOpenGL.cpp thirdparty/imgui/imgui_demo.cpp)
         target_link_libraries   (ailurus_example_imgui_opengl PUBLIC ${AILURUS_TARGET_NAME})
+
+        # Console
+        add_executable          (ailurus_example_console example/ExampleConsole.cpp)
+        target_link_libraries   (ailurus_example_console PUBLIC ${AILURUS_TARGET_NAME})
     endif ()
 endif ()

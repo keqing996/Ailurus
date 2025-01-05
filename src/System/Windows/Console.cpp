@@ -169,7 +169,7 @@ namespace Ailurus
         ::SetConsoleCursorPosition(hConsole, csbi.dwCursorPosition);
     }
 
-    void Console::ProgressBar(float progress, int barWidth)
+    void Console::ProgressBar(float progress, int barWidth, bool setCursorSameLine)
     {
         if (progress < 0)
             progress = 0;
@@ -187,7 +187,13 @@ namespace Ailurus
             else
                 std::cout << " ";
         }
-        std::cout << "] " << progress * 100.0 << " %\r";
+        std::cout << "] " << progress * 100.0 << " %";
+
+        if (setCursorSameLine)
+            std::cout << '\r';
+        else
+            std::cout << '\n';
+
         std::cout.flush();
     }
 }
