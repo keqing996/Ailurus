@@ -22,15 +22,6 @@ int main(int argc, const char** argv)
 
     Network::Initialize();
 
-    auto hostName = DNS::GetHostName();
-    std::cout << std::format("Hostname: {}", hostName) << std::endl;
-
-    auto localAddr = DNS::GetLocalIpAddress();
-    for (auto addr: localAddr)
-    {
-        std::cout << std::format("Host address: {}", addr.ToString()) << std::endl;
-    }
-
     auto socket = TcpSocket::Create(IpAddress::Family::IpV4);
     if (!socket.has_value())
     {
@@ -49,8 +40,8 @@ int main(int argc, const char** argv)
         return 0;
     }
 
-    const char* str = "Hello World!";
-    auto [sendRet, sendSize] = socket->Send((void*)str, sizeof(str));
+    std::string str = "Hello World!";
+    auto [sendRet, sendSize] = socket->Send((void*)str.data(), str.size());
     if (sendRet != SocketState::Success)
     {
         std::cout << std::format("Socket send failed with {}.", SocketStateUtil::GetName(sendRet)) << std::endl;
@@ -60,8 +51,8 @@ int main(int argc, const char** argv)
 
     std::cout << std::format("Send: {}", str) << std::endl;
 
-    char receiveBuf[1024];
-    auto [recvRet, recvSize] = socket->Receive(receiveBuf, sizeof(receiveBuf));
+    std::vector<char> receiveBuf(1024);
+    auto [recvRet, recvSize] = socket->Receive(receiveBuf.data(), receiveBuf.size());
     if (recvRet != SocketState::Success)
     {
         std::cout << std::format("Socket recv failed with {}.", SocketStateUtil::GetName(recvRet)) << std::endl;
@@ -69,7 +60,7 @@ int main(int argc, const char** argv)
         return 0;
     }
 
-    std::cout << std::format("Receive: {}", receiveBuf) << std::endl;
+    std::cout << std::format("Receive: {}", receiveBuf.data()) << std::endl;
 
     system("pause");
 }

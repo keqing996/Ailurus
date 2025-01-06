@@ -26,7 +26,7 @@ namespace Ailurus
     std::optional<TcpSocket> TcpSocket::Create(IpAddress::Family af, bool blocking)
     {
         auto addressFamily = SocketUtil::GetAddressFamily(af);
-        auto [wsaSocketType, wsaProtocol] = SocketUtil::GetTcpProtocol();
+        auto [wsaProtocol, wsaSocketType] = SocketUtil::GetTcpProtocol();
 
         const SocketHandle handle = ::socket(addressFamily, wsaSocketType, wsaProtocol);
         return Create(af, Npi::ToGeneralHandle(handle), blocking);

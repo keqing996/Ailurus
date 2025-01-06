@@ -19,47 +19,55 @@ int main(int argc, const char** argv)
     auto& ip = commandLine["ip"]->values[0];
     auto port = std::stoi(commandLine["port"]->values[0]);
 
+    ScopeGuard pauseGuard([]()->void { ::system("pause"); });
+
     Network::Initialize();
 
-    auto socket = TcpSocket::Create(IpAddress::Family::IpV4);
-    if (!socket.has_value())
+    auto socketOpt = TcpSocket::Create(IpAddress::Family::IpV4);
+    if (!socketOpt)
     {
         std::cout << "Socket create failed." << std::endl;
-        system("pause");
-        return 0;
+        return -1;
     }
 
-    ScopeGuard guard([&socket]()->void { socket->Close(); });
+    TcpSocket socket = socketOpt.value();
+    ScopeGuard guard([&socket]()->void { socket.Close(); });
 
-    auto ret = socket->Connect(ip, port);
-    if (ret != SocketState::Success)
+    auto listenRet = socket.Listen(ip, port);
+    if (listenRet != SocketState::Success)
     {
-        std::cout << std::format("Socket connect failed with {}.", SocketStateUtil::GetName(ret)) << std::endl;
-        system("pause");
-        return 0;
+        std::cout << std::format("Socket listen failed with {}.", (int)listenRet) << std::endl;
+        return -1;
     }
 
-    const char* str = "Hello World!";
-    auto [sendRet, sendSize] = socket->Send((void*)str, sizeof(str));
+    auto [acceptRet, clientSocket] = socket.Accept();
+    if (acceptRet != SocketState::Success)
+    {
+        std::cout << std::format("Socket accept failed with {}.", (int)listenRet) << std::endl;
+        return -1;
+    }
+
+    ScopeGuard clientGuard([&clientSocket]()->void { clientSocket.Close(); });
+
+    std::vector<char> receiveBuf(1024);
+    auto [recvRet, recvSize] = clientSocket.Receive(receiveBuf.data(), receiveBuf.size());
+    if (recvRet != SocketState::Success)
+    {
+        std::cout << std::format("Socket recv failed with {}.", (int)recvRet) << std::endl;
+        return -1;
+    }
+
+    std::cout << std::format("Receive: {}", receiveBuf.data()) << std::endl;
+
+    std::string_view str = "Hello World!";
+    auto [sendRet, sendSize] = clientSocket.Send((void*)str.data(), str.length());
     if (sendRet != SocketState::Success)
     {
-        std::cout << std::format("Socket send failed with {}.", SocketStateUtil::GetName(sendRet)) << std::endl;
-        system("pause");
-        return 0;
+        std::cout << std::format("Socket send failed with {}.", (int)sendRet) << std::endl;
+        return -1;
     }
 
     std::cout << std::format("Send: {}", str) << std::endl;
 
-    char receiveBuf[1024];
-    auto [recvRet, recvSize] = socket->Receive(receiveBuf, sizeof(receiveBuf));
-    if (recvRet != SocketState::Success)
-    {
-        std::cout << std::format("Socket recv failed with {}.", SocketStateUtil::GetName(recvRet)) << std::endl;
-        system("pause");
-        return 0;
-    }
-
-    std::cout << std::format("Receive: {}", receiveBuf) << std::endl;
-
-    system("pause");
+    return 0;
 }
