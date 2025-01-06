@@ -41,8 +41,28 @@ namespace Ailurus
 
     SocketState Npi::GetErrorState()
     {
-        // todo
-        return SocketState::Error;
+        auto err = errno;
+
+        // Incase define EWOULDBLOCK == EAGAIN, which will cause switch case
+        // compile error.
+        if (err == EAGAIN)
+            return SocketState::Busy;
+
+        switch (err)
+        {
+            case EWOULDBLOCK:
+            case EINPROGRESS:
+                return SocketState::Busy;
+            case ECONNABORTED:
+            case ECONNRESET:
+            case ENOTCONN:
+            case ETIMEDOUT:
+            case ENETRESET:
+            case EPIPE:
+                return SocketState::Disconnect;
+            default:
+                return SocketState::Error;
+        }
     }
 }
 
