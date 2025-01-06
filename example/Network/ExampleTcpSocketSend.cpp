@@ -20,13 +20,14 @@ int main(int argc, const char** argv)
     auto& ip = commandLine["ip"]->values[0];
     auto port = std::stoi(commandLine["port"]->values[0]);
 
+    ScopeGuard pauseGuard([]()->void { getchar(); });
+
     Network::Initialize();
 
     auto socket = TcpSocket::Create(IpAddress::Family::IpV4);
     if (!socket.has_value())
     {
         std::cout << "Socket create failed." << std::endl;
-        system("pause");
         return 0;
     }
 
@@ -36,7 +37,6 @@ int main(int argc, const char** argv)
     if (ret != SocketState::Success)
     {
         std::cout << std::format("Socket connect failed with {}.", SocketStateUtil::GetName(ret)) << std::endl;
-        system("pause");
         return 0;
     }
 
@@ -45,7 +45,6 @@ int main(int argc, const char** argv)
     if (sendRet != SocketState::Success)
     {
         std::cout << std::format("Socket send failed with {}.", SocketStateUtil::GetName(sendRet)) << std::endl;
-        system("pause");
         return 0;
     }
 
@@ -56,11 +55,10 @@ int main(int argc, const char** argv)
     if (recvRet != SocketState::Success)
     {
         std::cout << std::format("Socket recv failed with {}.", SocketStateUtil::GetName(recvRet)) << std::endl;
-        system("pause");
         return 0;
     }
 
     std::cout << std::format("Receive: {}", receiveBuf.data()) << std::endl;
 
-    system("pause");
+    return 0;
 }

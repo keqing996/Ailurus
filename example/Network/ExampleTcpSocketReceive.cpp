@@ -19,7 +19,7 @@ int main(int argc, const char** argv)
     auto& ip = commandLine["ip"]->values[0];
     auto port = std::stoi(commandLine["port"]->values[0]);
 
-    ScopeGuard pauseGuard([]()->void { ::system("pause"); });
+    ScopeGuard pauseGuard([]()->void { getchar(); });
 
     Network::Initialize();
 
@@ -40,7 +40,9 @@ int main(int argc, const char** argv)
         return -1;
     }
 
-    auto [acceptRet, clientSocket] = socket.Accept();
+    auto acceptResult = socket.Accept();
+    auto acceptRet = acceptResult.first;
+    auto& clientSocket = acceptResult.second;
     if (acceptRet != SocketState::Success)
     {
         std::cout << std::format("Socket accept failed with {}.", (int)listenRet) << std::endl;
