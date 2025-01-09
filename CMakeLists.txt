@@ -41,7 +41,11 @@ endif ()
 option (AILURUS_ENABLE_TEST OFF)
 
 if (AILURUS_ENABLE_TEST)
-    # todo
+    enable_testing()
+
+    add_executable          (ailurus_test_math test/TestVector.cpp)
+    target_link_libraries   (ailurus_test_math PUBLIC ${AILURUS_TARGET_NAME})
+    add_test                (NAME ailurus_test_math COMMAND ailurus_test_math)
 endif ()
 
 # Example code
