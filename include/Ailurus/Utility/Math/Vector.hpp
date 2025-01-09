@@ -5,6 +5,15 @@
 
 namespace Ailurus
 {
+    namespace _internal
+    {
+        template<size_t Dimension, size_t Value>
+        concept DimensionAtLeast = (Dimension >= Value);
+
+        template<typename T, size_t D>
+        concept CanDoCross = std::is_floating_point_v<T> && (D == 3);
+    }
+
     template<typename ElementType, size_t Dimension>
     class Vector
     {
@@ -21,6 +30,36 @@ namespace Ailurus
 
             size_t index = 0;
             (..., (_data[index++] = static_cast<ElementType>(args)));
+        }
+
+        Vector(const Vector& other)
+        {
+            ::memcpy(_data, other._data, Dimension * sizeof(ElementType));
+        }
+
+        Vector(Vector&& other) noexcept
+        {
+            ::memcpy(_data, other._data, Dimension * sizeof(ElementType));
+            ::memset(other._data, 0, Dimension * sizeof(ElementType));
+        }
+
+        Vector& operator=(const Vector& other)
+        {
+            if (this != &other)
+                ::memcpy(_data, other._data, Dimension * sizeof(ElementType));
+
+            return *this;
+        }
+
+        Vector& operator=(Vector&& other) noexcept
+        {
+            if (this != &other)
+            {
+                ::memcpy(_data, other._data, Dimension * sizeof(ElementType));
+                ::memset(other._data, 0, Dimension * sizeof(ElementType));
+            }
+
+            return *this;
         }
 
         template <typename T>
@@ -88,60 +127,70 @@ namespace Ailurus
             return *this;
         }
 
-        template <size_t D = Dimension>
-        typename std::enable_if_t<(D >= 1), ElementType&>
-        x()
+        template <size_t D = Dimension> requires _internal::DimensionAtLeast<D, 1>
+        ElementType& x()
         {
             return _data[0];
         }
 
-        template <size_t D = Dimension>
-        typename std::enable_if_t<(D >= 1), ElementType>
-        x() const
+        template <size_t D = Dimension> requires _internal::DimensionAtLeast<D, 1>
+        ElementType x() const
         {
             return _data[0];
         }
 
-        template <size_t D = Dimension>
-        typename std::enable_if_t<(D >= 2), ElementType&>
-        y()
+        template <size_t D = Dimension> requires _internal::DimensionAtLeast<D, 2>
+        ElementType& y()
         {
             return _data[1];
         }
 
-        template <size_t D = Dimension>
-        typename std::enable_if_t<(D >= 2), ElementType>
-        y() const
+        template <size_t D = Dimension> requires _internal::DimensionAtLeast<D, 2>
+        ElementType y() const
         {
             return _data[1];
         }
 
-        template <size_t D = Dimension>
-        typename std::enable_if_t<(D >= 3), ElementType&>
-        z()
+        template <size_t D = Dimension> requires _internal::DimensionAtLeast<D, 3>
+        ElementType& z()
         {
             return _data[2];
         }
 
-        template <size_t D = Dimension>
-        typename std::enable_if_t<(D >= 3), ElementType>
-        z() const
+        template <size_t D = Dimension> requires _internal::DimensionAtLeast<D, 3>
+        ElementType z() const
         {
             return _data[2];
         }
 
-        template <size_t D = Dimension>
-        typename std::enable_if_t<(D >= 4), ElementType&>
-        w()
+        template <size_t D = Dimension> requires _internal::DimensionAtLeast<D, 4>
+        ElementType& w()
         {
             return _data[3];
         }
 
-        template <size_t D = Dimension>
-        typename std::enable_if_t<(D >= 4), ElementType>
-        w() const
+        template <size_t D = Dimension> requires _internal::DimensionAtLeast<D, 4>
+        ElementType w() const
         {
             return _data[3];
+        }
+
+        template<typename T = ElementType, size_t D = Dimension>
+        requires _internal::CanDoCross<T, D>
+        Vector Cross(const Vector& other) const
+        {
+            return Vector(y() * other.z() - z() * other.y(),
+                          z() * other.x() - x() * other.z(),
+                          x() * other.y() - y() * other.x());
+        }
+
+        ElementType
+        Dot(const Vector& other) const
+        {
+            ElementType result;
+            for (auto i = 0; i < Dimension; i++)
+                result += _data[i] * other[i];
+            return result;
         }
 
     private:
@@ -223,10 +272,7 @@ namespace Ailurus
     template<typename E, size_t D>
     E operator*(const Vector<E, D>& left, const Vector<E, D>& right)
     {
-        E result;
-        for (auto i = 0; i < D; i++)
-            result += left[i] * right[i];
-        return result;
+        return left.Dot(right);
     }
 
     template<typename E, size_t D>
@@ -249,6 +295,12 @@ namespace Ailurus
         for (auto i = 0; i < D; i++)
             left[i] *= right[i];
         return left;
+    }
+
+    template<typename E, size_t D> requires _internal::CanDoCross<E, D>
+    Vector<E, D> operator^(const Vector<E, D>& left, const Vector<E, D>& right)
+    {
+        return left.Cross(right);
     }
 
     template<typename E, size_t D>
