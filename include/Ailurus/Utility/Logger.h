@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include <string>
+#include <string_view>
 #include <mutex>
 
 namespace Ailurus
@@ -16,7 +16,7 @@ namespace Ailurus
             Error = 2
         };
 
-        using LogCallBack = std::function<void(Level, const char*, const char*)>;
+        using LogCallBack = std::function<void(Level, const std::string_view&, const std::string_view&)>;
 
     public:
         Logger() = delete;
@@ -28,18 +28,18 @@ namespace Ailurus
         static bool GetTreadSafe();
         static void SetLogger(const LogCallBack& pFunc);
 
-        static void LogInfo(const char* message);
-        static void LogWarn(const char* message);
-        static void LogError(const char* message);
-        static void Log(Level level, const char* message);
+        static void LogInfo(const std::string_view& message);
+        static void LogWarn(const std::string_view& message);
+        static void LogError(const std::string_view& message);
+        static void Log(Level level, const std::string_view& message);
 
-        static void LogInfo(const char* tag, const char* message);
-        static void LogWarn(const char* tag, const char* message);
-        static void LogError(const char* tag, const char* message);
-        static void Log(Level level, const char* tag, const char* message);
+        static void LogInfo(const std::string_view& tag, const std::string_view& message);
+        static void LogWarn(const std::string_view& tag, const std::string_view& message);
+        static void LogError(const std::string_view& tag, const std::string_view& message);
+        static void Log(Level level, const std::string_view& tag, const std::string_view& message);
 
     private:
-        static void LogStd(Level level, const char* tag, const char* message);
+        static void LogStd(Level level, const std::string_view& tag, const std::string_view& message);
 
     private:
         static Level _filterLevel;

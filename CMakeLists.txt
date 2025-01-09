@@ -54,11 +54,14 @@ if (AILURUS_ENABLE_EXAMPLE)
     add_executable          (ailurus_example_network_dns example/Network/ExampleDNS.cpp)
     target_link_libraries   (ailurus_example_network_dns PUBLIC ${AILURUS_TARGET_NAME})
 
-    add_executable          (ailurus_example_network_tcp_send example/Network/ExampleTcpSocketSend.cpp)
-    target_link_libraries   (ailurus_example_network_tcp_send PUBLIC ${AILURUS_TARGET_NAME})
+    add_executable          (ailurus_example_network_simple_tcp_sender example/Network/ExampleSimpleTcpSender.cpp)
+    target_link_libraries   (ailurus_example_network_simple_tcp_sender PUBLIC ${AILURUS_TARGET_NAME})
 
-    add_executable          (ailurus_example_network_tcp_recv example/Network/ExampleTcpSocketReceive.cpp)
-    target_link_libraries   (ailurus_example_network_tcp_recv PUBLIC ${AILURUS_TARGET_NAME})
+    add_executable          (ailurus_example_network_single_tcp_echo_sever example/Network/ExampleTcpSingleEchoSever.cpp)
+    target_link_libraries   (ailurus_example_network_single_tcp_echo_sever PUBLIC ${AILURUS_TARGET_NAME})
+
+    add_executable          (ailurus_example_network_multi_tcp_echo_sever example/Network/ExampleTcpMultiEchoSever.cpp)
+    target_link_libraries   (ailurus_example_network_multi_tcp_echo_sever PUBLIC ${AILURUS_TARGET_NAME})
 
     if (WIN32)
         add_executable          (ailurus_example_window_create example/Window/ExampleWindowCreate.cpp)

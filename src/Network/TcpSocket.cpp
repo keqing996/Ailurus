@@ -63,10 +63,10 @@ namespace Ailurus
         return { af, static_cast<int64_t>(Npi::GetInvalidSocket()), blocking };
     }
 
-    bool TcpSocket::TryGetRemoteEndpoint(EndPoint& outEndpoint) const
+    std::optional<EndPoint> TcpSocket::TryGetRemoteEndpoint() const
     {
         if (!IsValid())
-            return false;
+            return std::nullopt;
 
         if (_addressFamily == IpAddress::Family::IpV4)
         {
@@ -74,11 +74,10 @@ namespace Ailurus
             SockLen structLen = sizeof(sockaddr_in);
             if (::getpeername(Npi::ToNativeHandle(_handle), reinterpret_cast<sockaddr*>(&address), &structLen) != -1)
             {
-                outEndpoint = EndPoint(IpAddress(ntohl(address.sin_addr.s_addr)), ntohs(address.sin_port));
-                return true;
+                return EndPoint(IpAddress(ntohl(address.sin_addr.s_addr)), ntohs(address.sin_port));
             }
 
-            return false;
+            return std::nullopt;
         }
 
         if (_addressFamily == IpAddress::Family::IpV6)
@@ -87,14 +86,13 @@ namespace Ailurus
             SockLen structLen = sizeof(sockaddr_in6);
             if (::getpeername(Npi::ToNativeHandle(_handle), reinterpret_cast<sockaddr*>(&address), &structLen) != -1)
             {
-                outEndpoint = EndPoint(IpAddress(address.sin6_addr.s6_addr), ntohs(address.sin6_port));
-                return true;
+                return EndPoint(IpAddress(address.sin6_addr.s6_addr), ntohs(address.sin6_port));
             }
 
-            return false;
+            return std::nullopt;
         }
 
-        return false;
+        return std::nullopt;
     }
 
     std::pair<SocketState, size_t> TcpSocket::Send(void* pData, size_t size) const

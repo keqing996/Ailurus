@@ -37,42 +37,42 @@ namespace Ailurus
         _logInfoCallVec = pFunc;
     }
 
-    void Logger::LogInfo(const char* message)
+    void Logger::LogInfo(const std::string_view& message)
     {
         Log(Level::Info, message);
     }
 
-    void Logger::LogWarn(const char* message)
+    void Logger::LogWarn(const std::string_view& message)
     {
         Log(Level::Warning, message);
     }
 
-    void Logger::LogError(const char* message)
+    void Logger::LogError(const std::string_view& message)
     {
         Log(Level::Error, message);
     }
 
-    void Logger::Log(Level level, const char* message)
+    void Logger::Log(Level level, const std::string_view& message)
     {
-        Log(level, nullptr, message);
+        Log(level, "", message);
     }
 
-    void Logger::LogInfo(const char* tag, const char* message)
+    void Logger::LogInfo(const std::string_view& tag, const std::string_view& message)
     {
         Log(Level::Info, tag, message);
     }
 
-    void Logger::LogWarn(const char* tag, const char* message)
+    void Logger::LogWarn(const std::string_view& tag, const std::string_view& message)
     {
         Log(Level::Warning, tag, message);
     }
 
-    void Logger::LogError(const char* tag, const char* message)
+    void Logger::LogError(const std::string_view& tag, const std::string_view& message)
     {
         Log(Level::Error, tag, message);
     }
 
-    void Logger::Log(Level level, const char* tag, const char* message)
+    void Logger::Log(Level level, const std::string_view& tag, const std::string_view& message)
     {
         if (static_cast<int>(_filterLevel) > static_cast<int>(level))
             return;
@@ -83,15 +83,15 @@ namespace Ailurus
         if (_isThreadSafe)
         {
             std::lock_guard guard(_mutex);
-            _logInfoCallVec(level, tag, message);
+            _logInfoCallVec(level, tag.data(), message.data());
         }
         else
         {
-            _logInfoCallVec(level, tag, message);
+            _logInfoCallVec(level, tag.data(), message.data());
         }
     }
 
-    void Logger::LogStd(Level level, const char* tag, const char* message)
+    void Logger::LogStd(Level level, const std::string_view& tag, const std::string_view& message)
     {
 #if AILURUS_PLATFORM_ANDROID
         // todo.
@@ -134,10 +134,10 @@ namespace Ailurus
         });
 #endif
 
-        if (tag != nullptr)
-            std::cout << '[' << tag << "] " << levelStr << message;
+        if (!tag.empty())
+            std::cout << '[' << tag << "] " << levelStr << message << '\n';
         else
-            std::cout << levelStr << message;
+            std::cout << levelStr << message << '\n';
 #endif
     }
 }

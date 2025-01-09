@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include "Socket.h"
 
 namespace Ailurus
@@ -13,7 +14,7 @@ namespace Ailurus
 
     public:
         // Get remote ip & port
-        bool TryGetRemoteEndpoint(EndPoint& outEndpoint) const;
+        std::optional<EndPoint> TryGetRemoteEndpoint() const;
 
         // [Client] Send & Recv
         std::pair<SocketState, size_t> Send(void* pData, size_t size) const;
