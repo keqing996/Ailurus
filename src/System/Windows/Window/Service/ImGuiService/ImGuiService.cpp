@@ -2,7 +2,6 @@
 
 #if AILURUS_PLATFORM_WINDOWS
 
-#include <locale>
 #include <imgui/imgui_internal.h>
 #include <imgui/backends/imgui_impl_win32.h>
 #include "Ailurus/Platform/Windows/Window/Window.h"
@@ -17,8 +16,6 @@ namespace Ailurus
     ImGuiService::ImGuiService(Window* pWindow)
         : Service(pWindow)
     {
-        std::locale::global(std::locale("zh_CN.UTF8"));
-
         IMGUI_CHECKVERSION();
 
         // ImGui context
@@ -98,7 +95,7 @@ namespace Ailurus
         return 16 * GetDpiScale();
     }
 
-    ImFont* ImGuiService::CreateImGuiFont(void* fontData, int fontDataSize, int fontSize, bool transferDataOwnership)
+    ImFont* ImGuiService::CreateImGuiFont(void* fontData, int fontDataSize, int fontSize, bool transferDataOwnership, const ImWchar* glyphRanges)
     {
         HWND hWnd = _pWindow->GetWindowHandle<HWND>();
         float dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
@@ -107,26 +104,32 @@ namespace Ailurus
         if (!transferDataOwnership)
             tempConfig.FontDataOwnedByAtlas = false;
 
+        if (fontSize <= 0)
+            fontSize = GetDefaultFontSize();
+
         auto pFonts = ImGui::GetIO().Fonts;
         return pFonts->AddFontFromMemoryTTF(
                 fontData,
                 fontDataSize,
                 dpiScale * fontSize,
                 &tempConfig,
-                pFonts->GetGlyphRangesChineseSimplifiedCommon());
+                glyphRanges);
     }
 
-    ImFont* ImGuiService::CreateImGuiFont(const std::string& ttfPath, int fontSize)
+    ImFont* ImGuiService::CreateImGuiFont(const std::string& ttfPath, int fontSize, const ImWchar* glyphRanges)
     {
         HWND hWnd = _pWindow->GetWindowHandle<HWND>();
         float dpiScale = ImGui_ImplWin32_GetDpiScaleForHwnd(hWnd);
+
+        if (fontSize <= 0)
+            fontSize = GetDefaultFontSize();
 
         auto pFonts = ImGui::GetIO().Fonts;
         return pFonts->AddFontFromFileTTF(
                 ttfPath.c_str(),
                 dpiScale * fontSize,
                 nullptr,
-                pFonts->GetGlyphRangesChineseSimplifiedCommon());
+                glyphRanges);
     }
 
 }

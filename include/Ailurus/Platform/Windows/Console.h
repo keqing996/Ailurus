@@ -38,7 +38,7 @@ namespace Ailurus
 
         static void ClearScreen();
 
-        static void ProgressBar(float progress, int barWidth = 70);
+        static void ProgressBar(float progress, int barWidth = 70, bool setCursorSameLine = true);
     };
 }
 
