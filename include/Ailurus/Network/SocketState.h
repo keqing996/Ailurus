@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace Ailurus
 {
     enum class SocketState
@@ -10,5 +12,13 @@ namespace Ailurus
         Disconnect,
         AddressFamilyNotMatch,
         Error
+    };
+
+    class SocketStateUtil
+    {
+    public:
+        SocketStateUtil() = delete;
+
+        static const std::string& GetName(SocketState state);
     };
 }
