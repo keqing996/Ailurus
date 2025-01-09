@@ -12,6 +12,9 @@ namespace Ailurus
 
         template<typename T, size_t D>
         concept CanDoCross = std::is_floating_point_v<T> && (D == 3);
+
+        template<typename T>
+        concept CanNormalize = std::is_floating_point_v<T>;
     }
 
     template<typename ElementType, size_t Dimension>
@@ -23,11 +26,9 @@ namespace Ailurus
             ::memset(_data, 0, Dimension * sizeof(ElementType));
         }
 
-        template<typename... Args>
+        template<typename... Args> requires ((sizeof...(Args) == Dimension))
         explicit Vector(Args... args)
         {
-            static_assert(sizeof...(Args) == Dimension, "Parameter count must match vector's dimension");
-
             size_t index = 0;
             (..., (_data[index++] = static_cast<ElementType>(args)));
         }
@@ -40,7 +41,6 @@ namespace Ailurus
         Vector(Vector&& other) noexcept
         {
             ::memcpy(_data, other._data, Dimension * sizeof(ElementType));
-            ::memset(other._data, 0, Dimension * sizeof(ElementType));
         }
 
         Vector& operator=(const Vector& other)
@@ -54,10 +54,7 @@ namespace Ailurus
         Vector& operator=(Vector&& other) noexcept
         {
             if (this != &other)
-            {
                 ::memcpy(_data, other._data, Dimension * sizeof(ElementType));
-                ::memset(other._data, 0, Dimension * sizeof(ElementType));
-            }
 
             return *this;
         }
@@ -68,7 +65,7 @@ namespace Ailurus
             Vector<T, Dimension> result;
 
             for (auto i = 0; i < Dimension; i++)
-                result._data[i] = static_cast<T>(_data[i]);
+                result[i] = static_cast<T>(_data[i]);
 
             return result;
         }
@@ -101,9 +98,9 @@ namespace Ailurus
 
         ElementType SquareMagnitude() const
         {
-            ElementType total;
+            ElementType total = 0;
             for (auto i = 0; i < Dimension; i++)
-                total = _data[i] * _data[i];
+                total += _data[i] * _data[i];
 
             return total;
         }
@@ -113,18 +110,25 @@ namespace Ailurus
             return std::sqrt(SquareMagnitude());
         }
 
-        Vector Normalize() const
+        template<typename T = ElementType>
+        requires _internal::CanNormalize<T>
+        void Normalize()
         {
-            static_assert(std::is_floating_point_v<ElementType>, "Normalize() only support floating elements.");
-
             ElementType mag = Magnitude();
             if (mag > 0)
             {
                 for (auto i = 0; i < Dimension; i++)
                     _data[i] = _data[i] / mag;
             }
+        }
 
-            return *this;
+        template<typename T = ElementType>
+        requires _internal::CanNormalize<T>
+        Vector Normalized()
+        {
+            Vector result = *this;
+            result.Normalize<>();
+            return result;
         }
 
         template <size_t D = Dimension> requires _internal::DimensionAtLeast<D, 1>
@@ -187,15 +191,32 @@ namespace Ailurus
         ElementType
         Dot(const Vector& other) const
         {
-            ElementType result;
+            ElementType result = 0;
             for (auto i = 0; i < Dimension; i++)
                 result += _data[i] * other[i];
             return result;
         }
 
+    public:
+        static const Vector Zero;
+        static const Vector One;
+
     private:
         ElementType _data[Dimension];
     };
+
+    template<typename ElementType, size_t Dimension>
+    const Vector<ElementType, Dimension> Vector<ElementType, Dimension>::Zero = Vector<ElementType, Dimension>();
+
+    template<typename ElementType, size_t Dimension>
+    const Vector<ElementType, Dimension> Vector<ElementType, Dimension>::One = []
+    {
+        Vector vec;
+        for (size_t i = 0; i < Dimension; ++i)
+            vec[i] = static_cast<ElementType>(1);
+
+        return vec;
+    }();
 
     namespace _internal
     {
@@ -222,18 +243,18 @@ namespace Ailurus
             return {};
         }
 
-        template<typename E, size_t D, Op Operation, std::size_t... Indices>
-        Vector<E, D> VectorOperationFoldExpression(
-            const Vector<E, D>& left,
-            E right,
+        template<typename E1, typename E2, size_t D, Op Operation, std::size_t... Indices>
+        Vector<E1, D> VectorOperationFoldExpression(
+            const Vector<E1, D>& left,
+            E2 right,
             std::index_sequence<Indices...>)
         {
             if constexpr (Operation == Op::Add)
-                return Vector<E, D>(left[Indices] + right...);
+                return Vector<E1, D>(left[Indices] + right...);
             else if constexpr (Operation == Op::Sub)
-                return Vector<E, D>(left[Indices] - right...);
+                return Vector<E1, D>(left[Indices] - right...);
             else if constexpr (Operation == Op::Multiply)
-                return Vector<E, D>(left[Indices] * right...);
+                return Vector<E1, D>(left[Indices] * right...);
 
             return {};
         }
@@ -275,25 +296,25 @@ namespace Ailurus
         return left.Dot(right);
     }
 
-    template<typename E, size_t D>
-    Vector<E, D> operator*(const Vector<E, D>& left, E right)
+    template<typename E1, typename E2, size_t D>
+    Vector<E1, D> operator*(const Vector<E1, D>& left, E2 right)
     {
-        return _internal::VectorOperationFoldExpression<E, D, _internal::Op::Multiply>(
+        return _internal::VectorOperationFoldExpression<E1, E2, D, _internal::Op::Multiply>(
             left, right, std::make_index_sequence<D>());
     }
 
-    template<typename E, size_t D>
-    Vector<E, D> operator*(E left, const Vector<E, D>& right)
+    template<typename E1, typename E2, size_t D>
+    Vector<E1, D> operator*(E2 left, const Vector<E1, D>& right)
     {
-        return _internal::VectorOperationFoldExpression<E, D, _internal::Op::Multiply>(
+        return _internal::VectorOperationFoldExpression<E1, E2, D, _internal::Op::Multiply>(
             right, left, std::make_index_sequence<D>());
     }
 
-    template<typename E, size_t D>
-    Vector<E, D>& operator*=(Vector<E, D>& left, const Vector<E, D>& right)
+    template<typename E1, typename E2, size_t D>
+    Vector<E1, D>& operator*=(Vector<E1, D>& left, E2 right)
     {
         for (auto i = 0; i < D; i++)
-            left[i] *= right[i];
+            left[i] *= right;
         return left;
     }
 
