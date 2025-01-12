@@ -1,26 +1,96 @@
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest/doctest.h"
 #include <iostream>
-#include "Ailurus/String.hpp"
-#include "Ailurus/Windows/Console.hpp"
+#include "Ailurus/Utility/String.h"
 
-int main()
+using namespace Ailurus;
+
+TEST_SUITE("String")
 {
-    // Do Not Change Global Locale
-    // std::locale::global(std::locale("zh_CN"));
+    TEST_CASE("Split")
+    {
+        std::string s = "apple,banana,orange,";
+        {
+            auto result = String::Split(s, ',');
 
-    // Change console output code page to UTF-8
-    Infra::Console::SetConsoleOutputUtf8();
+            CHECK_EQ(result.size(), 4);
+            CHECK_EQ(result[0], "apple");
+            CHECK_EQ(result[1], "banana");
+            CHECK_EQ(result[2], "orange");
+            CHECK_EQ(result[3], "");
+        }
+        {
+            auto result = String::Split(s, ",");
 
-    // Change wcout locale to zh_CN
-    std::wcout.imbue(std::locale("zh_CN"));
+            CHECK_EQ(result.size(), 4);
+            CHECK_EQ(result[0], "apple");
+            CHECK_EQ(result[1], "banana");
+            CHECK_EQ(result[2], "orange");
+            CHECK_EQ(result[3], "");
+        }
+    }
 
-    std::string str = "测试";
-    std::cout << str << std::endl;
-    std::wstring wstr = Infra::String::StringToWideString(str);
-    std::wcout << wstr << std::endl;
-    std::string str2 = Infra::String::WideStringToString(wstr);
-    std::cout << str2 << std::endl;
+    TEST_CASE("SplitView")
+    {
+        std::string s = "apple,banana,orange,";
+        {
+            auto result = String::SplitView(s, ',');
 
-    system("pause");
+            CHECK_EQ(result.size(), 4);
+            CHECK_EQ(result[0], "apple");
+            CHECK_EQ(result[1], "banana");
+            CHECK_EQ(result[2], "orange");
+            CHECK_EQ(result[3], "");
+        }
+        {
+            auto result = String::SplitView(s, ",");
 
-    return 0;
+            CHECK_EQ(result.size(), 4);
+            CHECK_EQ(result[0], "apple");
+            CHECK_EQ(result[1], "banana");
+            CHECK_EQ(result[2], "orange");
+            CHECK_EQ(result[3], "");
+        }
+    }
+
+    TEST_CASE("Join")
+    {
+        std::vector<std::string> strs = { "apple", "banana", "orange" };
+        {
+            const auto result = String::Join(strs, ",");
+            CHECK_EQ(result, "apple,banana,orange");
+        }
+        {
+            const auto result = String::Join(strs, ',');
+            CHECK_EQ(result, "apple,banana,orange");
+        }
+    }
+
+    TEST_CASE("Replace")
+    {
+        std::string s = "apple,banana,orange,";
+        String::Replace(s, ",", "-");
+        CHECK_EQ(s, "apple-banana-orange-");
+    }
+
+    TEST_CASE("Trim")
+    {
+        std::string testWhiteSpace = "  \t \r \n \r\n  ";
+        std::string content = "apple  banana orange";
+        {
+            std::string s = testWhiteSpace + content + testWhiteSpace;
+            String::TrimStart(s);
+            CHECK_EQ(s, content + testWhiteSpace);
+        }
+        {
+            std::string s = testWhiteSpace + content + testWhiteSpace;
+            String::TrimEnd(s);
+            CHECK_EQ(s, testWhiteSpace + content);
+        }
+        {
+            std::string s = testWhiteSpace + content + testWhiteSpace;
+            String::Trim(s);
+            CHECK_EQ(s, content);
+        }
+    }
 }

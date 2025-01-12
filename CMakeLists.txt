@@ -46,6 +46,10 @@ if (AILURUS_ENABLE_TEST)
     add_executable          (ailurus_test_math test/TestVector.cpp)
     target_link_libraries   (ailurus_test_math PUBLIC ${AILURUS_TARGET_NAME})
     add_test                (NAME ailurus_test_math COMMAND ailurus_test_math)
+
+    add_executable          (ailurus_test_string test/TestString.cpp)
+    target_link_libraries   (ailurus_test_string PUBLIC ${AILURUS_TARGET_NAME})
+    add_test                (NAME ailurus_test_string COMMAND ailurus_test_string)
 endif ()
 
 # Example code
