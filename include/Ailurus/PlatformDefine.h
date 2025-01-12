@@ -65,6 +65,29 @@
 #    define AILURUS_PLATFORM_SUPPORT_POSIX 0
 #endif
 
+/* ISA define */
+#if defined(__x86_64__) /* clang & gcc x64 */ || defined(_M_X64) /* msvc x64 */
+#    define AILURUS_CHIP_X64 1
+#    define AILURUS_CHIP_X86 1
+#    define AILURUS_CHIP_ARM64 0
+#    define AILURUS_CHIP_ARM32 0
+#elif defined(__i386__) /* clang & gcc x86 */ || defined(_M_IX86) /* msvc x86 */
+#    define AILURUS_CHIP_X64 0
+#    define AILURUS_CHIP_X86 1
+#    define AILURUS_CHIP_ARM64 0
+#    define AILURUS_CHIP_ARM32 0
+#elif defined(__aarch64__) /* arm64 */
+#    define AILURUS_CHIP_X64 0
+#    define AILURUS_CHIP_X86 0
+#    define AILURUS_CHIP_ARM64 1
+#    define AILURUS_CHIP_ARM32 0
+#elif defined(__arm__) /* arm32 */
+#    define AILURUS_CHIP_ARM64 0
+#    define AILURUS_CHIP_ARM32 1
+#else
+#    error "Not supported chip platform"
+#endif
+
 /* Cpp version
  * - std::format need gcc13
  */
