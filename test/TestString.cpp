@@ -13,20 +13,18 @@ TEST_SUITE("String")
         {
             auto result = String::Split(s, ',');
 
-            CHECK_EQ(result.size(), 4);
+            CHECK_EQ(result.size(), 3);
             CHECK_EQ(result[0], "apple");
             CHECK_EQ(result[1], "banana");
             CHECK_EQ(result[2], "orange");
-            CHECK_EQ(result[3], "");
         }
         {
             auto result = String::Split(s, ",");
 
-            CHECK_EQ(result.size(), 4);
+            CHECK_EQ(result.size(), 3);
             CHECK_EQ(result[0], "apple");
             CHECK_EQ(result[1], "banana");
             CHECK_EQ(result[2], "orange");
-            CHECK_EQ(result[3], "");
         }
     }
 
@@ -36,20 +34,18 @@ TEST_SUITE("String")
         {
             auto result = String::SplitView(s, ',');
 
-            CHECK_EQ(result.size(), 4);
+            CHECK_EQ(result.size(), 3);
             CHECK_EQ(result[0], "apple");
             CHECK_EQ(result[1], "banana");
             CHECK_EQ(result[2], "orange");
-            CHECK_EQ(result[3], "");
         }
         {
             auto result = String::SplitView(s, ",");
 
-            CHECK_EQ(result.size(), 4);
+            CHECK_EQ(result.size(), 3);
             CHECK_EQ(result[0], "apple");
             CHECK_EQ(result[1], "banana");
             CHECK_EQ(result[2], "orange");
-            CHECK_EQ(result[3], "");
         }
     }
 

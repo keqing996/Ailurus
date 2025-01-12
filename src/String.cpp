@@ -5,30 +5,6 @@ namespace Ailurus
     namespace _internal
     {
         template<typename DelimType>
-        static std::vector<std::string_view> SplitView(const std::string& inputStr, DelimType delimiter)
-        {
-            auto split = std::views::split(inputStr, delimiter);
-
-            std::vector<std::string_view> result;
-            for (const auto& element : split)
-                result.emplace_back(element.begin(), element.end());
-
-            return result;
-        }
-
-        template<typename DelimType>
-        static std::vector<std::string> Split(const std::string& inputStr, DelimType delimiter)
-        {
-            auto split = std::views::split(inputStr, delimiter);
-
-            std::vector<std::string> result;
-            for (const auto& element : split)
-                result.emplace_back(element.begin(), element.end());
-
-            return result;
-        }
-
-        template<typename DelimType>
         static std::string Join(const std::vector<std::string>& strVec, DelimType delim)
         {
             std::ostringstream oss;
@@ -46,22 +22,84 @@ namespace Ailurus
 
     std::vector<std::string_view> String::SplitView(const std::string& inputStr, char delimiter)
     {
-        return _internal::SplitView(inputStr, delimiter);
+        std::vector<std::string_view> result;
+        std::string_view strView(inputStr);
+        size_t start = 0;
+        size_t end = 0;
+
+        while ((end = strView.find(delimiter, start)) != std::string_view::npos)
+        {
+            result.emplace_back(strView.substr(start, end - start));
+            start = end + 1;
+        }
+
+        if (start < strView.size())
+            result.emplace_back(strView.substr(start));
+
+        return result;
     }
 
     std::vector<std::string_view> String::SplitView(const std::string& inputStr, const std::string& delimiter)
     {
-        return _internal::SplitView(inputStr, delimiter);
+        if (delimiter.empty())
+            return { inputStr };
+
+        std::vector<std::string_view> result;
+        std::string_view strView(inputStr);
+        size_t start = 0;
+        size_t end = 0;
+        const size_t delimLen = delimiter.size();
+
+        while ((end = strView.find(delimiter, start)) != std::string_view::npos)
+        {
+            result.emplace_back(strView.substr(start, end - start));
+            start = end + delimLen;
+        }
+
+        if (start < strView.size())
+            result.emplace_back(strView.substr(start));
+
+        return result;
     }
 
     std::vector<std::string> String::Split(const std::string& inputStr, char delimiter)
     {
-        return _internal::Split(inputStr, delimiter);
+        std::vector<std::string> result;
+        size_t start = 0;
+        size_t end = 0;
+
+        while ((end = inputStr.find(delimiter, start)) != std::string::npos)
+        {
+            result.emplace_back(inputStr.substr(start, end - start));
+            start = end + 1;
+        }
+
+        if (start < inputStr.size())
+            result.emplace_back(inputStr.substr(start));
+
+        return result;
     }
 
     std::vector<std::string> String::Split(const std::string& inputStr, const std::string& delimiter)
     {
-        return _internal::Split(inputStr, delimiter);
+        if (delimiter.empty())
+            return { inputStr };
+
+        std::vector<std::string> result;
+        size_t start = 0;
+        size_t end = 0;
+        const size_t delimLen = delimiter.size();
+
+        while ((end = inputStr.find(delimiter, start)) != std::string::npos)
+        {
+            result.emplace_back(inputStr.substr(start, end - start));
+            start = end + delimLen;
+        }
+
+        if (start < inputStr.size())
+            result.emplace_back(inputStr.substr(start));
+
+        return result;
     }
 
     std::string String::Join(const std::vector<std::string>& strVec, char delim)
