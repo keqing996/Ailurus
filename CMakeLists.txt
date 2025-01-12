@@ -46,6 +46,14 @@ if (AILURUS_ENABLE_TEST)
     add_executable          (ailurus_test_math test/TestVector.cpp)
     target_link_libraries   (ailurus_test_math PUBLIC ${AILURUS_TARGET_NAME})
     add_test                (NAME ailurus_test_math COMMAND ailurus_test_math)
+
+    add_executable          (ailurus_test_lock_free_queue test/TestLockFreeQueue.cpp)
+    target_link_libraries   (ailurus_test_lock_free_queue PUBLIC ${AILURUS_TARGET_NAME})
+    add_test                (NAME ailurus_test_lock_free_queue COMMAND ailurus_test_lock_free_queue)
+
+    add_executable          (ailurus_test_thread_pool test/TestThreadPool.cpp)
+    target_link_libraries   (ailurus_test_thread_pool PUBLIC ${AILURUS_TARGET_NAME})
+    add_test                (NAME ailurus_test_thread_pool COMMAND ailurus_test_thread_pool)
 endif ()
 
 # Example code
