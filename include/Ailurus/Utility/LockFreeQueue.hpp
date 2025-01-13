@@ -13,10 +13,10 @@ namespace Ailurus
 
         enum class State: uint8_t
         {
-            Empty,
-            Enqueuing,
+            Unloaded,
+            Loading,
             Loaded,
-            Dequeuing
+            Unloading
         };
 
         template<typename Element>
@@ -94,6 +94,14 @@ namespace Ailurus
             }
         };
 
+        inline uint32_t RingBufferNextIndex(uint32_t current, uint32_t size)
+        {
+            if (current + 1 >= size)
+                return 0;
+
+            return current + 1;
+        }
+
     }
 
     enum class LockFreeQueueStrategy
@@ -130,13 +138,16 @@ namespace Ailurus
             uint32_t headIndex = _storge.headIndex.load();
             _storge.headIndex.store(headIndex + 1);
 
+            // Clamp to real index
+            uint32_t realIndex = headIndex & _storge.size - 1;
+
             // Check state, wait state to be empty.
-            std::atomic<State>& state = _storge.state[headIndex];
-            while (state.load(std::memory_order_acquire) != State::Empty)
+            std::atomic<State>& state = _storge.state[realIndex];
+            while (state.load(std::memory_order_acquire) != State::Unloaded)
                 SpinPause();
 
             // Set data.
-            _storge.data[headIndex] = std::forward<T>(data);
+            _storge.data[realIndex] = std::forward<T>(data);
 
             // Set state.
             state.store(State::Loaded, std::memory_order_relaxed);
@@ -144,6 +155,24 @@ namespace Ailurus
 
         T Dequeue()
         {
+            // Safe get current head index
+            uint32_t tailIndex = _storge.tailIndex.load();
+            _storge.tailIndex.store(tailIndex + 1);
+
+            // Clamp to real index
+            uint32_t realIndex = tailIndex & _storge.size - 1;
+
+            // Check state, wait state to be loaded.
+            std::atomic<State>& state = _storge.state[realIndex];
+            while (state.load(std::memory_order_acquire) != State::Loaded)
+                SpinPause();
+
+            // Cache element.
+            T element = std::move(_storge.data[realIndex]);
+
+            // Set state.
+            state.store(State::Unloaded, std::memory_order_relaxed);
+            return element;
         }
 
         bool TryEnqueue(T&& data)
@@ -182,15 +211,18 @@ namespace Ailurus
             // Safe get current head index
             uint32_t headIndex = _storge.headIndex.fetch_add(1, _keepOrder ? std::memory_order_seq_cst : std::memory_order_relaxed);
 
+            // Clamp to real index
+            uint32_t realIndex = headIndex & _storge.size - 1;
+
             // Check state, wait state to be empty.
-            std::atomic<State>& state = _storge.state[headIndex];
+            std::atomic<State>& state = _storge.state[realIndex];
             while (true)
             {
-                State expected = State::Empty;
-                if (state.compare_exchange_weak(expected, State::Enqueuing, std::memory_order_acquire, std::memory_order_relaxed))
+                State expected = State::Unloaded;
+                if (state.compare_exchange_weak(expected, State::Loading, std::memory_order_acquire, std::memory_order_relaxed))
                 {
                     // Set data.
-                    _storge.data[headIndex] = std::forward<T>(data);
+                    _storge.data[realIndex] = std::forward<T>(data);
 
                     // Set state.
                     state.store(State::Loaded, std::memory_order_relaxed);
@@ -203,6 +235,29 @@ namespace Ailurus
 
         T Dequeue()
         {
+            // Safe get current head index
+            uint32_t tailIndex = _storge.tailIndex.fetch_add(1, _keepOrder ? std::memory_order_seq_cst : std::memory_order_relaxed);
+
+            // Clamp to real index
+            uint32_t realIndex = tailIndex & _storge.size - 1;
+
+            // Check state, wait state to be loaded.
+            std::atomic<State>& state = _storge.state[realIndex];
+            while (true)
+            {
+                State expected = State::Loaded;
+                if (state.compare_exchange_weak(expected, State::Unloading, std::memory_order_acquire, std::memory_order_relaxed))
+                {
+                    // Cache element.
+                    T element = std::move(_storge.data[realIndex]);
+
+                    // Set state.
+                    state.store(State::Unloaded, std::memory_order_relaxed);
+                    return element;
+                }
+
+                SpinPause();
+            }
         }
 
         bool TryEnqueue(T&& data)
