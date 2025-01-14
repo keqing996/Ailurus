@@ -26,6 +26,154 @@ namespace Ailurus
             return _array;
         }
 
+    public:
+        class iterator
+        {
+        public:
+            using iterator_category = std::random_access_iterator_tag;
+            using value_type = T;
+            using difference_type = std::ptrdiff_t;
+            using pointer = T*;
+            using reference = T&;
+
+            iterator(SegmentArray* array, size_t index) : _array(array), _index(index)
+            {
+            }
+
+            reference operator*() { return (*_array)[_index]; }
+            pointer operator->() { return &(*_array)[_index]; }
+
+            iterator& operator++()
+            {
+                ++_index;
+                return *this;
+            }
+
+            iterator operator++(int)
+            {
+                iterator temp = *this;
+                ++_index;
+                return temp;
+            }
+
+            iterator& operator--()
+            {
+                --_index;
+                return *this;
+            }
+
+            iterator operator--(int)
+            {
+                iterator temp = *this;
+                --_index;
+                return temp;
+            }
+
+            iterator operator+(size_t n) const
+            {
+                return iterator(_array, _index + n);
+            }
+
+            iterator operator-(size_t n) const
+            {
+                return iterator(_array, _index - n);
+            }
+
+            difference_type operator-(const iterator& other) const
+            {
+                return _index - other._index;
+            }
+
+            reference operator[](size_t n) { return (*_array)[_index + n]; }
+
+            bool operator==(const iterator& other) const { return _index == other._index; }
+            bool operator!=(const iterator& other) const { return _index != other._index; }
+            bool operator<(const iterator& other) const { return _index < other._index; }
+            bool operator>(const iterator& other) const { return _index > other._index; }
+            bool operator<=(const iterator& other) const { return _index <= other._index; }
+            bool operator>=(const iterator& other) const { return _index >= other._index; }
+
+        private:
+            SegmentArray* _array;
+            size_t _index;
+        };
+
+        class const_iterator
+        {
+        public:
+            using iterator_category = std::random_access_iterator_tag;
+            using value_type = T;
+            using difference_type = std::ptrdiff_t;
+            using pointer = const T*;
+            using reference = const T&;
+
+            const_iterator(const SegmentArray* array, size_t index) : _array(array), _index(index)
+            {
+            }
+
+            reference operator*() const { return (*_array)[_index]; }
+            pointer operator->() const { return &(*_array)[_index]; }
+
+            const_iterator& operator++()
+            {
+                ++_index;
+                return *this;
+            }
+
+            const_iterator operator++(int)
+            {
+                const_iterator temp = *this;
+                ++_index;
+                return temp;
+            }
+
+            const_iterator& operator--()
+            {
+                --_index;
+                return *this;
+            }
+
+            const_iterator operator--(int)
+            {
+                const_iterator temp = *this;
+                --_index;
+                return temp;
+            }
+
+            const_iterator operator+(size_t n) const
+            {
+                return const_iterator(_array, _index + n);
+            }
+
+            const_iterator operator-(size_t n) const
+            {
+                return const_iterator(_array, _index - n);
+            }
+
+            difference_type operator-(const const_iterator& other) const
+            {
+                return _index - other._index;
+            }
+
+            reference operator[](size_t n) const { return (*_array)[_index + n]; }
+
+            bool operator==(const const_iterator& other) const { return _index == other._index; }
+            bool operator!=(const const_iterator& other) const { return _index != other._index; }
+            bool operator<(const const_iterator& other) const { return _index < other._index; }
+            bool operator>(const const_iterator& other) const { return _index > other._index; }
+            bool operator<=(const const_iterator& other) const { return _index <= other._index; }
+            bool operator>=(const const_iterator& other) const { return _index >= other._index; }
+
+        private:
+            const SegmentArray* _array;
+            size_t _index;
+        };
+
+        iterator begin() { return iterator(this, 0); }
+        iterator end() { return iterator(this, size); }
+        const_iterator begin() const { return const_iterator(this, 0); }
+        const_iterator end() const { return const_iterator(this, size); }
+
     private:
         static uint32_t CalculateRealIndex(uint32_t index)
         {
