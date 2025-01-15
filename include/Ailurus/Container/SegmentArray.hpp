@@ -8,22 +8,55 @@ namespace Ailurus
     class SegmentArray
     {
         static_assert(SegmentSize > 0, "Segment size must larger than 0");
-        static constexpr bool SegmentPowerOfTwo = SegmentSize > 0 && (SegmentSize & (SegmentSize - 1)) == 0;
+
+        static constexpr size_t CalculateUpPaddingArraySize()
+        {
+            size_t remainder;
+            if constexpr (SegmentPowerOfTwo)
+                remainder = size & (SegmentSize - 1);
+            else
+                remainder = size % SegmentSize;
+
+            if (remainder == 0)
+                return size;
+
+            return size + (SegmentSize - remainder);
+        }
+
+        static constexpr size_t ArraySize = CalculateUpPaddingArraySize();
+        static constexpr size_t SegmentCount = ArraySize / SegmentSize;
+        static constexpr size_t SegmentPowerOfTwo = SegmentSize > 0 && (SegmentSize & (SegmentSize - 1)) == 0;
+        static constexpr size_t SegmentCountPowerOfTwo = SegmentCount > 0 && (SegmentCount & (SegmentCount - 1)) == 0;
+
+    public:
+        SegmentArray() : _array()
+        {
+        }
 
     public:
         T& operator[](uint32_t index)
         {
-            return _array[CalculateRealIndex(index)];
+            return _array[MappingIndexToSegment(index)];
         }
 
         const T& operator[](uint32_t index) const
         {
-            return _array[CalculateRealIndex(index)];
+            return _array[MappingIndexToSegment(index)];
         }
 
-        const std::array<T, size>& GetRawArray() const
+        const T* GetRawArray() const
         {
-            return _array;
+            return _array.data();
+        }
+
+        size_t GetInternalArraySize() const
+        {
+            return _array.size();
+        }
+
+        size_t GetSize() const
+        {
+            return size;
         }
 
     public:
@@ -175,20 +208,20 @@ namespace Ailurus
         const_iterator end() const { return const_iterator(this, size); }
 
     private:
-        static uint32_t CalculateRealIndex(uint32_t index)
+        static uint32_t MappingIndexToSegment(uint32_t index)
         {
-            uint32_t segmentIndex = index / SegmentSize;
+            uint32_t localIndex = index / SegmentCount;
 
-            uint32_t inSegmentIndex;
-            if constexpr (SegmentPowerOfTwo)
-                inSegmentIndex = index & (SegmentSize - 1);
+            uint32_t segmentIndex;
+            if constexpr (SegmentCountPowerOfTwo)
+                segmentIndex = index & (SegmentCount - 1);
             else
-                inSegmentIndex = index % SegmentSize;
+                segmentIndex = index % SegmentCount;
 
-            return segmentIndex * SegmentSize + inSegmentIndex;
+            return segmentIndex * SegmentSize + localIndex;
         }
 
     private:
-        std::array<T, size> _array;
+        std::array<T, ArraySize> _array;
     };
 }
