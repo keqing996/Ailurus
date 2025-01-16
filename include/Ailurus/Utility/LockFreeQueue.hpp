@@ -4,13 +4,13 @@
 #include <memory>
 #include <optional>
 #include "SpinPause.h"
+#include "../Container/SegmentArray.hpp"
 
 namespace Ailurus
 {
-    namespace _internal::LockFreeQueue
+    template<typename T, uint32_t WantedSize, bool KeepOrder>
+    class LockFreeQueue
     {
-        static constexpr uint32_t CACHE_LINE = 64;
-
         enum class State: uint8_t
         {
             Unloaded,
@@ -19,213 +19,105 @@ namespace Ailurus
             Unloading
         };
 
-        template<typename Element>
-        class BucketArray
+        static constexpr uint32_t UpAlignmentPowerOfTwo(uint32_t value)
         {
-            static constexpr uint32_t ELEMENT_PRE_CACHELINE = CACHE_LINE / sizeof(Element);
+            if (value <= 4)
+                return 4;
 
-        public:
-            explicit BucketArray(uint32_t size)
-                : _rawDataArray(static_cast<Element*>(::malloc(size * sizeof(Element))))
-            {
-                ::memset(_rawDataArray, 0, size * sizeof(Element));
-            }
+            value--;
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
 
-        public:
-            Element& operator[](uint32_t index)
-            {
-                uint32_t bucketIndex = index / ELEMENT_PRE_CACHELINE;
-
-                uint32_t inBucketIndex;
-                if constexpr (IsPowerOfTwo(ELEMENT_PRE_CACHELINE))
-                    inBucketIndex = index & (ELEMENT_PRE_CACHELINE - 1);
-                else
-                    inBucketIndex = index % ELEMENT_PRE_CACHELINE;
-
-                uint32_t finalIndex = bucketIndex * ELEMENT_PRE_CACHELINE + inBucketIndex;
-                return _rawDataArray[finalIndex];
-            }
-
-        private:
-            static constexpr
-            bool IsPowerOfTwo(uint32_t n)
-            {
-                return n > 0 && (n & (n - 1)) == 0;
-            }
-
-        private:
-            Element* _rawDataArray;
-        };
-
-        template<typename T>
-        class Storge
-        {
-        public:
-            explicit Storge(uint32_t wantedSize)
-                : size(UpAlignmentPowerOfTwo(wantedSize))
-                , data(size)
-                , state(size)
-            {
-            }
-
-        public:
-            // Padding index, avoid false sharing.
-            alignas(CACHE_LINE) std::atomic<uint32_t> headIndex {};
-            alignas(CACHE_LINE) std::atomic<uint32_t> tailIndex {};
-
-            uint32_t size;
-            BucketArray<T> data;
-            BucketArray<std::atomic<State>> state;
-
-        private:
-            static uint32_t UpAlignmentPowerOfTwo(uint32_t value)
-            {
-                if (value <= 4)
-                    return 4;
-
-                value--;
-                value |= value >> 1;
-                value |= value >> 2;
-                value |= value >> 4;
-                value |= value >> 8;
-                value |= value >> 16;
-
-                return value + 1;
-            }
-        };
-
-        inline uint32_t RingBufferNextIndex(uint32_t current, uint32_t size)
-        {
-            if (current + 1 >= size)
-                return 0;
-
-            return current + 1;
+            return value + 1;
         }
 
-    }
-
-    enum class LockFreeQueueStrategy
-    {
-        // SingleProducerSingleConsumer
-        SPSC,
-        // MultiProducerMultiConsumer
-        MPMC
-    };
-
-    template<typename T, LockFreeQueueStrategy Strategy = LockFreeQueueStrategy::MPMC>
-    class LockFreeQueue;
-
-    template<typename T>
-    class LockFreeQueue<T, LockFreeQueueStrategy::SPSC>
-    {
-        using State = _internal::LockFreeQueue::State;
-        using Storge = _internal::LockFreeQueue::Storge<T>;
-    public:
-        explicit LockFreeQueue(uint32_t size)
-            : _storge(size)
-        {
-        }
+        static constexpr uint32_t CACHE_LINE = 64;
+        static constexpr uint32_t ELEMENT_PRE_CACHELINE = CACHE_LINE / sizeof(T);
+        static constexpr uint32_t Size = UpAlignmentPowerOfTwo(WantedSize);
 
     public:
-        uint32_t GetSize()
+        constexpr uint32_t GetSize() const
         {
-            return _storge.size;
+            return Size;
         }
 
         void Enqueue(T&& data)
         {
             // Safe get current head index
-            uint32_t headIndex = _storge.headIndex.load();
-            _storge.headIndex.store(headIndex + 1);
+            uint32_t tailIndex = _tailIndex.fetch_add(1, KeepOrder ? std::memory_order_seq_cst : std::memory_order_relaxed);
 
-            // Clamp to real index
-            uint32_t realIndex = headIndex & _storge.size - 1;
-
-            // Check state, wait state to be empty.
-            std::atomic<State>& state = _storge.state[realIndex];
-            while (state.load(std::memory_order_acquire) != State::Unloaded)
-                SpinPause();
-
-            // Set data.
-            _storge.data[realIndex] = std::forward<T>(data);
-
-            // Set state.
-            state.store(State::Loaded, std::memory_order_relaxed);
+            EnqueueImp(std::forward<T>(data), tailIndex);
         }
 
         T Dequeue()
         {
             // Safe get current head index
-            uint32_t tailIndex = _storge.tailIndex.load();
-            _storge.tailIndex.store(tailIndex + 1);
+            uint32_t headIndex = _headIndex.fetch_add(1, KeepOrder ? std::memory_order_seq_cst : std::memory_order_relaxed);
 
-            // Clamp to real index
-            uint32_t realIndex = tailIndex & _storge.size - 1;
-
-            // Check state, wait state to be loaded.
-            std::atomic<State>& state = _storge.state[realIndex];
-            while (state.load(std::memory_order_acquire) != State::Loaded)
-                SpinPause();
-
-            // Cache element.
-            T element = std::move(_storge.data[realIndex]);
-
-            // Set state.
-            state.store(State::Unloaded, std::memory_order_relaxed);
-            return element;
+            return DequeueImp(headIndex);
         }
 
         bool TryEnqueue(T&& data)
         {
+            uint32_t tailIndex = _tailIndex.load();
+            while (true)
+            {
+                uint32_t headIndex = _headIndex.load();
+
+                if (tailIndex - headIndex >= Size)
+                    return false;
+
+                if (_tailIndex.compare_exchange_weak(tailIndex, tailIndex + 1, std::memory_order_acquire, std::memory_order_relaxed))
+                    break;
+
+                SpinPause();
+            }
+
+            EnqueueImp(std::forward<T>(data), tailIndex);
+
+            return true;
         }
 
         std::optional<T> TryDequeue()
         {
+            uint32_t headIndex = _headIndex.load();
+            while (true)
+            {
+                uint32_t tailIndex = _tailIndex.load();
+
+                if (tailIndex <= headIndex)
+                    return std::nullopt;
+
+                if (_headIndex.compare_exchange_weak(headIndex, headIndex + 1, std::memory_order_acquire, std::memory_order_relaxed))
+                    break;
+
+                SpinPause();
+            }
+
+            return DequeueImp(headIndex);
         }
 
     private:
-        Storge _storge;
-    };
-
-
-    template<typename T>
-    class LockFreeQueue<T, LockFreeQueueStrategy::MPMC> : _internal::LockFreeQueue::Storge<T>
-    {
-        using State = _internal::LockFreeQueue::State;
-        using Storge = _internal::LockFreeQueue::Storge<T>;
-    public:
-        explicit LockFreeQueue(uint32_t size, bool keepOrder)
-            : _storge(size)
-            , _keepOrder(keepOrder)
+        void EnqueueImp(T&& data, uint32_t tailIndex)
         {
-        }
-
-    public:
-        uint32_t GetSize()
-        {
-            return _storge.size;
-        }
-
-        void Enqueue(T&& data)
-        {
-            // Safe get current head index
-            uint32_t headIndex = _storge.headIndex.fetch_add(1, _keepOrder ? std::memory_order_seq_cst : std::memory_order_relaxed);
-
             // Clamp to real index
-            uint32_t realIndex = headIndex & _storge.size - 1;
+            uint32_t realIndex = tailIndex & (Size - 1);
 
             // Check state, wait state to be empty.
-            std::atomic<State>& state = _storge.state[realIndex];
+            std::atomic<State>& state = _state[realIndex];
             while (true)
             {
                 State expected = State::Unloaded;
                 if (state.compare_exchange_weak(expected, State::Loading, std::memory_order_acquire, std::memory_order_relaxed))
                 {
                     // Set data.
-                    _storge.data[realIndex] = std::forward<T>(data);
+                    _data[realIndex] = std::forward<T>(data);
 
                     // Set state.
-                    state.store(State::Loaded, std::memory_order_relaxed);
+                    state.store(State::Loaded, std::memory_order_release);
                     return;
                 }
 
@@ -233,26 +125,23 @@ namespace Ailurus
             }
         }
 
-        T Dequeue()
+        T DequeueImp(uint32_t headIndex)
         {
-            // Safe get current head index
-            uint32_t tailIndex = _storge.tailIndex.fetch_add(1, _keepOrder ? std::memory_order_seq_cst : std::memory_order_relaxed);
-
             // Clamp to real index
-            uint32_t realIndex = tailIndex & _storge.size - 1;
+            uint32_t realIndex = headIndex & (Size - 1);
 
             // Check state, wait state to be loaded.
-            std::atomic<State>& state = _storge.state[realIndex];
+            std::atomic<State>& state = _state[realIndex];
             while (true)
             {
                 State expected = State::Loaded;
                 if (state.compare_exchange_weak(expected, State::Unloading, std::memory_order_acquire, std::memory_order_relaxed))
                 {
                     // Cache element.
-                    T element = std::move(_storge.data[realIndex]);
+                    T element = std::move(_data[realIndex]);
 
                     // Set state.
-                    state.store(State::Unloaded, std::memory_order_relaxed);
+                    state.store(State::Unloaded, std::memory_order_release);
                     return element;
                 }
 
@@ -260,16 +149,19 @@ namespace Ailurus
             }
         }
 
-        bool TryEnqueue(T&& data)
+        static uint32_t RingBufferNextIndex(uint32_t current, uint32_t size)
         {
-        }
+            if (current + 1 >= size)
+                return 0;
 
-        std::optional<T> TryDequeue()
-        {
+            return current + 1;
         }
 
     private:
-        Storge _storge;
-        bool _keepOrder;
+        // Padding index, avoid false sharing.
+        alignas(CACHE_LINE) std::atomic<uint32_t> _headIndex {};
+        alignas(CACHE_LINE) std::atomic<uint32_t> _tailIndex {};
+        SegmentArray<T, Size, ELEMENT_PRE_CACHELINE> _data;
+        SegmentArray<std::atomic<State>, Size, ELEMENT_PRE_CACHELINE> _state;
     };
 }
