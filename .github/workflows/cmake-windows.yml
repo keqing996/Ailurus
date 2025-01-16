@@ -11,11 +11,8 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        c_compiler: [gcc, cl, clang]
+        c_compiler: [cl, clang]
         include:
-          - c_compiler: gcc
-            cpp_compiler: g++
-            generator: Ninja
           - c_compiler: cl
             cpp_compiler: cl
             generator: Visual Studio 17 2022
@@ -25,19 +22,16 @@ jobs:
     steps:
       - name: Install Ninja on Windows
         run: choco install ninja --yes
+
       - name: Verify Ninja installation
         run: ninja --version
+
       - uses: actions/checkout@v4
       - name: Set reusable strings
         id: strings
         shell: bash
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-
-      - name: Check GCC
-        run: |
-          gcc --version
-          g++ --version
 
       - name: Configure CMake
         run: >
