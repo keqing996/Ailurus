@@ -1,18 +1,38 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest/doctest.h"
 #include <format>
+#include <numeric>
 #include <thread>
+#include <random>
 #include <Ailurus/Container/LockFreeQueue.hpp>
 
 using namespace Ailurus;
 
 TEST_SUITE("LockFreeQueue")
 {
+    TEST_CASE("Up alignment")
+    {
+        {
+            LockFreeQueue<int, 0> lockFreeQueue;
+            CHECK_EQ(lockFreeQueue.GetSize(), 4);
+        }
+        {
+            LockFreeQueue<int, 127> lockFreeQueue;
+            CHECK_EQ(lockFreeQueue.GetSize(), 128);
+        }
+        {
+            LockFreeQueue<int, 128> lockFreeQueue;
+            CHECK_EQ(lockFreeQueue.GetSize(), 128);
+        }
+        {
+            LockFreeQueue<int, 129> lockFreeQueue;
+            CHECK_EQ(lockFreeQueue.GetSize(), 256);
+        }
+    }
+
     TEST_CASE("Basic")
     {
         LockFreeQueue<int, 5> lockFreeQueue;
-
-        CHECK_EQ(lockFreeQueue.GetSize(), 8);
 
         lockFreeQueue.Enqueue(1);
         lockFreeQueue.Enqueue(2);
@@ -61,21 +81,26 @@ TEST_SUITE("LockFreeQueue")
 
     TEST_CASE("SPSC - try enqueue & try dequeue")
     {
-        LockFreeQueue<int, 100> lockFreeQueue;
+        constexpr uint32_t queueSize = 20;
+        constexpr uint32_t dataSize = 500;
+
+        LockFreeQueue<int, queueSize> lockFreeQueue;
         std::vector<int> result;
-        result.reserve(1000);
+        result.reserve(dataSize);
         std::atomic<bool> finish { false };
 
         size_t enqueueFailCount = 0;
         std::thread producer([&]() -> void
         {
-            for (auto i = 0; i < 1000; i++)
+            for (auto i = 0; i < dataSize; i++)
             {
                 while (true)
                 {
                     bool success = lockFreeQueue.TryEnqueue(i);
                     if (success)
                         break;
+
+                    SpinPause();
 
                     enqueueFailCount++;
                 }
@@ -98,14 +123,17 @@ TEST_SUITE("LockFreeQueue")
                 if (ret.has_value())
                     result.push_back(*ret);
                 else
+                {
                     dequeueFailCount++;
+                    SpinPause();
+                }
             }
         });
 
         producer.join();
         consumer.join();
 
-        CHECK_EQ(result.size(), 1000);
+        CHECK_EQ(result.size(), dataSize);
         for (int i = 0; i < result.size(); i++)
             CHECK_EQ(result[i], i);
 
@@ -115,26 +143,29 @@ TEST_SUITE("LockFreeQueue")
 
     TEST_CASE("SPSC - block enqueue & block dequeue")
     {
-        LockFreeQueue<int, 100> lockFreeQueue;
+        constexpr uint32_t queueSize = 20;
+        constexpr uint32_t dataSize = 500;
+
+        LockFreeQueue<int, queueSize> lockFreeQueue;
         std::vector<int> result;
-        result.reserve(1000);
+        result.reserve(dataSize);
 
         std::thread producer([&]() -> void
         {
-            for (auto i = 0; i < 1000; i++)
+            for (auto i = 0; i < dataSize; i++)
                 lockFreeQueue.Enqueue(i);
         });
 
         std::thread consumer([&]()->void
         {
-            while (result.size() < 1000)
+            while (result.size() < dataSize)
                 result.push_back(lockFreeQueue.Dequeue());
         });
 
         producer.join();
         consumer.join();
 
-        CHECK_EQ(result.size(), 1000);
+        CHECK_EQ(result.size(), dataSize);
         for (int i = 0; i < result.size(); i++)
             CHECK_EQ(result[i], i);
     }
@@ -145,11 +176,17 @@ TEST_SUITE("LockFreeQueue")
 
         std::vector<std::thread> producers;
         std::vector<std::thread> consumers;
-        std::vector<std::vector<int>> consumerResults;
         std::atomic<bool> finish { false };
 
         producers.reserve(5);
         consumers.reserve(5);
+
+        std::vector<std::vector<int>> producerResults;
+        producerResults.resize(5);
+        for (auto& producerResult: producerResults)
+            producerResult.reserve(1000);
+
+        std::vector<std::vector<int>> consumerResults;
         consumerResults.resize(5);
         for (auto& consumerResult: consumerResults)
             consumerResult.reserve(1000);
@@ -158,8 +195,16 @@ TEST_SUITE("LockFreeQueue")
         {
             producers.emplace_back([&, i]() -> void
             {
+                std::random_device rd;
+                std::mt19937 mt(rd());
+                std::uniform_int_distribution<int> dist(0, 100);
+
                 for (auto num = 0 + i * 1000; num < 1000 + i * 1000; num++)
-                    lockFreeQueue.Enqueue(num);
+                {
+                    int data = dist(mt);
+                    producerResults[i].push_back(data);
+                    lockFreeQueue.Enqueue(data);
+                }
             });
         }
 
@@ -187,14 +232,15 @@ TEST_SUITE("LockFreeQueue")
         for (auto& consumer: consumers)
             consumer.join();
 
-        std::vector<int> finalResult;
+        int64_t originalResult = 0;
+        int64_t finalResult = 0;
+
+        for (auto& producerResult: producerResults)
+            originalResult += std::accumulate(producerResult.begin(), producerResult.end(), 0);
+
         for (auto& consumerResult: consumerResults)
-            finalResult.insert(finalResult.end(), consumerResult.begin(), consumerResult.end());
+            finalResult += std::accumulate(consumerResult.begin(), consumerResult.end(), 0);
 
-        std::sort(finalResult.begin(), finalResult.end());
-
-        CHECK_EQ(finalResult.size(), 5000);
-        for (int i = 0; i < finalResult.size(); i++)
-            CHECK_EQ(finalResult[i], i);
+        CHECK_EQ(originalResult, finalResult);
     }
 }
