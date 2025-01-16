@@ -3,12 +3,12 @@
 #include <atomic>
 #include <memory>
 #include <optional>
-#include "SpinPause.h"
-#include "../Container/SegmentArray.hpp"
+#include "../Utility/SpinPause.h"
+#include "SegmentArray.hpp"
 
 namespace Ailurus
 {
-    template<typename T, uint32_t WantedSize, bool KeepOrder>
+    template<typename T, uint32_t WantedSize, bool KeepOrder = true>
     class LockFreeQueue
     {
         enum class State: uint8_t
@@ -44,12 +44,20 @@ namespace Ailurus
             return Size;
         }
 
-        void Enqueue(T&& data)
+        bool Empty() const
+        {
+            uint32_t headIndex = _headIndex.load();
+            uint32_t tailIndex = _tailIndex.load();
+            return tailIndex == headIndex;
+        }
+
+        template<typename D = T>
+        void Enqueue(D&& data)
         {
             // Safe get current head index
             uint32_t tailIndex = _tailIndex.fetch_add(1, KeepOrder ? std::memory_order_seq_cst : std::memory_order_relaxed);
 
-            EnqueueImp(std::forward<T>(data), tailIndex);
+            EnqueueImp(std::forward<D>(data), tailIndex);
         }
 
         T Dequeue()
@@ -60,7 +68,8 @@ namespace Ailurus
             return DequeueImp(headIndex);
         }
 
-        bool TryEnqueue(T&& data)
+        template<typename D = T>
+        bool TryEnqueue(D&& data)
         {
             uint32_t tailIndex = _tailIndex.load();
             while (true)
@@ -76,7 +85,7 @@ namespace Ailurus
                 SpinPause();
             }
 
-            EnqueueImp(std::forward<T>(data), tailIndex);
+            EnqueueImp(std::forward<D>(data), tailIndex);
 
             return true;
         }
@@ -101,7 +110,8 @@ namespace Ailurus
         }
 
     private:
-        void EnqueueImp(T&& data, uint32_t tailIndex)
+        template<typename D = T>
+        void EnqueueImp(D&& data, uint32_t tailIndex)
         {
             // Clamp to real index
             uint32_t realIndex = tailIndex & (Size - 1);
@@ -114,7 +124,7 @@ namespace Ailurus
                 if (state.compare_exchange_weak(expected, State::Loading, std::memory_order_acquire, std::memory_order_relaxed))
                 {
                     // Set data.
-                    _data[realIndex] = std::forward<T>(data);
+                    _data[realIndex] = std::forward<D>(data);
 
                     // Set state.
                     state.store(State::Loaded, std::memory_order_release);
