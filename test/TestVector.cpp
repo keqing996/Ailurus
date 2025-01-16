@@ -1,7 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest/doctest.h"
 
-#include <Ailurus/Utility/Math/Vector.hpp>
+#include <Ailurus/Math/Vector.hpp>
 
 using namespace Ailurus;
 
