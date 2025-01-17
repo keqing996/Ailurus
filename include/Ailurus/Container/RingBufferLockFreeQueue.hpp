@@ -9,7 +9,7 @@
 namespace Ailurus
 {
     template<typename T, uint32_t WantedSize, bool KeepOrder = true>
-    class LockFreeQueue
+    class RingBufferLockFreeQueue
     {
         enum class State: uint8_t
         {

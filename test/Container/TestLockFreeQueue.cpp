@@ -4,7 +4,8 @@
 #include <numeric>
 #include <thread>
 #include <random>
-#include <Ailurus/Container/LockFreeQueue.hpp>
+#include <Ailurus/Container/RingBufferLockFreeQueue.hpp>
+#include <Ailurus/Container/LinkedListLockFreeQueue.hpp>
 
 using namespace Ailurus;
 
@@ -13,26 +14,26 @@ TEST_SUITE("LockFreeQueue")
     TEST_CASE("Up alignment")
     {
         {
-            LockFreeQueue<int, 0> lockFreeQueue;
+            RingBufferLockFreeQueue<int, 0> lockFreeQueue;
             CHECK_EQ(lockFreeQueue.GetSize(), 4);
         }
         {
-            LockFreeQueue<int, 127> lockFreeQueue;
+            RingBufferLockFreeQueue<int, 127> lockFreeQueue;
             CHECK_EQ(lockFreeQueue.GetSize(), 128);
         }
         {
-            LockFreeQueue<int, 128> lockFreeQueue;
+            RingBufferLockFreeQueue<int, 128> lockFreeQueue;
             CHECK_EQ(lockFreeQueue.GetSize(), 128);
         }
         {
-            LockFreeQueue<int, 129> lockFreeQueue;
+            RingBufferLockFreeQueue<int, 129> lockFreeQueue;
             CHECK_EQ(lockFreeQueue.GetSize(), 256);
         }
     }
 
     TEST_CASE("Basic")
     {
-        LockFreeQueue<int, 5> lockFreeQueue;
+        RingBufferLockFreeQueue<int, 5> lockFreeQueue;
 
         lockFreeQueue.Enqueue(1);
         lockFreeQueue.Enqueue(2);
@@ -84,7 +85,7 @@ TEST_SUITE("LockFreeQueue")
         constexpr uint32_t queueSize = 20;
         constexpr uint32_t dataSize = 500;
 
-        LockFreeQueue<int, queueSize> lockFreeQueue;
+        RingBufferLockFreeQueue<int, queueSize> lockFreeQueue;
         std::vector<int> result;
         result.reserve(dataSize);
         std::atomic<bool> finish { false };
@@ -146,7 +147,7 @@ TEST_SUITE("LockFreeQueue")
         constexpr uint32_t queueSize = 20;
         constexpr uint32_t dataSize = 500;
 
-        LockFreeQueue<int, queueSize> lockFreeQueue;
+        RingBufferLockFreeQueue<int, queueSize> lockFreeQueue;
         std::vector<int> result;
         result.reserve(dataSize);
 
@@ -172,7 +173,7 @@ TEST_SUITE("LockFreeQueue")
 
     TEST_CASE("MPMC")
     {
-        LockFreeQueue<int, 20> lockFreeQueue;
+        RingBufferLockFreeQueue<int, 20> lockFreeQueue;
 
         std::vector<std::thread> producers;
         std::vector<std::thread> consumers;

@@ -11,7 +11,7 @@ add_executable          (ailurus_test_string TestString.cpp)
 target_link_libraries   (ailurus_test_string PUBLIC ${AILURUS_TARGET_NAME})
 add_test                (NAME ailurus_test_string COMMAND ailurus_test_string)
 
-add_executable          (ailurus_test_lock_free_queue TestLockFreeQueue.cpp)
+add_executable          (ailurus_test_lock_free_queue Container/TestLockFreeQueue.cpp)
 target_link_libraries   (ailurus_test_lock_free_queue PUBLIC ${AILURUS_TARGET_NAME})
 add_test                (NAME ailurus_test_lock_free_queue COMMAND ailurus_test_lock_free_queue)
 
