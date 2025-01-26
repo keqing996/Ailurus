@@ -82,6 +82,8 @@
 #    define AILURUS_CHIP_ARM64 1
 #    define AILURUS_CHIP_ARM32 0
 #elif defined(__arm__) /* arm32 */
+#    define AILURUS_CHIP_X64 0
+#    define AILURUS_CHIP_X86 0
 #    define AILURUS_CHIP_ARM64 0
 #    define AILURUS_CHIP_ARM32 1
 #else

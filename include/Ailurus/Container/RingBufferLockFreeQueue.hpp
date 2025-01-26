@@ -8,7 +8,7 @@
 
 namespace Ailurus
 {
-    template<typename T, uint32_t WantedSize, bool KeepOrder = true>
+    template<typename T, uint32_t WantedSize>
     class RingBufferLockFreeQueue
     {
         enum class State: uint8_t
@@ -55,7 +55,7 @@ namespace Ailurus
         void Enqueue(D&& data)
         {
             // Safe get current head index
-            uint32_t tailIndex = _tailIndex.fetch_add(1, KeepOrder ? std::memory_order_seq_cst : std::memory_order_relaxed);
+            uint32_t tailIndex = _tailIndex.fetch_add(1, std::memory_order_relaxed);
 
             EnqueueImp(std::forward<D>(data), tailIndex);
         }
@@ -63,7 +63,7 @@ namespace Ailurus
         T Dequeue()
         {
             // Safe get current head index
-            uint32_t headIndex = _headIndex.fetch_add(1, KeepOrder ? std::memory_order_seq_cst : std::memory_order_relaxed);
+            uint32_t headIndex = _headIndex.fetch_add(1, std::memory_order_relaxed);
 
             return DequeueImp(headIndex);
         }
