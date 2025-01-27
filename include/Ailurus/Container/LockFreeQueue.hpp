@@ -9,7 +9,7 @@
 namespace Ailurus
 {
     template<typename T, uint32_t WantedSize>
-    class RingBufferLockFreeQueue
+    class LockFreeQueue
     {
         enum class State: uint8_t
         {
@@ -79,7 +79,8 @@ namespace Ailurus
                 if (tailIndex - headIndex >= Size)
                     return false;
 
-                if (_tailIndex.compare_exchange_weak(tailIndex, tailIndex + 1, std::memory_order_acquire, std::memory_order_relaxed))
+                if (_tailIndex.compare_exchange_weak(tailIndex, tailIndex + 1,
+                    std::memory_order_acquire, std::memory_order_relaxed))
                     break;
 
                 SpinPause();
@@ -100,7 +101,8 @@ namespace Ailurus
                 if (tailIndex <= headIndex)
                     return std::nullopt;
 
-                if (_headIndex.compare_exchange_weak(headIndex, headIndex + 1, std::memory_order_acquire, std::memory_order_relaxed))
+                if (_headIndex.compare_exchange_weak(headIndex, headIndex + 1,
+                    std::memory_order_acquire, std::memory_order_relaxed))
                     break;
 
                 SpinPause();
@@ -121,7 +123,8 @@ namespace Ailurus
             while (true)
             {
                 State expected = State::Unloaded;
-                if (state.compare_exchange_weak(expected, State::Loading, std::memory_order_acquire, std::memory_order_relaxed))
+                if (state.compare_exchange_weak(expected, State::Loading,
+                    std::memory_order_acquire, std::memory_order_relaxed))
                 {
                     // Set data.
                     _data[realIndex] = std::forward<D>(data);
@@ -145,7 +148,8 @@ namespace Ailurus
             while (true)
             {
                 State expected = State::Loaded;
-                if (state.compare_exchange_weak(expected, State::Unloading, std::memory_order_acquire, std::memory_order_relaxed))
+                if (state.compare_exchange_weak(expected, State::Unloading, std
+                    ::memory_order_acquire, std::memory_order_relaxed))
                 {
                     // Cache element.
                     T element = std::move(_data[realIndex]);
