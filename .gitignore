@@ -50,3 +50,4 @@ obj
 intermediates
 
 !CppToolSet/Artifacts/*
+.DS_Store

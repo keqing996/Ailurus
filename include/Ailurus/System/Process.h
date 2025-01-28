@@ -5,25 +5,12 @@
 
 namespace Ailurus
 {
-    struct ProcessHandle
-    {
-        void* handle;
-    };
-
-    struct ThreadHandle
-    {
-        void* handle;
-    };
-
-    struct PipeHandle
-    {
-        void* handle;
-    };
+    using ProcessHandle = void*;
+    using PipeHandle = void*;
 
     struct ProcessInfo
     {
         ProcessHandle hProcess;
-        ThreadHandle hThread;
         PipeHandle hPipeChildStdIn;
         PipeHandle hPipeChildStdOut;
     };
@@ -35,8 +22,6 @@ namespace Ailurus
 
     public:
         static auto GetCurrentProcessId() -> int32_t;
-        static auto GetProcessHandle(int32_t processId) -> ProcessHandle;
-        static auto ReleaseProcessHandle(const ProcessHandle& pProcess) -> void;
         static auto GetProcessName(const ProcessHandle& hProcess) -> std::string;
 
         static auto CreateProcessAndWaitFinish(const std::string& commandLine) -> std::optional<int>;
