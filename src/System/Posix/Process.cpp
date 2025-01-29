@@ -4,9 +4,15 @@
 
 #if AILURUS_PLATFORM_SUPPORT_POSIX
 
+#if AILURUS_PLATFORM_MAC
+#include <libproc.h>
+#endif
+
 #include <string>
 #include <vector>
 #include <optional>
+#include <fstream>
+#include <sstream>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -78,10 +84,36 @@ namespace Ailurus
 
     std::string Process::GetProcessName(Handle hProcess)
     {
-        char buf[256];
-        ::snprintf(buf, sizeof(buf), "/proc/%ld/status", static_cast<long>(hProcess));
+#if AILURUS_PLATFORM_MAC
+        pid_t pid = static_cast<pid_t>(hProcess);
+        char name[PROC_PIDPATHINFO_MAXSIZE] = {0};
+        if (::proc_name(pid, name, sizeof(name)) <= 0)
+            return "";
 
-        return {};
+        return std::string(name);
+#else
+        pid_t pid = static_cast<pid_t>(hProcess);
+        std::string proc_status_path = "/proc/" + std::to_string(pid) + "/status";
+        std::ifstream status_file(proc_status_path);
+
+        // PID not exist, or it is no auth to access it.
+        if (!status_file.is_open())
+            return "";
+
+        std::string line;
+        while (std::getline(status_file, line))
+        {
+            if (line.find("Name:") == 0)
+            {
+                std::istringstream iss(line);
+                std::string key, value;
+                iss >> key >> value;
+                return value;
+            }
+        }
+
+        return "";
+#endif
     }
 
     std::optional<Process> Process::Create(const std::string& exeName, const std::vector<std::string>& argv)
