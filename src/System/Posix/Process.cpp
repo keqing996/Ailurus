@@ -1,117 +1,174 @@
+#include <sys/fcntl.h>
+
 #include "Ailurus/PlatformDefine.h"
 
 #if AILURUS_PLATFORM_SUPPORT_POSIX
 
 #include <string>
+#include <vector>
 #include <optional>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "Ailurus/System/Process.h"
 
-auto Ailurus::Process::GetCurrentProcessId() -> int32_t
+namespace Ailurus
 {
-    return ::getpid();
-}
-
-auto Ailurus::Process::GetProcessName(const ProcessHandle& hProcess) -> std::string
-{
-    char buf[256];
-    ::snprintf(buf, sizeof(buf), "/proc/%ld/status", reinterpret_cast<long>(hProcess));
-
-    return {};
-}
-
-auto Ailurus::Process::CreateProcessAndWaitFinish(const std::string &commandLine) -> std::optional<int>
-{
-    pid_t pid = ::fork();
-    if (pid == -1)
-        return std::nullopt;
-
-    if (pid == 0) // Child process
+    static std::optional<size_t> ReadPipe(int pipeFd, char* buffer, size_t maxSize)
     {
-        ::execlp(commandLine.c_str(), commandLine.c_str(), (char*)nullptr);
-        _exit(1); // If execlp fails
+        ssize_t count = ::read(pipeFd, buffer, maxSize);
+        if (count > 0)
+            return count;
+
+        // EOF
+        if (count == 0)
+            return 0;
+
+        // No data
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return 0;
+
+        return std::nullopt;
     }
-    else // Parent process
+
+    bool Process::WriteStdin(const char* buffer, size_t size) const
+    {
+        if (::write(static_cast<int>(stdinPipe), buffer, size) == -1)
+            return false;
+
+        return true;
+    }
+
+    bool Process::IsRunning() const
+    {
+        pid_t pid = static_cast<pid_t>(handle);
+        if (pid < 0)
+            return false;
+
+        int status;
+        // Check progress status by non-block WNOHANG
+        int result = ::waitpid(pid, &status, WNOHANG);
+        if (result == 0)
+            return true;
+
+        return false;
+    }
+
+    int Process::WaitFinish() const
     {
         int status;
-        // Wait for child to finish
-        ::waitpid(pid, &status, 0);
+        ::waitpid(static_cast<pid_t>(handle), &status, 0);
         return WEXITSTATUS(status);
     }
-}
 
-auto Ailurus::Process::CreateProcessAndDetach(const std::string &commandLine) -> bool
-{
-    pid_t pid = ::fork();
-    if (pid == -1)
-        return false;
-
-    if (pid == 0) // Child process
+    std::optional<size_t> Process::ReadStdout(char* buffer, size_t maxSize) const
     {
-        ::setsid();
-        ::execlp(commandLine.c_str(), commandLine.c_str(), (char*)nullptr);
-        _exit(1);
+        return ReadPipe(static_cast<int>(stdoutPipe), buffer, maxSize);
     }
 
-    // Parent continues without waiting
-    return true;
-}
-
-auto Ailurus::Process::CreateProcessWithPipe(const std::string &commandLine) -> std::optional<ProcessInfo>
-{
-    int pipeIn[2], pipeOut[2];
-    if (::pipe(pipeIn) == -1 || ::pipe(pipeOut) == -1)
-        return std::nullopt;
-
-    pid_t pid = ::fork();
-    if (pid == -1)
-        return std::nullopt;
-
-    if (pid == 0) // Child process
+    std::optional<size_t> Process::ReadStderr(char* buffer, size_t maxSize) const
     {
-        ::close(pipeIn[1]); // Close unused write end
-        ::close(pipeOut[0]); // Close unused read end
-        ::dup2(pipeIn[0], STDIN_FILENO); // Redirect stdin to pipe
-        ::dup2(pipeOut[1], STDOUT_FILENO); // Redirect stdout to pipe
-
-        ::execlp(commandLine.c_str(), commandLine.c_str(), (char*)nullptr);
-        _exit(1); // If execlp fails
+        return ReadPipe(static_cast<int>(stderrPipe), buffer, maxSize);
     }
 
-    ProcessInfo processInfo {};
-    processInfo.hProcess = reinterpret_cast<void*>(pid);
-    processInfo.hPipeChildStdIn = reinterpret_cast<void*>(pipeIn[0]);
-    processInfo.hPipeChildStdOut = reinterpret_cast<void*>(pipeOut[1]);
+    int32_t Process::GetCurrentProcessId()
+    {
+        return ::getpid();
+    }
 
-    return processInfo;
-}
+    std::string Process::GetProcessName(Handle hProcess)
+    {
+        char buf[256];
+        ::snprintf(buf, sizeof(buf), "/proc/%ld/status", static_cast<long>(hProcess));
 
-auto Ailurus::Process::WaitProcessFinish(const ProcessInfo &processInfo) -> int
-{
-    int status;
-    pid_t pid = reinterpret_cast<pid_t>(processInfo.hProcess);
-    ::waitpid(pid, &status, 0);
-    return WEXITSTATUS(status);
-}
+        return {};
+    }
 
-auto Ailurus::Process::SendDataToProcess(const ProcessInfo &processInfo, const char *buffer,
-    int sendSize) -> std::optional<int>
-{
-    return ::write(reinterpret_cast<int>(processInfo.hPipeChildStdIn), buffer, sendSize);
-}
+    std::optional<Process> Process::Create(const std::string& exeName, const std::vector<std::string>& argv)
+    {
+        if (exeName.empty())
+            return std::nullopt;
 
-auto Ailurus::Process::ReadDataFromProcess(const ProcessInfo &processInfo, char *buffer,
-    int bufferSize) -> std::optional<int>
-{
-    return ::read(reinterpret_cast<int>(processInfo.hPipeChildStdOut), buffer, bufferSize);
-}
+        int stdinPipe[2];
+        int stdoutPipe[2];
+        int stderrPipe[2];
+        if (::pipe(stdinPipe) == -1)
+            return std::nullopt;
 
-auto Ailurus::Process::DetachProcess(const ProcessInfo &processInfo) -> void
-{
-    ::close(reinterpret_cast<int>(processInfo.hPipeChildStdIn));
-    ::close(reinterpret_cast<int>(processInfo.hPipeChildStdOut));
+        if (::pipe(stdoutPipe) == -1)
+        {
+            ::close(stdinPipe[0]);
+            ::close(stdinPipe[1]);
+            return std::nullopt;
+        }
+
+        if (::pipe(stderrPipe) == -1)
+        {
+            ::close(stdinPipe[0]);
+            ::close(stdinPipe[1]);
+            ::close(stdoutPipe[0]);
+            ::close(stdoutPipe[1]);
+            return std::nullopt;
+        }
+
+        pid_t pid = ::fork();
+        if (pid == -1)
+        {
+            ::close(stdinPipe[0]);
+            ::close(stdinPipe[1]);
+            ::close(stdoutPipe[0]);
+            ::close(stdoutPipe[1]);
+            ::close(stderrPipe[0]);
+            ::close(stderrPipe[1]);
+            return std::nullopt;
+        }
+
+        if (pid == 0) // Child process
+        {
+            // redirect std in/out/err
+            if (::dup2(stdinPipe[0], STDIN_FILENO) == -1 ||
+                ::dup2(stdoutPipe[1], STDOUT_FILENO) == -1 ||
+                ::dup2(stderrPipe[1], STDERR_FILENO) == -1)
+            {
+                ::exit(EXIT_FAILURE);
+            }
+
+            // close all parent pipe
+            ::close(stdinPipe[0]);
+            ::close(stdinPipe[1]);
+            ::close(stdoutPipe[0]);
+            ::close(stdoutPipe[1]);
+            ::close(stderrPipe[0]);
+            ::close(stderrPipe[1]);
+
+            // prepare parameters
+            std::vector<char*> argvRaw;
+            argvRaw.push_back(const_cast<char*>(exeName.c_str()));
+            for (const auto& arg : argv)
+                argvRaw.push_back(const_cast<char*>(arg.c_str()));
+            argvRaw.push_back(nullptr);
+
+            ::execvp(exeName.c_str(), argvRaw.data());
+            exit(EXIT_FAILURE);
+        }
+
+        // Parent process
+        ::close(stdinPipe[0]);   // close stdin read
+        ::close(stdoutPipe[1]);  // close stdout write
+        ::close(stderrPipe[1]);  // close stderr write
+
+        // Set non-block read
+        ::fcntl(stdoutPipe[0], F_SETFL, O_NONBLOCK);
+        ::fcntl(stderrPipe[0], F_SETFL, O_NONBLOCK);
+
+        Process result {};
+        result.handle = static_cast<int64_t>(pid);
+        result.stdinPipe = stdinPipe[1];
+        result.stdoutPipe = stdoutPipe[0];
+        result.stderrPipe = stderrPipe[0];
+
+        return result;
+    }
 }
 
 #endif

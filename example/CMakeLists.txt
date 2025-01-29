@@ -20,6 +20,10 @@ target_link_libraries   (ailurus_example_network_multi_tcp_echo_sever PUBLIC ${A
 add_executable          (ailurus_example_system ExampleSystem.cpp)
 target_link_libraries   (ailurus_example_system PUBLIC ${AILURUS_TARGET_NAME})
 
+# Process
+add_executable          (ailurus_example_process ExampleProcess.cpp)
+target_link_libraries   (ailurus_example_process PUBLIC ${AILURUS_TARGET_NAME})
+
 if (WIN32)
     # Native window
     add_executable          (ailurus_example_window_create Window/ExampleWindowCreate.cpp)
