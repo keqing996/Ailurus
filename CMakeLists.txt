@@ -6,6 +6,7 @@ set (AILURUS_TARGET_NAME ailurus)
 
 # SDL
 set (SDL_STATIC ON) # static link sdl
+set (SDL_SHARED OFF)
 add_subdirectory(submodule/sdl)
 
 # Set output path
@@ -34,7 +35,7 @@ add_library                 (${AILURUS_TARGET_NAME} STATIC ${AILURUS_SRC} ${AILU
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/)
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/) # for imgui source
-target_link_libraries       (${AILURUS_TARGET_NAME} PUBLIC SDL3-static)
+target_link_libraries       (${AILURUS_TARGET_NAME} SDL3-static)
 
 if (WIN32)
     target_link_libraries   (${AILURUS_TARGET_NAME} wsock32 ws2_32) # for socket
