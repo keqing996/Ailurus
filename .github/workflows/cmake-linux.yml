@@ -34,7 +34,8 @@ jobs:
 
       - name: Install X11
         run: |
-          brew --cask install xquartz
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxext-dev libxrandr-dev
 
       - name: Configure CMake
         run: >
