@@ -4,6 +4,10 @@ project (AILURUS_INFRASTRUCTURE)
 set (CMAKE_CXX_STANDARD 20)
 set (AILURUS_TARGET_NAME ailurus)
 
+# SDL
+set (SDL_STATIC ON) # static link sdl
+add_subdirectory(submodule/sdl)
+
 # Set output path
 set (LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/artifacts/${CMAKE_CXX_COMPILER_ID}/${CMAKE_BUILD_TYPE}/)
 
@@ -12,13 +16,13 @@ file (GLOB_RECURSE AILURUS_SRC ./src/*.cpp)
 
 if (WIN32)
     set (AILURUS_IMGUI_SRC
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/imgui.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/imgui_draw.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/imgui_tables.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/imgui_widgets.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/backends/imgui_impl_win32.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/backends/imgui_impl_dx11.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/backends/imgui_impl_opengl3.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_draw.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_tables.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_widgets.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_win32.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_dx11.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_opengl3.cpp
             # ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/backends/imgui_impl_vulkan.cpp
     )
 else ()
@@ -30,6 +34,7 @@ add_library                 (${AILURUS_TARGET_NAME} STATIC ${AILURUS_SRC} ${AILU
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/)
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/) # for imgui source
+target_link_libraries       (${AILURUS_TARGET_NAME} PUBLIC SDL3-static)
 
 if (WIN32)
     target_link_libraries   (${AILURUS_TARGET_NAME} wsock32 ws2_32) # for socket
