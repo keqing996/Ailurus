@@ -43,32 +43,22 @@ namespace Ailurus
         void Loop(const std::function<void()>& loopFunction);
 
         /// Get native window's size(client area, without borders, caption bar, etc.).
-        std::pair<int, int> GetSize();
+        std::pair<int, int> GetSize() const;
 
         /// Set native window's size.
         void SetSize(int width, int height);
 
         /// Get native window's position in screen.
-        std::pair<int, int> GetPosition();
+        std::pair<int, int> GetPosition() const;
 
         /// Set native window's position in screen.
         void SetPosition(int x, int y);
 
-        /// Get native window handle, which is HWND in this case.
-        void* GetWindowHandle() const;
-
-        /// Get native window handle, which is HWND in this case.
-        template<typename T>
-        T GetWindowHandle() const;
-
         /// Set icon of window through bytes in memory.
         /// @param width Icon width.
         /// @param height Icon height.
-        /// @param pixels Icon bytes data in RGBA.
+        /// @param pixels Icon bytes data in RGBA8888.
         void SetIcon(unsigned int width, unsigned int height, const std::byte* pixels);
-
-        /// Set icon of window through windows resource id.
-        void SetIcon(int iconResId);
 
         /// Set window title in UTF8.
         void SetTitle(const std::string& title);
@@ -151,14 +141,11 @@ namespace Ailurus
         T* GetService();
 
     private:
-        void SetTrackMouseLeave(bool enable);
         void OnWindowClose();
         void OnWindowPreDestroy();
         void OnWindowPostDestroy();
         int WindowEventProcess(uint32_t message, void* wpara, void* lpara);
         void WindowEventProcessInternal(uint32_t message, void* wpara, void* lpara);
-        void SetCursorLimitedInWindowInternal(bool doCapture);
-        bool CalculateMouseInsideWindow() const;
 
         Service* GetServiceInternal(ServiceType type);
         bool AddServiceInternal(ServiceType type);
@@ -171,16 +158,7 @@ namespace Ailurus
 
     private:
         // Window handle
-        void* _hWindow = nullptr;
-
-        // Cursor & Icon
-        void* hIcon = nullptr;
-        void* hCursor = nullptr;
-
-        // State
-        bool cursorVisible = true;
-        bool cursorLimitedInWindow = false;
-        bool cursorInsideWindow = false;
+        void* _pWindow = nullptr;
 
         // Record window size
         int lastWidth = 0;
@@ -202,17 +180,7 @@ namespace Ailurus
         std::function<void(bool)>                           _onWindowFocusChanged = nullptr;
         std::function<void(bool)>                           _onWindowCursorEnteredOrLeaved = nullptr;
         std::function<void(bool)>                           _onWindowCursorVisibleChanged = nullptr;
-
-    private:
-        static void RegisterWindowClass();
-        static void UnRegisterWindowClass();
     };
-
-    template<typename T>
-    T Window::GetWindowHandle() const
-    {
-        return reinterpret_cast<T>(GetWindowHandle());
-    }
 
     template<typename T>
     bool Window::AddService()
