@@ -2,14 +2,14 @@
 
 #include "Ailurus/PlatformDefine.h"
 
-#if AILURUS_PLATFORM_WINDOWS
+#if AILURUS_FEAT_SUPPORT_WINDOW
 
 #include <cstdint>
 #include <functional>
 #include <string>
 #include <optional>
 
-#include "Detail/WindowStyle.h"
+#include "WindowStyle.h"
 #include "Service/Service.h"
 #include "Ailurus/Utility/NonCopyable.h"
 

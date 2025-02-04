@@ -3,7 +3,7 @@
 
 #include "Ailurus/PlatformDefine.h"
 
-#if AILURUS_PLATFORM_WINDOWS
+#if AILURUS_FEAT_SUPPORT_WINDOW
 
 #include <functional>
 #include <unordered_set>
