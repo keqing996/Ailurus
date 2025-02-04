@@ -6,6 +6,60 @@
 
 namespace Ailurus
 {
+    struct NativeWindowUtility
+    {
+        static void HandleEvent(Window& window, const SDL_Event& event, bool* shouldBreakLoop)
+        {
+            switch (event.type)
+            {
+                case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+                {
+                    if (!window._onWindowTryToClose && window._onWindowTryToClose())
+                        *shouldBreakLoop = true;
+                    break;
+                }
+                case SDL_EVENT_WINDOW_MOVED:
+                {
+                    if (window._onWindowMoved)
+                        window._onWindowMoved(event.window.data1, event.window.data2);
+                    break;
+                }
+                case SDL_EVENT_WINDOW_RESIZED:
+                {
+                    if (window._onWindowResize)
+                        window._onWindowResize(event.window.data1, event.window.data2);
+                    break;
+                }
+                case SDL_EVENT_WINDOW_FOCUS_GAINED:
+                {
+                    if (window._onWindowFocusChanged)
+                        window._onWindowFocusChanged(true);
+                    break;
+                }
+                case SDL_EVENT_WINDOW_FOCUS_LOST:
+                {
+                    if (window._onWindowFocusChanged)
+                        window._onWindowFocusChanged(false);
+                    break;
+                }
+                case SDL_EVENT_WINDOW_MOUSE_ENTER:
+                {
+                    if (window._onWindowCursorEnteredOrLeaved)
+                        window._onWindowCursorEnteredOrLeaved(true);
+                    break;
+                }
+                case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+                {
+                    if (window._onWindowCursorEnteredOrLeaved)
+                        window._onWindowCursorEnteredOrLeaved(false);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    };
+
     Window::Window()
     {
     }
@@ -62,50 +116,24 @@ namespace Ailurus
 
     void Window::Loop(const std::function<void()>& loopFunction)
     {
-        SDL_Event e;
-        while(_running)
+        while(true)
         {
-            while(SDL_PollEvent(&e)) {
-                switch(e.type)
-                {
-                    case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-                        if (!_onWindowTryToClose || _onWindowTryToClose()) {
-                            _running = false;
-                        }
+            bool shouldBreakLoop = false;
+            while(true)
+            {
+                SDL_Event event;
+                if (!SDL_PollEvent(&event))
                     break;
 
-                    case SDL_EVENT_WINDOW_MOVED:
-                        if(_onWindowMoved)
-                            _onWindowMoved(e.window.data1, e.window.data2);
+                NativeWindowUtility::HandleEvent(*this, event, &shouldBreakLoop);
+                if (shouldBreakLoop)
                     break;
-
-                    case SDL_EVENT_WINDOW_RESIZED:
-                        if(_onWindowResize)
-                            _onWindowResize(e.window.data1, e.window.data2);
-                    break;
-
-                    case SDL_EVENT_WINDOW_FOCUS_GAINED:
-                        if(_onWindowFocusChanged) _onWindowFocusChanged(true);
-                    break;
-
-                    case SDL_EVENT_WINDOW_FOCUS_LOST:
-                        if(_onWindowFocusChanged) _onWindowFocusChanged(false);
-                    break;
-
-                    // 处理鼠标进入/离开事件
-                    case SDL_EVENT_MOUSE_ENTER:
-                        _cursorInsideWindow = true;
-                    if(_onWindowCursorEnteredOrLeaved) _onWindowCursorEnteredOrLeaved(true);
-                    break;
-
-                    case SDL_EVENT_MOUSE_LEAVE:
-                        _cursorInsideWindow = false;
-                    if(_onWindowCursorEnteredOrLeaved) _onWindowCursorEnteredOrLeaved(false);
-                    break;
-                }
             }
 
-            if(loopFunction)
+            if (shouldBreakLoop)
+                break;
+
+            if (loopFunction != nullptr)
                 loopFunction();
         }
     }
