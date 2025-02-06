@@ -2,20 +2,35 @@
 
 #if AILURUS_FEAT_SUPPORT_WINDOW
 
-#include <SDL3/SDL_main.h>
+#include <unordered_set>
+#include <SDL3/SDL.h>
 
 namespace Ailurus
 {
-    struct NativeWindowUtility
+    class NativeWindowUtility
     {
-        static void HandleEvent(Window& window, const SDL_Event& event, bool* shouldBreakLoop)
+    public:
+        static void HandleEvent(Window& window, const SDL_Event& event, bool* quitLoop)
         {
             switch (event.type)
             {
+                case SDL_EVENT_QUIT:
+                {
+                    if (window._ignoreNextQuit)
+                        window._ignoreNextQuit = false;
+                    else
+                        *quitLoop = true;
+                    break;
+                }
+                case SDL_EVENT_WINDOW_DESTROYED:
+                {
+                    *quitLoop = true;
+                    break;
+                }
                 case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
                 {
-                    if (!window._onWindowTryToClose && window._onWindowTryToClose())
-                        *shouldBreakLoop = true;
+                    if (window._onWindowTryToClose != nullptr && !window._onWindowTryToClose())
+                        window._ignoreNextQuit = true;
                     break;
                 }
                 case SDL_EVENT_WINDOW_MOVED:
@@ -78,10 +93,6 @@ namespace Ailurus
             flags |= SDL_WINDOW_BORDERLESS;
         if (style.canResize)
             flags |= SDL_WINDOW_RESIZABLE;
-        if (style.canMin)
-            flags |= SDL_WINDOW_MAXIMIZED;
-        if (style.canMax)
-            flags |= SDL_WINDOW_MINIMIZED;
 
         _pWindow = SDL_CreateWindow(title.c_str(), width, height, flags);
         if (_pWindow == nullptr)
@@ -100,7 +111,7 @@ namespace Ailurus
             if (_onWindowPreDestroyed)
                 _onWindowPreDestroyed();
 
-            ClearServices();
+            //ClearServices();
             SDL_DestroyWindow(static_cast<SDL_Window*>(_pWindow));
             _pWindow = nullptr;
 
@@ -125,9 +136,11 @@ namespace Ailurus
                 if (!SDL_PollEvent(&event))
                     break;
 
-                NativeWindowUtility::HandleEvent(*this, event, &shouldBreakLoop);
-                if (shouldBreakLoop)
-                    break;
+                bool closeWindow = false;
+                NativeWindowUtility::HandleEvent(*this, event, &closeWindow);
+
+                if (closeWindow)
+                    shouldBreakLoop = true;
             }
 
             if (shouldBreakLoop)
@@ -136,6 +149,8 @@ namespace Ailurus
             if (loopFunction != nullptr)
                 loopFunction();
         }
+
+        Destroy();
     }
 
     std::pair<int, int> Window::GetSize() const
@@ -304,6 +319,99 @@ namespace Ailurus
     {
         _onWindowCursorVisibleChanged = callback;
     }
+/*
+    Service* Window::GetServiceInternal(ServiceType type)
+    {
+        auto itr = _serviceMap.find(type);
+        if (itr == _serviceMap.end())
+            return nullptr;
+
+        return itr->second;
+    }
+
+    bool Window::AddServiceInternal(ServiceType type)
+    {
+        auto itr = _serviceMap.find(type);
+        if (itr != _serviceMap.end())
+            return true;
+
+        auto pDependentService = Service::GetServiceDependent(type);
+        if (pDependentService != nullptr)
+        {
+            for (auto dependentServiceType: *pDependentService)
+            {
+                if (!AddServiceInternal(dependentServiceType))
+                    return false;
+            }
+        }
+
+        Service* service = nullptr;
+
+        switch (type)
+        {
+            case ServiceType::Input:
+                service = new InputService(this);
+                break;
+            case ServiceType::OpenGL:
+                service = new OpenGLService(this);
+                break;
+            case ServiceType::ImGuiOpenGL:
+                service = new ImGuiOpenGLService(this);
+                break;
+        }
+
+        if (service != nullptr)
+        {
+            _serviceMap[type] = service;
+            _servicesInCreationOrder.push_back(service);
+        }
+
+        return service != nullptr;
+    }
+
+    bool Window::CanServiceBeAdded(ServiceType type)
+    {
+        std::unordered_set<ServiceType> tempSet;
+
+        std::function<void(ServiceType)> CollectConflict = [&](ServiceType type)
+        {
+            auto pConflictServices = Service::GetServiceConflict(type);
+            if (pConflictServices != nullptr)
+            {
+                for (auto conflictServiceType: *pConflictServices)
+                {
+                    tempSet.insert(conflictServiceType);
+                    CollectConflict(conflictServiceType);
+                }
+            }
+        };
+
+        CollectConflict(type);
+
+        for (auto conflictType: tempSet)
+        {
+            if (GetServiceInternal(conflictType) != nullptr)
+                return false;
+        }
+
+        return true;
+    }
+
+    const std::vector<Service*>& Window::GetServices()
+    {
+        return _servicesInCreationOrder;
+    }
+
+    void Window::ClearService()
+    {
+        auto itr = _servicesInCreationOrder.rbegin();
+        for (; itr != _servicesInCreationOrder.rend(); ++itr)
+            delete *itr;
+
+        _servicesInCreationOrder.clear();
+        _serviceMap.clear();
+    }
+    */
 }
 
 #endif

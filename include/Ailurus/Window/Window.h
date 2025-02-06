@@ -131,7 +131,7 @@ namespace Ailurus
 
         /// Called when cursor's visibility changes, true for shown and false for hided.
         void SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback);
-
+/*
         //// Add service.
         template<typename T>
         bool AddService();
@@ -139,19 +139,20 @@ namespace Ailurus
         /// Get service pointer.
         template<typename T>
         T* GetService();
-
+*/
     private:
         void OnWindowClose();
         void OnWindowPreDestroy();
         void OnWindowPostDestroy();
         int WindowEventProcess(uint32_t message, void* wpara, void* lpara);
         void WindowEventProcessInternal(uint32_t message, void* wpara, void* lpara);
-
+/*
         Service* GetServiceInternal(ServiceType type);
         bool AddServiceInternal(ServiceType type);
         bool CanServiceBeAdded(ServiceType type);
         const std::vector<Service*>& GetServices();
         void ClearService();
+        */
 
     private:
         friend NativeWindowUtility;
@@ -160,9 +161,7 @@ namespace Ailurus
         // Window handle
         void* _pWindow = nullptr;
 
-        // Record window size
-        int lastWidth = 0;
-        int lastHeight = 0;
+        bool _ignoreNextQuit = false;
 
         // Services
         std::vector<Service*> _servicesInCreationOrder;
@@ -181,7 +180,7 @@ namespace Ailurus
         std::function<void(bool)>                           _onWindowCursorEnteredOrLeaved = nullptr;
         std::function<void(bool)>                           _onWindowCursorVisibleChanged = nullptr;
     };
-
+/*
     template<typename T>
     bool Window::AddService()
     {
@@ -201,6 +200,7 @@ namespace Ailurus
     {
         return reinterpret_cast<T*>(GetServiceInternal(T::ServiceType()));
     }
+    */
 }
 
 #endif

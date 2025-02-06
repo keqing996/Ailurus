@@ -9,8 +9,6 @@ namespace Ailurus
     struct WindowStyle
     {
         bool canResize = true;
-        bool canMin = true;
-        bool canMax = true;
         bool haveBorder = true;
     };
 }
