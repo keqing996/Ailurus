@@ -9,6 +9,11 @@ namespace Ailurus
 {
     class NativeWindowUtility
     {
+        static bool IsSameWindow(const Window& window, const SDL_WindowEvent& sdlWindowEvent)
+        {
+            return SDL_GetWindowID(static_cast<SDL_Window*>(window._pWindow)) == sdlWindowEvent.windowID;
+        }
+
     public:
         static void HandleEvent(Window& window, const SDL_Event& event, bool* quitLoop)
         {
@@ -24,49 +29,78 @@ namespace Ailurus
                 }
                 case SDL_EVENT_WINDOW_DESTROYED:
                 {
-                    *quitLoop = true;
+                    if (IsSameWindow(window, event.window))
+                        *quitLoop = true;
+
                     break;
                 }
                 case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
                 {
-                    if (window._onWindowTryToClose != nullptr && !window._onWindowTryToClose())
-                        window._ignoreNextQuit = true;
+                    if (IsSameWindow(window, event.window))
+                    {
+                        if (window._onWindowTryToClose != nullptr && !window._onWindowTryToClose())
+                            window._ignoreNextQuit = true;
+                    }
+
                     break;
                 }
                 case SDL_EVENT_WINDOW_MOVED:
                 {
-                    if (window._onWindowMoved)
-                        window._onWindowMoved(event.window.data1, event.window.data2);
+                    if (IsSameWindow(window, event.window))
+                    {
+                        if (window._onWindowMoved)
+                            window._onWindowMoved(event.window.data1, event.window.data2);
+                    }
+
                     break;
                 }
                 case SDL_EVENT_WINDOW_RESIZED:
                 {
-                    if (window._onWindowResize)
-                        window._onWindowResize(event.window.data1, event.window.data2);
+                    if (IsSameWindow(window, event.window))
+                    {
+                        if (window._onWindowResize)
+                            window._onWindowResize(event.window.data1, event.window.data2);
+                    }
+
                     break;
                 }
                 case SDL_EVENT_WINDOW_FOCUS_GAINED:
                 {
-                    if (window._onWindowFocusChanged)
-                        window._onWindowFocusChanged(true);
+                    if (IsSameWindow(window, event.window))
+                    {
+                        if (window._onWindowFocusChanged)
+                            window._onWindowFocusChanged(true);
+                    }
+
                     break;
                 }
                 case SDL_EVENT_WINDOW_FOCUS_LOST:
                 {
-                    if (window._onWindowFocusChanged)
-                        window._onWindowFocusChanged(false);
+                    if (IsSameWindow(window, event.window))
+                    {
+                        if (window._onWindowFocusChanged)
+                            window._onWindowFocusChanged(false);
+                    }
+
                     break;
                 }
                 case SDL_EVENT_WINDOW_MOUSE_ENTER:
                 {
-                    if (window._onWindowCursorEnteredOrLeaved)
-                        window._onWindowCursorEnteredOrLeaved(true);
+                    if (IsSameWindow(window, event.window))
+                    {
+                        if (window._onWindowCursorEnteredOrLeaved)
+                            window._onWindowCursorEnteredOrLeaved(true);
+                    }
+
                     break;
                 }
                 case SDL_EVENT_WINDOW_MOUSE_LEAVE:
                 {
-                    if (window._onWindowCursorEnteredOrLeaved)
-                        window._onWindowCursorEnteredOrLeaved(false);
+                    if (IsSameWindow(window, event.window))
+                    {
+                        if (window._onWindowCursorEnteredOrLeaved)
+                            window._onWindowCursorEnteredOrLeaved(false);
+                    }
                     break;
                 }
                 default:
@@ -75,12 +109,11 @@ namespace Ailurus
         }
     };
 
-    Window::Window()
-    {
-    }
+    Window::Window() = default;
 
     Window::~Window()
     {
+        Destroy();
     }
 
     bool Window::Create(int width, int height, const std::string& title, WindowStyle style)
