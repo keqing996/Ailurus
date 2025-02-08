@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_set>
+
 #include "Ailurus/PlatformDefine.h"
 
 #if AILURUS_FEAT_SUPPORT_WINDOW
@@ -10,13 +12,12 @@
 #include <optional>
 
 #include "WindowStyle.h"
-#include "Service/Service.h"
+#include "InputEnum.h"
+#include "Ailurus/Math/Vector.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
 
 namespace Ailurus
 {
-    class NativeWindowUtility;
-
     class Window final: NonCopyable
     {
     public:
@@ -43,16 +44,22 @@ namespace Ailurus
         void Loop(const std::function<void()>& loopFunction);
 
         /// Get native window's size(client area, without borders, caption bar, etc.).
-        std::pair<int, int> GetSize() const;
+        Vector2i GetSize() const;
 
         /// Set native window's size.
         void SetSize(int width, int height);
 
+        /// Set native window's size.
+        void SetSize(const Vector2i& size);
+
         /// Get native window's position in screen.
-        std::pair<int, int> GetPosition() const;
+        Vector2i GetPosition() const;
 
         /// Set native window's position in screen.
         void SetPosition(int x, int y);
+
+        /// Set native window's position in screen.
+        void SetPosition(const Vector2i& pos);
 
         /// Set icon of window through bytes in memory.
         /// @param width Icon width.
@@ -100,26 +107,16 @@ namespace Ailurus
         /// already received, all resources are released, window is closed.
         void SetCallbackOnWindowPostDestroyed(const std::function<void()>& callback);
 
-        /// Called when windows messages received.
-        ///
-        /// - uint32_t: message Windows message.
-        /// - void*: wpara WPARAM.
-        /// - void*: lpara LPARAM.
-        /// - int*: result If block original message process, return value of message.
-        ///
-        /// Returned bool: Should block original message process, should be false in most cases.
-        void SetCallbackOnWindowMessagePreProcess(const std::function<bool(uint32_t, void*, void*, int*)>& callback);
-
         /// Called when window received WM_MOVE
         ///
         /// - int: left up corner x.
         /// - int: left up corner y.
-        void SetCallbackOnWindowMoved(const std::function<void(int,int)>& callback);
+        void SetCallbackOnWindowMoved(const std::function<void(Vector2i)>& callback);
 
         /// Called when window received WM_SIZE
         /// - int: new size width.
         /// - int: new size height.
-        void SetCallbackOnWindowResize(const std::function<void(int, int)>& callback);
+        void SetCallbackOnWindowResize(const std::function<void(Vector2i)>& callback);
 
         /// Called when window get or lost focus,
         /// true for enter focus and false for lose focus.
@@ -131,76 +128,56 @@ namespace Ailurus
 
         /// Called when cursor's visibility changes, true for shown and false for hided.
         void SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback);
-/*
-        //// Add service.
-        template<typename T>
-        bool AddService();
 
-        /// Get service pointer.
-        template<typename T>
-        T* GetService();
-*/
-    private:
-        void OnWindowClose();
-        void OnWindowPreDestroy();
-        void OnWindowPostDestroy();
-        int WindowEventProcess(uint32_t message, void* wpara, void* lpara);
-        void WindowEventProcessInternal(uint32_t message, void* wpara, void* lpara);
-/*
-        Service* GetServiceInternal(ServiceType type);
-        bool AddServiceInternal(ServiceType type);
-        bool CanServiceBeAdded(ServiceType type);
-        const std::vector<Service*>& GetServices();
-        void ClearService();
-        */
+        bool IsButtonPressed(ButtonType key) const;
+        Vector2f GetMousePosition() const;
+        Vector2f GetMouseWheel() const;
+
+        bool GetIsAutoRepeat() const;
+        void SetIsAutoRepeat(bool autoRepeat);
+
+        void SetCallbackOnMouseMove(const std::function<void(Vector2f, Vector2f)>& fun);
+        void SetCallbackOnMouseWheel(const std::function<void(Vector2f)>& fun);
+        void SetCallbackOnButtonPressed(const std::function<void(ButtonType)>& fun);
+        void SetCallbackOnButtonReleased(const std::function<void(ButtonType)>& fun);
 
     private:
-        friend NativeWindowUtility;
+        void EventLoop(bool* quitLoop);
+        void HandleEvent(const void* pEvent, bool* quitLoop);
+        void OnEventButtonPressed(ButtonType button);
+        void OnEventButtonReleased(ButtonType button);
 
     private:
         // Window handle
         void* _pWindow = nullptr;
 
+        // Close request
         bool _ignoreNextQuit = false;
-
-        // Services
-        std::vector<Service*> _servicesInCreationOrder;
-        std::unordered_map<ServiceType, Service*> _serviceMap;
 
         // Window callbacks
         std::function<void()>                               _onWindowCreated = nullptr;
-        std::function<void(int,int)>                        _onWindowMoved = nullptr;
-        std::function<bool(uint32_t, void*, void*, int*)>   _onWindowMessagePreProcess = nullptr;
+        std::function<void(Vector2i)>                       _onWindowMoved = nullptr;
         std::function<bool()>                               _onWindowTryToClose = nullptr;
         std::function<void()>                               _onWindowClosed = nullptr;
         std::function<void()>                               _onWindowPreDestroyed = nullptr;
         std::function<void()>                               _onWindowPostDestroyed = nullptr;
-        std::function<void(int,int)>                        _onWindowResize = nullptr;
+        std::function<void(Vector2i)>                       _onWindowResize = nullptr;
         std::function<void(bool)>                           _onWindowFocusChanged = nullptr;
         std::function<void(bool)>                           _onWindowCursorEnteredOrLeaved = nullptr;
         std::function<void(bool)>                           _onWindowCursorVisibleChanged = nullptr;
+
+        // Input
+        Vector2f _mousePos;
+        Vector2f _mouseWheel;
+
+        bool _enableAutoRepeat = true;
+        std::unordered_set<ButtonType> _pressedButton;
+
+        std::function<void(Vector2f, Vector2f)> _onMouseMove = nullptr;
+        std::function<void(Vector2f)> _onMouseWheel = nullptr;
+        std::function<void(ButtonType)> _onButtonPressed = nullptr;
+        std::function<void(ButtonType)> _onButtonReleased = nullptr;
     };
-/*
-    template<typename T>
-    bool Window::AddService()
-    {
-        if (GetService<T>() != nullptr)
-            return true;
-
-        // Check all conflicts
-        auto serviceType = T::ServiceType();
-        if (!CanServiceBeAdded(serviceType))
-            return false;
-
-        return AddServiceInternal(serviceType);
-    }
-
-    template<typename T>
-    T* Window::GetService()
-    {
-        return reinterpret_cast<T*>(GetServiceInternal(T::ServiceType()));
-    }
-    */
 }
 
 #endif

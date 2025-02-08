@@ -7,107 +7,24 @@
 
 namespace Ailurus
 {
-    class NativeWindowUtility
+    static ButtonType GetButtonFromSDL(const SDL_MouseButtonEvent& buttonEvent)
     {
-        static bool IsSameWindow(const Window& window, const SDL_WindowEvent& sdlWindowEvent)
+        switch (buttonEvent.button)
         {
-            return SDL_GetWindowID(static_cast<SDL_Window*>(window._pWindow)) == sdlWindowEvent.windowID;
+            case SDL_BUTTON_LEFT:
+                return ButtonType::MouseLeft;
+            case SDL_BUTTON_RIGHT:
+                return ButtonType::MouseRight;
+            case SDL_BUTTON_MIDDLE:
+                return ButtonType::MouseMiddle;
+            case SDL_BUTTON_X1:
+                return ButtonType::MouseXButton1;
+            case SDL_BUTTON_X2:
+                return ButtonType::MouseXButton2;
+            default:
+                return ButtonType::Unknown;;
         }
-
-    public:
-        static void HandleEvent(Window& window, const SDL_Event& event, bool* quitLoop)
-        {
-            switch (event.type)
-            {
-                case SDL_EVENT_QUIT:
-                {
-                    if (window._ignoreNextQuit)
-                        window._ignoreNextQuit = false;
-                    else
-                        *quitLoop = true;
-                    break;
-                }
-                case SDL_EVENT_WINDOW_DESTROYED:
-                {
-                    if (IsSameWindow(window, event.window))
-                        *quitLoop = true;
-
-                    break;
-                }
-                case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-                {
-                    if (IsSameWindow(window, event.window))
-                    {
-                        if (window._onWindowTryToClose != nullptr && !window._onWindowTryToClose())
-                            window._ignoreNextQuit = true;
-                    }
-
-                    break;
-                }
-                case SDL_EVENT_WINDOW_MOVED:
-                {
-                    if (IsSameWindow(window, event.window))
-                    {
-                        if (window._onWindowMoved)
-                            window._onWindowMoved(event.window.data1, event.window.data2);
-                    }
-
-                    break;
-                }
-                case SDL_EVENT_WINDOW_RESIZED:
-                {
-                    if (IsSameWindow(window, event.window))
-                    {
-                        if (window._onWindowResize)
-                            window._onWindowResize(event.window.data1, event.window.data2);
-                    }
-
-                    break;
-                }
-                case SDL_EVENT_WINDOW_FOCUS_GAINED:
-                {
-                    if (IsSameWindow(window, event.window))
-                    {
-                        if (window._onWindowFocusChanged)
-                            window._onWindowFocusChanged(true);
-                    }
-
-                    break;
-                }
-                case SDL_EVENT_WINDOW_FOCUS_LOST:
-                {
-                    if (IsSameWindow(window, event.window))
-                    {
-                        if (window._onWindowFocusChanged)
-                            window._onWindowFocusChanged(false);
-                    }
-
-                    break;
-                }
-                case SDL_EVENT_WINDOW_MOUSE_ENTER:
-                {
-                    if (IsSameWindow(window, event.window))
-                    {
-                        if (window._onWindowCursorEnteredOrLeaved)
-                            window._onWindowCursorEnteredOrLeaved(true);
-                    }
-
-                    break;
-                }
-                case SDL_EVENT_WINDOW_MOUSE_LEAVE:
-                {
-                    if (IsSameWindow(window, event.window))
-                    {
-                        if (window._onWindowCursorEnteredOrLeaved)
-                            window._onWindowCursorEnteredOrLeaved(false);
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    };
+    }
 
     Window::Window() = default;
 
@@ -130,6 +47,10 @@ namespace Ailurus
         _pWindow = SDL_CreateWindow(title.c_str(), width, height, flags);
         if (_pWindow == nullptr)
             return false;
+
+        float x, y;
+        SDL_GetMouseState(&x, &y);
+        _mousePos = Vector2f(x, y);
 
         if (_onWindowCreated != nullptr)
             _onWindowCreated();
@@ -163,18 +84,7 @@ namespace Ailurus
         while(true)
         {
             bool shouldBreakLoop = false;
-            while(true)
-            {
-                SDL_Event event;
-                if (!SDL_PollEvent(&event))
-                    break;
-
-                bool closeWindow = false;
-                NativeWindowUtility::HandleEvent(*this, event, &closeWindow);
-
-                if (closeWindow)
-                    shouldBreakLoop = true;
-            }
+            EventLoop(&shouldBreakLoop);
 
             if (shouldBreakLoop)
                 break;
@@ -186,16 +96,16 @@ namespace Ailurus
         Destroy();
     }
 
-    std::pair<int, int> Window::GetSize() const
+    Vector2i Window::GetSize() const
     {
         if (_pWindow != nullptr)
         {
             int w, h;
             SDL_GetWindowSize(static_cast<SDL_Window*>(_pWindow), &w, &h);
-            return {w, h};
+            return Vector2i(w, h);
         }
 
-        return {0, 0};
+        return Vector2i(0, 0);
     }
 
     void Window::SetSize(int width, int height)
@@ -204,14 +114,19 @@ namespace Ailurus
             SDL_SetWindowSize(static_cast<SDL_Window*>(_pWindow), width, height);
     }
 
-    std::pair<int, int> Window::GetPosition() const
+    void Window::SetSize(const Vector2i& size)
+    {
+        SetSize(size.x(), size.y());
+    }
+
+    Vector2i Window::GetPosition() const
     {
         if (_pWindow == nullptr)
-            return {0, 0};
+            return Vector2i(0, 0);
 
         int x, y;
         SDL_GetWindowPosition(static_cast<SDL_Window*>(_pWindow), &x, &y);
-        return {x, y};
+        return Vector2i(x, y);
     }
 
     void Window::SetPosition(int x, int y)
@@ -220,6 +135,11 @@ namespace Ailurus
             return;
 
         SDL_SetWindowPosition(static_cast<SDL_Window*>(_pWindow), x, y);
+    }
+
+    void Window::SetPosition(const Vector2i& pos)
+    {
+        SetPosition(pos.x(), pos.y());
     }
 
     void Window::SetIcon(unsigned int width, unsigned int height, const std::byte* pixels)
@@ -323,17 +243,12 @@ namespace Ailurus
         _onWindowPostDestroyed = callback;
     }
 
-    void Window::SetCallbackOnWindowMessagePreProcess(const std::function<bool(uint32_t, void*, void*, int*)>& callback)
-    {
-        _onWindowMessagePreProcess = callback;
-    }
-
-    void Window::SetCallbackOnWindowMoved(const std::function<void(int, int)>& callback)
+    void Window::SetCallbackOnWindowMoved(const std::function<void(Vector2i)>& callback)
     {
         _onWindowMoved = callback;
     }
 
-    void Window::SetCallbackOnWindowResize(const std::function<void(int, int)>& callback)
+    void Window::SetCallbackOnWindowResize(const std::function<void(Vector2i)>& callback)
     {
         _onWindowResize = callback;
     }
@@ -352,99 +267,219 @@ namespace Ailurus
     {
         _onWindowCursorVisibleChanged = callback;
     }
-/*
-    Service* Window::GetServiceInternal(ServiceType type)
-    {
-        auto itr = _serviceMap.find(type);
-        if (itr == _serviceMap.end())
-            return nullptr;
 
-        return itr->second;
+    bool Window::IsButtonPressed(ButtonType key) const
+    {
+        return _pressedButton.find(key) != _pressedButton.end();
     }
 
-    bool Window::AddServiceInternal(ServiceType type)
+    Vector2f Window::GetMousePosition() const
     {
-        auto itr = _serviceMap.find(type);
-        if (itr != _serviceMap.end())
-            return true;
+        return _mousePos;
+    }
 
-        auto pDependentService = Service::GetServiceDependent(type);
-        if (pDependentService != nullptr)
+    Vector2f Window::GetMouseWheel() const
+    {
+        return _mouseWheel;
+    }
+
+    bool Window::GetIsAutoRepeat() const
+    {
+        return _enableAutoRepeat;
+    }
+
+    void Window::SetIsAutoRepeat(bool autoRepeat)
+    {
+        _enableAutoRepeat = autoRepeat;
+    }
+
+    void Window::SetCallbackOnMouseMove(const std::function<void(Vector2f, Vector2f)>& fun)
+    {
+        _onMouseMove = fun;
+    }
+
+    void Window::SetCallbackOnMouseWheel(const std::function<void(Vector2f)>& fun)
+    {
+        _onMouseWheel = fun;
+    }
+
+    void Window::SetCallbackOnButtonPressed(const std::function<void(ButtonType)>& fun)
+    {
+        _onButtonPressed = fun;
+    }
+
+    void Window::SetCallbackOnButtonReleased(const std::function<void(ButtonType)>& fun)
+    {
+        _onButtonReleased = fun;
+    }
+
+    void Window::EventLoop(bool* quitLoop)
+    {
+        // Record
+        Vector2f recordMousePos = _mousePos;
+
+        // Clear
+        _mouseWheel = Vector2f(0, 0);
+
+        while(true)
         {
-            for (auto dependentServiceType: *pDependentService)
+            SDL_Event event;
+            if (!SDL_PollEvent(&event))
+                break;
+
+            bool closeWindow = false;
+            HandleEvent(&event, &closeWindow);
+
+            if (closeWindow)
+                *quitLoop = true;
+        }
+
+        // Emit callback
+        if (_mousePos != recordMousePos && _onMouseMove != nullptr)
+            _onMouseMove(recordMousePos, _mousePos);
+
+        if (_mouseWheel != Vector2f(0, 0))
+            _onMouseWheel(_mouseWheel);
+    }
+
+    void Window::HandleEvent(const void* pEvent, bool* quitLoop)
+    {
+        const SDL_Event* pSDLEvent = static_cast<const SDL_Event*>(pEvent);
+        const SDL_WindowID windowId = SDL_GetWindowID(static_cast<SDL_Window*>(_pWindow));
+
+        switch (pSDLEvent->type)
+        {
+            case SDL_EVENT_QUIT:
             {
-                if (!AddServiceInternal(dependentServiceType))
-                    return false;
+                if (_ignoreNextQuit)
+                    _ignoreNextQuit = false;
+                else
+                    *quitLoop = true;
+                break;
             }
-        }
-
-        Service* service = nullptr;
-
-        switch (type)
-        {
-            case ServiceType::Input:
-                service = new InputService(this);
-                break;
-            case ServiceType::OpenGL:
-                service = new OpenGLService(this);
-                break;
-            case ServiceType::ImGuiOpenGL:
-                service = new ImGuiOpenGLService(this);
-                break;
-        }
-
-        if (service != nullptr)
-        {
-            _serviceMap[type] = service;
-            _servicesInCreationOrder.push_back(service);
-        }
-
-        return service != nullptr;
-    }
-
-    bool Window::CanServiceBeAdded(ServiceType type)
-    {
-        std::unordered_set<ServiceType> tempSet;
-
-        std::function<void(ServiceType)> CollectConflict = [&](ServiceType type)
-        {
-            auto pConflictServices = Service::GetServiceConflict(type);
-            if (pConflictServices != nullptr)
+            case SDL_EVENT_WINDOW_DESTROYED:
             {
-                for (auto conflictServiceType: *pConflictServices)
+                if (windowId == pSDLEvent->window.windowID)
+                    *quitLoop = true;
+
+                break;
+            }
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+            {
+                if (windowId == pSDLEvent->window.windowID
+                    && _onWindowTryToClose != nullptr && !_onWindowTryToClose())
                 {
-                    tempSet.insert(conflictServiceType);
-                    CollectConflict(conflictServiceType);
+                        _ignoreNextQuit = true;
+                }
+
+                break;
+            }
+            case SDL_EVENT_WINDOW_MOVED:
+            {
+                if (windowId == pSDLEvent->window.windowID && _onWindowMoved != nullptr)
+                    _onWindowMoved(Vector2i(pSDLEvent->window.data1, pSDLEvent->window.data2));
+
+                break;
+            }
+            case SDL_EVENT_WINDOW_RESIZED:
+            {
+                if (windowId == pSDLEvent->window.windowID && _onWindowResize != nullptr)
+                    _onWindowResize(Vector2i(pSDLEvent->window.data1, pSDLEvent->window.data2));
+
+                break;
+            }
+            case SDL_EVENT_WINDOW_FOCUS_GAINED:
+            {
+                if (windowId == pSDLEvent->window.windowID && _onWindowFocusChanged != nullptr)
+                    _onWindowFocusChanged(true);
+
+                break;
+            }
+            case SDL_EVENT_WINDOW_FOCUS_LOST:
+            {
+                if (windowId == pSDLEvent->window.windowID && _onWindowFocusChanged != nullptr)
+                    _onWindowFocusChanged(false);
+
+                break;
+            }
+            case SDL_EVENT_WINDOW_MOUSE_ENTER:
+            {
+                if (windowId == pSDLEvent->window.windowID && _onWindowCursorEnteredOrLeaved != nullptr)
+                    _onWindowCursorEnteredOrLeaved(true);
+
+                break;
+            }
+            case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+            {
+                if (windowId == pSDLEvent->window.windowID && _onWindowCursorEnteredOrLeaved != nullptr)
+                    _onWindowCursorEnteredOrLeaved(false);
+
+                break;
+            }
+            case SDL_EVENT_MOUSE_MOTION:
+            {
+                if (windowId == pSDLEvent->motion.windowID)
+                    _mousePos = Vector2f(pSDLEvent->motion.x, pSDLEvent->motion.y);
+
+                break;
+            }
+            case SDL_EVENT_MOUSE_WHEEL:
+            {
+                if (windowId == pSDLEvent->motion.windowID)
+                {
+                    _mouseWheel += Vector2f(
+                        -pSDLEvent->wheel.mouse_x,
+                        pSDLEvent->wheel.mouse_y);
                 }
             }
-        };
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+            {
+                if (windowId == pSDLEvent->button.windowID)
+                {
+                    auto buttonType = GetButtonFromSDL(pSDLEvent->button);
+                    OnEventButtonPressed(buttonType);
+                }
 
-        CollectConflict(type);
-
-        for (auto conflictType: tempSet)
-        {
-            if (GetServiceInternal(conflictType) != nullptr)
-                return false;
+                break;
+            }
+            case SDL_EVENT_MOUSE_BUTTON_UP:
+            {
+                if (windowId == pSDLEvent->button.windowID)
+                {
+                    auto buttonType = GetButtonFromSDL(pSDLEvent->button);
+                    OnEventButtonReleased(buttonType);
+                }
+                break;
+            }
+            default:
+                break;
         }
-
-        return true;
     }
 
-    const std::vector<Service*>& Window::GetServices()
+    void Window::OnEventButtonPressed(ButtonType button)
     {
-        return _servicesInCreationOrder;
+        if (_pressedButton.find(button) == _pressedButton.end())
+        {
+            _pressedButton.insert(button);
+            if (_onButtonPressed != nullptr)
+                _onButtonPressed(button);
+        }
+        else
+        {
+            if (_enableAutoRepeat && _onButtonPressed != nullptr)
+                _onButtonPressed(button);
+        }
     }
 
-    void Window::ClearService()
+    void Window::OnEventButtonReleased(ButtonType button)
     {
-        auto itr = _servicesInCreationOrder.rbegin();
-        for (; itr != _servicesInCreationOrder.rend(); ++itr)
-            delete *itr;
-
-        _servicesInCreationOrder.clear();
-        _serviceMap.clear();
+        if (auto itr = _pressedButton.find(button); itr != _pressedButton.end())
+        {
+            _pressedButton.erase(itr);
+            if (_onButtonReleased != nullptr)
+                _onButtonReleased(button);
+        }
     }
-    */
 }
 
 #endif
