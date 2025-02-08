@@ -99,11 +99,11 @@ namespace Ailurus
             case ButtonType::KeyboardCapital:       return "KeyboardCapital";
             case ButtonType::KeyboardLeftShift:     return "KeyboardLeftShift";
             case ButtonType::KeyboardLeftCtrl:      return "KeyboardLeftCtrl";
-            case ButtonType::KeyboardLeftWindows:   return "KeyboardLeftWindows";
+            case ButtonType::KeyboardLeftSuper:     return "KeyboardLeftSuper";
             case ButtonType::KeyboardLeftAlt:       return "KeyboardLeftAlt";
             case ButtonType::KeyboardSpace:         return "KeyboardSpace";
             case ButtonType::KeyboardRightAlt:      return "KeyboardRightAlt";
-            case ButtonType::KeyboardRightWindows:  return "KeyboardRightWindows";
+            case ButtonType::KeyboardRightSuper:    return "KeyboardRightSuper";
             case ButtonType::KeyboardRightCtrl:     return "KeyboardRightCtrl";
             case ButtonType::KeyboardRightShift:    return "KeyboardRightShift";
             case ButtonType::KeyboardEnter:         return "KeyboardEnter";
