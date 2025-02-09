@@ -5,7 +5,7 @@
 
 #include <array>
 
-namespace ImApp
+namespace Ailurus
 {
 
 inline static std::array<unsigned char, 273900> SourceJetBrainsMonoRegular =

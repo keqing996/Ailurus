@@ -123,6 +123,3 @@
 #else
 #    define AILURUS_FORCE_INLINE inline
 #endif
-
-/* Feature definition */
-#define AILURUS_FEAT_SUPPORT_WINDOW AILURUS_PLATFORM_WINDOWS || AILURUS_PLATFORM_MAC

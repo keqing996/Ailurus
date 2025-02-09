@@ -1,6 +1,4 @@
-#include "Ailurus/Window/InputEnum.h"
-
-#if AILURUS_FEAT_SUPPORT_WINDOW
+#include "Ailurus/Window/Input/InputEnum.h"
 
 namespace Ailurus
 {
@@ -144,4 +142,3 @@ namespace Ailurus
     }
 }
 
-#endif

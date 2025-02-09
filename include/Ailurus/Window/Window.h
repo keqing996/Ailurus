@@ -1,25 +1,27 @@
 #pragma once
 
-#include <unordered_set>
-
-#include "Ailurus/PlatformDefine.h"
-
-#if AILURUS_FEAT_SUPPORT_WINDOW
-
 #include <cstdint>
 #include <functional>
 #include <string>
-#include <optional>
+#include <memory>
 
-#include "WindowStyle.h"
-#include "InputEnum.h"
+#include "Input/Input.h"
+#include "ImGui/ImGui.h"
 #include "Ailurus/Math/Vector.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Renderer/Renderer.h"
 
 namespace Ailurus
 {
     class Window final: NonCopyable
     {
+    public:
+        struct Style
+        {
+            bool canResize = true;
+            bool haveBorder = true;
+        };
+
     public:
         Window();
         ~Window();
@@ -31,7 +33,7 @@ namespace Ailurus
         /// @param title Window title in UTF8.
         /// @param style Window style.
         /// @return Create success.
-        bool Create(int width, int height, const std::string& title, WindowStyle style);
+        bool Create(int width, int height, const std::string& title, Style style);
 
         /// Destroy window instance.
         void Destroy();
@@ -129,23 +131,13 @@ namespace Ailurus
         /// Called when cursor's visibility changes, true for shown and false for hided.
         void SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback);
 
-        bool IsButtonPressed(ButtonType key) const;
-        Vector2f GetMousePosition() const;
-        Vector2f GetMouseWheel() const;
+        const Input* GetInput() const;
 
-        bool GetIsAutoRepeat() const;
-        void SetIsAutoRepeat(bool autoRepeat);
-
-        void SetCallbackOnMouseMove(const std::function<void(Vector2f, Vector2f)>& fun);
-        void SetCallbackOnMouseWheel(const std::function<void(Vector2f)>& fun);
-        void SetCallbackOnButtonPressed(const std::function<void(ButtonType)>& fun);
-        void SetCallbackOnButtonReleased(const std::function<void(ButtonType)>& fun);
+        const ImGui* GetImGui() const;
 
     private:
         void EventLoop(bool* quitLoop);
         void HandleEvent(const void* pEvent, bool* quitLoop);
-        void OnEventButtonPressed(ButtonType button);
-        void OnEventButtonReleased(ButtonType button);
 
     private:
         // Window handle
@@ -155,29 +147,22 @@ namespace Ailurus
         bool _ignoreNextQuit = false;
 
         // Window callbacks
-        std::function<void()>                               _onWindowCreated = nullptr;
-        std::function<void(Vector2i)>                       _onWindowMoved = nullptr;
-        std::function<bool()>                               _onWindowTryToClose = nullptr;
-        std::function<void()>                               _onWindowClosed = nullptr;
-        std::function<void()>                               _onWindowPreDestroyed = nullptr;
-        std::function<void()>                               _onWindowPostDestroyed = nullptr;
-        std::function<void(Vector2i)>                       _onWindowResize = nullptr;
-        std::function<void(bool)>                           _onWindowFocusChanged = nullptr;
-        std::function<void(bool)>                           _onWindowCursorEnteredOrLeaved = nullptr;
-        std::function<void(bool)>                           _onWindowCursorVisibleChanged = nullptr;
+        std::function<void()>           _onWindowCreated = nullptr;
+        std::function<void(Vector2i)>   _onWindowMoved = nullptr;
+        std::function<bool()>           _onWindowTryToClose = nullptr;
+        std::function<void()>           _onWindowClosed = nullptr;
+        std::function<void()>           _onWindowPreDestroyed = nullptr;
+        std::function<void()>           _onWindowPostDestroyed = nullptr;
+        std::function<void(Vector2i)>   _onWindowResize = nullptr;
+        std::function<void(bool)>       _onWindowFocusChanged = nullptr;
+        std::function<void(bool)>       _onWindowCursorEnteredOrLeaved = nullptr;
+        std::function<void(bool)>       _onWindowCursorVisibleChanged = nullptr;
 
         // Input
-        Vector2f _mousePos;
-        Vector2f _mouseWheel;
+        std::unique_ptr<Input> _pInput = nullptr;
 
-        bool _enableAutoRepeat = true;
-        std::unordered_set<ButtonType> _pressedButton;
-
-        std::function<void(Vector2f, Vector2f)> _onMouseMove = nullptr;
-        std::function<void(Vector2f)> _onMouseWheel = nullptr;
-        std::function<void(ButtonType)> _onButtonPressed = nullptr;
-        std::function<void(ButtonType)> _onButtonReleased = nullptr;
+        // ImGui
+        std::unique_ptr<ImGui> _pImGui = nullptr;
     };
 }
 
-#endif

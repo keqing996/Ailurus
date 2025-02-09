@@ -1,9 +1,5 @@
 #pragma once
 
-#include "Ailurus/PlatformDefine.h"
-
-#if AILURUS_FEAT_SUPPORT_WINDOW
-
 namespace Ailurus
 {
     enum class ButtonType: int
@@ -109,4 +105,4 @@ namespace Ailurus
     };
 }
 
-#endif
+
