@@ -131,6 +131,8 @@ namespace Ailurus
         /// Called when cursor's visibility changes, true for shown and false for hided.
         void SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback);
 
+        void* GetSDLWindowPtr();
+
         const Input* GetInput() const;
 
         const ImGui* GetImGui() const;

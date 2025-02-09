@@ -1,14 +1,18 @@
 #include "Ailurus/Renderer/Renderer.h"
 
+#include <algorithm>
+
+#include "SDL3/SDL_vulkan.h"
+
 namespace Ailurus
 {
-    Renderer::Renderer(Window* pWindow, bool enableValidationLayer)
+    Renderer::Renderer(Window* pWindow, bool enableDebugReport, bool enableValidationLayer)
         : _pWindow(pWindow)
     {
         if (vulkanAvailable)
-            VulkanInitInstance();
+            VulkanInitInstance(enableDebugReport, enableValidationLayer);
 
-        if (vulkanAvailable)
+        if (vulkanAvailable && enableDebugReport)
             VulkanInitDebugReportCallbackExt();
 
         if (vulkanAvailable)
@@ -37,7 +41,7 @@ namespace Ailurus
     {
     }
 
-    void Renderer::VulkanInitInstance()
+    void Renderer::VulkanInitInstance(bool enableDebugReport, bool enableValidation)
     {
         std::vector<VkLayerProperties> layers;
         if (VulkanUtil::EnumerateInstanceLayerProperties(layers) != VK_SUCCESS)
@@ -48,30 +52,32 @@ namespace Ailurus
 
         // Validation layers
         std::vector<const char*> validationLayers;
-        for (const VkLayerProperties& layer : layers)
+        if (enableValidation)
         {
-            /* Add validation layer.
-            if (std::string_view(layer.layerName) == "VK_LAYER_LUNARG_standard_validation")
-                validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
-            else if (std::string_view(layer.layerName) == "VK_LAYER_LUNARG_monitor")
-                validationLayers.push_back("VK_LAYER_LUNARG_monitor");
-                */
+            for (const VkLayerProperties& layer : layers)
+            {
+                if (std::string_view(layer.layerName) == "VK_LAYER_LUNARG_standard_validation")
+                    validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+                else if (std::string_view(layer.layerName) == "VK_LAYER_LUNARG_monitor")
+                    validationLayers.push_back("VK_LAYER_LUNARG_monitor");
+            }
         }
 
-        // Platform required extensions
-        std::vector<const char*> requiredExtensions {
-            // Platform required extensions
-            VK_KHR_SURFACE_EXTENSION_NAME,
-            //VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-            VK_EXT_METAL_SURFACE_EXTENSION_NAME,
-            VK_MVK_MACOS_SURFACE_EXTENSION_NAME,
-            // Debug extension
-            VK_EXT_DEBUG_REPORT_EXTENSION_NAME
-        };
+        // Extensions
+        std::vector<const char*> requiredExtensions;
 
+        if (enableDebugReport)
+            requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+
+        uint32_t sdlExtensionCount = 0;
+        const char* const* sdl_extensions = SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount);
+        for (uint32_t n = 0; n < sdlExtensionCount; n++)
+            requiredExtensions.push_back(sdl_extensions[n]);
+
+        // Create instance
         VkApplicationInfo applicationInfo  = VkApplicationInfo();
         applicationInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        applicationInfo.pApplicationName   = "ImGui App";
+        applicationInfo.pApplicationName   = "Ailurus";
         applicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         applicationInfo.pEngineName        = "No Engine";
         applicationInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
@@ -111,12 +117,8 @@ namespace Ailurus
 
     void Renderer::VulkanInitSurface()
     {
-        VkMetalSurfaceCreateInfoEXT surfaceCreateInfo = VkMetalSurfaceCreateInfoEXT();
-        surfaceCreateInfo.sType     = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
-        surfaceCreateInfo.hinstance = GetModuleHandleW(nullptr);
-        surfaceCreateInfo.hwnd      = static_cast<HWND>(_pWindow->GetSystemHandle());
-
-        if (::vkCreateWin32SurfaceKHR(_vkInstance, &surfaceCreateInfo, nullptr, &_vkSurface) == VK_SUCCESS)
+        if (::SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(_pWindow->GetSDLWindowPtr()),
+            _vkInstance, nullptr, &_vkSurface) == VK_SUCCESS)
         {
             vulkanAvailable = false;
             return;
@@ -205,7 +207,6 @@ namespace Ailurus
                 }
             }
         }
-
     }
 
     void Renderer::VulkanInitLogicDevice()
@@ -329,11 +330,11 @@ namespace Ailurus
             return;
         }
 
-        auto [x, y] = _pWindow->GetSize();
-        _vkSwapChainExtent.width  = std::clamp(static_cast<uint32_t>(x),
+        Vector2i windowSize = _pWindow->GetSize();
+        _vkSwapChainExtent.width  = std::clamp(static_cast<uint32_t>(windowSize.x()),
                                            surfaceCapabilities.minImageExtent.width,
                                            surfaceCapabilities.maxImageExtent.width);
-        _vkSwapChainExtent.height = std::clamp(static_cast<uint32_t>(y),
+        _vkSwapChainExtent.height = std::clamp(static_cast<uint32_t>(windowSize.y()),
                                             surfaceCapabilities.minImageExtent.height,
                                             surfaceCapabilities.maxImageExtent.height);
 
@@ -365,7 +366,7 @@ namespace Ailurus
     }
     void Renderer::VulkanInitSwapChainImage()
     {
-        if (VulkanUtil::GetSwapchainImagesKHR(_vkLogicDevice, _vkSwapChain, _vkSwapChainImages) != VK_SUCCESS)
+        if (VulkanUtil::GetSwapChainImagesKHR(_vkLogicDevice, _vkSwapChain, _vkSwapChainImages) != VK_SUCCESS)
         {
             vulkanAvailable = false;
             return;

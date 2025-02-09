@@ -248,6 +248,11 @@ namespace Ailurus
         _onWindowCursorVisibleChanged = callback;
     }
 
+    void* Window::GetSDLWindowPtr()
+    {
+        return _pWindow;
+    }
+
     const Input* Window::GetInput() const
     {
         return _pInput.get();

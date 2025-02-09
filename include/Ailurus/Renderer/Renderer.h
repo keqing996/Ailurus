@@ -10,13 +10,14 @@ namespace Ailurus
     class Renderer
     {
     public:
-        Renderer(Window* pWindow, bool enableValidationLayer);
+        Renderer(Window* pWindow, bool enableDebugReport, bool enableValidationLayer);
         ~Renderer();
 
     private:
-        void VulkanInitInstance();
+        void VulkanInitInstance(bool enableDebugReport, bool enableValidation);
         void VulkanInitDebugReportCallbackExt();
         void VulkanInitSurface();
+        void VulkanInitPhysicsDevice();
         void VulkanInitDepthFormat();
         void VulkanInitLogicDevice();
         void VulkanInitSwapChainFormat();
