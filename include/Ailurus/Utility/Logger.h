@@ -1,8 +1,8 @@
 #pragma once
 
-#include <functional>
+#include <format>
 #include <string_view>
-#include <mutex>
+#include <string>
 
 namespace Ailurus
 {
@@ -23,28 +23,28 @@ namespace Ailurus
 
     public:
         static void SetFilterLevel(Level targetLevel);
-        static Level GetCurrentFilterLevel();
-        static void SetTreadSafe(bool treadSafe);
-        static bool GetTreadSafe();
-        static void SetLogger(const LogCallBack& pFunc);
 
         static void LogInfo(const std::string_view& message);
         static void LogWarn(const std::string_view& message);
         static void LogError(const std::string_view& message);
         static void Log(Level level, const std::string_view& message);
 
-        static void LogInfo(const std::string_view& tag, const std::string_view& message);
-        static void LogWarn(const std::string_view& tag, const std::string_view& message);
-        static void LogError(const std::string_view& tag, const std::string_view& message);
-        static void Log(Level level, const std::string_view& tag, const std::string_view& message);
+        template <typename... Args>
+        static void LogInfo(const std::string& fmt, Args&&... args)
+        {
+            LogInfo(std::format(fmt, std::forward<Args>(args)...));
+        }
 
-    private:
-        static void LogStd(Level level, const std::string_view& tag, const std::string_view& message);
+        template <typename... Args>
+        static void LogWarn(const std::string& fmt, Args&&... args)
+        {
+            LogInfo(std::format(fmt, std::forward<Args>(args)...));
+        }
 
-    private:
-        static Level _filterLevel;
-        static LogCallBack _logInfoCallVec;
-        static bool _isThreadSafe;
-        static std::mutex _mutex;
+        template <typename... Args>
+        static void LogError(const std::string& fmt, Args&&... args)
+        {
+            LogInfo(std::format(fmt, std::forward<Args>(args)...));
+        }
     };
 }
