@@ -9,6 +9,9 @@ set (SDL_STATIC ON) # static link sdl
 set (SDL_SHARED OFF)
 add_subdirectory(submodule/sdl)
 
+# spdlog
+add_subdirectory(submodule/spdlog)
+
 # Vulkan
 find_package(Vulkan REQUIRED)
 
@@ -32,7 +35,7 @@ add_library                 (${AILURUS_TARGET_NAME} STATIC ${AILURUS_SRC} ${AILU
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/)
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/) # for imgui source
-target_link_libraries       (${AILURUS_TARGET_NAME} PUBLIC SDL3-static Vulkan::Vulkan)
+target_link_libraries       (${AILURUS_TARGET_NAME} PUBLIC SDL3-static Vulkan::Vulkan spdlog)
 
 if (WIN32)
     target_link_libraries   (${AILURUS_TARGET_NAME} PRIVATE wsock32 ws2_32) # for socket
