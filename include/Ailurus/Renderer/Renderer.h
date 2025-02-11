@@ -23,8 +23,7 @@ namespace Ailurus
 
     private:
         void CreateInstance(bool enableValidation);
-
-        //void VulkanInitDebugReportCallbackExt();
+        void InitDebugReportCallbackExt();
         //void VulkanInitSurface();
         //void VulkanInitPhysicsDevice();
         //void VulkanInitDepthFormat();
@@ -38,7 +37,7 @@ namespace Ailurus
         GetWindowInstanceExtension _getWindowInstExtensionsCallback;
 
         vk::Instance                  _vkInstance = nullptr;
-        //VkDebugReportCallbackEXT    _vkDebugReportCallbackExt = nullptr;
+        vk::DebugReportCallbackEXT     _vkDebugReportCallbackExt = nullptr;
         //VkSurfaceKHR                _vkSurface = nullptr;
         //VkPhysicalDevice            _vkPhysicalDevice = nullptr;
         //VkFormat                    _vkDepthFormat = VK_FORMAT_UNDEFINED;

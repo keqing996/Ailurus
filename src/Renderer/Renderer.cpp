@@ -1,9 +1,25 @@
 #include <algorithm>
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Renderer/Renderer.h"
+#include "Ailurus/Renderer/Utility/VulkanUtil.h"
 
 namespace Ailurus
 {
+    static VKAPI_ATTR VkBool32 VKAPI_CALL
+        DebugReportExtCallback(
+            VkDebugReportFlagsEXT,
+            VkDebugReportObjectTypeEXT,
+            std::uint64_t,
+            std::size_t,
+            std::int32_t,
+            const char*,
+            const char* pMessage,
+            void*)
+    {
+        Logger::LogError(pMessage);
+        return VK_FALSE;
+    }
+
     Renderer::Renderer(const GetWindowSizeCallback& getWindowSize,
         const GetWindowInstanceExtension& getWindowInstExt,
         bool enableValidationLayer)
@@ -11,10 +27,19 @@ namespace Ailurus
         , _getWindowInstExtensionsCallback(getWindowInstExt)
     {
         CreateInstance(enableValidationLayer);
+
+        if (enableValidationLayer)
+            InitDebugReportCallbackExt();
     }
 
     Renderer::~Renderer()
     {
+        if (_vkDebugReportCallbackExt)
+        {
+            vk::DispatchLoaderDynamic dynamicLoader(_vkInstance, vkGetInstanceProcAddr);
+            _vkInstance.destroyDebugReportCallbackEXT(_vkDebugReportCallbackExt, nullptr, dynamicLoader);
+        }
+
         _vkInstance.destroy();
     }
 
@@ -74,24 +99,23 @@ namespace Ailurus
 
         _vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
     }
-/*
-    void Renderer::VulkanInitDebugReportCallbackExt()
+
+    void Renderer::InitDebugReportCallbackExt()
     {
-        VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo = VkDebugReportCallbackCreateInfoEXT();
-        debugReportCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-        debugReportCallbackCreateInfo.flags = VK_DEBUG_REPORT_WARNING_BIT_EXT
-            | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT
-            | VK_DEBUG_REPORT_ERROR_BIT_EXT;
-        debugReportCallbackCreateInfo.pfnCallback = VulkanUtil::DebugReportExtCallback;
+        auto flags = vk::DebugReportFlagBitsEXT::eWarning
+                    | vk::DebugReportFlagBitsEXT::ePerformanceWarning
+                    | vk::DebugReportFlagBitsEXT::eError;
 
-        // Create the debug callback
-        if (::vkCreateDebugReportCallbackEXT(_vkInstance, &debugReportCallbackCreateInfo, nullptr, &_vkDebugReportCallbackExt) != VK_SUCCESS)
-        {
-            vulkanAvailable = false;
-            return;
-        }
+        vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo;
+        debugReportCallbackCreateInfo.setFlags(flags)
+            .setPfnCallback(DebugReportExtCallback);
+
+        vk::DispatchLoaderDynamic dynamicLoader(_vkInstance, vkGetInstanceProcAddr);
+
+        _vkDebugReportCallbackExt = _vkInstance.createDebugReportCallbackEXT(debugReportCallbackCreateInfo,
+            nullptr, dynamicLoader);
     }
-
+    /*
     void Renderer::VulkanInitSurface()
     {
         if (::SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(_pWindow->GetSDLWindowPtr()),
