@@ -35,6 +35,8 @@ namespace Ailurus
             CreatDebugReportCallbackExt();
 
         CreateSurface(createSurface);
+
+        ChoosePhysicsDevice();
     }
 
     Renderer::~Renderer()
@@ -62,7 +64,7 @@ namespace Ailurus
             {
                 Logger::LogInfo("Supported layer properties:");
                 for (auto layerProperty: allLayerProperties)
-                    Logger::LogInfo("\t{}", layerProperty.layerName.data());
+                    Logger::LogInfo("    {}", layerProperty.layerName.data());
             }
 
             if (enableValidation)
@@ -81,7 +83,7 @@ namespace Ailurus
             auto allExt = vk::enumerateInstanceExtensionProperties();
             Logger::LogInfo("Supported extensions:");
             for (auto ext: allExt)
-                Logger::LogInfo("\t{}", ext.extensionName.data());
+                Logger::LogInfo("    {}", ext.extensionName.data());
         }
 
         // Extensions
@@ -128,56 +130,56 @@ namespace Ailurus
         _vkSurface = createSurface(_vkInstance);
     }
 
-    /*
-
-    void Renderer::VulkanInitPhysicsDevice()
+    void Renderer::ChoosePhysicsDevice()
     {
-        std::vector<VkPhysicalDevice> devices;
-        if (VulkanUtil::EnumeratePhysicalDevices(_vkInstance, devices) != VK_SUCCESS)
+        auto graphicCards = _vkInstance.enumeratePhysicalDevices();
+
+        if (VerboseLog)
         {
-            vulkanAvailable = false;
-            return;
+            Logger::LogInfo("All graphic cards:");
+            for (auto& graphicCard: graphicCards)
+            {
+                auto property = graphicCard.getProperties();
+                Logger::LogInfo("    {}", property.deviceName.data());
+            }
         }
 
-        VkPhysicalDeviceType lastFoundDeviceType = VK_PHYSICAL_DEVICE_TYPE_OTHER;
-        for (VkPhysicalDevice singleDevice : devices)
+        vk::PhysicalDeviceType lastFoundDeviceType = vk::PhysicalDeviceType::eOther;
+        for (auto& graphicCard: graphicCards)
         {
-            if (!VulkanUtil::IsPhysicalDeviceSupportSwapChain(singleDevice))
-                continue;
-
-            VkPhysicalDeviceProperties deviceProperties;
-            ::vkGetPhysicalDeviceProperties(singleDevice, &deviceProperties);
+            auto property = graphicCard.getProperties();
 
             // Discrete gpu found, no need to continue.
-            if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            if (property.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
             {
-                _vkPhysicalDevice = singleDevice;
+                _vkPhysicalDevice = graphicCard;
                 break;
             }
 
             // Integrated gpu found, record it and keep finding discrete gpu.
-            if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+            if (property.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
             {
-                _vkPhysicalDevice = singleDevice;
-                lastFoundDeviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+                _vkPhysicalDevice = graphicCard;
+                lastFoundDeviceType = vk::PhysicalDeviceType::eIntegratedGpu;
             }
 
             // Cpu found, record it only if that no gpu was found.
-            if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU
-                && lastFoundDeviceType != VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+            if (property.deviceType == vk::PhysicalDeviceType::eCpu
+                && lastFoundDeviceType != vk::PhysicalDeviceType::eIntegratedGpu)
             {
-                _vkPhysicalDevice = singleDevice;
-                lastFoundDeviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
+                _vkPhysicalDevice = graphicCard;
+                lastFoundDeviceType = vk::PhysicalDeviceType::eCpu;
             }
         }
 
-        if (!_vkPhysicalDevice)
+        if (VerboseLog)
         {
-            vulkanAvailable = false;
-            return;
+            auto property = _vkPhysicalDevice.getProperties();
+            Logger::LogInfo("Choose physical device: {}", property.deviceName.data());
         }
-
     }
+
+    /*
 
     void Renderer::VulkanInitDepthFormat()
     {

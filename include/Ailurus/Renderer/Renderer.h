@@ -29,7 +29,7 @@ namespace Ailurus
         void CreateInstance(bool enableValidation);
         void CreatDebugReportCallbackExt();
         void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
-        //void VulkanInitPhysicsDevice();
+        void ChoosePhysicsDevice();
         //void VulkanInitDepthFormat();
         //void VulkanInitLogicDevice();
         //void VulkanInitSwapChainFormat();
@@ -44,7 +44,7 @@ namespace Ailurus
         vk::Instance                  _vkInstance = nullptr;
         vk::DebugReportCallbackEXT     _vkDebugReportCallbackExt = nullptr;
         vk::SurfaceKHR                _vkSurface = nullptr;
-        //VkPhysicalDevice            _vkPhysicalDevice = nullptr;
+        vk::PhysicalDevice            _vkPhysicalDevice = nullptr;
         //VkFormat                    _vkDepthFormat = VK_FORMAT_UNDEFINED;
         //std::optional<uint32_t>     _vkQueueFamilyIndex;
         //VkDevice                    _vkLogicDevice = nullptr;

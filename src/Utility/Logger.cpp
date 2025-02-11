@@ -32,7 +32,7 @@ namespace Ailurus
     {
         static const char* DefaultLoggerName = "DefaultLogger";
 
-        spdlog::init_thread_pool(10240, 2);
+        spdlog::init_thread_pool(10240, 1);
 
 #if AILURUS_PLATFORM_ANDROID
         _defaultLogger = std::make_shared<spdlog::async_logger>(
@@ -44,7 +44,8 @@ namespace Ailurus
             spdlog::thread_pool(), spdlog::async_overflow_policy::block);
 #endif
 
-        _defaultLogger->set_pattern("[%Y-%m-%d %H:%M:%S] [%l] %v");
+        // _defaultLogger->set_pattern("[%Y-%m-%d %H:%M:%S] [%l] %v");
+        _defaultLogger->set_pattern("[%l] %v");
         _defaultLogger->flush_on(ToSpdLevel(Logger::Level::Error));
         _defaultLogger->set_level(ToSpdLevel(Logger::Level::Info));
 
