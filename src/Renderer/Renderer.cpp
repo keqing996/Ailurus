@@ -1,103 +1,80 @@
-#include "Ailurus/Renderer/Renderer.h"
-
 #include <algorithm>
-
-#include "SDL3/SDL_vulkan.h"
+#include "Ailurus/Utility/Logger.h"
+#include "Ailurus/Renderer/Renderer.h"
 
 namespace Ailurus
 {
-    Renderer::Renderer(Window* pWindow, bool enableDebugReport, bool enableValidationLayer)
-        : _pWindow(pWindow)
+    Renderer::Renderer(const GetWindowSizeCallback& getWindowSize,
+        const GetWindowInstanceExtension& getWindowInstExt,
+        bool enableValidationLayer)
+        : _getWindowSizeCallback(getWindowSize)
+        , _getWindowInstExtensionsCallback(getWindowInstExt)
     {
-        if (vulkanAvailable)
-            VulkanInitInstance(enableDebugReport, enableValidationLayer);
-
-        if (vulkanAvailable && enableDebugReport)
-            VulkanInitDebugReportCallbackExt();
-
-        if (vulkanAvailable)
-            VulkanInitSurface();
-
-        if (vulkanAvailable)
-            VulkanInitPhysicsDevice();
-
-        if (vulkanAvailable)
-            VulkanInitDepthFormat();
-
-        if (vulkanAvailable)
-            VulkanInitLogicDevice();
-
-        if (vulkanAvailable)
-            VulkanInitSwapChainFormat();
-
-        if (vulkanAvailable)
-            VulkanInitSwapChain();
-
-        if (vulkanAvailable)
-            VulkanInitSwapChainImage();
+        CreateInstance(enableValidationLayer);
     }
 
     Renderer::~Renderer()
     {
+        _vkInstance.destroy();
     }
 
-    void Renderer::VulkanInitInstance(bool enableDebugReport, bool enableValidation)
+    void Renderer::CreateInstance(bool enableValidation)
     {
-        std::vector<VkLayerProperties> layers;
-        if (VulkanUtil::EnumerateInstanceLayerProperties(layers) != VK_SUCCESS)
+        // Validation layers
+        static const char* VALIDATION_LAYER_NAME = "VK_LAYER_KHRONOS_validation";
+        std::vector<const char*> validationLayers;
         {
-            vulkanAvailable = false;
-            return;
+            auto allLayerProperties = vk::enumerateInstanceLayerProperties();
+
+            if (VerboseLog)
+            {
+                Logger::LogInfo("Supported layer properties:");
+                for (auto layerProperty: allLayerProperties)
+                    Logger::LogInfo("\t{}", layerProperty.layerName.data());
+            }
+
+            if (enableValidation)
+            {
+                for (auto layerProperty: allLayerProperties)
+                {
+                    if (layerProperty.layerName == VALIDATION_LAYER_NAME)
+                        validationLayers.push_back(VALIDATION_LAYER_NAME);
+                }
+            }
         }
 
-        // Validation layers
-        std::vector<const char*> validationLayers;
-        if (enableValidation)
+        // All extensions
+        if (VerboseLog)
         {
-            for (const VkLayerProperties& layer : layers)
-            {
-                if (std::string_view(layer.layerName) == "VK_LAYER_LUNARG_standard_validation")
-                    validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
-                else if (std::string_view(layer.layerName) == "VK_LAYER_LUNARG_monitor")
-                    validationLayers.push_back("VK_LAYER_LUNARG_monitor");
-            }
+            auto allExt = vk::enumerateInstanceExtensionProperties();
+            Logger::LogInfo("Supported extensions:");
+            for (auto ext: allExt)
+                Logger::LogInfo("\t{}", ext.extensionName.data());
         }
 
         // Extensions
         std::vector<const char*> requiredExtensions;
-
-        if (enableDebugReport)
+        if (enableValidation)
             requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 
-        uint32_t sdlExtensionCount = 0;
-        const char* const* sdl_extensions = SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount);
-        for (uint32_t n = 0; n < sdlExtensionCount; n++)
-            requiredExtensions.push_back(sdl_extensions[n]);
+        std::vector<const char*> windowInstExtensions = _getWindowInstExtensionsCallback();
+        requiredExtensions.insert(requiredExtensions.end(),
+            windowInstExtensions.begin(), windowInstExtensions.end());
 
         // Create instance
-        VkApplicationInfo applicationInfo  = VkApplicationInfo();
-        applicationInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        applicationInfo.pApplicationName   = "Ailurus";
-        applicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        applicationInfo.pEngineName        = "No Engine";
-        applicationInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-        applicationInfo.apiVersion         = VK_API_VERSION_1_0;
+        vk::ApplicationInfo applicationInfo;
+        applicationInfo.setPApplicationName("Ailurus")
+            .setApiVersion(VK_API_VERSION_1_3)
+            .setPEngineName("No Engine");
 
-        VkInstanceCreateInfo instanceCreateInfo    = VkInstanceCreateInfo();
-        instanceCreateInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        instanceCreateInfo.pApplicationInfo        = &applicationInfo;
-        instanceCreateInfo.enabledLayerCount       = static_cast<std::uint32_t>(validationLayers.size());
-        instanceCreateInfo.ppEnabledLayerNames     = validationLayers.data();
-        instanceCreateInfo.enabledExtensionCount   = static_cast<std::uint32_t>(requiredExtensions.size());
-        instanceCreateInfo.ppEnabledExtensionNames = requiredExtensions.data();
+        vk::InstanceCreateInfo instanceCreateInfo;
+        instanceCreateInfo.setPApplicationInfo(&applicationInfo)
+            .setPEnabledLayerNames(validationLayers)
+            .setPEnabledExtensionNames(requiredExtensions);
 
-        if (::vkCreateInstance(&instanceCreateInfo, nullptr, &_vkInstance) != VK_SUCCESS)
-        {
-            vulkanAvailable = false;
-            return;
-        }
+        _vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
     }
-
+/*
     void Renderer::VulkanInitDebugReportCallbackExt()
     {
         VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo = VkDebugReportCallbackCreateInfoEXT();
@@ -399,4 +376,6 @@ namespace Ailurus
         }
 
     }
+
+    */
 }

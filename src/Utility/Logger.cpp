@@ -24,11 +24,15 @@ namespace Ailurus
             case Logger::Level::Error:
                 return spdlog::level::level_enum::err;
         }
+
+        return spdlog::level::info;
     }
 
     static void InitLogger()
     {
         static const char* DefaultLoggerName = "DefaultLogger";
+
+        spdlog::init_thread_pool(10240, 2);
 
 #if AILURUS_PLATFORM_ANDROID
         _defaultLogger = std::make_shared<spdlog::async_logger>(
@@ -60,22 +64,42 @@ namespace Ailurus
         GetLogger()->set_level(ToSpdLevel(targetLevel));
     }
 
-    void Logger::LogInfo(const std::string_view& message)
+    void Logger::LogInfo(const char* message)
     {
         Log(Level::Info, message);
     }
 
-    void Logger::LogWarn(const std::string_view& message)
+    void Logger::LogWarn(const char* message)
     {
         Log(Level::Warning, message);
     }
 
-    void Logger::LogError(const std::string_view& message)
+    void Logger::LogError(const char* message)
     {
         Log(Level::Error, message);
     }
 
-    void Logger::Log(Level level, const std::string_view& message)
+    void Logger::Log(Level level, const char* message)
+    {
+        GetLogger()->log(ToSpdLevel(level), message);
+    }
+
+    void Logger::LogInfo(const std::string& message)
+    {
+        Log(Level::Info, message);
+    }
+
+    void Logger::LogWarn(const std::string& message)
+    {
+        Log(Level::Warning, message);
+    }
+
+    void Logger::LogError(const std::string& message)
+    {
+        Log(Level::Error, message);
+    }
+
+    void Logger::Log(Level level, const std::string& message)
     {
         GetLogger()->log(ToSpdLevel(level), message);
     }

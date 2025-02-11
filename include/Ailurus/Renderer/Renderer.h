@@ -1,44 +1,54 @@
 #pragma once
 
 #include <optional>
-#include <vulkan/vulkan.h>
-#include "Utility/VulkanUtil.h"
-#include "../Window/Window.h"
+#include <functional>
+#include <vulkan/vulkan.hpp>
+#include "../Math/Vector.hpp"
 
 namespace Ailurus
 {
     class Renderer
     {
+        using GetWindowSizeCallback = std::function<Vector2i()>;
+        using GetWindowInstanceExtension = std::function<std::vector<const char*>()>;
+
     public:
-        Renderer(Window* pWindow, bool enableDebugReport, bool enableValidationLayer);
+        Renderer(const GetWindowSizeCallback& getWindowSize,
+            const GetWindowInstanceExtension& getWindowInstExt,
+            bool enableValidationLayer);
         ~Renderer();
 
-    private:
-        void VulkanInitInstance(bool enableDebugReport, bool enableValidation);
-        void VulkanInitDebugReportCallbackExt();
-        void VulkanInitSurface();
-        void VulkanInitPhysicsDevice();
-        void VulkanInitDepthFormat();
-        void VulkanInitLogicDevice();
-        void VulkanInitSwapChainFormat();
-        void VulkanInitSwapChain();
-        void VulkanInitSwapChainImage();
+    public:
+        inline static bool VerboseLog = true;
 
     private:
-        Window* _pWindow;
-        bool vulkanAvailable = true;
-        VkInstance                  _vkInstance = nullptr;
-        VkDebugReportCallbackEXT    _vkDebugReportCallbackExt = nullptr;
-        VkSurfaceKHR                _vkSurface = nullptr;
-        VkPhysicalDevice            _vkPhysicalDevice = nullptr;
-        VkFormat                    _vkDepthFormat = VK_FORMAT_UNDEFINED;
-        std::optional<uint32_t>     _vkQueueFamilyIndex;
-        VkDevice                    _vkLogicDevice = nullptr;
-        VkQueue                     _vkQueue = nullptr;
-        VkSurfaceFormatKHR          _vkSwapChainFormat{};
-        VkExtent2D                  _vkSwapChainExtent{};
-        VkSwapchainKHR              _vkSwapChain{};
-        std::vector<VkImage>        _vkSwapChainImages;
-        std::vector<VkImageView>    _vkSwapChainImageViews;
+        void CreateInstance(bool enableValidation);
+
+        //void VulkanInitDebugReportCallbackExt();
+        //void VulkanInitSurface();
+        //void VulkanInitPhysicsDevice();
+        //void VulkanInitDepthFormat();
+        //void VulkanInitLogicDevice();
+        //void VulkanInitSwapChainFormat();
+        //void VulkanInitSwapChain();
+        //void VulkanInitSwapChainImage();
+
+    private:
+        GetWindowSizeCallback _getWindowSizeCallback;
+        GetWindowInstanceExtension _getWindowInstExtensionsCallback;
+
+        vk::Instance                  _vkInstance = nullptr;
+        //VkDebugReportCallbackEXT    _vkDebugReportCallbackExt = nullptr;
+        //VkSurfaceKHR                _vkSurface = nullptr;
+        //VkPhysicalDevice            _vkPhysicalDevice = nullptr;
+        //VkFormat                    _vkDepthFormat = VK_FORMAT_UNDEFINED;
+        //std::optional<uint32_t>     _vkQueueFamilyIndex;
+        //VkDevice                    _vkLogicDevice = nullptr;
+        //VkQueue                     _vkQueue = nullptr;
+        //VkSurfaceFormatKHR          _vkSwapChainFormat{};
+        //VkExtent2D                  _vkSwapChainExtent{};
+        //VkSwapchainKHR              _vkSwapChain{};
+        //std::vector<VkImage>        _vkSwapChainImages;
+        //std::vector<VkImageView>    _vkSwapChainImageViews;
     };
 }

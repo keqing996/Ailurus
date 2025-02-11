@@ -148,6 +148,9 @@ namespace Ailurus
         // Close request
         bool _ignoreNextQuit = false;
 
+        // Renderer
+        std::unique_ptr<Renderer> _pRenderer = nullptr;
+
         // Window callbacks
         std::function<void()>           _onWindowCreated = nullptr;
         std::function<void(Vector2i)>   _onWindowMoved = nullptr;

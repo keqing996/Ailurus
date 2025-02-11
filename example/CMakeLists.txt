@@ -24,7 +24,6 @@ if (WIN32)
     # Native window
     add_executable          (ailurus_example_window_create Window/ExampleWindowCreate.cpp)
     target_link_libraries   (ailurus_example_window_create PUBLIC ${AILURUS_TARGET_NAME})
-    set_target_properties   (ailurus_example_window_create PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 
     add_executable          (ailurus_example_window_msg_recv Window/ExampleMessageReceived.cpp)
     target_link_libraries   (ailurus_example_window_msg_recv PUBLIC ${AILURUS_TARGET_NAME})

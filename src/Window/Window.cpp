@@ -2,6 +2,7 @@
 
 #include <unordered_set>
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 
 namespace Ailurus
 {
@@ -23,11 +24,30 @@ namespace Ailurus
         if (style.canResize)
             flags |= SDL_WINDOW_RESIZABLE;
 
+        flags |= SDL_WINDOW_VULKAN;
+        flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY;
+        flags |= SDL_WINDOW_HIDDEN;
+
         _pWindow = SDL_CreateWindow(title.c_str(), width, height, flags);
         if (_pWindow == nullptr)
             return false;
 
         _pInput = std::make_unique<Input>(_pWindow);
+
+        SetWindowVisible(true);
+
+        _pRenderer = std::make_unique<Renderer>(
+            [this]() -> Vector2i { return GetSize(); },
+            [this]() -> std::vector<const char*>
+            {
+                std::vector<const char*> extensions;
+                uint32_t size;
+                char const* const* pExt = SDL_Vulkan_GetInstanceExtensions(&size);
+                for (uint32_t n = 0; n < size; n++)
+                    extensions.push_back(pExt[n]);
+                return extensions;
+            },
+            true);
 
         if (_onWindowCreated != nullptr)
             _onWindowCreated();
