@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Renderer/Renderer.h"
 #include "VerboseLogger/VerboseLogger.h"
@@ -46,10 +47,14 @@ namespace Ailurus
         VerboseLogger::Vulkan::LogChosenPhysicalCard(_vkPhysicalDevice, _vkSurface);
 
         CreateLogicDevice();
+
+        CreateSwapChain();
     }
 
     Renderer::~Renderer()
     {
+        _vkLogicDevice.destroySwapchainKHR(_vkSwapChain);
+
         _vkLogicDevice.destroy();
 
         _windowDestroySurfaceCallback(_vkInstance, _vkSurface);
@@ -89,12 +94,14 @@ namespace Ailurus
 
         // Create instance
         vk::ApplicationInfo applicationInfo;
-        applicationInfo.setPApplicationName("Ailurus")
+        applicationInfo
+            .setPApplicationName("Ailurus")
             .setApiVersion(VK_API_VERSION_1_3)
             .setPEngineName("No Engine");
 
         vk::InstanceCreateInfo instanceCreateInfo;
-        instanceCreateInfo.setPApplicationInfo(&applicationInfo)
+        instanceCreateInfo
+            .setPApplicationInfo(&applicationInfo)
             .setPEnabledLayerNames(validationLayers)
             .setPEnabledExtensionNames(requiredExtensions);
 
@@ -108,7 +115,8 @@ namespace Ailurus
                     | vk::DebugReportFlagBitsEXT::eError;
 
         vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo;
-        debugReportCallbackCreateInfo.setFlags(flags)
+        debugReportCallbackCreateInfo
+            .setFlags(flags)
             .setPfnCallback(DebugReportExtCallback);
 
         vk::DispatchLoaderDynamic dynamicLoader(_vkInstance, vkGetInstanceProcAddr);
@@ -157,27 +165,19 @@ namespace Ailurus
 
     void Renderer::CreateLogicDevice()
     {
-        struct QueueIndex
-        {
-            std::optional<uint32_t> graphicQueueIndex = std::nullopt;
-            std::optional<uint32_t> presentQueueIndex = std::nullopt;
-        };
-
-        QueueIndex queueIndex;
-
         // Find graphic queue and present queue.
         auto queueFamilyProperties = _vkPhysicalDevice.getQueueFamilyProperties();
         for (std::size_t i = 0; i < queueFamilyProperties.size(); ++i)
         {
             auto& property = queueFamilyProperties[i];
-            if ((property.queueFlags & vk::QueueFlagBits::eGraphics) && !queueIndex.graphicQueueIndex.has_value())
-                queueIndex.graphicQueueIndex = static_cast<uint32_t>(i);
+            if ((property.queueFlags & vk::QueueFlagBits::eGraphics) && !_queueIndex.graphicQueueIndex.has_value())
+                _queueIndex.graphicQueueIndex = static_cast<uint32_t>(i);
 
             bool canPresent = _vkPhysicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), _vkSurface);
-            if (canPresent && !queueIndex.presentQueueIndex.has_value())
-                queueIndex.presentQueueIndex = static_cast<uint32_t>(i);
+            if (canPresent && !_queueIndex.presentQueueIndex.has_value())
+                _queueIndex.presentQueueIndex = static_cast<uint32_t>(i);
 
-            if (queueIndex.graphicQueueIndex.has_value()&& queueIndex.presentQueueIndex.has_value())
+            if (_queueIndex.graphicQueueIndex.has_value()&& _queueIndex.presentQueueIndex.has_value())
                 break;
         }
 
@@ -187,14 +187,15 @@ namespace Ailurus
         queueCreateInfoList.emplace_back();
         queueCreateInfoList.back().setQueueCount(1)
             .setQueuePriorities(queuePriority)
-            .setQueueFamilyIndex(queueIndex.graphicQueueIndex.value());
+            .setQueueFamilyIndex(_queueIndex.graphicQueueIndex.value());
 
-        if (queueIndex.presentQueueIndex.value() != queueIndex.graphicQueueIndex.value())
+        if (_queueIndex.presentQueueIndex.value() != _queueIndex.graphicQueueIndex.value())
         {
             queueCreateInfoList.emplace_back();
-            queueCreateInfoList.back().setQueueCount(1)
+            queueCreateInfoList.back()
+                .setQueueCount(1)
                 .setQueuePriorities(queuePriority)
-                .setQueueFamilyIndex(queueIndex.presentQueueIndex.value());
+                .setQueueFamilyIndex(_queueIndex.presentQueueIndex.value());
         }
 
         // Features
@@ -205,13 +206,98 @@ namespace Ailurus
         const char* extensions[1] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
         vk::DeviceCreateInfo deviceCreateInfo;
-        deviceCreateInfo.setPEnabledExtensionNames(extensions)
+        deviceCreateInfo
+            .setPEnabledExtensionNames(extensions)
             .setQueueCreateInfos(queueCreateInfoList)
             .setPEnabledFeatures(&physicalDeviceFeatures);
 
         _vkLogicDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
-        _vkGraphicQueue = _vkLogicDevice.getQueue(queueIndex.graphicQueueIndex.value(), 0);
-        _vkPresentQueue = _vkLogicDevice.getQueue(queueIndex.presentQueueIndex.value(), 0);
+        _vkGraphicQueue = _vkLogicDevice.getQueue(_queueIndex.graphicQueueIndex.value(), 0);
+        _vkPresentQueue = _vkLogicDevice.getQueue(_queueIndex.presentQueueIndex.value(), 0);
+    }
+
+    void Renderer::CreateSwapChain()
+    {
+        struct SwapChainConfig
+        {
+            vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
+            vk::SurfaceFormatKHR surfaceFormat = vk::Format::eUndefined;
+            vk::Extent2D extent;
+            uint32_t imageCount;
+        };
+
+        SwapChainConfig swapChainConfig;
+
+        // Present mode
+        auto allPresentMode = _vkPhysicalDevice.getSurfacePresentModesKHR(_vkSurface);
+        for (const vk::PresentModeKHR& mode : allPresentMode)
+        {
+            if (mode == vk::PresentModeKHR::eMailbox)
+            {
+                swapChainConfig.presentMode = mode;
+                break;
+            }
+        }
+
+        // Format
+        auto surfaceFormats = _vkPhysicalDevice.getSurfaceFormatsKHR(_vkSurface);
+        for (auto& surfaceFormat: surfaceFormats)
+        {
+            if (surfaceFormat.format == vk::Format::eR8G8B8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+            {
+                swapChainConfig.surfaceFormat = surfaceFormat;
+                break;
+            }
+        }
+
+        if (swapChainConfig.surfaceFormat == vk::Format::eUndefined)
+        {
+            Logger::LogError("No suitable surface format (format R8G8B8SRGB & colorspace SRGB non-linear)");
+            swapChainConfig.surfaceFormat = surfaceFormats[0];
+        }
+
+        // Swap chain image count & size
+        Vector2i windowSize = _getWindowSizeCallback();
+        vk::SurfaceCapabilitiesKHR surfaceCapabilities = _vkPhysicalDevice.getSurfaceCapabilitiesKHR(_vkSurface);
+        swapChainConfig.imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
+        swapChainConfig.extent.width  = std::clamp(static_cast<uint32_t>(windowSize.x()),
+                                           surfaceCapabilities.minImageExtent.width,
+                                           surfaceCapabilities.maxImageExtent.width);
+        swapChainConfig.extent.height = std::clamp(static_cast<uint32_t>(windowSize.y()),
+                                            surfaceCapabilities.minImageExtent.height,
+                                            surfaceCapabilities.maxImageExtent.height);
+
+        // Create
+        vk::SwapchainCreateInfoKHR swapChainCreateInfo;
+        swapChainCreateInfo
+            .setSurface(_vkSurface) // target surface
+            .setImageArrayLayers(1) // not cube image
+            .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+            .setClipped(true)   // clipped when image's pixel outside of window
+            .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)  // No alpha blending when image output to window
+            .setMinImageCount(swapChainConfig.imageCount)
+            .setImageFormat(swapChainConfig.surfaceFormat.format)
+            .setImageColorSpace(swapChainConfig.surfaceFormat.colorSpace)
+            .setImageExtent(swapChainConfig.extent);
+
+        if (_queueIndex.graphicQueueIndex.value() == _queueIndex.presentQueueIndex.value())
+        {
+            swapChainCreateInfo
+                .setImageSharingMode(vk::SharingMode::eExclusive)
+                .setQueueFamilyIndices(_queueIndex.graphicQueueIndex.value());
+        }
+        else
+        {
+            std::array indices = {
+                _queueIndex.graphicQueueIndex.value(),
+                _queueIndex.presentQueueIndex.value()
+            };
+            swapChainCreateInfo
+                .setImageSharingMode(vk::SharingMode::eConcurrent)
+                .setQueueFamilyIndices(indices);
+        }
+
+        _vkSwapChain = _vkLogicDevice.createSwapchainKHR(swapChainCreateInfo);
     }
 
     /*
@@ -251,107 +337,6 @@ namespace Ailurus
         }
     }
 
-
-
-    void Renderer::VulkanInitSwapChainFormat()
-    {
-        std::vector<VkSurfaceFormatKHR> surfaceFormats;
-        if (VulkanUtil::GetPhysicalDeviceSurfaceFormatsKHR(_vkPhysicalDevice, _vkSurface, surfaceFormats) != VK_SUCCESS)
-        {
-            vulkanAvailable = false;
-            return;
-        }
-
-        if (surfaceFormats.size() == 1 && surfaceFormats[0].format == VK_FORMAT_UNDEFINED)
-        {
-            _vkSwapChainFormat.format     = VK_FORMAT_B8G8R8A8_UNORM;
-            _vkSwapChainFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-        }
-        else if (!surfaceFormats.empty())
-        {
-            for (const VkSurfaceFormatKHR& surfaceFormat : surfaceFormats)
-            {
-                if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM && surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-                {
-                    _vkSwapChainFormat.format     = VK_FORMAT_B8G8R8A8_UNORM;
-                    _vkSwapChainFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-                    break;
-                }
-            }
-
-            if (_vkSwapChainFormat.format == VK_FORMAT_UNDEFINED)
-                _vkSwapChainFormat = surfaceFormats[0];
-        }
-        else
-        {
-            vulkanAvailable = false;
-            return;
-        }
-
-    }
-
-    void Renderer::VulkanInitSwapChain()
-    {
-        std::vector<VkPresentModeKHR> presentModes;
-        if (VulkanUtil::GetPhysicalDeviceSurfacePresentModesKHR(_vkPhysicalDevice, _vkSurface, presentModes) != VK_SUCCESS)
-        {
-            vulkanAvailable = false;
-            return;
-        }
-
-        // mailbox > fifo
-        VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
-        for (const VkPresentModeKHR& mode : presentModes)
-        {
-            if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
-            {
-                presentMode = mode;
-                break;
-            }
-        }
-
-        // Swap chain image size
-        VkSurfaceCapabilitiesKHR surfaceCapabilities;
-        if (::vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_vkPhysicalDevice, _vkSurface, &surfaceCapabilities) != VK_SUCCESS)
-        {
-            vulkanAvailable = false;
-            return;
-        }
-
-        Vector2i windowSize = _pWindow->GetSize();
-        _vkSwapChainExtent.width  = std::clamp(static_cast<uint32_t>(windowSize.x()),
-                                           surfaceCapabilities.minImageExtent.width,
-                                           surfaceCapabilities.maxImageExtent.width);
-        _vkSwapChainExtent.height = std::clamp(static_cast<uint32_t>(windowSize.y()),
-                                            surfaceCapabilities.minImageExtent.height,
-                                            surfaceCapabilities.maxImageExtent.height);
-
-        // Default 2 images for swap chain
-        const auto imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
-
-        VkSwapchainCreateInfoKHR swapChainCreateInfo = VkSwapchainCreateInfoKHR();
-        swapChainCreateInfo.sType                    = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        swapChainCreateInfo.surface                  = _vkSurface;
-        swapChainCreateInfo.minImageCount            = imageCount;
-        swapChainCreateInfo.imageFormat              = _vkSwapChainFormat.format;
-        swapChainCreateInfo.imageColorSpace          = _vkSwapChainFormat.colorSpace;
-        swapChainCreateInfo.imageExtent              = _vkSwapChainExtent;
-        swapChainCreateInfo.imageArrayLayers         = 1;
-        swapChainCreateInfo.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        swapChainCreateInfo.imageSharingMode         = VK_SHARING_MODE_EXCLUSIVE;
-        swapChainCreateInfo.preTransform             = surfaceCapabilities.currentTransform;
-        swapChainCreateInfo.compositeAlpha           = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        swapChainCreateInfo.presentMode              = presentMode;
-        swapChainCreateInfo.clipped                  = VK_TRUE;
-        swapChainCreateInfo.oldSwapchain             = VK_NULL_HANDLE;
-
-        if (::vkCreateSwapchainKHR(_vkLogicDevice, &swapChainCreateInfo, nullptr, &_vkSwapChain) != VK_SUCCESS)
-        {
-            vulkanAvailable = false;
-            return;
-        }
-
-    }
     void Renderer::VulkanInitSwapChainImage()
     {
         if (VulkanUtil::GetSwapChainImagesKHR(_vkLogicDevice, _vkSwapChain, _vkSwapChainImages) != VK_SUCCESS)

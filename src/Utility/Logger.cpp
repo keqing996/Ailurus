@@ -45,7 +45,7 @@ namespace Ailurus
 #endif
 
         // _defaultLogger->set_pattern("[%Y-%m-%d %H:%M:%S] [%l] %v");
-        _defaultLogger->set_pattern("[%l] %v");
+        _defaultLogger->set_pattern("%^[%L] %v%$");
         _defaultLogger->flush_on(ToSpdLevel(Logger::Level::Error));
         _defaultLogger->set_level(ToSpdLevel(Logger::Level::Info));
 

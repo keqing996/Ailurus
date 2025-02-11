@@ -20,14 +20,22 @@ namespace Ailurus
             const WindowCreateSurfaceCallback& createSurface,
             const WindowDestroySurfaceCallback& destroySurface,
             bool enableValidationLayer);
+
         ~Renderer();
 
     private:
+        struct QueueIndex
+        {
+            std::optional<uint32_t> graphicQueueIndex = std::nullopt;
+            std::optional<uint32_t> presentQueueIndex = std::nullopt;
+        };
+
         void CreateInstance(bool enableValidation);
         void CreatDebugReportCallbackExt();
         void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
         void ChoosePhysicsDevice();
         void CreateLogicDevice();
+        void CreateSwapChain();
         //void VulkanInitDepthFormat();
 
         //void VulkanInitSwapChainFormat();
@@ -44,15 +52,16 @@ namespace Ailurus
         vk::SurfaceKHR                _vkSurface = nullptr;
         vk::PhysicalDevice            _vkPhysicalDevice = nullptr;
         vk::Device                    _vkLogicDevice = nullptr;
+        QueueIndex _queueIndex;
         vk::Queue   _vkGraphicQueue = nullptr;
         vk::Queue   _vkPresentQueue = nullptr;
+        vk::SwapchainKHR _vkSwapChain = nullptr;
 
         //VkFormat                    _vkDepthFormat = VK_FORMAT_UNDEFINED;
 
         //VkQueue                     _vkQueue = nullptr;
         //VkSurfaceFormatKHR          _vkSwapChainFormat{};
         //VkExtent2D                  _vkSwapChainExtent{};
-        //VkSwapchainKHR              _vkSwapChain{};
         //std::vector<VkImage>        _vkSwapChainImages;
         //std::vector<VkImageView>    _vkSwapChainImageViews;
     };
