@@ -1,5 +1,6 @@
 #include "Ailurus/Window/Window.h"
 
+#include <vulkan/vulkan.hpp>
 #include <unordered_set>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
@@ -46,6 +47,16 @@ namespace Ailurus
                 for (uint32_t n = 0; n < size; n++)
                     extensions.push_back(pExt[n]);
                 return extensions;
+            },
+            [this](const vk::Instance& instance) -> vk::SurfaceKHR
+            {
+                VkSurfaceKHR surface;
+                SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(_pWindow), instance, nullptr, &surface);
+                return surface;
+            },
+            [this](const vk::Instance& instance, const vk::SurfaceKHR& surface) -> void
+            {
+                SDL_Vulkan_DestroySurface(instance, surface, nullptr);
             },
             true);
 

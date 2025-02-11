@@ -22,18 +22,25 @@ namespace Ailurus
 
     Renderer::Renderer(const GetWindowSizeCallback& getWindowSize,
         const GetWindowInstanceExtension& getWindowInstExt,
+        const WindowCreateSurfaceCallback& createSurface,
+        const WindowDestroySurfaceCallback& destroySurface,
         bool enableValidationLayer)
         : _getWindowSizeCallback(getWindowSize)
         , _getWindowInstExtensionsCallback(getWindowInstExt)
+        , _windowDestroySurfaceCallback(destroySurface)
     {
         CreateInstance(enableValidationLayer);
 
         if (enableValidationLayer)
-            InitDebugReportCallbackExt();
+            CreatDebugReportCallbackExt();
+
+        CreateSurface(createSurface);
     }
 
     Renderer::~Renderer()
     {
+        _windowDestroySurfaceCallback(_vkInstance, _vkSurface);
+
         if (_vkDebugReportCallbackExt)
         {
             vk::DispatchLoaderDynamic dynamicLoader(_vkInstance, vkGetInstanceProcAddr);
@@ -100,7 +107,7 @@ namespace Ailurus
         _vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
     }
 
-    void Renderer::InitDebugReportCallbackExt()
+    void Renderer::CreatDebugReportCallbackExt()
     {
         auto flags = vk::DebugReportFlagBitsEXT::eWarning
                     | vk::DebugReportFlagBitsEXT::ePerformanceWarning
@@ -115,16 +122,13 @@ namespace Ailurus
         _vkDebugReportCallbackExt = _vkInstance.createDebugReportCallbackEXT(debugReportCallbackCreateInfo,
             nullptr, dynamicLoader);
     }
-    /*
-    void Renderer::VulkanInitSurface()
+
+    void Renderer::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
     {
-        if (::SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(_pWindow->GetSDLWindowPtr()),
-            _vkInstance, nullptr, &_vkSurface) == VK_SUCCESS)
-        {
-            vulkanAvailable = false;
-            return;
-        }
+        _vkSurface = createSurface(_vkInstance);
     }
+
+    /*
 
     void Renderer::VulkanInitPhysicsDevice()
     {

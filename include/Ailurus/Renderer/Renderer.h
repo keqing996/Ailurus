@@ -11,10 +11,14 @@ namespace Ailurus
     {
         using GetWindowSizeCallback = std::function<Vector2i()>;
         using GetWindowInstanceExtension = std::function<std::vector<const char*>()>;
+        using WindowCreateSurfaceCallback = std::function<vk::SurfaceKHR(const vk::Instance&)>;
+        using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
 
     public:
         Renderer(const GetWindowSizeCallback& getWindowSize,
             const GetWindowInstanceExtension& getWindowInstExt,
+            const WindowCreateSurfaceCallback& createSurface,
+            const WindowDestroySurfaceCallback& destroySurface,
             bool enableValidationLayer);
         ~Renderer();
 
@@ -23,8 +27,8 @@ namespace Ailurus
 
     private:
         void CreateInstance(bool enableValidation);
-        void InitDebugReportCallbackExt();
-        //void VulkanInitSurface();
+        void CreatDebugReportCallbackExt();
+        void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
         //void VulkanInitPhysicsDevice();
         //void VulkanInitDepthFormat();
         //void VulkanInitLogicDevice();
@@ -35,10 +39,11 @@ namespace Ailurus
     private:
         GetWindowSizeCallback _getWindowSizeCallback;
         GetWindowInstanceExtension _getWindowInstExtensionsCallback;
+        WindowDestroySurfaceCallback _windowDestroySurfaceCallback;
 
         vk::Instance                  _vkInstance = nullptr;
         vk::DebugReportCallbackEXT     _vkDebugReportCallbackExt = nullptr;
-        //VkSurfaceKHR                _vkSurface = nullptr;
+        vk::SurfaceKHR                _vkSurface = nullptr;
         //VkPhysicalDevice            _vkPhysicalDevice = nullptr;
         //VkFormat                    _vkDepthFormat = VK_FORMAT_UNDEFINED;
         //std::optional<uint32_t>     _vkQueueFamilyIndex;
