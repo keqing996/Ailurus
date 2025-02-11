@@ -1,7 +1,7 @@
 #include <algorithm>
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Renderer/Renderer.h"
-#include "Ailurus/Renderer/Utility/VulkanUtil.h"
+#include "VerboseLogger/VerboseLogger.h"
 
 namespace Ailurus
 {
@@ -29,6 +29,9 @@ namespace Ailurus
         , _getWindowInstExtensionsCallback(getWindowInstExt)
         , _windowDestroySurfaceCallback(destroySurface)
     {
+        VerboseLogger::Vulkan::LogInstanceLayerProperties();
+        VerboseLogger::Vulkan::LogInstanceExtensionProperties();
+
         CreateInstance(enableValidationLayer);
 
         if (enableValidationLayer)
@@ -36,11 +39,19 @@ namespace Ailurus
 
         CreateSurface(createSurface);
 
+        VerboseLogger::Vulkan::LogPhysicalCards(_vkInstance);
+
         ChoosePhysicsDevice();
+
+        VerboseLogger::Vulkan::LogChosenPhysicalCard(_vkPhysicalDevice, _vkSurface);
+
+        CreateLogicDevice();
     }
 
     Renderer::~Renderer()
     {
+        _vkLogicDevice.destroy();
+
         _windowDestroySurfaceCallback(_vkInstance, _vkSurface);
 
         if (_vkDebugReportCallbackExt)
@@ -57,33 +68,14 @@ namespace Ailurus
         // Validation layers
         static const char* VALIDATION_LAYER_NAME = "VK_LAYER_KHRONOS_validation";
         std::vector<const char*> validationLayers;
+        if (enableValidation)
         {
             auto allLayerProperties = vk::enumerateInstanceLayerProperties();
-
-            if (VerboseLog)
+            for (auto layerProperty: allLayerProperties)
             {
-                Logger::LogInfo("Supported layer properties:");
-                for (auto layerProperty: allLayerProperties)
-                    Logger::LogInfo("    {}", layerProperty.layerName.data());
+                if (layerProperty.layerName == VALIDATION_LAYER_NAME)
+                    validationLayers.push_back(VALIDATION_LAYER_NAME);
             }
-
-            if (enableValidation)
-            {
-                for (auto layerProperty: allLayerProperties)
-                {
-                    if (layerProperty.layerName == VALIDATION_LAYER_NAME)
-                        validationLayers.push_back(VALIDATION_LAYER_NAME);
-                }
-            }
-        }
-
-        // All extensions
-        if (VerboseLog)
-        {
-            auto allExt = vk::enumerateInstanceExtensionProperties();
-            Logger::LogInfo("Supported extensions:");
-            for (auto ext: allExt)
-                Logger::LogInfo("    {}", ext.extensionName.data());
         }
 
         // Extensions
@@ -134,16 +126,6 @@ namespace Ailurus
     {
         auto graphicCards = _vkInstance.enumeratePhysicalDevices();
 
-        if (VerboseLog)
-        {
-            Logger::LogInfo("All graphic cards:");
-            for (auto& graphicCard: graphicCards)
-            {
-                auto property = graphicCard.getProperties();
-                Logger::LogInfo("    {}", property.deviceName.data());
-            }
-        }
-
         vk::PhysicalDeviceType lastFoundDeviceType = vk::PhysicalDeviceType::eOther;
         for (auto& graphicCard: graphicCards)
         {
@@ -171,12 +153,65 @@ namespace Ailurus
                 lastFoundDeviceType = vk::PhysicalDeviceType::eCpu;
             }
         }
+    }
 
-        if (VerboseLog)
+    void Renderer::CreateLogicDevice()
+    {
+        struct QueueIndex
         {
-            auto property = _vkPhysicalDevice.getProperties();
-            Logger::LogInfo("Choose physical device: {}", property.deviceName.data());
+            std::optional<uint32_t> graphicQueueIndex = std::nullopt;
+            std::optional<uint32_t> presentQueueIndex = std::nullopt;
+        };
+
+        QueueIndex queueIndex;
+
+        // Find graphic queue and present queue.
+        auto queueFamilyProperties = _vkPhysicalDevice.getQueueFamilyProperties();
+        for (std::size_t i = 0; i < queueFamilyProperties.size(); ++i)
+        {
+            auto& property = queueFamilyProperties[i];
+            if ((property.queueFlags & vk::QueueFlagBits::eGraphics) && !queueIndex.graphicQueueIndex.has_value())
+                queueIndex.graphicQueueIndex = static_cast<uint32_t>(i);
+
+            bool canPresent = _vkPhysicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), _vkSurface);
+            if (canPresent && !queueIndex.presentQueueIndex.has_value())
+                queueIndex.presentQueueIndex = static_cast<uint32_t>(i);
+
+            if (queueIndex.graphicQueueIndex.has_value()&& queueIndex.presentQueueIndex.has_value())
+                break;
         }
+
+        // Queue create info
+        const float queuePriority = 1.0f;
+        std::vector<vk::DeviceQueueCreateInfo> queueCreateInfoList;
+        queueCreateInfoList.emplace_back();
+        queueCreateInfoList.back().setQueueCount(1)
+            .setQueuePriorities(queuePriority)
+            .setQueueFamilyIndex(queueIndex.graphicQueueIndex.value());
+
+        if (queueIndex.presentQueueIndex.value() != queueIndex.graphicQueueIndex.value())
+        {
+            queueCreateInfoList.emplace_back();
+            queueCreateInfoList.back().setQueueCount(1)
+                .setQueuePriorities(queuePriority)
+                .setQueueFamilyIndex(queueIndex.presentQueueIndex.value());
+        }
+
+        // Features
+        vk::PhysicalDeviceFeatures physicalDeviceFeatures;
+        physicalDeviceFeatures.setSamplerAnisotropy(true);
+
+        // Swap chain is required
+        const char* extensions[1] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
+        vk::DeviceCreateInfo deviceCreateInfo;
+        deviceCreateInfo.setPEnabledExtensionNames(extensions)
+            .setQueueCreateInfos(queueCreateInfoList)
+            .setPEnabledFeatures(&physicalDeviceFeatures);
+
+        _vkLogicDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
+        _vkGraphicQueue = _vkLogicDevice.getQueue(queueIndex.graphicQueueIndex.value(), 0);
+        _vkPresentQueue = _vkLogicDevice.getQueue(queueIndex.presentQueueIndex.value(), 0);
     }
 
     /*
@@ -216,61 +251,7 @@ namespace Ailurus
         }
     }
 
-    void Renderer::VulkanInitLogicDevice()
-    {
-        std::vector<VkQueueFamilyProperties> queueFamilyProperties;
-        VulkanUtil::GetPhysicalDeviceQueueFamilyProperties(_vkPhysicalDevice, queueFamilyProperties);
 
-        for (std::size_t i = 0; i < queueFamilyProperties.size(); ++i)
-        {
-            VkBool32 surfaceSupported = VK_FALSE;
-            ::vkGetPhysicalDeviceSurfaceSupportKHR(_vkPhysicalDevice, static_cast<uint32_t>(i), _vkSurface, &surfaceSupported);
-
-            if ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && surfaceSupported == VK_TRUE)
-            {
-                _vkQueueFamilyIndex = static_cast<uint32_t>(i);
-                break;
-            }
-        }
-
-        // Gpu only support compute, do not support graphic.
-        if (!_vkQueueFamilyIndex.has_value())
-        {
-            vulkanAvailable = false;
-            return;
-        }
-
-        const float queuePriority = 1.0f;
-
-        VkDeviceQueueCreateInfo deviceQueueCreateInfo = VkDeviceQueueCreateInfo();
-        deviceQueueCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        deviceQueueCreateInfo.queueCount              = 1;
-        deviceQueueCreateInfo.queueFamilyIndex        = _vkQueueFamilyIndex.value();
-        deviceQueueCreateInfo.pQueuePriorities        = &queuePriority;
-
-        // Swap chain is required
-        const char* extensions[1] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
-        // Anisotropic filtering
-        VkPhysicalDeviceFeatures physicalDeviceFeatures = VkPhysicalDeviceFeatures();
-        physicalDeviceFeatures.samplerAnisotropy        = VK_TRUE;
-
-        VkDeviceCreateInfo deviceCreateInfo      = VkDeviceCreateInfo();
-        deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        deviceCreateInfo.enabledExtensionCount   = 1;
-        deviceCreateInfo.ppEnabledExtensionNames = extensions;
-        deviceCreateInfo.queueCreateInfoCount    = 1;
-        deviceCreateInfo.pQueueCreateInfos       = &deviceQueueCreateInfo;
-        deviceCreateInfo.pEnabledFeatures        = &physicalDeviceFeatures;
-
-        if (::vkCreateDevice(_vkPhysicalDevice, &deviceCreateInfo, nullptr, &_vkLogicDevice) != VK_SUCCESS)
-        {
-            vulkanAvailable = false;
-            return;
-        }
-
-        ::vkGetDeviceQueue(_vkLogicDevice, *_vkQueueFamilyIndex, 0, &_vkQueue);
-    }
 
     void Renderer::VulkanInitSwapChainFormat()
     {

@@ -22,16 +22,14 @@ namespace Ailurus
             bool enableValidationLayer);
         ~Renderer();
 
-    public:
-        inline static bool VerboseLog = true;
-
     private:
         void CreateInstance(bool enableValidation);
         void CreatDebugReportCallbackExt();
         void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
         void ChoosePhysicsDevice();
+        void CreateLogicDevice();
         //void VulkanInitDepthFormat();
-        //void VulkanInitLogicDevice();
+
         //void VulkanInitSwapChainFormat();
         //void VulkanInitSwapChain();
         //void VulkanInitSwapChainImage();
@@ -45,9 +43,12 @@ namespace Ailurus
         vk::DebugReportCallbackEXT     _vkDebugReportCallbackExt = nullptr;
         vk::SurfaceKHR                _vkSurface = nullptr;
         vk::PhysicalDevice            _vkPhysicalDevice = nullptr;
+        vk::Device                    _vkLogicDevice = nullptr;
+        vk::Queue   _vkGraphicQueue = nullptr;
+        vk::Queue   _vkPresentQueue = nullptr;
+
         //VkFormat                    _vkDepthFormat = VK_FORMAT_UNDEFINED;
-        //std::optional<uint32_t>     _vkQueueFamilyIndex;
-        //VkDevice                    _vkLogicDevice = nullptr;
+
         //VkQueue                     _vkQueue = nullptr;
         //VkSurfaceFormatKHR          _vkSwapChainFormat{};
         //VkExtent2D                  _vkSwapChainExtent{};
