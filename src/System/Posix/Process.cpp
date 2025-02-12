@@ -1,5 +1,3 @@
-#include <sys/fcntl.h>
-
 #include "Ailurus/PlatformDefine.h"
 
 #if AILURUS_PLATFORM_SUPPORT_POSIX
@@ -13,6 +11,7 @@
 #include <optional>
 #include <fstream>
 #include <sstream>
+#include <sys/fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -82,17 +81,15 @@ namespace Ailurus
         return ::getpid();
     }
 
-    std::string Process::GetProcessName(Handle hProcess)
+    std::string Process::GetProcessName(int32_t pid)
     {
 #if AILURUS_PLATFORM_MAC
-        pid_t pid = static_cast<pid_t>(hProcess);
         char name[PROC_PIDPATHINFO_MAXSIZE] = {0};
         if (::proc_name(pid, name, sizeof(name)) <= 0)
             return "";
 
         return std::string(name);
 #else
-        pid_t pid = static_cast<pid_t>(hProcess);
         std::string proc_status_path = "/proc/" + std::to_string(pid) + "/status";
         std::ifstream status_file(proc_status_path);
 

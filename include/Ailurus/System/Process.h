@@ -2,6 +2,7 @@
 
 #include <string>
 #include <optional>
+#include <vector>
 
 namespace Ailurus
 {
@@ -25,7 +26,7 @@ namespace Ailurus
 
     public:
         static int32_t GetCurrentProcessId();
-        static std::string GetProcessName(Handle hProcess);
+        static std::string GetProcessName(int32_t pid);
         static std::optional<Process> Create(const std::string& exeName, const std::vector<std::string>& argv);
     };
 

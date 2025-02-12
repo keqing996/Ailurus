@@ -1,4 +1,5 @@
 #include "Ailurus/System/Process.h"
+#include "Ailurus/PlatformDefine.h"
 #include <iostream>
 #include <array>
 
@@ -12,7 +13,13 @@ int main()
     std::cout << std::endl;
 
     std::cout << "Start process: " << std::endl;
+
+#if AILURUS_PLATFORM_WINDOWS
+    auto subProcess = Ailurus::Process::Create("cmd.exe", {"/c", "dir", "/b"});
+#else
     auto subProcess = Ailurus::Process::Create("ls", {"-l", "-a"});
+#endif
+
     if (subProcess)
     {
         while (subProcess->IsRunning())
