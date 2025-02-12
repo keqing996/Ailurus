@@ -218,23 +218,13 @@ namespace Ailurus
 
     void Renderer::CreateSwapChain()
     {
-        struct SwapChainConfig
-        {
-            vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
-            vk::SurfaceFormatKHR surfaceFormat = vk::Format::eUndefined;
-            vk::Extent2D extent;
-            uint32_t imageCount;
-        };
-
-        SwapChainConfig swapChainConfig;
-
         // Present mode
         auto allPresentMode = _vkPhysicalDevice.getSurfacePresentModesKHR(_vkSurface);
         for (const vk::PresentModeKHR& mode : allPresentMode)
         {
             if (mode == vk::PresentModeKHR::eMailbox)
             {
-                swapChainConfig.presentMode = mode;
+                _swapChainConfig.presentMode = mode;
                 break;
             }
         }
@@ -245,25 +235,25 @@ namespace Ailurus
         {
             if (surfaceFormat.format == vk::Format::eR8G8B8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
             {
-                swapChainConfig.surfaceFormat = surfaceFormat;
+                _swapChainConfig.surfaceFormat = surfaceFormat;
                 break;
             }
         }
 
-        if (swapChainConfig.surfaceFormat == vk::Format::eUndefined)
+        if (_swapChainConfig.surfaceFormat == vk::Format::eUndefined)
         {
             Logger::LogError("No suitable surface format (format R8G8B8SRGB & colorspace SRGB non-linear)");
-            swapChainConfig.surfaceFormat = surfaceFormats[0];
+            _swapChainConfig.surfaceFormat = surfaceFormats[0];
         }
 
         // Swap chain image count & size
         Vector2i windowSize = _getWindowSizeCallback();
         vk::SurfaceCapabilitiesKHR surfaceCapabilities = _vkPhysicalDevice.getSurfaceCapabilitiesKHR(_vkSurface);
-        swapChainConfig.imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
-        swapChainConfig.extent.width  = std::clamp(static_cast<uint32_t>(windowSize.x()),
+        _swapChainConfig.imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
+        _swapChainConfig.extent.width  = std::clamp(static_cast<uint32_t>(windowSize.x()),
                                            surfaceCapabilities.minImageExtent.width,
                                            surfaceCapabilities.maxImageExtent.width);
-        swapChainConfig.extent.height = std::clamp(static_cast<uint32_t>(windowSize.y()),
+        _swapChainConfig.extent.height = std::clamp(static_cast<uint32_t>(windowSize.y()),
                                             surfaceCapabilities.minImageExtent.height,
                                             surfaceCapabilities.maxImageExtent.height);
 
@@ -275,10 +265,10 @@ namespace Ailurus
             .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
             .setClipped(true)   // clipped when image's pixel outside of window
             .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)  // No alpha blending when image output to window
-            .setMinImageCount(swapChainConfig.imageCount)
-            .setImageFormat(swapChainConfig.surfaceFormat.format)
-            .setImageColorSpace(swapChainConfig.surfaceFormat.colorSpace)
-            .setImageExtent(swapChainConfig.extent);
+            .setMinImageCount(_swapChainConfig.imageCount)
+            .setImageFormat(_swapChainConfig.surfaceFormat.format)
+            .setImageColorSpace(_swapChainConfig.surfaceFormat.colorSpace)
+            .setImageExtent(_swapChainConfig.extent);
 
         if (_queueIndex.graphicQueueIndex.value() == _queueIndex.presentQueueIndex.value())
         {
@@ -298,80 +288,29 @@ namespace Ailurus
         }
 
         _vkSwapChain = _vkLogicDevice.createSwapchainKHR(swapChainCreateInfo);
-    }
 
-    /*
-
-    void Renderer::VulkanInitDepthFormat()
-    {
-        VkFormatProperties formatProperties = VkFormatProperties();
-
-        ::vkGetPhysicalDeviceFormatProperties(_vkPhysicalDevice, VK_FORMAT_D24_UNORM_S8_UINT, &formatProperties);
-
-        if (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-        {
-            _vkDepthFormat = VK_FORMAT_D24_UNORM_S8_UINT;
-        }
-        else
-        {
-            ::vkGetPhysicalDeviceFormatProperties(_vkPhysicalDevice, VK_FORMAT_D32_SFLOAT_S8_UINT, &formatProperties);
-
-            if (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-            {
-                _vkDepthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
-            }
-            else
-            {
-                ::vkGetPhysicalDeviceFormatProperties(_vkPhysicalDevice, VK_FORMAT_D32_SFLOAT, &formatProperties);
-
-                if (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-                {
-                    _vkDepthFormat = VK_FORMAT_D32_SFLOAT;
-                }
-                else
-                {
-                    vulkanAvailable = false;
-                    return;
-                }
-            }
-        }
-    }
-
-    void Renderer::VulkanInitSwapChainImage()
-    {
-        if (VulkanUtil::GetSwapChainImagesKHR(_vkLogicDevice, _vkSwapChain, _vkSwapChainImages) != VK_SUCCESS)
-        {
-            vulkanAvailable = false;
-            return;
-        }
-
-        VkImageViewCreateInfo imageViewCreateInfo           = VkImageViewCreateInfo();
-        imageViewCreateInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewCreateInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-        imageViewCreateInfo.format                          = _vkSwapChainFormat.format;
-        imageViewCreateInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewCreateInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageViewCreateInfo.subresourceRange.baseMipLevel   = 0;
-        imageViewCreateInfo.subresourceRange.levelCount     = 1;
-        imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-        imageViewCreateInfo.subresourceRange.layerCount     = 1;
-
+        // Swap chain image & view
+        _vkSwapChainImages = _vkLogicDevice.getSwapchainImagesKHR(_vkSwapChain);
         _vkSwapChainImageViews.resize(_vkSwapChainImages.size());
-        for (std::size_t i = 0; i < _vkSwapChainImages.size(); ++i)
+        for (auto i = 0; i < _vkSwapChainImages.size(); i++)
         {
-            imageViewCreateInfo.image = _vkSwapChainImages[i];
+            vk::ImageSubresourceRange range;
+            range.setAspectMask(vk::ImageAspectFlagBits::eColor)
+                .setBaseMipLevel(0) // first mipmap level accessible to the view
+                .setLayerCount(1)   // number of mipmap levels (starting from baseMipLevel) accessible to the view
+                .setBaseArrayLayer(0) // first array layer accessible to the view
+                .setLayerCount(1); //number of array layers (starting from baseArrayLayer) accessible to the view
 
-            if (::vkCreateImageView(_vkLogicDevice, &imageViewCreateInfo, nullptr, &_vkSwapChainImageViews[i]) != VK_SUCCESS)
-            {
-                vulkanAvailable = false;
-                return;
-            }
+            vk::ImageViewCreateInfo imageViewCreateInfo;
+            imageViewCreateInfo
+                .setImage(_vkSwapChainImages[i])
+                .setViewType(vk::ImageViewType::e2D)
+                .setFormat(_swapChainConfig.surfaceFormat.format)
+                .setComponents(vk::ComponentMapping())
+                .setSubresourceRange(range);
+
+            _vkSwapChainImageViews[i] = _vkLogicDevice.createImageView(imageViewCreateInfo);
         }
 
     }
-
-    */
 }

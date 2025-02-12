@@ -30,17 +30,20 @@ namespace Ailurus
             std::optional<uint32_t> presentQueueIndex = std::nullopt;
         };
 
+        struct SwapChainConfig
+        {
+            vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
+            vk::SurfaceFormatKHR surfaceFormat = vk::Format::eUndefined;
+            vk::Extent2D extent;
+            uint32_t imageCount;
+        };
+
         void CreateInstance(bool enableValidation);
         void CreatDebugReportCallbackExt();
         void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
         void ChoosePhysicsDevice();
         void CreateLogicDevice();
         void CreateSwapChain();
-        //void VulkanInitDepthFormat();
-
-        //void VulkanInitSwapChainFormat();
-        //void VulkanInitSwapChain();
-        //void VulkanInitSwapChainImage();
 
     private:
         GetWindowSizeCallback _getWindowSizeCallback;
@@ -55,14 +58,10 @@ namespace Ailurus
         QueueIndex _queueIndex;
         vk::Queue   _vkGraphicQueue = nullptr;
         vk::Queue   _vkPresentQueue = nullptr;
+        SwapChainConfig _swapChainConfig;
         vk::SwapchainKHR _vkSwapChain = nullptr;
+        std::vector<vk::Image>        _vkSwapChainImages;
+        std::vector<vk::ImageView>    _vkSwapChainImageViews;
 
-        //VkFormat                    _vkDepthFormat = VK_FORMAT_UNDEFINED;
-
-        //VkQueue                     _vkQueue = nullptr;
-        //VkSurfaceFormatKHR          _vkSwapChainFormat{};
-        //VkExtent2D                  _vkSwapChainExtent{};
-        //std::vector<VkImage>        _vkSwapChainImages;
-        //std::vector<VkImageView>    _vkSwapChainImageViews;
     };
 }
