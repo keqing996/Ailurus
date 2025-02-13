@@ -9,7 +9,7 @@
 #include "ImGui/ImGui.h"
 #include "Ailurus/Math/Vector.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
-#include "Ailurus/Renderer/Renderer.h"
+#include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus
 {

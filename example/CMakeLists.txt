@@ -20,23 +20,38 @@ target_link_libraries   (ailurus_example_network_multi_tcp_echo_sever PUBLIC ${A
 add_executable          (ailurus_example_system ExampleSystem.cpp)
 target_link_libraries   (ailurus_example_system PUBLIC ${AILURUS_TARGET_NAME})
 
+# Native window
+add_executable          (ailurus_example_window_create Window/ExampleWindowCreate.cpp)
+target_link_libraries   (ailurus_example_window_create PUBLIC ${AILURUS_TARGET_NAME})
+
+add_executable          (ailurus_example_window_imgui Window/ExampleWindowImGui.cpp ../submodule/imgui/imgui_demo.cpp)
+target_link_libraries   (ailurus_example_window_imgui PUBLIC ${AILURUS_TARGET_NAME})
+
+add_executable          (ailurus_example_window_msg_recv Window/ExampleMessageReceived.cpp)
+target_link_libraries   (ailurus_example_window_msg_recv PUBLIC ${AILURUS_TARGET_NAME})
+
+add_executable          (ailurus_example_window_callback Window/ExampleWindowCallback.cpp)
+target_link_libraries   (ailurus_example_window_callback PUBLIC ${AILURUS_TARGET_NAME})
+
+add_executable          (ailurus_example_input_callback Window/ExampleInputCallback.cpp)
+target_link_libraries   (ailurus_example_input_callback PUBLIC ${AILURUS_TARGET_NAME})
+
+add_executable          (ailurus_example_window_triangle Window/ExampleWindowVulkanTriangle.cpp)
+target_link_libraries   (ailurus_example_window_triangle PUBLIC ${AILURUS_TARGET_NAME})
+add_custom_command(
+        TARGET ailurus_example_window_triangle POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_SOURCE_DIR}/Window/Shader/triangle.vert.spv"
+            "$<TARGET_FILE_DIR:ailurus_example_window_triangle>"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_SOURCE_DIR}/Window/Shader/triangle.frag.spv"
+            "$<TARGET_FILE_DIR:ailurus_example_window_triangle>"
+)
+
+add_executable          (ailurus_example_imgui Window/ExampleWindowImGui.cpp ../submodule/imgui/imgui_demo.cpp)
+target_link_libraries   (ailurus_example_imgui PUBLIC ${AILURUS_TARGET_NAME})
+
 if (WIN32)
-    # Native window
-    add_executable          (ailurus_example_window_create Window/ExampleWindowCreate.cpp)
-    target_link_libraries   (ailurus_example_window_create PUBLIC ${AILURUS_TARGET_NAME})
-
-    add_executable          (ailurus_example_window_msg_recv Window/ExampleMessageReceived.cpp)
-    target_link_libraries   (ailurus_example_window_msg_recv PUBLIC ${AILURUS_TARGET_NAME})
-
-    add_executable          (ailurus_example_window_callback Window/ExampleWindowCallback.cpp)
-    target_link_libraries   (ailurus_example_window_callback PUBLIC ${AILURUS_TARGET_NAME})
-
-    add_executable          (ailurus_example_input_callback Window/ExampleInputCallback.cpp)
-    target_link_libraries   (ailurus_example_input_callback PUBLIC ${AILURUS_TARGET_NAME})
-
-    add_executable          (ailurus_example_imgui_opengl Window/ExampleImGuiOpenGL.cpp ../submodule/imgui/imgui_demo.cpp)
-    target_link_libraries   (ailurus_example_imgui_opengl PUBLIC ${AILURUS_TARGET_NAME})
-
     # Console
     add_executable          (ailurus_example_console ExampleConsole.cpp)
     target_link_libraries   (ailurus_example_console PUBLIC ${AILURUS_TARGET_NAME})

@@ -1,51 +1,12 @@
 
+#include <algorithm>
+#include <stb/stb_image.h>
 #include "Ailurus/Utility/ScopeGuard.h"
 #include "Ailurus/Graphics/Image.h"
 
-#include <algorithm>
-
-#include "stb/stb_image.h"
-
 namespace Ailurus
 {
-    Image::Pixel::Pixel()
-        : Pixel(0, 0, 0, 0)
-    {
-    }
-
-    Image::Pixel::Pixel(uint32_t packColor)
-    {
-        auto pData = reinterpret_cast<std::uint8_t*>(&packColor);
-        r = pData[0];
-        g = pData[1];
-        b = pData[2];
-        a = pData[3];
-    }
-
-    Image::Pixel::Pixel(std::uint8_t red, std::uint8_t green, std::uint8_t blue)
-        : Pixel(red, green, blue, 255)
-    {
-    }
-
-    Image::Pixel::Pixel(std::uint8_t red, std::uint8_t green, std::uint8_t blue, std::uint8_t alpha)
-        : r(red), g(green), b(blue), a(alpha)
-    {
-    }
-
-    uint32_t Image::Pixel::Pack() const
-    {
-        uint32_t result;
-
-        uint8_t* pColor = reinterpret_cast<uint8_t*>(&result);
-        pColor[0] = r;
-        pColor[1] = g;
-        pColor[2] = b;
-        pColor[3] = a;
-
-        return result;
-    }
-
-    Image::Image(uint width, uint height, Pixel pixel)
+    Image::Image(uint width, uint height, Color pixel)
     {
         if (width == 0 || height == 0)
         {
@@ -117,16 +78,16 @@ namespace Ailurus
        return { _width, _height };
     }
 
-    Image::Pixel Image::GetPixel(uint x, uint y) const
+    Color Image::GetPixel(uint x, uint y) const
     {
         if (x >= _width || y >= _height)
             return {};
 
         auto pData = reinterpret_cast<const uint32_t*>(_data.data());
-        return pData[x + y * _width];
+        return Color(pData[x + y * _width]);
     }
 
-    void Image::SetPixel(uint x, uint y, Pixel pixel)
+    void Image::SetPixel(uint x, uint y, Color pixel)
     {
         if (x >= _width || y >= _height)
             return;
