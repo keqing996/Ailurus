@@ -9,38 +9,37 @@ set (SDL_STATIC ON) # static link sdl
 set (SDL_SHARED OFF)
 add_subdirectory(submodule/sdl)
 
+# spdlog
+add_subdirectory(submodule/spdlog)
+
+# Vulkan
+find_package(Vulkan REQUIRED)
+
 # Set output path
 set (LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/artifacts/${CMAKE_CXX_COMPILER_ID}/${CMAKE_BUILD_TYPE}/)
 
 # Source files
 file (GLOB_RECURSE AILURUS_SRC ./src/*.cpp)
 
-if (WIN32)
-    set (AILURUS_IMGUI_SRC
-            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_draw.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_tables.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_widgets.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_win32.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_dx11.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_opengl3.cpp
-            # ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/backends/imgui_impl_vulkan.cpp
-    )
-else ()
-    set (AILURUS_IMGUI_SRC )
-endif ()
+set (AILURUS_IMGUI_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_draw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_tables.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_widgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_sdl3.cpp
+)
 
 # Library
 add_library                 (${AILURUS_TARGET_NAME} STATIC ${AILURUS_SRC} ${AILURUS_IMGUI_SRC})
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/)
-target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/) # for imgui source
-target_link_libraries       (${AILURUS_TARGET_NAME} SDL3-static)
+target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/) # for imgui source
+target_link_libraries       (${AILURUS_TARGET_NAME} PUBLIC SDL3-static Vulkan::Vulkan spdlog)
 
 if (WIN32)
-    target_link_libraries   (${AILURUS_TARGET_NAME} wsock32 ws2_32) # for socket
-    target_link_libraries   (${AILURUS_TARGET_NAME} opengl32) # for windows opengl
-    target_link_libraries   (${AILURUS_TARGET_NAME} dwmapi) # to fix some 'DwmXXX' link errors under mingw
+    target_link_libraries   (${AILURUS_TARGET_NAME} PRIVATE wsock32 ws2_32) # for socket
+    target_link_libraries   (${AILURUS_TARGET_NAME} PRIVATE dwmapi) # to fix some 'DwmXXX' link errors under mingw
 endif ()
 
 # Test code

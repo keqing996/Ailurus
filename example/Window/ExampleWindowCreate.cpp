@@ -1,11 +1,10 @@
 
-#include <Windows.h>
-#include <Ailurus/Platform/Windows/Window/Window.h>
+#include <Ailurus/Window/Window.h>
 
-int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PWSTR lpCmdLine, int nCmdShow)
+int Main(int argc, char *argv[])
 {
     Ailurus::Window window;
-    window.Create(800, 600, "Test", Ailurus::WindowStyle::DefaultStyle());
+    window.Create(800, 600, "Test", Ailurus::Window::Style{});
     window.Loop(nullptr);
 
     return 0;
