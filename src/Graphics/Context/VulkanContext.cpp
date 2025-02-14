@@ -45,10 +45,25 @@ namespace Ailurus
         VerboseLogger::Vulkan::LogChosenPhysicalCard(_vkPhysicalDevice, _vkSurface);
 
         CreateLogicDevice();
+
+        CreateCommandPoolAndCommandBuffer();
+
+        CreateSemaphoresAndFences();
     }
 
     VulkanContext::~VulkanContext()
     {
+        for (auto sem: _imageAvailableSemaphores)
+            _vkLogicalDevice.destroySemaphore(sem);
+
+        for (auto sem: _renderFinishedSemaphores)
+            _vkLogicalDevice.destroySemaphore(sem);
+
+        for (auto fence: _inFlightFences)
+            _vkLogicalDevice.destroyFence(fence);
+
+        _vkLogicalDevice.destroyCommandPool(_vkGraphicCommandPool);
+
         _vkLogicalDevice.destroy();
 
         _windowDestroySurfaceCallback(_vkInstance, _vkSurface);
@@ -243,5 +258,39 @@ namespace Ailurus
         _vkLogicalDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
         _vkGraphicQueue = _vkLogicalDevice.getQueue(_queueIndex.graphicQueueIndex.value(), 0);
         _vkPresentQueue = _vkLogicalDevice.getQueue(_queueIndex.presentQueueIndex.value(), 0);
+    }
+
+    void VulkanContext::CreateCommandPoolAndCommandBuffer()
+    {
+        vk::CommandPoolCreateInfo poolInfo;
+        poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+            .setQueueFamilyIndex(_queueIndex.graphicQueueIndex.value());
+
+        _vkGraphicCommandPool = _vkLogicalDevice.createCommandPool(poolInfo);
+
+        vk::CommandBufferAllocateInfo allocInfo;
+        allocInfo.setCommandPool(_vkGraphicCommandPool)
+            .setLevel(vk::CommandBufferLevel::ePrimary)
+            .setCommandBufferCount(PARALLEL_FRAME_COUNT);
+
+        _vkCommandBuffers = _vkLogicalDevice.allocateCommandBuffers(allocInfo);
+    }
+
+    void VulkanContext::CreateSemaphoresAndFences()
+    {
+        vk::SemaphoreCreateInfo semaphoreInfo;
+
+        vk::FenceCreateInfo fenceInfo;
+        fenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
+
+        _imageAvailableSemaphores.clear();
+        _renderFinishedSemaphores.clear();
+        _inFlightFences.clear();
+        for (size_t i = 0; i < PARALLEL_FRAME_COUNT; i++)
+        {
+            _imageAvailableSemaphores.push_back(_vkLogicalDevice.createSemaphore(semaphoreInfo));
+            _renderFinishedSemaphores.push_back(_vkLogicalDevice.createSemaphore(semaphoreInfo));
+            _inFlightFences.push_back(_vkLogicalDevice.createFence(fenceInfo));
+        }
     }
 }

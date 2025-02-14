@@ -25,4 +25,9 @@ namespace Ailurus
         for (auto frameBuffer: _vkFrameBuffer)
             _pContext->GetLogicalDevice().destroyFramebuffer(frameBuffer);
     }
+
+    const std::vector<vk::Framebuffer>& BackBuffer::GetBackBuffers()
+    {
+        return _vkFrameBuffer;
+    }
 }

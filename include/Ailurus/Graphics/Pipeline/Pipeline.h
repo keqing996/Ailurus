@@ -15,7 +15,7 @@ namespace Ailurus
         ~Pipeline();
 
     public:
-        void AddShader(ShaderStage stage, Shader* pShader);
+        void AddShader(Shader* pShader);
         void GeneratePipeline();
 
     private:

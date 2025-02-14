@@ -32,12 +32,16 @@ namespace Ailurus
         vk::Queue GetGraphicQueue() const;
         vk::Queue GetPresentQueue() const;
 
+        inline static uint32_t PARALLEL_FRAME_COUNT = 2;
+
     private:
         void CreateInstance(bool enableValidation);
         void CreatDebugReportCallbackExt();
         void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
         void ChoosePhysicsDevice();
         void CreateLogicDevice();
+        void CreateCommandPoolAndCommandBuffer();
+        void CreateSemaphoresAndFences();
 
     private:
         GetWindowSizeCallback _getWindowSizeCallback;
@@ -52,5 +56,12 @@ namespace Ailurus
         QueueIndex _queueIndex;
         vk::Queue _vkGraphicQueue = nullptr;
         vk::Queue _vkPresentQueue = nullptr;
+
+        vk::CommandPool _vkGraphicCommandPool = nullptr;
+        std::vector<vk::CommandBuffer> _vkCommandBuffers;
+
+        std::vector<vk::Semaphore> _imageAvailableSemaphores;
+        std::vector<vk::Semaphore> _renderFinishedSemaphores;
+        std::vector<vk::Fence> _inFlightFences;
     };
 }

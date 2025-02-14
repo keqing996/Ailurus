@@ -15,9 +15,9 @@ namespace Ailurus
         _pContext->GetLogicalDevice().destroyPipeline(_vkPipeline);
     }
 
-    void Pipeline::AddShader(ShaderStage stage, Shader* pShader)
+    void Pipeline::AddShader(Shader* pShader)
     {
-        _shaderMap[stage] = pShader;
+        _shaderMap[pShader->GetStage()] = pShader;
     }
 
     void Pipeline::GeneratePipeline()
