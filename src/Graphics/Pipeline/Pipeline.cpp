@@ -3,16 +3,16 @@
 
 namespace Ailurus
 {
-    Pipeline::Pipeline(vk::Device logicDevice, vk::RenderPass pass)
-        : _vkLogicDevice(logicDevice)
-        , _vkRenderPass(pass)
+    Pipeline::Pipeline(const VulkanContext* pContext, const RenderPass* pRenderPass)
+        : _pContext(pContext)
+        , _pRenderPass(pRenderPass)
     {
     }
 
     Pipeline::~Pipeline()
     {
-        _vkLogicDevice.destroyPipelineLayout(_vkPipelineLayout);
-        _vkLogicDevice.destroyPipeline(_vkPipeline);
+        _pContext->GetLogicalDevice().destroyPipelineLayout(_vkPipelineLayout);
+        _pContext->GetLogicalDevice().destroyPipeline(_vkPipeline);
     }
 
     void Pipeline::AddShader(ShaderStage stage, Shader* pShader)
@@ -22,6 +22,8 @@ namespace Ailurus
 
     void Pipeline::GeneratePipeline()
     {
+        auto vkLogicDevice = _pContext->GetLogicalDevice();
+
         vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
         vertexInputInfo.setVertexBindingDescriptionCount(0)
             .setVertexAttributeDescriptionCount(0);
@@ -71,7 +73,7 @@ namespace Ailurus
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
         pipelineLayoutInfo.setSetLayouts(nullptr);
 
-        vk::PipelineLayout pipelineLayout = _vkLogicDevice.createPipelineLayout(pipelineLayoutInfo);
+        vk::PipelineLayout pipelineLayout = vkLogicDevice.createPipelineLayout(pipelineLayoutInfo);
 
         std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfoList;
         for (auto [stage, pShader]: _shaderMap)
@@ -90,15 +92,14 @@ namespace Ailurus
             .setPColorBlendState(&colorBlending)
             .setPDynamicState(&dynamicState)
             .setLayout(pipelineLayout)
-            .setRenderPass(_vkRenderPass)
+            .setRenderPass(_pRenderPass->GetRenderPass())
             .setSubpass(0)
             .setBasePipelineHandle(nullptr);
 
-        auto pipelineCreateResult = _vkLogicDevice.createGraphicsPipeline(nullptr, pipelineInfo);
+        auto pipelineCreateResult = vkLogicDevice.createGraphicsPipeline(nullptr, pipelineInfo);
         if (pipelineCreateResult.result == vk::Result::eSuccess)
             _vkPipeline = pipelineCreateResult.value;
         else
             Logger::LogError("Failed to create graphics pipeline");
         }
-    }
 }
