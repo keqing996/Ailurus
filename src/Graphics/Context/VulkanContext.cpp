@@ -132,6 +132,11 @@ namespace Ailurus
         return _inFlightFences;
     }
 
+    Vector2i VulkanContext::GetWindowSize() const
+    {
+        return _getWindowSizeCallback();
+    }
+
     void VulkanContext::CreateInstance(bool enableValidation)
     {
         // Validation layers

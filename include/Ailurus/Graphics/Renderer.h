@@ -32,7 +32,13 @@ namespace Ailurus
 
         void RecordCommand(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, vk::Framebuffer targetFrameBuffer);
 
+        void NeedRecreateSwapChain();
+
     private:
+        void RecreateSwapChain();
+
+    private:
+        bool _needRebuildSwapChain;
         uint32_t _currentFlight = 0;
 
         std::unique_ptr<VulkanContext> _pContext = nullptr;

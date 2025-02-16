@@ -1,6 +1,8 @@
 #include <array>
 #include "Ailurus/Graphics/Renderer.h"
 
+#include <Ailurus/Utility/Logger.h>
+
 namespace Ailurus
 {
     Renderer::Renderer(const GetWindowSizeCallback& getWindowSize, const GetWindowInstanceExtension& getWindowInstExt,
@@ -30,6 +32,9 @@ namespace Ailurus
 
     void Renderer::Render()
     {
+        if (_needRebuildSwapChain)
+            RecreateSwapChain();
+
         auto vkLogicalDevice = _pContext->GetLogicalDevice();
         auto imageAvailableSemaphores = _pContext->GetImageAvailableSemaphores();
         auto renderFinishSemaphores = _pContext->GetRenderFinishSemaphores();
@@ -42,22 +47,31 @@ namespace Ailurus
         auto vkPresentQueue = _pContext->GetPresentQueue();
         auto timeout = std::numeric_limits<uint64_t>::max();
 
-        auto waitFence = vkLogicalDevice.waitForFences(1, &vkFences[_currentFlight], true, timeout);
-        if (waitFence != vk::Result::eSuccess)
-            return;
-
-        auto resetFence = vkLogicalDevice.resetFences(1, &vkFences[_currentFlight]);
-        if (resetFence != vk::Result::eSuccess)
-            return;
-
         auto acquireImage = vkLogicalDevice.acquireNextImageKHR(vkSwapChain, timeout, imageAvailableSemaphores[_currentFlight]);
-        if (acquireImage.result != vk::Result::eSuccess)
+        if (acquireImage.result == vk::Result::eErrorOutOfDateKHR || acquireImage.result == vk::Result::eSuboptimalKHR)
+            _needRebuildSwapChain = true;
+
+        if (acquireImage.result == vk::Result::eErrorOutOfDateKHR)
             return;
+
+        if (acquireImage.result != vk::Result::eSuccess)
+        {
+            Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
+            return;
+        }
+
+        auto waitFence = vkLogicalDevice.waitForFences(vkFences[_currentFlight], true, timeout);
+        if (waitFence != vk::Result::eSuccess)
+        {
+            Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
+            return;
+        }
+
+        vkLogicalDevice.resetFences(vkFences[_currentFlight]);
 
         uint32_t imageIndex = acquireImage.value;
 
         auto vkCommandBuffer = vkCommandBuffers[_currentFlight];
-        vkCommandBuffer.reset();
         RecordCommand(vkCommandBuffer, vkRenderPass, vkBackBuffers[imageIndex]);
 
         std::array waitSemaphores = { imageAvailableSemaphores[_currentFlight] };
@@ -72,7 +86,10 @@ namespace Ailurus
 
         auto submit = vkGraphicsQueue.submit(1, &submitInfo, vkFences[_currentFlight]);
         if (submit != vk::Result::eSuccess)
+        {
+            Logger::LogError("Fail to submit command buffer, result = {}", static_cast<int>(submit));
             return;
+        }
 
         vk::PresentInfoKHR presentInfo;
         presentInfo.setWaitSemaphores(signalSemaphores)
@@ -80,8 +97,17 @@ namespace Ailurus
                 .setImageIndices(imageIndex);
 
         auto present = vkPresentQueue.presentKHR(presentInfo);
-        if (present != vk::Result::eSuccess)
+        if (present == vk::Result::eErrorOutOfDateKHR || present == vk::Result::eSuboptimalKHR)
+            _needRebuildSwapChain = true;
+
+        if (present == vk::Result::eErrorOutOfDateKHR)
             return;
+
+        if (present != vk::Result::eSuccess)
+        {
+            Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
+            return;
+        }
 
         _currentFlight = (_currentFlight + 1) % VulkanContext::PARALLEL_FRAME_COUNT;
     }
@@ -89,9 +115,13 @@ namespace Ailurus
     void Renderer::RecordCommand(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass,
         vk::Framebuffer targetFrameBuffer)
     {
+        commandBuffer.reset();
+
         auto extent = _pSwapChain->GetSwapChainConfig().extent;
 
         vk::CommandBufferBeginInfo beginInfo;
+        beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
         commandBuffer.begin(beginInfo);
         {
             vk::ClearValue clearColor({0.0f, 0.0f, 0.0f, 1.0f});
@@ -118,5 +148,24 @@ namespace Ailurus
             commandBuffer.endRenderPass();
         }
         commandBuffer.end();
+    }
+
+    void Renderer::NeedRecreateSwapChain()
+    {
+        _needRebuildSwapChain = true;
+    }
+
+    void Renderer::RecreateSwapChain()
+    {
+        _pContext->GetLogicalDevice().waitIdle();
+
+        _pBackBuffer.reset();
+        _pSwapChain.reset();
+
+        auto windowSize = _pContext->GetWindowSize();
+        _pSwapChain = SwapChain::Create(_pContext.get(), windowSize.x(), windowSize.y());
+        _pBackBuffer = std::make_unique<BackBuffer>(_pContext.get(), _pSwapChain.get(), _pRenderPass.get());
+
+        _needRebuildSwapChain = false;
     }
 }

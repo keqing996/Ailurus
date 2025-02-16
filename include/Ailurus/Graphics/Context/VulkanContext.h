@@ -35,6 +35,7 @@ namespace Ailurus
         const std::vector<vk::Semaphore>& GetImageAvailableSemaphores() const;
         const std::vector<vk::Semaphore>& GetRenderFinishSemaphores() const;
         const std::vector<vk::Fence>& GetFences() const;
+        Vector2i GetWindowSize() const;
 
         inline static uint32_t PARALLEL_FRAME_COUNT = 2;
 

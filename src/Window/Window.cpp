@@ -1,7 +1,6 @@
 #include "Ailurus/Window/Window.h"
 
 #include <vulkan/vulkan.hpp>
-#include <unordered_set>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
@@ -364,6 +363,9 @@ namespace Ailurus
             }
             case SDL_EVENT_WINDOW_RESIZED:
             {
+                if (_pRenderer)
+                    _pRenderer->NeedRecreateSwapChain();
+
                 if (windowId == pSDLEvent->window.windowID && _onWindowResize != nullptr)
                     _onWindowResize(Vector2i(pSDLEvent->window.data1, pSDLEvent->window.data2));
 
