@@ -73,6 +73,7 @@ namespace Ailurus
             if (_onWindowPreDestroyed)
                 _onWindowPreDestroyed();
 
+            _pRenderer = nullptr;
             _pInput = nullptr;
             _pImGui = nullptr;
 
@@ -102,6 +103,9 @@ namespace Ailurus
 
             if (loopFunction != nullptr)
                 loopFunction();
+
+            if (_pRenderer)
+                _pRenderer->Render();
         }
 
         Destroy();

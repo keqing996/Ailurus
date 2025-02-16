@@ -17,6 +17,7 @@ namespace Ailurus
     public:
         void AddShader(Shader* pShader);
         void GeneratePipeline();
+        vk::Pipeline GetPipeline() const;
 
     private:
         const VulkanContext* _pContext;

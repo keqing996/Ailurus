@@ -40,7 +40,7 @@ namespace Ailurus
     std::unique_ptr<Shader> Shader::Create(const VulkanContext* pContext, ShaderStage stage, const char* binaryData,
         size_t size)
     {
-        return std::make_unique<Shader>(pContext, stage, binaryData, size);
+        return std::unique_ptr<Shader>(new Shader(pContext, stage, binaryData, size));
     }
 
     Shader::Shader(const VulkanContext* pContext, ShaderStage stage, const char* binaryData, size_t size)

@@ -112,6 +112,26 @@ namespace Ailurus
         return _vkPresentQueue;
     }
 
+    const std::vector<vk::CommandBuffer>& VulkanContext::GetCommandBuffers() const
+    {
+        return _vkCommandBuffers;
+    }
+
+    const std::vector<vk::Semaphore>& VulkanContext::GetImageAvailableSemaphores() const
+    {
+        return _imageAvailableSemaphores;
+    }
+
+    const std::vector<vk::Semaphore>& VulkanContext::GetRenderFinishSemaphores() const
+    {
+        return _renderFinishedSemaphores;
+    }
+
+    const std::vector<vk::Fence>& VulkanContext::GetFences() const
+    {
+        return _inFlightFences;
+    }
+
     void VulkanContext::CreateInstance(bool enableValidation)
     {
         // Validation layers

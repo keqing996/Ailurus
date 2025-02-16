@@ -99,7 +99,7 @@ enum class EnumName : int                                       \
     __VA_ARGS__                                                 \
 };                                                              \
                                                                 \
-template<>                                                      \
+template<> inline                                               \
 constexpr int Ailurus::_internal::EnumSize<EnumName>()          \
 {                                                               \
     enum EnumName { __VA_ARGS__ };                              \
@@ -107,7 +107,7 @@ constexpr int Ailurus::_internal::EnumSize<EnumName>()          \
     return sizeof(enumArray) / sizeof(enumArray[0]);            \
 }                                                               \
                                                                 \
-template<>                                                      \
+template<> inline                                               \
 std::string Ailurus::_internal::GetEnumStringValues<EnumName>() \
 {                                                               \
     return #__VA_ARGS__;                                        \

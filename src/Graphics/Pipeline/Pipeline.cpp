@@ -101,5 +101,10 @@ namespace Ailurus
             _vkPipeline = pipelineCreateResult.value;
         else
             Logger::LogError("Failed to create graphics pipeline");
-        }
+    }
+
+    vk::Pipeline Pipeline::GetPipeline() const
+    {
+        return _vkPipeline;
+    }
 }

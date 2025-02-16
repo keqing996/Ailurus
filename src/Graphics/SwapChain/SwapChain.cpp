@@ -72,7 +72,7 @@ namespace Ailurus
                                             surfaceCapabilities.minImageExtent.height,
                                             surfaceCapabilities.maxImageExtent.height);
 
-        return std::make_unique<SwapChain>(pContext, config);
+        return std::unique_ptr<SwapChain>(new SwapChain(pContext, config));
     }
 
     SwapChain::SwapChain(const VulkanContext* pContext, SwapChainConfig config)

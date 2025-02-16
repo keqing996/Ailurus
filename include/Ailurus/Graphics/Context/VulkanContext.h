@@ -31,6 +31,10 @@ namespace Ailurus
         const QueueIndex& GetQueueIndex() const;
         vk::Queue GetGraphicQueue() const;
         vk::Queue GetPresentQueue() const;
+        const std::vector<vk::CommandBuffer>& GetCommandBuffers() const;
+        const std::vector<vk::Semaphore>& GetImageAvailableSemaphores() const;
+        const std::vector<vk::Semaphore>& GetRenderFinishSemaphores() const;
+        const std::vector<vk::Fence>& GetFences() const;
 
         inline static uint32_t PARALLEL_FRAME_COUNT = 2;
 

@@ -51,6 +51,6 @@ namespace Ailurus
 
     std::unique_ptr<RenderPass> RenderPass::Create(const VulkanContext* pContext, const SwapChain* pSwapChain)
     {
-        return std::make_unique<RenderPass>(pContext, pSwapChain);
+        return std::unique_ptr<RenderPass>(new RenderPass(pContext, pSwapChain));
     }
 }

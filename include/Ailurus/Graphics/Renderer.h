@@ -24,30 +24,17 @@ namespace Ailurus
                  const GetWindowInstanceExtension& getWindowInstExt,
                  const WindowCreateSurfaceCallback& createSurface,
                  const WindowDestroySurfaceCallback& destroySurface,
-                 bool enableValidationLayer)
-        {
-            _pContext = std::make_unique<VulkanContext>(getWindowSize, getWindowInstExt,
-                                                        createSurface, destroySurface, enableValidationLayer);
+                 bool enableValidationLayer);
 
-            Vector2i windowSize = getWindowSize();
-            _pSwapChain = SwapChain::Create(_pContext.get(), windowSize.x(), windowSize.y());
-            _pRenderPass = RenderPass::Create(_pContext.get(), _pSwapChain.get());
-            _pBackBuffer = std::make_unique<BackBuffer>(_pContext.get(), _pSwapChain.get(), _pRenderPass.get());
+        ~Renderer();
 
-            _pVertShader = Shader::Create(_pContext.get(), ShaderStage::Vertex, "./triangle.vert.spv");
-            _pFragShader = Shader::Create(_pContext.get(), ShaderStage::Fragment, "./triangle.frag.spv");
+        void Render();
 
-            _pPipeline = std::make_unique<Pipeline>(_pContext.get(), _pRenderPass.get());
-            _pPipeline->AddShader(_pVertShader.get());
-            _pPipeline->AddShader(_pFragShader.get());
-            _pPipeline->GeneratePipeline();
-        }
-
-        ~Renderer()
-        {
-        }
+        void RecordCommand(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, vk::Framebuffer targetFrameBuffer);
 
     private:
+        uint32_t _currentFlight = 0;
+
         std::unique_ptr<VulkanContext> _pContext = nullptr;
         std::unique_ptr<SwapChain> _pSwapChain = nullptr;
         std::unique_ptr<RenderPass> _pRenderPass = nullptr;
