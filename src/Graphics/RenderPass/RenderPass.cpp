@@ -1,14 +1,10 @@
 #include "Ailurus/Graphics/RenderPass/RenderPass.h"
+#include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus
 {
-    vk::RenderPass RenderPass::GetRenderPass() const
-    {
-        return _vkRenderPass;
-    }
-
-    RenderPass::RenderPass(const VulkanContext* pContext, const SwapChain* pSwapChain)
-        : _pContext(pContext)
+    RenderPass::RenderPass(const Renderer* pRenderer, const SwapChain* pSwapChain)
+        : _pRenderer(pRenderer)
     {
         vk::AttachmentDescription colorAttachment;
         colorAttachment.setFormat(pSwapChain->GetSwapChainConfig().surfaceFormat.format)
@@ -41,16 +37,16 @@ namespace Ailurus
             .setSubpasses(subpass)
             .setDependencies(dependency);
 
-        _vkRenderPass = _pContext->GetLogicalDevice().createRenderPass(renderPassInfo);
+        _vkRenderPass = _pRenderer->GetLogicalDevice().createRenderPass(renderPassInfo);
     }
 
     RenderPass::~RenderPass()
     {
-        _pContext->GetLogicalDevice().destroyRenderPass(_vkRenderPass);
+        _pRenderer->GetLogicalDevice().destroyRenderPass(_vkRenderPass);
     }
 
-    std::unique_ptr<RenderPass> RenderPass::Create(const VulkanContext* pContext, const SwapChain* pSwapChain)
+    vk::RenderPass RenderPass::GetRenderPass() const
     {
-        return std::unique_ptr<RenderPass>(new RenderPass(pContext, pSwapChain));
+        return _vkRenderPass;
     }
 }

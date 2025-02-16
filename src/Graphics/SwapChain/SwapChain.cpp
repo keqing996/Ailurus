@@ -1,38 +1,16 @@
 #include "Ailurus/Graphics/SwapChain/SwapChain.h"
 #include "Ailurus/Utility/Logger.h"
+#include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus
 {
-    SwapChain::~SwapChain()
+    SwapChain::SwapChain(const Renderer* pRenderer, int windowWidth, int windowHeight)
+        : _pRenderer(pRenderer)
     {
-        _pContext->GetLogicalDevice().destroySwapchainKHR(_vkSwapChain);
-    }
-
-    const SwapChainConfig& SwapChain::GetSwapChainConfig() const
-    {
-        return _swapChainConfig;
-    }
-
-    const vk::SwapchainKHR& SwapChain::GetSwapChain() const
-    {
-        return _vkSwapChain;
-    }
-
-    const std::vector<vk::Image>& SwapChain::GetImages() const
-    {
-        return _vkSwapChainImages;
-    }
-
-    const std::vector<vk::ImageView>& SwapChain::GetImageViews() const
-    {
-        return _vkSwapChainImageViews;
-    }
-
-    std::unique_ptr<SwapChain> SwapChain::Create(const VulkanContext* pContext, int windowWidth, int windowHeight)
-    {
-        auto vkPhysicalDevice = pContext->GetPhysicalDevice();
-        auto vkSurface = pContext->GetSurface();
-        SwapChainConfig config;
+        auto vkPhysicalDevice = _pRenderer->GetPhysicalDevice();
+        auto vkSurface = _pRenderer->GetSurface();
+        auto vkLogicalDevice = _pRenderer->GetLogicalDevice();
+        auto queueIndex = _pRenderer->GetQueueIndex();
 
         // Present mode
         auto allPresentMode = vkPhysicalDevice.getSurfacePresentModesKHR(vkSurface);
@@ -40,7 +18,7 @@ namespace Ailurus
         {
             if (mode == vk::PresentModeKHR::eMailbox)
             {
-                config.presentMode = mode;
+                _swapChainConfig.presentMode = mode;
                 break;
             }
         }
@@ -51,37 +29,25 @@ namespace Ailurus
         {
             if (surfaceFormat.format == vk::Format::eR8G8B8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
             {
-                config.surfaceFormat = surfaceFormat;
+                _swapChainConfig.surfaceFormat = surfaceFormat;
                 break;
             }
         }
 
-        if (config.surfaceFormat == vk::Format::eUndefined)
-        {
+        if (_swapChainConfig.surfaceFormat == vk::Format::eUndefined)
             Logger::LogError("No suitable surface format (format R8G8B8SRGB & colorspace SRGB non-linear)");
-            return nullptr;
-        }
+
 
         // Swap chain image count & size
         vk::SurfaceCapabilitiesKHR surfaceCapabilities = vkPhysicalDevice.getSurfaceCapabilitiesKHR(vkSurface);
-        config.imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
-        config.extent.width  = std::clamp(static_cast<uint32_t>(windowWidth),
+        _swapChainConfig.imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
+        _swapChainConfig.extent.width  = std::clamp(static_cast<uint32_t>(windowWidth),
                                            surfaceCapabilities.minImageExtent.width,
                                            surfaceCapabilities.maxImageExtent.width);
-        config.extent.height = std::clamp(static_cast<uint32_t>(windowHeight),
+        _swapChainConfig.extent.height = std::clamp(static_cast<uint32_t>(windowHeight),
                                             surfaceCapabilities.minImageExtent.height,
                                             surfaceCapabilities.maxImageExtent.height);
 
-        return std::unique_ptr<SwapChain>(new SwapChain(pContext, config));
-    }
-
-    SwapChain::SwapChain(const VulkanContext* pContext, SwapChainConfig config)
-        : _pContext(pContext)
-        , _swapChainConfig(config)
-    {
-        auto vkLogicalDevice = pContext->GetLogicalDevice();
-        auto vkSurface = pContext->GetSurface();
-        auto queueIndex = pContext->GetQueueIndex();
 
         // Create
         vk::SwapchainCreateInfoKHR swapChainCreateInfo;
@@ -137,5 +103,33 @@ namespace Ailurus
 
             _vkSwapChainImageViews[i] = vkLogicalDevice.createImageView(imageViewCreateInfo);
         }
+    }
+
+    SwapChain::~SwapChain()
+    {
+        for (auto& view : _vkSwapChainImageViews)
+            _pRenderer->GetLogicalDevice().destroyImageView(view);
+
+        _pRenderer->GetLogicalDevice().destroySwapchainKHR(_vkSwapChain);
+    }
+
+    const SwapChainConfig& SwapChain::GetSwapChainConfig() const
+    {
+        return _swapChainConfig;
+    }
+
+    const vk::SwapchainKHR& SwapChain::GetSwapChain() const
+    {
+        return _vkSwapChain;
+    }
+
+    const std::vector<vk::Image>& SwapChain::GetImages() const
+    {
+        return _vkSwapChainImages;
+    }
+
+    const std::vector<vk::ImageView>& SwapChain::GetImageViews() const
+    {
+        return _vkSwapChainImageViews;
     }
 }

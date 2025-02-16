@@ -2,26 +2,23 @@
 
 #include <memory>
 #include <vulkan/vulkan.hpp>
-#include "../Context/VulkanContext.h"
 #include "../SwapChain/SwapChain.h"
 
 namespace Ailurus
 {
+    class Renderer;
+
     class RenderPass
     {
     public:
+        RenderPass(const Renderer* pRenderer, const SwapChain* pSwapChain);
         ~RenderPass();
 
     public:
-        static std::unique_ptr<RenderPass> Create(const VulkanContext* pContext, const SwapChain* pSwapChain);
-
         vk::RenderPass GetRenderPass() const;
 
     private:
-        RenderPass(const VulkanContext* pContext, const SwapChain* pSwapChain);
-
-    private:
-        const VulkanContext* _pContext;
+        const Renderer* _pRenderer;
         vk::RenderPass _vkRenderPass;
     };
 }

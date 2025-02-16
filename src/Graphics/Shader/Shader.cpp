@@ -1,11 +1,32 @@
 #include "Ailurus/Graphics/Shader/Shader.h"
 #include "Ailurus/Utility/File.h"
+#include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus
 {
+    Shader::Shader(const Renderer* pRenderer, ShaderStage stage, const std::string& path)
+        : _pRenderer(pRenderer)
+        , _stage(stage)
+    {
+        auto binaryFile = File::LoadBinary(path);
+        if (binaryFile.has_value())
+            Shader(pRenderer, stage, binaryFile.value().data(), binaryFile.value().size());
+    }
+
+    Shader::Shader(const Renderer* pRenderer, ShaderStage stage, const char* binaryData, size_t size)
+        : _pRenderer(pRenderer)
+        , _stage(stage)
+    {
+        vk::ShaderModuleCreateInfo createInfo;
+        createInfo.setPCode(reinterpret_cast<const uint32_t*>(binaryData))
+                .setCodeSize(size);
+
+        _vkShaderModule = _pRenderer->GetLogicalDevice().createShaderModule(createInfo);
+    }
+
     Shader::~Shader()
     {
-        _pContext->GetLogicalDevice().destroyShaderModule(_vkShaderModule);
+        _pRenderer->GetLogicalDevice().destroyShaderModule(_vkShaderModule);
     }
 
     ShaderStage Shader::GetStage() const
@@ -26,31 +47,5 @@ namespace Ailurus
                 .setPName("main");
 
         return createInfo;
-    }
-
-    std::unique_ptr<Shader> Shader::Create(const VulkanContext* pContext, ShaderStage stage, const std::string& path)
-    {
-        auto binaryFile = File::LoadBinary(path);
-        if (!binaryFile)
-            return nullptr;
-
-        return Create(pContext, stage, binaryFile.value().data(), binaryFile.value().size());
-    }
-
-    std::unique_ptr<Shader> Shader::Create(const VulkanContext* pContext, ShaderStage stage, const char* binaryData,
-        size_t size)
-    {
-        return std::unique_ptr<Shader>(new Shader(pContext, stage, binaryData, size));
-    }
-
-    Shader::Shader(const VulkanContext* pContext, ShaderStage stage, const char* binaryData, size_t size)
-        : _pContext(pContext)
-        , _stage(stage)
-    {
-        vk::ShaderModuleCreateInfo createInfo;
-        createInfo.setPCode(reinterpret_cast<const uint32_t*>(binaryData))
-                .setCodeSize(size);
-
-        _vkShaderModule = pContext->GetLogicalDevice().createShaderModule(createInfo);
     }
 }

@@ -1,30 +1,25 @@
 #pragma once
 
-#include <memory>
 #include <vulkan/vulkan.hpp>
 #include "SwapChainConfig.h"
-#include "../Context/VulkanContext.h"
 
 namespace Ailurus
 {
+    class Renderer;
+
     class SwapChain
     {
     public:
+        SwapChain(const Renderer* pRenderer, int windowWidth, int windowHeight);
         ~SwapChain();
 
     public:
-        static std::unique_ptr<SwapChain> Create(const VulkanContext* pContext, int windowWidth, int windowHeight);
-
         const SwapChainConfig& GetSwapChainConfig() const;
         const vk::SwapchainKHR& GetSwapChain() const;
         const std::vector<vk::Image>& GetImages() const;
         const std::vector<vk::ImageView>& GetImageViews() const;
-
     private:
-        SwapChain(const VulkanContext* pContext, SwapChainConfig config);
-
-    private:
-        const VulkanContext* _pContext;
+        const Renderer* _pRenderer;
 
         SwapChainConfig _swapChainConfig{};
         vk::SwapchainKHR _vkSwapChain = nullptr;

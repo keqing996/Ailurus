@@ -3,15 +3,16 @@
 #include <unordered_map>
 #include <vulkan/vulkan.hpp>
 #include "../Shader/Shader.h"
-#include "../Context/VulkanContext.h"
 #include "../RenderPass/RenderPass.h"
 
 namespace Ailurus
 {
+    class Renderer;
+
     class Pipeline
     {
     public:
-        Pipeline(const VulkanContext* pContext, const RenderPass* pRenderPass);
+        Pipeline(const Renderer* pRenderer, const RenderPass* pRenderPass);
         ~Pipeline();
 
     public:
@@ -20,7 +21,7 @@ namespace Ailurus
         vk::Pipeline GetPipeline() const;
 
     private:
-        const VulkanContext* _pContext;
+        const Renderer* _pRenderer;
         const RenderPass* _pRenderPass;
         vk::PipelineLayout _vkPipelineLayout;
         vk::Pipeline _vkPipeline;

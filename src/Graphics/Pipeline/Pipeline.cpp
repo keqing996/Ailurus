@@ -1,18 +1,19 @@
 #include "Ailurus/Graphics/Pipeline/Pipeline.h"
 #include "Ailurus/Utility/Logger.h"
+#include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus
 {
-    Pipeline::Pipeline(const VulkanContext* pContext, const RenderPass* pRenderPass)
-        : _pContext(pContext)
+    Pipeline::Pipeline(const Renderer* pRenderer, const RenderPass* pRenderPass)
+        : _pRenderer(pRenderer)
         , _pRenderPass(pRenderPass)
     {
     }
 
     Pipeline::~Pipeline()
     {
-        _pContext->GetLogicalDevice().destroyPipelineLayout(_vkPipelineLayout);
-        _pContext->GetLogicalDevice().destroyPipeline(_vkPipeline);
+        _pRenderer->GetLogicalDevice().destroyPipelineLayout(_vkPipelineLayout);
+        _pRenderer->GetLogicalDevice().destroyPipeline(_vkPipeline);
     }
 
     void Pipeline::AddShader(Shader* pShader)
@@ -22,7 +23,7 @@ namespace Ailurus
 
     void Pipeline::GeneratePipeline()
     {
-        auto vkLogicDevice = _pContext->GetLogicalDevice();
+        auto vkLogicDevice = _pRenderer->GetLogicalDevice();
 
         vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
         vertexInputInfo.setVertexBindingDescriptionCount(0)

@@ -1,33 +1,113 @@
 #include <array>
 #include "Ailurus/Graphics/Renderer.h"
-
-#include <Ailurus/Utility/Logger.h>
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
-    Renderer::Renderer(const GetWindowSizeCallback& getWindowSize, const GetWindowInstanceExtension& getWindowInstExt,
-        const WindowCreateSurfaceCallback& createSurface, const WindowDestroySurfaceCallback& destroySurface,
-        bool enableValidationLayer)
+    namespace Verbose
     {
-        _pContext = std::make_unique<VulkanContext>(getWindowSize, getWindowInstExt,
-                                                    createSurface, destroySurface, enableValidationLayer);
+        static VKAPI_ATTR VkBool32 VKAPI_CALL
+        DebugReportExtCallback(
+            VkDebugReportFlagsEXT,
+            VkDebugReportObjectTypeEXT,
+            std::uint64_t,
+            std::size_t,
+            std::int32_t,
+            const char*,
+            const char* pMessage,
+            void*)
+        {
+            Logger::LogError(pMessage);
+            return VK_FALSE;
+        }
 
-        Vector2i windowSize = getWindowSize();
-        _pSwapChain = SwapChain::Create(_pContext.get(), windowSize.x(), windowSize.y());
-        _pRenderPass = RenderPass::Create(_pContext.get(), _pSwapChain.get());
-        _pBackBuffer = std::make_unique<BackBuffer>(_pContext.get(), _pSwapChain.get(), _pRenderPass.get());
+        static void LogInstanceLayerProperties()
+        {
+            auto allLayerProperties = vk::enumerateInstanceLayerProperties();
 
-        _pVertShader = Shader::Create(_pContext.get(), ShaderStage::Vertex, "./triangle.vert.spv");
-        _pFragShader = Shader::Create(_pContext.get(), ShaderStage::Fragment, "./triangle.frag.spv");
+            Logger::LogInfo("Instance layer properties:");
+            for (auto layerProperty: allLayerProperties)
+                Logger::LogInfo("    {}", layerProperty.layerName.data());
+        }
 
-        _pPipeline = std::make_unique<Pipeline>(_pContext.get(), _pRenderPass.get());
-        _pPipeline->AddShader(_pVertShader.get());
-        _pPipeline->AddShader(_pFragShader.get());
-        _pPipeline->GeneratePipeline();
+        static void LogInstanceExtensionProperties()
+        {
+            auto allExt = vk::enumerateInstanceExtensionProperties();
+            Logger::LogInfo("Instance extensions:");
+            for (auto ext: allExt)
+                Logger::LogInfo("    {}", ext.extensionName.data());
+        }
+
+        static void LogPhysicalCards(const vk::Instance& vkInstance)
+        {
+            auto graphicCards = vkInstance.enumeratePhysicalDevices();
+            Logger::LogInfo("All graphic cards:");
+            for (auto& graphicCard: graphicCards)
+            {
+                auto property = graphicCard.getProperties();
+                Logger::LogInfo("    {}", property.deviceName.data());
+            }
+        }
+
+        static void LogChosenPhysicalCard(const vk::PhysicalDevice& vkPhysicalDevice, const vk::SurfaceKHR& vkSurface)
+        {
+            auto physicalDeviceProperty = vkPhysicalDevice.getProperties();
+            Logger::LogInfo("Choose physical device: {}, API version: {}, vendor id: {}",
+                            physicalDeviceProperty.deviceName.data(),
+                            physicalDeviceProperty.apiVersion, physicalDeviceProperty.vendorID);
+
+            auto queueFamilyProperties = vkPhysicalDevice.getQueueFamilyProperties();
+            Logger::LogInfo("    Queue family size: {}", queueFamilyProperties.size());
+            for (std::size_t i = 0; i < queueFamilyProperties.size(); ++i)
+            {
+                auto& queueProperty = queueFamilyProperties[i];
+
+                bool canPresent = vkPhysicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), vkSurface);
+                bool canGraphic = static_cast<bool>(queueProperty.queueFlags & vk::QueueFlagBits::eGraphics);
+                bool canCompute = static_cast<bool>(queueProperty.queueFlags & vk::QueueFlagBits::eCompute);
+                bool canTransfer = static_cast<bool>(queueProperty.queueFlags & vk::QueueFlagBits::eTransfer);
+
+                Logger::LogInfo("        {}:\tPresent: {},\tGraphic: {}\t, Compute: {}\t, Transfer: {}",
+                                i, canPresent, canGraphic, canCompute, canTransfer);
+            }
+
+#if false // Too long to show details
+        Logger::LogInfo("    Physical device layer properties:");
+        auto allLayerProperties = vkPhysicalDevice.enumerateDeviceLayerProperties();
+        for (auto layerProperty: allLayerProperties)
+            Logger::LogInfo("        {}", layerProperty.layerName.data());
+
+        Logger::LogInfo("    Physical device extensions:");
+        auto allExt = vkPhysicalDevice.enumerateDeviceExtensionProperties();
+        for (auto ext: allExt)
+            Logger::LogInfo("        {}", ext.extensionName.data());
+#endif
+        }
+    }
+
+    Renderer::Renderer(
+        const GetWindowSizeCallback& getWindowSize,
+        const GetWindowInstanceExtension& getWindowInstExt,
+        const WindowCreateSurfaceCallback& createSurface,
+        const WindowDestroySurfaceCallback& destroySurface,
+        bool enableValidationLayer)
+        : _getWindowSizeCallback(getWindowSize)
+          , _getWindowInstExtensionsCallback(getWindowInstExt)
+          , _windowDestroySurfaceCallback(destroySurface)
+    {
+        CreateStaticContext(enableValidationLayer, createSurface);
+
+        // temp
+        _pVertShader = std::make_unique<Shader>(this, ShaderStage::Vertex, "./triangle.vert.spv");
+        _pFragShader = std::make_unique<Shader>(this, ShaderStage::Fragment, "./triangle.frag.spv");
+
+        CreateDynamicContext();
     }
 
     Renderer::~Renderer()
     {
+        DestroyDynamicContext();
+        DestroyStaticContext();
     }
 
     void Renderer::Render()
@@ -35,19 +115,14 @@ namespace Ailurus
         if (_needRebuildSwapChain)
             RecreateSwapChain();
 
-        auto vkLogicalDevice = _pContext->GetLogicalDevice();
-        auto imageAvailableSemaphores = _pContext->GetImageAvailableSemaphores();
-        auto renderFinishSemaphores = _pContext->GetRenderFinishSemaphores();
-        auto vkFences = _pContext->GetFences();
         auto vkSwapChain = _pSwapChain->GetSwapChain();
-        auto vkCommandBuffers = _pContext->GetCommandBuffers();
         auto vkRenderPass = _pRenderPass->GetRenderPass();
         auto vkBackBuffers = _pBackBuffer->GetBackBuffers();
-        auto vkGraphicsQueue = _pContext->GetGraphicQueue();
-        auto vkPresentQueue = _pContext->GetPresentQueue();
         auto timeout = std::numeric_limits<uint64_t>::max();
 
-        auto acquireImage = vkLogicalDevice.acquireNextImageKHR(vkSwapChain, timeout, imageAvailableSemaphores[_currentFlight]);
+        auto flight = _pAirport->GetNextFlight();
+
+        auto acquireImage = _vkLogicalDevice.acquireNextImageKHR(vkSwapChain, timeout, flight.imageReadySemaphore);
         if (acquireImage.result == vk::Result::eErrorOutOfDateKHR || acquireImage.result == vk::Result::eSuboptimalKHR)
             _needRebuildSwapChain = true;
 
@@ -60,31 +135,19 @@ namespace Ailurus
             return;
         }
 
-        auto waitFence = vkLogicalDevice.waitForFences(vkFences[_currentFlight], true, timeout);
-        if (waitFence != vk::Result::eSuccess)
-        {
-            Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
-            return;
-        }
-
-        vkLogicalDevice.resetFences(vkFences[_currentFlight]);
-
         uint32_t imageIndex = acquireImage.value;
 
-        auto vkCommandBuffer = vkCommandBuffers[_currentFlight];
-        RecordCommand(vkCommandBuffer, vkRenderPass, vkBackBuffers[imageIndex]);
+        RecordCommand(flight.commandBuffer, vkRenderPass, vkBackBuffers[imageIndex]);
 
-        std::array waitSemaphores = { imageAvailableSemaphores[_currentFlight] };
-        std::array signalSemaphores = { renderFinishSemaphores[_currentFlight] };
-        std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+        std::array<vk::PipelineStageFlags, 1> waitStages = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
         vk::SubmitInfo submitInfo;
-        submitInfo.setWaitSemaphores(waitSemaphores)
-                .setSignalSemaphores(signalSemaphores)
+        submitInfo.setWaitSemaphores(flight.imageReadySemaphore)
+                .setSignalSemaphores(flight.renderFinishSemaphore)
                 .setWaitDstStageMask(waitStages)
-                .setCommandBuffers(vkCommandBuffer);
+                .setCommandBuffers(flight.commandBuffer);
 
-        auto submit = vkGraphicsQueue.submit(1, &submitInfo, vkFences[_currentFlight]);
+        auto submit = _vkGraphicQueue.submit(1, &submitInfo, flight.fence);
         if (submit != vk::Result::eSuccess)
         {
             Logger::LogError("Fail to submit command buffer, result = {}", static_cast<int>(submit));
@@ -92,11 +155,11 @@ namespace Ailurus
         }
 
         vk::PresentInfoKHR presentInfo;
-        presentInfo.setWaitSemaphores(signalSemaphores)
+        presentInfo.setWaitSemaphores(flight.renderFinishSemaphore)
                 .setSwapchains(vkSwapChain)
                 .setImageIndices(imageIndex);
 
-        auto present = vkPresentQueue.presentKHR(presentInfo);
+        auto present = _vkPresentQueue.presentKHR(presentInfo);
         if (present == vk::Result::eErrorOutOfDateKHR || present == vk::Result::eSuboptimalKHR)
             _needRebuildSwapChain = true;
 
@@ -109,11 +172,11 @@ namespace Ailurus
             return;
         }
 
-        _currentFlight = (_currentFlight + 1) % VulkanContext::PARALLEL_FRAME_COUNT;
+        _pAirport->UpdateFlightPlan();
     }
 
     void Renderer::RecordCommand(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass,
-        vk::Framebuffer targetFrameBuffer)
+                                 vk::Framebuffer targetFrameBuffer)
     {
         commandBuffer.reset();
 
@@ -122,8 +185,7 @@ namespace Ailurus
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
-        commandBuffer.begin(beginInfo);
-        {
+        commandBuffer.begin(beginInfo); {
             vk::ClearValue clearColor({0.0f, 0.0f, 0.0f, 1.0f});
 
             vk::RenderPassBeginInfo renderPassInfo;
@@ -135,8 +197,7 @@ namespace Ailurus
                     })
                     .setClearValues(clearColor);
 
-            commandBuffer.beginRenderPass(renderPassInfo, {});
-            {
+            commandBuffer.beginRenderPass(renderPassInfo, {}); {
                 vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
                 vk::Rect2D scissor(vk::Offset2D{0, 0}, extent);
 
@@ -155,16 +216,270 @@ namespace Ailurus
         _needRebuildSwapChain = true;
     }
 
+    vk::Instance Renderer::GetInstance() const
+    {
+        return _vkInstance;
+    }
+
+    vk::SurfaceKHR Renderer::GetSurface() const
+    {
+        return _vkSurface;
+    }
+
+    vk::PhysicalDevice Renderer::GetPhysicalDevice() const
+    {
+        return _vkPhysicalDevice;
+    }
+
+    vk::Device Renderer::GetLogicalDevice() const
+    {
+        return _vkLogicalDevice;
+    }
+
+    const Renderer::QueueIndex& Renderer::GetQueueIndex() const
+    {
+        return _queueIndex;
+    }
+
+    vk::Queue Renderer::GetGraphicQueue() const
+    {
+        return _vkGraphicQueue;
+    }
+
+    vk::Queue Renderer::GetPresentQueue() const
+    {
+        return _vkPresentQueue;
+    }
+
+    vk::CommandPool Renderer::GetCommandPool() const
+    {
+        return _vkGraphicCommandPool;
+    }
+
+    void Renderer::CreateStaticContext(bool enableValidation, const WindowCreateSurfaceCallback& createSurface)
+    {
+        Verbose::LogInstanceLayerProperties();
+        Verbose::LogInstanceExtensionProperties();
+
+        CreateInstance(enableValidation);
+
+        if (enableValidation)
+            CreatDebugReportCallbackExt();
+
+        CreateSurface(createSurface);
+
+        Verbose::LogPhysicalCards(_vkInstance);
+
+        ChoosePhysicsDevice();
+
+        Verbose::LogChosenPhysicalCard(_vkPhysicalDevice, _vkSurface);
+
+        CreateLogicDevice();
+
+        CreateCommandPool();
+    }
+
+    void Renderer::DestroyStaticContext()
+    {
+        _vkLogicalDevice.destroyCommandPool(_vkGraphicCommandPool);
+        _vkLogicalDevice.destroy();
+
+        _windowDestroySurfaceCallback(_vkInstance, _vkSurface);
+
+        if (_vkDebugReportCallbackExt)
+        {
+            vk::DispatchLoaderDynamic dynamicLoader(_vkInstance, vkGetInstanceProcAddr);
+            _vkInstance.destroyDebugReportCallbackEXT(_vkDebugReportCallbackExt, nullptr, dynamicLoader);
+        }
+
+        _vkInstance.destroy();
+    }
+
+    void Renderer::CreateInstance(bool enableValidation)
+    {
+        // Validation layers
+        static const char* VALIDATION_LAYER_NAME = "VK_LAYER_KHRONOS_validation";
+        std::vector<const char*> validationLayers;
+        if (enableValidation)
+        {
+            auto allLayerProperties = vk::enumerateInstanceLayerProperties();
+            for (auto layerProperty: allLayerProperties)
+            {
+                if (layerProperty.layerName == VALIDATION_LAYER_NAME)
+                    validationLayers.push_back(VALIDATION_LAYER_NAME);
+            }
+        }
+
+        // Extensions
+        std::vector<const char*> requiredExtensions;
+        if (enableValidation)
+            requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+
+        std::vector<const char*> windowInstExtensions = _getWindowInstExtensionsCallback();
+        requiredExtensions.insert(requiredExtensions.end(),
+                                  windowInstExtensions.begin(), windowInstExtensions.end());
+
+        // Create instance
+        vk::ApplicationInfo applicationInfo;
+        applicationInfo
+                .setPApplicationName("Ailurus")
+                .setApiVersion(VK_API_VERSION_1_3)
+                .setPEngineName("No Engine");
+
+        vk::InstanceCreateInfo instanceCreateInfo;
+        instanceCreateInfo
+                .setPApplicationInfo(&applicationInfo)
+                .setPEnabledLayerNames(validationLayers)
+                .setPEnabledExtensionNames(requiredExtensions);
+
+        _vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
+    }
+
+    void Renderer::CreatDebugReportCallbackExt()
+    {
+        auto flags = vk::DebugReportFlagBitsEXT::eWarning
+                     | vk::DebugReportFlagBitsEXT::ePerformanceWarning
+                     | vk::DebugReportFlagBitsEXT::eError;
+
+        vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo;
+        debugReportCallbackCreateInfo
+                .setFlags(flags)
+                .setPfnCallback(Verbose::DebugReportExtCallback);
+
+        vk::DispatchLoaderDynamic dynamicLoader(_vkInstance, vkGetInstanceProcAddr);
+
+        _vkDebugReportCallbackExt = _vkInstance.createDebugReportCallbackEXT(
+            debugReportCallbackCreateInfo, nullptr, dynamicLoader);
+    }
+
+    void Renderer::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
+    {
+        _vkSurface = createSurface(_vkInstance);
+    }
+
+    void Renderer::ChoosePhysicsDevice()
+    {
+        auto graphicCards = _vkInstance.enumeratePhysicalDevices();
+
+        vk::PhysicalDeviceType lastFoundDeviceType = vk::PhysicalDeviceType::eOther;
+        for (auto& graphicCard: graphicCards)
+        {
+            auto property = graphicCard.getProperties();
+
+            // Discrete gpu found, no need to continue.
+            if (property.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
+            {
+                _vkPhysicalDevice = graphicCard;
+                break;
+            }
+
+            // Integrated gpu found, record it and keep finding discrete gpu.
+            if (property.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
+            {
+                _vkPhysicalDevice = graphicCard;
+                lastFoundDeviceType = vk::PhysicalDeviceType::eIntegratedGpu;
+            }
+
+            // Cpu found, record it only if that no gpu was found.
+            if (property.deviceType == vk::PhysicalDeviceType::eCpu
+                && lastFoundDeviceType != vk::PhysicalDeviceType::eIntegratedGpu)
+            {
+                _vkPhysicalDevice = graphicCard;
+                lastFoundDeviceType = vk::PhysicalDeviceType::eCpu;
+            }
+        }
+    }
+
+    void Renderer::CreateLogicDevice()
+    {
+        // Find graphic queue and present queue.
+        auto queueFamilyProperties = _vkPhysicalDevice.getQueueFamilyProperties();
+        for (std::size_t i = 0; i < queueFamilyProperties.size(); ++i)
+        {
+            auto& property = queueFamilyProperties[i];
+            if ((property.queueFlags & vk::QueueFlagBits::eGraphics) && !_queueIndex.graphicQueueIndex.has_value())
+                _queueIndex.graphicQueueIndex = static_cast<uint32_t>(i);
+
+            bool canPresent = _vkPhysicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), _vkSurface);
+            if (canPresent && !_queueIndex.presentQueueIndex.has_value())
+                _queueIndex.presentQueueIndex = static_cast<uint32_t>(i);
+
+            if (_queueIndex.graphicQueueIndex.has_value() && _queueIndex.presentQueueIndex.has_value())
+                break;
+        }
+
+        // Queue create info
+        const float queuePriority = 1.0f;
+        std::vector<vk::DeviceQueueCreateInfo> queueCreateInfoList;
+        queueCreateInfoList.emplace_back();
+        queueCreateInfoList.back().setQueueCount(1)
+                .setQueuePriorities(queuePriority)
+                .setQueueFamilyIndex(_queueIndex.graphicQueueIndex.value());
+
+        if (_queueIndex.presentQueueIndex.value() != _queueIndex.graphicQueueIndex.value())
+        {
+            queueCreateInfoList.emplace_back();
+            queueCreateInfoList.back()
+                    .setQueueCount(1)
+                    .setQueuePriorities(queuePriority)
+                    .setQueueFamilyIndex(_queueIndex.presentQueueIndex.value());
+        }
+
+        // Features
+        vk::PhysicalDeviceFeatures physicalDeviceFeatures;
+        physicalDeviceFeatures.setSamplerAnisotropy(true);
+
+        // Swap chain is required
+        const char* extensions[1] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
+        vk::DeviceCreateInfo deviceCreateInfo;
+        deviceCreateInfo
+                .setPEnabledExtensionNames(extensions)
+                .setQueueCreateInfos(queueCreateInfoList)
+                .setPEnabledFeatures(&physicalDeviceFeatures);
+
+        _vkLogicalDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
+        _vkGraphicQueue = _vkLogicalDevice.getQueue(_queueIndex.graphicQueueIndex.value(), 0);
+        _vkPresentQueue = _vkLogicalDevice.getQueue(_queueIndex.presentQueueIndex.value(), 0);
+    }
+
+    void Renderer::CreateCommandPool()
+    {
+        vk::CommandPoolCreateInfo poolInfo;
+        poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+            .setQueueFamilyIndex(_queueIndex.graphicQueueIndex.value());
+
+        _vkGraphicCommandPool = _vkLogicalDevice.createCommandPool(poolInfo);
+    }
+
+    void Renderer::CreateDynamicContext()
+    {
+        Vector2i windowSize = _getWindowSizeCallback();
+        _pSwapChain = std::make_unique<SwapChain>(this, windowSize.x(), windowSize.y());
+        _pRenderPass = std::make_unique<RenderPass>(this, _pSwapChain.get());
+        _pBackBuffer = std::make_unique<BackBuffer>(this, _pSwapChain.get(), _pRenderPass.get());
+
+        _pPipeline = std::make_unique<Pipeline>(this, _pRenderPass.get());
+        _pPipeline->AddShader(_pVertShader.get());
+        _pPipeline->AddShader(_pFragShader.get());
+        _pPipeline->GeneratePipeline();
+
+        _pAirport = std::make_unique<Airport>(this);
+    }
+
+    void Renderer::DestroyDynamicContext()
+    {
+        _pAirport.reset();
+        _pPipeline.reset();
+        _pBackBuffer.reset();
+        _pRenderPass.reset();
+        _pSwapChain.reset();
+    }
+
     void Renderer::RecreateSwapChain()
     {
-        _pContext->GetLogicalDevice().waitIdle();
-
-        _pBackBuffer.reset();
-        _pSwapChain.reset();
-
-        auto windowSize = _pContext->GetWindowSize();
-        _pSwapChain = SwapChain::Create(_pContext.get(), windowSize.x(), windowSize.y());
-        _pBackBuffer = std::make_unique<BackBuffer>(_pContext.get(), _pSwapChain.get(), _pRenderPass.get());
+        DestroyDynamicContext();
+        CreateDynamicContext();
 
         _needRebuildSwapChain = false;
     }
