@@ -10,18 +10,14 @@ namespace Ailurus
     {
         auto binaryFile = File::LoadBinary(path);
         if (binaryFile.has_value())
-            Shader(pRenderer, stage, binaryFile.value().data(), binaryFile.value().size());
+            CreateShaderModule(binaryFile.value().data(), binaryFile.value().size());
     }
 
     Shader::Shader(const Renderer* pRenderer, ShaderStage stage, const char* binaryData, size_t size)
         : _pRenderer(pRenderer)
         , _stage(stage)
     {
-        vk::ShaderModuleCreateInfo createInfo;
-        createInfo.setPCode(reinterpret_cast<const uint32_t*>(binaryData))
-                .setCodeSize(size);
-
-        _vkShaderModule = _pRenderer->GetLogicalDevice().createShaderModule(createInfo);
+        CreateShaderModule(binaryData, size);
     }
 
     Shader::~Shader()
@@ -47,5 +43,14 @@ namespace Ailurus
                 .setPName("main");
 
         return createInfo;
+    }
+
+    void Shader::CreateShaderModule(const char* binaryData, size_t size)
+    {
+        vk::ShaderModuleCreateInfo createInfo;
+        createInfo.setPCode(reinterpret_cast<const uint32_t*>(binaryData))
+                .setCodeSize(size);
+
+        _vkShaderModule = _pRenderer->GetLogicalDevice().createShaderModule(createInfo);
     }
 }

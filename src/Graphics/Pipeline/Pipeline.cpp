@@ -8,6 +8,10 @@ namespace Ailurus
         : _pRenderer(pRenderer)
         , _pRenderPass(pRenderPass)
     {
+        vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+        pipelineLayoutInfo.setSetLayouts(nullptr);
+
+        _vkPipelineLayout = _pRenderer->GetLogicalDevice().createPipelineLayout(pipelineLayoutInfo);
     }
 
     Pipeline::~Pipeline()
@@ -71,11 +75,6 @@ namespace Ailurus
         vk::PipelineDynamicStateCreateInfo dynamicState;
         dynamicState.setDynamicStates(dynamicStates);
 
-        vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-        pipelineLayoutInfo.setSetLayouts(nullptr);
-
-        vk::PipelineLayout pipelineLayout = vkLogicDevice.createPipelineLayout(pipelineLayoutInfo);
-
         std::vector<vk::PipelineShaderStageCreateInfo> shaderStageCreateInfoList;
         for (auto [stage, pShader]: _shaderMap)
         {
@@ -92,7 +91,7 @@ namespace Ailurus
             .setPMultisampleState(&multisampling)
             .setPColorBlendState(&colorBlending)
             .setPDynamicState(&dynamicState)
-            .setLayout(pipelineLayout)
+            .setLayout(_vkPipelineLayout)
             .setRenderPass(_pRenderPass->GetRenderPass())
             .setSubpass(0)
             .setBasePipelineHandle(nullptr);

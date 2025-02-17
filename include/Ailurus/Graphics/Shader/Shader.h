@@ -20,6 +20,9 @@ namespace Ailurus
         vk::PipelineShaderStageCreateInfo GeneratePipelineCreateInfo() const;
 
     private:
+        void CreateShaderModule(const char* binaryData, size_t size);
+
+    private:
         const Renderer* _pRenderer;
 
         ShaderStage _stage;

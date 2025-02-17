@@ -89,7 +89,7 @@ namespace Ailurus
             vk::ImageSubresourceRange range;
             range.setAspectMask(vk::ImageAspectFlagBits::eColor)
                 .setBaseMipLevel(0) // first mipmap level accessible to the view
-                .setLayerCount(1)   // number of mipmap levels (starting from baseMipLevel) accessible to the view
+                .setLevelCount(1)   // number of mipmap levels (starting from baseMipLevel) accessible to the view
                 .setBaseArrayLayer(0) // first array layer accessible to the view
                 .setLayerCount(1); //number of array layers (starting from baseArrayLayer) accessible to the view
 

@@ -37,8 +37,8 @@ namespace Ailurus
         for (const auto& sem: _vkImageReadySemaphore)
             _pRenderer->GetLogicalDevice().destroySemaphore(sem);
 
-        for (const auto& fence: _vkFences)
-            _pRenderer->GetLogicalDevice().destroyFence(fence);
+        for (const auto& sem: _vkFinishRenderSemaphore)
+            _pRenderer->GetLogicalDevice().destroySemaphore(sem);
 
         _pRenderer->GetLogicalDevice().freeCommandBuffers(_pRenderer->GetCommandPool(), _vkCommandBuffers);
     }

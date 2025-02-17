@@ -107,6 +107,10 @@ namespace Ailurus
     Renderer::~Renderer()
     {
         DestroyDynamicContext();
+
+        _pVertShader.reset();
+        _pFragShader.reset();
+
         DestroyStaticContext();
     }
 
@@ -124,7 +128,7 @@ namespace Ailurus
 
         auto acquireImage = _vkLogicalDevice.acquireNextImageKHR(vkSwapChain, timeout, flight.imageReadySemaphore);
         if (acquireImage.result == vk::Result::eErrorOutOfDateKHR || acquireImage.result == vk::Result::eSuboptimalKHR)
-            _needRebuildSwapChain = true;
+            NeedRecreateSwapChain();
 
         if (acquireImage.result == vk::Result::eErrorOutOfDateKHR)
             return;
@@ -136,6 +140,8 @@ namespace Ailurus
         }
 
         uint32_t imageIndex = acquireImage.value;
+
+        _pAirport->WaitFlightReady(flight);
 
         RecordCommand(flight.commandBuffer, vkRenderPass, vkBackBuffers[imageIndex]);
 
@@ -161,7 +167,7 @@ namespace Ailurus
 
         auto present = _vkPresentQueue.presentKHR(presentInfo);
         if (present == vk::Result::eErrorOutOfDateKHR || present == vk::Result::eSuboptimalKHR)
-            _needRebuildSwapChain = true;
+            NeedRecreateSwapChain();
 
         if (present == vk::Result::eErrorOutOfDateKHR)
             return;
@@ -305,7 +311,7 @@ namespace Ailurus
             auto allLayerProperties = vk::enumerateInstanceLayerProperties();
             for (auto layerProperty: allLayerProperties)
             {
-                if (layerProperty.layerName == VALIDATION_LAYER_NAME)
+                if (std::string(layerProperty.layerName.data()) == VALIDATION_LAYER_NAME)
                     validationLayers.push_back(VALIDATION_LAYER_NAME);
             }
         }
