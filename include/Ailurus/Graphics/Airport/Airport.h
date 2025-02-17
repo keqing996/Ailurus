@@ -1,13 +1,14 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include <optional>
+#include <vector>
 #include "Flight.h"
 
 namespace Ailurus
 {
     class Renderer;
+    class SwapChain;
 
     class Airport
     {
@@ -16,9 +17,8 @@ namespace Ailurus
         ~Airport();
 
     public:
-        Flight GetNextFlight() const;
-        void WaitFlightReady(const Flight& flight) const;
-        void UpdateFlightPlan();
+        std::optional<Flight> WaitNextFlight(const SwapChain* pSwapChain, bool* needRebuild);
+        bool TakeOff(Flight flight, const SwapChain* pSwapChain, bool* needRebuild);
 
         inline static uint32_t MAX_FLIGHTS = 2;
 

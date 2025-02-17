@@ -119,66 +119,13 @@ namespace Ailurus
         if (_needRebuildSwapChain)
             RecreateSwapChain();
 
-        auto vkSwapChain = _pSwapChain->GetSwapChain();
-        auto vkRenderPass = _pRenderPass->GetRenderPass();
-        auto vkBackBuffers = _pBackBuffer->GetBackBuffers();
-        auto timeout = std::numeric_limits<uint64_t>::max();
-
-        auto flight = _pAirport->GetNextFlight();
-
-        auto acquireImage = _vkLogicalDevice.acquireNextImageKHR(vkSwapChain, timeout, flight.imageReadySemaphore);
-        if (acquireImage.result == vk::Result::eErrorOutOfDateKHR || acquireImage.result == vk::Result::eSuboptimalKHR)
-            NeedRecreateSwapChain();
-
-        if (acquireImage.result == vk::Result::eErrorOutOfDateKHR)
+        auto flight = _pAirport->WaitNextFlight(_pSwapChain.get(), &_needRebuildSwapChain);
+        if (!flight.has_value())
             return;
 
-        if (acquireImage.result != vk::Result::eSuccess)
-        {
-            Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
-            return;
-        }
+        RecordCommand(flight->commandBuffer, _pRenderPass->GetRenderPass(), _pBackBuffer->GetBackBuffers()[flight->imageIndex]);
 
-        uint32_t imageIndex = acquireImage.value;
-
-        _pAirport->WaitFlightReady(flight);
-
-        RecordCommand(flight.commandBuffer, vkRenderPass, vkBackBuffers[imageIndex]);
-
-        std::array<vk::PipelineStageFlags, 1> waitStages = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-
-        vk::SubmitInfo submitInfo;
-        submitInfo.setWaitSemaphores(flight.imageReadySemaphore)
-                .setSignalSemaphores(flight.renderFinishSemaphore)
-                .setWaitDstStageMask(waitStages)
-                .setCommandBuffers(flight.commandBuffer);
-
-        auto submit = _vkGraphicQueue.submit(1, &submitInfo, flight.fence);
-        if (submit != vk::Result::eSuccess)
-        {
-            Logger::LogError("Fail to submit command buffer, result = {}", static_cast<int>(submit));
-            return;
-        }
-
-        vk::PresentInfoKHR presentInfo;
-        presentInfo.setWaitSemaphores(flight.renderFinishSemaphore)
-                .setSwapchains(vkSwapChain)
-                .setImageIndices(imageIndex);
-
-        auto present = _vkPresentQueue.presentKHR(presentInfo);
-        if (present == vk::Result::eErrorOutOfDateKHR || present == vk::Result::eSuboptimalKHR)
-            NeedRecreateSwapChain();
-
-        if (present == vk::Result::eErrorOutOfDateKHR)
-            return;
-
-        if (present != vk::Result::eSuccess)
-        {
-            Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
-            return;
-        }
-
-        _pAirport->UpdateFlightPlan();
+        _pAirport->TakeOff(flight.value(), _pSwapChain.get(), &_needRebuildSwapChain);
     }
 
     void Renderer::RecordCommand(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass,

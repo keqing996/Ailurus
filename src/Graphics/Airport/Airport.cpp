@@ -43,31 +43,85 @@ namespace Ailurus
         _pRenderer->GetLogicalDevice().freeCommandBuffers(_pRenderer->GetCommandPool(), _vkCommandBuffers);
     }
 
-    Flight Airport::GetNextFlight() const
+    std::optional<Flight> Airport::WaitNextFlight(const SwapChain* pSwapChain, bool* needRebuild)
     {
-        return Flight{
+        Flight flight { 0,
             _vkCommandBuffers[_currentFlightIndex],
             _vkImageReadySemaphore[_currentFlightIndex],
             _vkFinishRenderSemaphore[_currentFlightIndex],
             _vkFences[_currentFlightIndex]
         };
-    }
 
-    void Airport::WaitFlightReady(const Flight& flight) const
-    {
-        auto waitFence = _pRenderer->GetLogicalDevice().waitForFences(
-            flight.fence, true, std::numeric_limits<uint64_t>::max());
+        // Acquire swap chain next image
+        auto acquireImage = _pRenderer->GetLogicalDevice().acquireNextImageKHR(
+            pSwapChain->GetSwapChain(), std::numeric_limits<uint64_t>::max(), flight.imageReadySemaphore);
+
+        switch (acquireImage.result)
+        {
+            case vk::Result::eErrorOutOfDateKHR:
+                *needRebuild = true;
+                return std::nullopt;
+            case vk::Result::eSuboptimalKHR:
+                *needRebuild = true;
+                break;
+            case vk::Result::eSuccess:
+                break;
+            default:
+                Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
+                return std::nullopt;
+        }
+
+        flight.imageIndex = acquireImage.value;
+
+        // Wait fence
+        auto waitFence = _pRenderer->GetLogicalDevice().waitForFences( flight.fence, true,
+            std::numeric_limits<uint64_t>::max());
         if (waitFence != vk::Result::eSuccess)
         {
             Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
-            return;
+            return std::nullopt;
         }
 
         _pRenderer->GetLogicalDevice().resetFences(flight.fence);
+
+        _currentFlightIndex = (_currentFlightIndex + 1) % MAX_FLIGHTS;
+
+        return flight;
     }
 
-    void Airport::UpdateFlightPlan()
+    bool Airport::TakeOff(Flight flight, const SwapChain* pSwapChain, bool* needRebuild)
     {
-        _currentFlightIndex = (_currentFlightIndex + 1) % MAX_FLIGHTS;
+        std::array<vk::PipelineStageFlags, 1> waitStages = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+
+        vk::SubmitInfo submitInfo;
+        submitInfo.setWaitSemaphores(flight.imageReadySemaphore)
+                .setSignalSemaphores(flight.renderFinishSemaphore)
+                .setWaitDstStageMask(waitStages)
+                .setCommandBuffers(flight.commandBuffer);
+
+        _pRenderer->GetGraphicQueue().submit(submitInfo, flight.fence);
+
+        vk::PresentInfoKHR presentInfo;
+        presentInfo.setWaitSemaphores(flight.renderFinishSemaphore)
+                .setSwapchains(pSwapChain->GetSwapChain())
+                .setImageIndices(flight.imageIndex);
+
+        auto present = _pRenderer->GetPresentQueue().presentKHR(presentInfo);
+        switch (present)
+        {
+            case vk::Result::eErrorOutOfDateKHR:
+                *needRebuild = true;
+                return false;
+            case vk::Result::eSuboptimalKHR:
+                *needRebuild = true;
+                break;
+            case vk::Result::eSuccess:
+                break;
+            default:
+                Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
+                return false;
+        }
+
+        return true;
     }
 }
