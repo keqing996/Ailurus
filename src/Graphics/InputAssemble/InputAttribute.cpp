@@ -15,7 +15,8 @@ namespace Ailurus
                 return vk::Format::eR32G32B32A32Sfloat;
         }
 
-        Logger::LogError("Fail to convert attribute type to vk format, attribute type = {}", type);
+        Logger::LogError("Fail to convert attribute type to vk format, attribute type = {}",
+            EnumReflection<AttributeType>::ToString(type));
         return vk::Format::eUndefined;
     }
 
@@ -31,7 +32,8 @@ namespace Ailurus
                 return sizeof(float) * 4;
         }
 
-        Logger::LogError("Fail to get attribute size, attribute type = {}", type);
+        Logger::LogError("Fail to get attribute size, attribute type = {}",
+            EnumReflection<AttributeType>::ToString(type));
         return 0;
     }
 

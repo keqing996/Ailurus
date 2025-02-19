@@ -3,15 +3,14 @@
 #include <vector>
 #include <initializer_list>
 #include <vulkan/vulkan.hpp>
+#include "../../Utility/EnumReflection.h"
 
 namespace Ailurus
 {
-    enum class AttributeType
-    {
+    REFLECTION_ENUM(AttributeType,
         Vector2,
         Vector3,
-        Vector4,
-    };
+        Vector4);
 
     class InputAttribute
     {

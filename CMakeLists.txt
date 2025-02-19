@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.22)
 
 project (AILURUS_INFRASTRUCTURE)
 set (CMAKE_CXX_STANDARD 20)
-set (AILURUS_TARGET_NAME ailurus)
 
 # SDL
 set (SDL_STATIC ON) # static link sdl
@@ -14,9 +13,6 @@ add_subdirectory(submodule/spdlog)
 
 # Vulkan
 find_package(Vulkan REQUIRED)
-
-# Set output path
-set (LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/artifacts/${CMAKE_CXX_COMPILER_ID}/${CMAKE_BUILD_TYPE}/)
 
 # Source files
 file (GLOB_RECURSE AILURUS_SRC ./src/*.cpp)
@@ -30,17 +26,27 @@ set (AILURUS_IMGUI_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_sdl3.cpp
 )
 
-# Library
-add_library                 (${AILURUS_TARGET_NAME} STATIC ${AILURUS_SRC} ${AILURUS_IMGUI_SRC})
-target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
-target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/)
-target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/) # for imgui source
-target_link_libraries       (${AILURUS_TARGET_NAME} PUBLIC SDL3-static Vulkan::Vulkan spdlog)
+# Core Library
+add_library                 (ailurus-core STATIC ${AILURUS_SRC} ${AILURUS_IMGUI_SRC})
+target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/)
+target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/) # for imgui source
+target_link_libraries       (ailurus-core PUBLIC SDL3-static Vulkan::Vulkan spdlog)
 
 if (WIN32)
-    target_link_libraries   (${AILURUS_TARGET_NAME} PRIVATE wsock32 ws2_32) # for socket
-    target_link_libraries   (${AILURUS_TARGET_NAME} PRIVATE dwmapi) # to fix some 'DwmXXX' link errors under mingw
+    target_link_libraries   (ailurus-core PRIVATE wsock32 ws2_32) # for socket
+    target_link_libraries   (ailurus-core PRIVATE dwmapi) # to fix some 'DwmXXX' link errors under mingw
 endif ()
+
+# Interface
+set (AILURUS_TARGET_NAME ailurus)
+add_library (${AILURUS_TARGET_NAME} INTERFACE)
+if (WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # To fix Mingw link order problem, "undefined reference to WinMain".
+    target_link_libraries (${AILURUS_TARGET_NAME} INTERFACE mingw32 ailurus-core)
+else ()
+    target_link_libraries (${AILURUS_TARGET_NAME} INTERFACE ailurus-core)
+endif()
 
 # Test code
 option (AILURUS_ENABLE_TEST OFF)
