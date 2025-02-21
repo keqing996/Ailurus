@@ -7,9 +7,9 @@
 #include "FrameBuffer/BackBuffer.h"
 #include "Pipeline/Pipeline.h"
 #include "RenderPass/RenderPass.h"
-#include "Shader/Shader.h"
+#include "Shader/ShaderLibrary.h"
 #include "SwapChain/SwapChain.h"
-#include "../Math/Vector.hpp"
+#include "Ailurus/Math/Vector.hpp"
 
 namespace Ailurus
 {
@@ -51,6 +51,7 @@ namespace Ailurus
         vk::Queue GetGraphicQueue() const;
         vk::Queue GetPresentQueue() const;
         vk::CommandPool GetCommandPool() const;
+        ShaderLibrary* GetShaderLibrary();
 
     private:
         // Static Context
@@ -89,6 +90,7 @@ namespace Ailurus
         vk::Queue _vkGraphicQueue = nullptr;
         vk::Queue _vkPresentQueue = nullptr;
         vk::CommandPool _vkGraphicCommandPool = nullptr;
+        std::unique_ptr<ShaderLibrary> _pShaderLibrary = nullptr;
 
         // Dynamic context
         std::unique_ptr<SwapChain> _pSwapChain = nullptr;
@@ -96,9 +98,5 @@ namespace Ailurus
         std::unique_ptr<Pipeline> _pPipeline = nullptr;
         std::unique_ptr<BackBuffer> _pBackBuffer = nullptr;
         std::unique_ptr<Airport> _pAirport = nullptr;
-
-        // temp
-        std::unique_ptr<Shader> _pVertShader = nullptr;
-        std::unique_ptr<Shader> _pFragShader = nullptr;
     };
 }

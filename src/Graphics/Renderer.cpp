@@ -91,26 +91,17 @@ namespace Ailurus
         const WindowCreateSurfaceCallback& createSurface,
         const WindowDestroySurfaceCallback& destroySurface,
         bool enableValidationLayer)
-        : _getWindowSizeCallback(getWindowSize)
-          , _getWindowInstExtensionsCallback(getWindowInstExt)
-          , _windowDestroySurfaceCallback(destroySurface)
+            : _getWindowSizeCallback(getWindowSize)
+            , _getWindowInstExtensionsCallback(getWindowInstExt)
+            , _windowDestroySurfaceCallback(destroySurface)
     {
         CreateStaticContext(enableValidationLayer, createSurface);
-
-        // temp
-        _pVertShader = std::make_unique<Shader>(this, ShaderStage::Vertex, "./triangle.vert.spv");
-        _pFragShader = std::make_unique<Shader>(this, ShaderStage::Fragment, "./triangle.frag.spv");
-
         CreateDynamicContext();
     }
 
     Renderer::~Renderer()
     {
         DestroyDynamicContext();
-
-        _pVertShader.reset();
-        _pFragShader.reset();
-
         DestroyStaticContext();
     }
 
@@ -209,6 +200,11 @@ namespace Ailurus
         return _vkGraphicCommandPool;
     }
 
+    ShaderLibrary* Renderer::GetShaderLibrary()
+    {
+        return _pShaderLibrary.get();
+    }
+
     void Renderer::CreateStaticContext(bool enableValidation, const WindowCreateSurfaceCallback& createSurface)
     {
         Verbose::LogInstanceLayerProperties();
@@ -230,10 +226,14 @@ namespace Ailurus
         CreateLogicDevice();
 
         CreateCommandPool();
+
+        _pShaderLibrary = std::make_unique<ShaderLibrary>(this);
     }
 
     void Renderer::DestroyStaticContext()
     {
+        _pShaderLibrary.reset();
+
         _vkLogicalDevice.destroyCommandPool(_vkGraphicCommandPool);
         _vkLogicalDevice.destroy();
 
@@ -413,8 +413,8 @@ namespace Ailurus
         _pBackBuffer = std::make_unique<BackBuffer>(this, _pSwapChain.get(), _pRenderPass.get());
 
         _pPipeline = std::make_unique<Pipeline>(this, _pRenderPass.get());
-        _pPipeline->AddShader(_pVertShader.get());
-        _pPipeline->AddShader(_pFragShader.get());
+        _pPipeline->AddShader(_pShaderLibrary->GetShader(ShaderStage::Vertex, "./triangle.vert.spv"));
+        _pPipeline->AddShader(_pShaderLibrary->GetShader(ShaderStage::Fragment, "./triangle.frag.spv"));
         _pPipeline->GeneratePipeline();
 
         _pAirport = std::make_unique<Airport>(this);

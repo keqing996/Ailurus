@@ -1,8 +1,8 @@
 #pragma once
 
-#include <memory>
 #include <vulkan/vulkan.hpp>
-#include "../SwapChain/SwapChain.h"
+#include "RenderPassType.h"
+#include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus
 {
