@@ -10,7 +10,8 @@ namespace Ailurus
         auto vkPhysicalDevice = _pRenderer->GetPhysicalDevice();
         auto vkSurface = _pRenderer->GetSurface();
         auto vkLogicalDevice = _pRenderer->GetLogicalDevice();
-        auto queueIndex = _pRenderer->GetQueueIndex();
+        auto graphicQueueIndex = _pRenderer->GetGraphicQueueIndex();
+        auto presentQueueIndex = _pRenderer->GetPresentQueueIndex();
 
         // Present mode
         auto allPresentMode = vkPhysicalDevice.getSurfacePresentModesKHR(vkSurface);
@@ -62,18 +63,15 @@ namespace Ailurus
             .setImageColorSpace(_swapChainConfig.surfaceFormat.colorSpace)
             .setImageExtent(_swapChainConfig.extent);
 
-        if (queueIndex.graphicQueueIndex.value() == queueIndex.presentQueueIndex.value())
+        if (graphicQueueIndex == presentQueueIndex)
         {
             swapChainCreateInfo
                 .setImageSharingMode(vk::SharingMode::eExclusive)
-                .setQueueFamilyIndices(queueIndex.graphicQueueIndex.value());
+                .setQueueFamilyIndices(graphicQueueIndex);
         }
         else
         {
-            std::array indices = {
-                queueIndex.graphicQueueIndex.value(),
-                queueIndex.presentQueueIndex.value()
-            };
+            std::array indices = { graphicQueueIndex, presentQueueIndex };
             swapChainCreateInfo
                 .setImageSharingMode(vk::SharingMode::eConcurrent)
                 .setQueueFamilyIndices(indices);

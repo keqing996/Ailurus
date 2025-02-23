@@ -21,13 +21,6 @@ namespace Ailurus
         using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
 
     public:
-        struct QueueIndex
-        {
-            std::optional<uint32_t> graphicQueueIndex = std::nullopt;
-            std::optional<uint32_t> presentQueueIndex = std::nullopt;
-        };
-
-    public:
         Renderer(const GetWindowSizeCallback& getWindowSize,
                  const GetWindowInstanceExtension& getWindowInstExt,
                  const WindowCreateSurfaceCallback& createSurface,
@@ -47,7 +40,8 @@ namespace Ailurus
         vk::SurfaceKHR GetSurface() const;
         vk::PhysicalDevice GetPhysicalDevice() const;
         vk::Device GetLogicalDevice() const;
-        const QueueIndex& GetQueueIndex() const;
+        uint32_t GetGraphicQueueIndex() const;
+        uint32_t GetPresentQueueIndex() const;
         vk::Queue GetGraphicQueue() const;
         vk::Queue GetPresentQueue() const;
         vk::CommandPool GetCommandPool() const;
@@ -86,7 +80,8 @@ namespace Ailurus
         vk::SurfaceKHR _vkSurface = nullptr;
         vk::PhysicalDevice _vkPhysicalDevice = nullptr;
         vk::Device _vkLogicalDevice = nullptr;
-        QueueIndex _queueIndex;
+        uint32_t _graphicQueueIndex = 0;
+        uint32_t _presentQueueIndex = 0;
         vk::Queue _vkGraphicQueue = nullptr;
         vk::Queue _vkPresentQueue = nullptr;
         vk::CommandPool _vkGraphicCommandPool = nullptr;

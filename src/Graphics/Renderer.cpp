@@ -180,9 +180,14 @@ namespace Ailurus
         return _vkLogicalDevice;
     }
 
-    const Renderer::QueueIndex& Renderer::GetQueueIndex() const
+    uint32_t Renderer::GetGraphicQueueIndex() const
     {
-        return _queueIndex;
+        return _graphicQueueIndex;
+    }
+
+    uint32_t Renderer::GetPresentQueueIndex() const
+    {
+        return _presentQueueIndex;
     }
 
     vk::Queue Renderer::GetGraphicQueue() const
@@ -346,20 +351,31 @@ namespace Ailurus
     void Renderer::CreateLogicDevice()
     {
         // Find graphic queue and present queue.
+        std::optional<uint32_t> optGraphicQueue = std::nullopt;
+        std::optional<uint32_t> optPresentQueue = std::nullopt;
         auto queueFamilyProperties = _vkPhysicalDevice.getQueueFamilyProperties();
         for (std::size_t i = 0; i < queueFamilyProperties.size(); ++i)
         {
             auto& property = queueFamilyProperties[i];
-            if ((property.queueFlags & vk::QueueFlagBits::eGraphics) && !_queueIndex.graphicQueueIndex.has_value())
-                _queueIndex.graphicQueueIndex = static_cast<uint32_t>(i);
+            if ((property.queueFlags & vk::QueueFlagBits::eGraphics) && !optGraphicQueue.has_value())
+                optGraphicQueue = static_cast<uint32_t>(i);
 
             bool canPresent = _vkPhysicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), _vkSurface);
-            if (canPresent && !_queueIndex.presentQueueIndex.has_value())
-                _queueIndex.presentQueueIndex = static_cast<uint32_t>(i);
+            if (canPresent && !optPresentQueue.has_value())
+                optPresentQueue = static_cast<uint32_t>(i);
 
-            if (_queueIndex.graphicQueueIndex.has_value() && _queueIndex.presentQueueIndex.has_value())
+            if (optGraphicQueue.has_value() && optPresentQueue.has_value())
                 break;
         }
+
+        if (!optGraphicQueue.has_value() || !optPresentQueue.has_value())
+        {
+            Logger::LogError("Fail to get graphic queue and present queue.");
+            return;
+        }
+
+        _graphicQueueIndex = *optGraphicQueue;
+        _presentQueueIndex = *optPresentQueue;
 
         // Queue create info
         const float queuePriority = 1.0f;
@@ -367,15 +383,15 @@ namespace Ailurus
         queueCreateInfoList.emplace_back();
         queueCreateInfoList.back().setQueueCount(1)
                 .setQueuePriorities(queuePriority)
-                .setQueueFamilyIndex(_queueIndex.graphicQueueIndex.value());
+                .setQueueFamilyIndex(_graphicQueueIndex);
 
-        if (_queueIndex.presentQueueIndex.value() != _queueIndex.graphicQueueIndex.value())
+        if (_presentQueueIndex != _graphicQueueIndex)
         {
             queueCreateInfoList.emplace_back();
             queueCreateInfoList.back()
                     .setQueueCount(1)
                     .setQueuePriorities(queuePriority)
-                    .setQueueFamilyIndex(_queueIndex.presentQueueIndex.value());
+                    .setQueueFamilyIndex(_presentQueueIndex);
         }
 
         // Features
@@ -392,15 +408,15 @@ namespace Ailurus
                 .setPEnabledFeatures(&physicalDeviceFeatures);
 
         _vkLogicalDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
-        _vkGraphicQueue = _vkLogicalDevice.getQueue(_queueIndex.graphicQueueIndex.value(), 0);
-        _vkPresentQueue = _vkLogicalDevice.getQueue(_queueIndex.presentQueueIndex.value(), 0);
+        _vkGraphicQueue = _vkLogicalDevice.getQueue(_graphicQueueIndex, 0);
+        _vkPresentQueue = _vkLogicalDevice.getQueue(_presentQueueIndex, 0);
     }
 
     void Renderer::CreateCommandPool()
     {
         vk::CommandPoolCreateInfo poolInfo;
         poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-            .setQueueFamilyIndex(_queueIndex.graphicQueueIndex.value());
+            .setQueueFamilyIndex(_graphicQueueIndex);
 
         _vkGraphicCommandPool = _vkLogicalDevice.createCommandPool(poolInfo);
     }

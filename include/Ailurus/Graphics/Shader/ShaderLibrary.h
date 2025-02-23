@@ -2,11 +2,12 @@
 
 #include <memory>
 #include <unordered_map>
-#include "Ailurus/Graphics/Renderer.h"
 #include "Shader.h"
 
 namespace Ailurus
 {
+    class Renderer;
+
     class ShaderLibrary
     {
     public:

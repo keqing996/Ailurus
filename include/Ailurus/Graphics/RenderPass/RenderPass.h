@@ -2,11 +2,11 @@
 
 #include <vulkan/vulkan.hpp>
 #include "RenderPassType.h"
-#include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus
 {
     class Renderer;
+    class SwapChain;
 
     class RenderPass
     {

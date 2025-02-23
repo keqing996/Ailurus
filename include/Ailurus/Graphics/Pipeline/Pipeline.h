@@ -2,12 +2,13 @@
 
 #include <unordered_map>
 #include <vulkan/vulkan.hpp>
-#include "../Shader/Shader.h"
-#include "../RenderPass/RenderPass.h"
+#include "Ailurus/Graphics/Shader/ShaderStage.h"
 
 namespace Ailurus
 {
     class Renderer;
+    class RenderPass;
+    class Shader;
 
     class Pipeline
     {

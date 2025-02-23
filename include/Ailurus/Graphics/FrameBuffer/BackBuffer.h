@@ -1,12 +1,12 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "../SwapChain/SwapChain.h"
-#include "../RenderPass/RenderPass.h"
 
 namespace Ailurus
 {
     class Renderer;
+    class RenderPass;
+    class SwapChain;
 
     class BackBuffer
     {
