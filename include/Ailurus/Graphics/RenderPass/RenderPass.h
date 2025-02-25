@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include "RenderPassType.h"
+#include "Ailurus/Graphics/Airport/Flight.h"
 
 namespace Ailurus
 {
@@ -11,14 +12,13 @@ namespace Ailurus
     class RenderPass
     {
     public:
-        RenderPass(const Renderer* pRenderer, const SwapChain* pSwapChain);
-        ~RenderPass();
+        explicit RenderPass(const Renderer* pRenderer) : _pRenderer(pRenderer) {}
+        virtual ~RenderPass() = 0;
 
     public:
-        vk::RenderPass GetRenderPass() const;
+        virtual vk::RenderPassBeginInfo GetRenderPassBeginInfo(const Flight& flight) = 0;
 
-    private:
+    protected:
         const Renderer* _pRenderer;
-        vk::RenderPass _vkRenderPass;
     };
 }

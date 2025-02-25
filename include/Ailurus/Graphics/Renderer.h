@@ -6,7 +6,7 @@
 #include "Airport/Airport.h"
 #include "FrameBuffer/BackBuffer.h"
 #include "Pipeline/Pipeline.h"
-#include "RenderPass/RenderPass.h"
+#include "RenderPass/RenderPassForward.h"
 #include "Shader/ShaderLibrary.h"
 #include "SwapChain/SwapChain.h"
 #include "Ailurus/Math/Vector.hpp"
@@ -46,6 +46,7 @@ namespace Ailurus
         vk::Queue GetPresentQueue() const;
         vk::CommandPool GetCommandPool() const;
         ShaderLibrary* GetShaderLibrary();
+        SwapChain* GetSwapChain() const;
 
     private:
         // Static Context

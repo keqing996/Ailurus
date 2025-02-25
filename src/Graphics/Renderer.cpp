@@ -210,6 +210,11 @@ namespace Ailurus
         return _pShaderLibrary.get();
     }
 
+    SwapChain* Renderer::GetSwapChain() const
+    {
+        return _pSwapChain.get();
+    }
+
     void Renderer::CreateStaticContext(bool enableValidation, const WindowCreateSurfaceCallback& createSurface)
     {
         Verbose::LogInstanceLayerProperties();
