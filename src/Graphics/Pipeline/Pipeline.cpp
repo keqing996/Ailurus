@@ -4,7 +4,7 @@
 
 namespace Ailurus
 {
-    Pipeline::Pipeline(const Renderer* pRenderer, const RenderPass* pRenderPass)
+    Pipeline::Pipeline(const Renderer* pRenderer, const RenderPass* pRenderPass, PipelineConfig config)
         : _pRenderer(pRenderer)
         , _pRenderPass(pRenderPass)
     {

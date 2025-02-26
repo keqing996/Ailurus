@@ -10,6 +10,9 @@ namespace Ailurus
         Fragment
     )
 
+    class Shader;
+    using PipelineShaderStages = std::array<const Shader*, EnumReflection<ShaderStage>::Size()>;
+
     namespace ShaderStageUtil
     {
         vk::ShaderStageFlagBits ToVulkanEnum(ShaderStage stage);

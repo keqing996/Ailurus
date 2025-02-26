@@ -33,21 +33,21 @@ namespace Ailurus
         template <typename... Args>
         static void LogInfo(const std::string& fmt, Args&&... args)
         {
-            std::string formattedMessage = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+            std::string formattedMessage = std::vformat(fmt, std::make_format_args(args...));
             LogInfo(formattedMessage);
         }
 
         template <typename... Args>
         static void LogWarn(const std::string& fmt, Args&&... args)
         {
-            std::string formattedMessage = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+            std::string formattedMessage = std::vformat(fmt, std::make_format_args(args...));
             LogWarn(formattedMessage);
         }
 
         template <typename... Args>
         static void LogError(const std::string& fmt, Args&&... args)
         {
-            std::string formattedMessage = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+            std::string formattedMessage = std::vformat(fmt, std::make_format_args(args...));
             LogError(formattedMessage);
         }
     };

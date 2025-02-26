@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vulkan/vulkan.hpp>
 #include "Ailurus/Graphics/Shader/ShaderStage.h"
+#include "PipelineConfig.h"
 
 namespace Ailurus
 {
@@ -13,19 +14,16 @@ namespace Ailurus
     class Pipeline
     {
     public:
-        Pipeline(const Renderer* pRenderer, const RenderPass* pRenderPass);
+        Pipeline(const Renderer* pRenderer, const RenderPass* pRenderPass, PipelineConfig config);
         ~Pipeline();
 
     public:
-        void AddShader(Shader* pShader);
-        void GeneratePipeline();
         vk::Pipeline GetPipeline() const;
 
     private:
         const Renderer* _pRenderer;
-        const RenderPass* _pRenderPass;
+
         vk::PipelineLayout _vkPipelineLayout;
         vk::Pipeline _vkPipeline;
-        std::unordered_map<ShaderStage, Shader*> _shaderMap;
     };
 }

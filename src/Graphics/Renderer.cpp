@@ -1,4 +1,5 @@
 #include <array>
+#include "Ailurus/PlatformDefine.h"
 #include "Ailurus/Graphics/Renderer.h"
 #include "Ailurus/Utility/Logger.h"
 
