@@ -17,6 +17,11 @@ namespace Ailurus
         _pRenderer->GetLogicalDevice().destroyRenderPass(_vkRenderPass);
     }
 
+    vk::RenderPass RenderPassForward::GetRenderPass() const
+    {
+        return _vkRenderPass;
+    }
+
     vk::RenderPassBeginInfo RenderPassForward::GetRenderPassBeginInfo(const Flight& flight)
     {
         static vk::ClearValue clearColor({0.0f, 0.0f, 0.0f, 1.0f});

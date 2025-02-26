@@ -16,6 +16,7 @@ namespace Ailurus
         virtual ~RenderPass() = 0;
 
     public:
+        virtual vk::RenderPass GetRenderPass() const = 0;
         virtual vk::RenderPassBeginInfo GetRenderPassBeginInfo(const Flight& flight) = 0;
 
     protected:

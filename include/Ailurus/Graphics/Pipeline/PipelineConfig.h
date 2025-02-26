@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Ailurus/Graphics/InputAssemble/InputAttribute.h"
 #include "Ailurus/Graphics/Shader/ShaderStage.h"
 
 namespace Ailurus
 {
+    class InputAssemble;
+
     struct PipelineConfig
     {
-        InputAttribute inputAttribute;
+        const InputAssemble* pInputAssemble;
         PipelineShaderStages shaderStages;
     };
 }

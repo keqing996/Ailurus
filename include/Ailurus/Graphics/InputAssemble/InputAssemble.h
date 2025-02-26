@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <vector>
-#include <optional>
 #include "InputAttribute.h"
 
 namespace Ailurus
@@ -20,7 +19,7 @@ namespace Ailurus
 
     public:
         const VertexBuffer* GetVertexBuffer() const;
-        const std::optional<InputAttribute>& GetInputAttribute() const;
+        const InputAttribute& GetInputAttribute() const;
         const IndexBuffer* GetIndexBuffer() const;
 
     private:

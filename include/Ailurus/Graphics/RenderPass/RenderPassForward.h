@@ -12,6 +12,7 @@ namespace Ailurus
         ~RenderPassForward() override;
 
     public:
+        vk::RenderPass GetRenderPass() const override;
         vk::RenderPassBeginInfo GetRenderPassBeginInfo(const Flight& flight) override;
 
     private:

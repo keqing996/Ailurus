@@ -18,7 +18,7 @@ namespace Ailurus
         explicit InputAttribute(const std::initializer_list<AttributeType>& attributes);
         explicit InputAttribute(const std::vector<AttributeType>& attributes);
 
-        std::vector<vk::VertexInputAttributeDescription> GetAttributeDescription(uint32_t binding = 0) const;
+        std::vector<vk::VertexInputAttributeDescription> GetAttributeDescription() const;
         uint32_t GetStride() const;
 
     private:

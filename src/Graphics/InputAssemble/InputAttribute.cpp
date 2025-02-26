@@ -47,12 +47,12 @@ namespace Ailurus
     {
     }
 
-    std::vector<vk::VertexInputAttributeDescription> InputAttribute::GetAttributeDescription(
-        uint32_t binding) const
+    std::vector<vk::VertexInputAttributeDescription> InputAttribute::GetAttributeDescription() const
     {
         std::vector<vk::VertexInputAttributeDescription> result;
 
         uint32_t offset = 0;
+        uint32_t binding = 0;
         for (auto i = 0; i < _attribute.size(); i++)
         {
             AttributeType attr = _attribute[i];
@@ -66,6 +66,7 @@ namespace Ailurus
             result.push_back(attributeDescriptions);
 
             offset += GetAttributeSize(attr);
+            binding++;
         }
 
         return result;

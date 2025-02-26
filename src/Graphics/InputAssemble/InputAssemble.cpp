@@ -31,7 +31,7 @@ namespace Ailurus
         return _pVertexBuffer.get();
     }
 
-    const std::optional<InputAttribute>& InputAssemble::GetInputAttribute() const
+    const InputAttribute& InputAssemble::GetInputAttribute() const
     {
         return _inputAttr;
     }

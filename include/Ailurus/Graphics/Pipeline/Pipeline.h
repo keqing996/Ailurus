@@ -14,7 +14,7 @@ namespace Ailurus
     class Pipeline
     {
     public:
-        Pipeline(const Renderer* pRenderer, const RenderPass* pRenderPass, PipelineConfig config);
+        Pipeline(const Renderer* pRenderer, const RenderPass* pRenderPass, const PipelineConfig& config);
         ~Pipeline();
 
     public:
