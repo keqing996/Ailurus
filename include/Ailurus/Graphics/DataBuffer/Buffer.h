@@ -2,11 +2,12 @@
 
 #include <optional>
 #include <vulkan/vulkan.hpp>
-#include "Ailurus/Graphics/Renderer.h"
 #include "BufferType.h"
 
 namespace Ailurus
 {
+    class Renderer;
+
     class Buffer
     {
     protected:

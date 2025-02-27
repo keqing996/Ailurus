@@ -1,4 +1,5 @@
 #include "Ailurus/Graphics/DataBuffer/IndexBuffer.h"
+#include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus
 {

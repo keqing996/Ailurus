@@ -5,12 +5,12 @@
 #include <unordered_map>
 #include "Ailurus/Graphics/RenderPass/RenderPassType.h"
 #include "Ailurus/Graphics/Shader/ShaderStage.h"
+#include "Ailurus/Graphics/InputAssemble/InputAssemble.h"
 
 namespace Ailurus
 {
     class Renderer;
     class Shader;
-    class InputAssemble;
 
     class RenderObject
     {
@@ -28,7 +28,14 @@ namespace Ailurus
             SetRenderPassShader(passType, pShader);
         }
 
-        std::optional<const PipelineShaderStages&> GetRenderPassShaders(RenderPassType passType) const;
+        const InputAssemble* GetInputAssemble() const;
+        std::optional<const PipelineShaderStages*> GetRenderPassShaders(RenderPassType passType) const;
+
+        template<RenderPassType passType>
+        std::optional<const PipelineShaderStages*> GetRenderPassShaders() const
+        {
+            return GetRenderPassShaders(passType);
+        }
 
     private:
         const Renderer* _pRenderer;

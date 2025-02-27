@@ -1,4 +1,5 @@
 #include "Ailurus/Graphics/RenderPass/RenderPass.h"
+#include "Ailurus/Graphics/Pipeline/Pipeline.h"
 #include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus

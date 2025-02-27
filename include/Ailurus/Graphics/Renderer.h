@@ -30,8 +30,6 @@ namespace Ailurus
 
         void Render();
 
-        void RecordCommand(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass, vk::Framebuffer targetFrameBuffer);
-
         void NeedRecreateSwapChain();
 
     public: // Getter

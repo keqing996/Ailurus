@@ -1,8 +1,6 @@
 #pragma once
 
-#include <unordered_map>
 #include <vulkan/vulkan.hpp>
-#include "Ailurus/Graphics/Shader/ShaderStage.h"
 #include "PipelineConfig.h"
 
 namespace Ailurus

@@ -11,6 +11,11 @@ namespace Ailurus
         const InputAssemble* pInputAssemble;
         PipelineShaderStages shaderStages;
 
+        bool operator==(const PipelineConfig& rhs) const
+        {
+            return pInputAssemble == rhs.pInputAssemble && shaderStages == rhs.shaderStages;
+        }
+
         struct Hash
         {
             size_t operator()(const PipelineConfig& p) const

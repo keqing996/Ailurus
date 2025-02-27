@@ -3,21 +3,19 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <unordered_map>
-#include "RenderPassType.h"
 #include "Ailurus/Graphics/Airport/Flight.h"
-#include "Ailurus/Graphics/Pipeline/PipelineConfig.h"
+#include "Ailurus/Graphics/Pipeline/Pipeline.h"
 
 namespace Ailurus
 {
     class Renderer;
     class SwapChain;
-    class Pipeline;
 
     class RenderPass
     {
     public:
         explicit RenderPass(const Renderer* pRenderer) : _pRenderer(pRenderer) {}
-        virtual ~RenderPass() = 0;
+        virtual ~RenderPass() = default;
 
     public:
         virtual vk::RenderPass GetRenderPass() const = 0;

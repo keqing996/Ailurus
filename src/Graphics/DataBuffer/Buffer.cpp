@@ -1,4 +1,5 @@
 #include "Ailurus/Graphics/DataBuffer/Buffer.h"
+#include "Ailurus/Graphics/Renderer.h"
 #include "Ailurus/Utility/ScopeGuard.h"
 #include "Ailurus/Utility/Logger.h"
 

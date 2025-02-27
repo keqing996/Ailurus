@@ -1,6 +1,8 @@
 #include <array>
-#include "Ailurus/PlatformDefine.h"
 #include "Ailurus/Graphics/Renderer.h"
+#include "Ailurus/Graphics/DataBuffer/VertexBuffer.h"
+#include "Ailurus/Graphics/DataBuffer/IndexBuffer.h"
+#include "Ailurus/Graphics/Pipeline/Pipeline.h"
 #include "Ailurus/Graphics/InputAssemble/InputAssemble.h"
 #include "Ailurus/Utility/Logger.h"
 
@@ -139,45 +141,39 @@ namespace Ailurus
         if (!flight.has_value())
             return;
 
-        RecordCommand(flight->commandBuffer, _pRenderPass->GetRenderPass(), _pBackBuffer->GetBackBuffers()[flight->imageIndex]);
+        auto commandBuffer = flight->commandBuffer;
+        {
+            vk::CommandBufferBeginInfo beginInfo;
+            beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+            commandBuffer.begin(beginInfo);
+            {
+                commandBuffer.beginRenderPass(_pForwardPass->GetRenderPassBeginInfo(flight.value()), {});
+                {
+                    PipelineConfig pipelineConfig;
+                    pipelineConfig.pInputAssemble = _pRenderObj->GetInputAssemble();
+                    pipelineConfig.shaderStages = *_pRenderObj->GetRenderPassShaders<RenderPassType::Forward>().value();
+
+                    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _pForwardPass->GetPipeline(pipelineConfig)->GetPipeline());
+
+                    auto extent = _pSwapChain->GetSwapChainConfig().extent;
+                    vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
+                    vk::Rect2D scissor(vk::Offset2D{0, 0}, extent);
+
+                    commandBuffer.setViewport(0, 1, &viewport);
+                    commandBuffer.setScissor(0, 1, &scissor);
+
+                    vk::Buffer vertexBuffers[] = {_pRenderObj->GetInputAssemble()->GetVertexBuffer()->GetBuffer()};
+                    vk::DeviceSize offsets[] = {0};
+                    commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+                    commandBuffer.draw(3, 1, 0, 0);
+                }
+                commandBuffer.endRenderPass();
+            }
+            commandBuffer.end();
+        }
 
         _pAirport->TakeOff(flight.value(), _pSwapChain.get(), &_needRebuildSwapChain);
-    }
-
-    void Renderer::RecordCommand(vk::CommandBuffer commandBuffer, vk::RenderPass renderPass,
-                                 vk::Framebuffer targetFrameBuffer)
-    {
-        commandBuffer.reset();
-
-        auto extent = _pSwapChain->GetSwapChainConfig().extent;
-
-        vk::CommandBufferBeginInfo beginInfo;
-        beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-        commandBuffer.begin(beginInfo); {
-            vk::ClearValue clearColor({0.0f, 0.0f, 0.0f, 1.0f});
-
-            vk::RenderPassBeginInfo renderPassInfo;
-            renderPassInfo.setRenderPass(renderPass)
-                    .setFramebuffer(targetFrameBuffer)
-                    .setRenderArea(vk::Rect2D{
-                        vk::Offset2D{0, 0},
-                        extent
-                    })
-                    .setClearValues(clearColor);
-
-            commandBuffer.beginRenderPass(renderPassInfo, {}); {
-                vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
-                vk::Rect2D scissor(vk::Offset2D{0, 0}, extent);
-
-                commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _pPipeline->GetPipeline());
-                commandBuffer.setViewport(0, 1, &viewport);
-                commandBuffer.setScissor(0, 1, &scissor);
-                commandBuffer.draw(3, 1, 0, 0);
-            }
-            commandBuffer.endRenderPass();
-        }
-        commandBuffer.end();
     }
 
     void Renderer::NeedRecreateSwapChain()
