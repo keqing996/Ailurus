@@ -2,12 +2,12 @@
 
 namespace Ailurus
 {
-    VertexBuffer::VertexBuffer(const Renderer* pRenderer, const std::vector<char>& vertexData)
+    VertexBuffer::VertexBuffer(const Renderer* pRenderer, const char* vertexData, size_t vertexSize)
         : Buffer(pRenderer)
         , _buffer(nullptr)
         , _bufferMemory(nullptr)
     {
-        auto ret = CreateBuffer(BufferType::Vertex, vertexData);
+        auto ret = CreateBuffer(BufferType::Vertex, vertexData, vertexSize);
         if (!ret)
             return;
 

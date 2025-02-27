@@ -14,8 +14,14 @@ namespace Ailurus
         explicit ShaderLibrary(const Renderer* pRenderer);
 
     public:
-        Shader* GetShader(ShaderStage stage, const std::string& path);
         void Clear();
+        Shader* GetShader(ShaderStage stage, const std::string& path);
+
+        template<ShaderStage stage>
+        Shader* GetShader(const std::string& path)
+        {
+            return GetShader(stage, path);
+        }
 
     private:
         Shader* LoadShader(ShaderStage stage, const std::string& path);

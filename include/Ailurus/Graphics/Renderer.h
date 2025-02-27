@@ -4,12 +4,11 @@
 #include <functional>
 #include <vulkan/vulkan.hpp>
 #include "Airport/Airport.h"
-#include "FrameBuffer/BackBuffer.h"
-#include "Pipeline/Pipeline.h"
 #include "RenderPass/RenderPassForward.h"
 #include "Shader/ShaderLibrary.h"
 #include "SwapChain/SwapChain.h"
 #include "Ailurus/Math/Vector.hpp"
+#include "RenderObject/RenderObject.h"
 
 namespace Ailurus
 {
@@ -88,11 +87,12 @@ namespace Ailurus
         vk::CommandPool _vkGraphicCommandPool = nullptr;
         std::unique_ptr<ShaderLibrary> _pShaderLibrary = nullptr;
 
+        // temp
+        std::unique_ptr<RenderObject> _pRenderObj = nullptr;
+
         // Dynamic context
         std::unique_ptr<SwapChain> _pSwapChain = nullptr;
-        std::unique_ptr<RenderPass> _pRenderPass = nullptr;
-        std::unique_ptr<Pipeline> _pPipeline = nullptr;
-        std::unique_ptr<BackBuffer> _pBackBuffer = nullptr;
+        std::unique_ptr<RenderPassForward> _pForwardPass = nullptr;
         std::unique_ptr<Airport> _pAirport = nullptr;
     };
 }

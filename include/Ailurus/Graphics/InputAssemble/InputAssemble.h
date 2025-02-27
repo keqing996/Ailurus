@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include "InputAttribute.h"
 
 namespace Ailurus
@@ -13,8 +12,9 @@ namespace Ailurus
     class InputAssemble
     {
     public:
-        InputAssemble(const Renderer* pRenderer, const std::vector<char>& vertexData, const InputAttribute& inputAttr);
-        InputAssemble(const Renderer* pRenderer, const std::vector<char>& vertexData, const InputAttribute& inputAttr, const std::vector<char>& indexData);
+        InputAssemble(const Renderer* pRenderer, const char* vertexData, size_t vertexSize, const InputAttribute& inputAttr);
+        InputAssemble(const Renderer* pRenderer, const char* vertexData, size_t vertexSize, const InputAttribute& inputAttr,
+            const char* indexData, size_t indexSize);
         ~InputAssemble();
 
     public:

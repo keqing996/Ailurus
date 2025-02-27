@@ -20,7 +20,14 @@ namespace Ailurus
 
     public:
         void SetInputAssemble(std::unique_ptr<InputAssemble>&& pInputAssemble);
-        void AddShaderToRenderPass(RenderPassType passType, const Shader* pShader);
+        void SetRenderPassShader(RenderPassType passType, const Shader* pShader);
+
+        template <RenderPassType passType>
+        void SetRenderPassShader(const Shader* pShader)
+        {
+            SetRenderPassShader(passType, pShader);
+        }
+
         std::optional<const PipelineShaderStages&> GetRenderPassShaders(RenderPassType passType) const;
 
     private:

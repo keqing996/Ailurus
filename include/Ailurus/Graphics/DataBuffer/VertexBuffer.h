@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 #include <vulkan/vulkan.hpp>
 #include "Buffer.h"
 
@@ -9,7 +8,7 @@ namespace Ailurus
     class VertexBuffer : public Buffer
     {
     public:
-        VertexBuffer(const Renderer* pRenderer, const std::vector<char>& vertexData);
+        VertexBuffer(const Renderer* pRenderer, const char* vertexData, size_t vertexSize);
         ~VertexBuffer() override;
 
         vk::Buffer GetBuffer() const;

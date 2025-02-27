@@ -4,21 +4,21 @@
 
 namespace Ailurus
 {
-    InputAssemble::InputAssemble(const Renderer* pRenderer, const std::vector<char>& vertexData,
+    InputAssemble::InputAssemble(const Renderer* pRenderer, const char* vertexData, size_t vertexSize,
         const InputAttribute& inputAttr)
         : _pRenderer(pRenderer)
-        , _pVertexBuffer(std::make_unique<VertexBuffer>(pRenderer, vertexData))
+        , _pVertexBuffer(std::make_unique<VertexBuffer>(pRenderer, vertexData, vertexSize))
         , _inputAttr(inputAttr)
         , _pIndexBuffer(nullptr)
     {
     }
 
-    InputAssemble::InputAssemble(const Renderer* pRenderer, const std::vector<char>& vertexData,
-        const InputAttribute& inputAttr, const std::vector<char>& indexData)
+    InputAssemble::InputAssemble(const Renderer* pRenderer, const char* vertexData, size_t vertexSize, const InputAttribute& inputAttr,
+            const char* indexData, size_t indexSize)
         : _pRenderer(pRenderer)
-        , _pVertexBuffer(std::make_unique<VertexBuffer>(pRenderer, vertexData))
+        , _pVertexBuffer(std::make_unique<VertexBuffer>(pRenderer, vertexData, vertexSize))
         , _inputAttr(inputAttr)
-        , _pIndexBuffer(std::make_unique<IndexBuffer>(pRenderer, indexData))
+        , _pIndexBuffer(std::make_unique<IndexBuffer>(pRenderer, indexData, indexSize))
     {
     }
 

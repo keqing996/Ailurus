@@ -2,12 +2,12 @@
 
 namespace Ailurus
 {
-    IndexBuffer::IndexBuffer(const Renderer* pRenderer, const std::vector<char>& indexData)
+    IndexBuffer::IndexBuffer(const Renderer* pRenderer, const char* indexData, size_t indexSize)
         : Buffer(pRenderer)
         , _buffer(nullptr)
         , _bufferMemory(nullptr)
     {
-        auto ret = CreateBuffer(BufferType::Index, indexData);
+        auto ret = CreateBuffer(BufferType::Index, indexData, indexSize);
         if (!ret)
             return;
 

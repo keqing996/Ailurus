@@ -27,7 +27,7 @@ namespace Ailurus
         return itr->second;
     }
 
-    void RenderObject::AddShaderToRenderPass(RenderPassType passType, const Shader* pShader)
+    void RenderObject::SetRenderPassShader(RenderPassType passType, const Shader* pShader)
     {
         _renderPassShaderMap[passType][static_cast<size_t>(pShader->GetStage())] = pShader;
     }

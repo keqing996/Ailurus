@@ -9,9 +9,9 @@ namespace Ailurus
     {
     }
 
-    std::optional<Buffer::BufferWithMem> Buffer::CreateBuffer(BufferType type, const std::vector<char>& bufferData) const
+    std::optional<Buffer::BufferWithMem> Buffer::CreateBuffer(BufferType type, const char* bufferData, size_t bufferSize) const
     {
-        auto stagingBufferRet = CreateBuffer(bufferData.size(), vk::BufferUsageFlagBits::eTransferSrc,
+        auto stagingBufferRet = CreateBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
         if (!stagingBufferRet.has_value())
         {
@@ -28,8 +28,8 @@ namespace Ailurus
         };
 
         const auto device = _pRenderer->GetLogicalDevice();
-        void* mappedAddr = device.mapMemory(stagingBufferMemory, 0, bufferData.size(), {});
-        ::memcpy(mappedAddr, bufferData.data(), bufferData.size());
+        void* mappedAddr = device.mapMemory(stagingBufferMemory, 0, bufferSize, {});
+        ::memcpy(mappedAddr, bufferData, bufferSize);
         device.unmapMemory(stagingBufferMemory);
 
         vk::BufferUsageFlags targetBufferFlags = vk::BufferUsageFlagBits::eTransferDst;
@@ -46,7 +46,7 @@ namespace Ailurus
                 return std::nullopt;
         }
 
-        auto targetBufferRet = CreateBuffer(bufferData.size(), targetBufferFlags,
+        auto targetBufferRet = CreateBuffer(bufferSize, targetBufferFlags,
             vk::MemoryPropertyFlagBits::eDeviceLocal);
         if (!targetBufferRet.has_value())
         {
@@ -54,7 +54,7 @@ namespace Ailurus
             return std::nullopt;
         }
 
-        CopyBuffer(stagingBuffer, targetBufferRet->buffer, bufferData.size());
+        CopyBuffer(stagingBuffer, targetBufferRet->buffer, bufferSize);
 
         return *targetBufferRet;
     }

@@ -1,6 +1,7 @@
 #include <array>
 #include "Ailurus/PlatformDefine.h"
 #include "Ailurus/Graphics/Renderer.h"
+#include "Ailurus/Graphics/InputAssemble/InputAssemble.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
@@ -97,12 +98,35 @@ namespace Ailurus
             , _windowDestroySurfaceCallback(destroySurface)
     {
         CreateStaticContext(enableValidationLayer, createSurface);
+
+        _pRenderObj = std::make_unique<RenderObject>(this);
+
+        static std::vector vertices = {
+            -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+            0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+            0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+            -0.5f, 0.5f, 1.0f, 1.0f, 1.0f
+        };
+
+        auto pInputAssemble = std::make_unique<InputAssemble>(this, reinterpret_cast<const char*>(vertices.data()),
+            vertices.size(), InputAttribute{AttributeType::Vector2, AttributeType::Vector3});
+
+        auto pVertexShader = _pShaderLibrary->GetShader<ShaderStage::Vertex>("./triangle.vert.spv");
+        auto pFragmentShader = _pShaderLibrary->GetShader<ShaderStage::Fragment>("./triangle.frag.spv");
+
+        _pRenderObj->SetInputAssemble(std::move(pInputAssemble));
+        _pRenderObj->SetRenderPassShader<RenderPassType::Forward>(pVertexShader);
+        _pRenderObj->SetRenderPassShader<RenderPassType::Forward>(pFragmentShader);
+
         CreateDynamicContext();
     }
 
     Renderer::~Renderer()
     {
         DestroyDynamicContext();
+
+        _pRenderObj.reset();
+
         DestroyStaticContext();
     }
 
@@ -431,23 +455,14 @@ namespace Ailurus
     {
         Vector2i windowSize = _getWindowSizeCallback();
         _pSwapChain = std::make_unique<SwapChain>(this, windowSize.x(), windowSize.y());
-        _pRenderPass = std::make_unique<RenderPass>(this, _pSwapChain.get());
-        _pBackBuffer = std::make_unique<BackBuffer>(this, _pSwapChain.get(), _pRenderPass.get());
-
-        _pPipeline = std::make_unique<Pipeline>(this, _pRenderPass.get());
-        _pPipeline->AddShader(_pShaderLibrary->GetShader(ShaderStage::Vertex, "./triangle.vert.spv"));
-        _pPipeline->AddShader(_pShaderLibrary->GetShader(ShaderStage::Fragment, "./triangle.frag.spv"));
-        _pPipeline->GeneratePipeline();
-
+        _pForwardPass = std::make_unique<RenderPassForward>(this);
         _pAirport = std::make_unique<Airport>(this);
     }
 
     void Renderer::DestroyDynamicContext()
     {
         _pAirport.reset();
-        _pPipeline.reset();
-        _pBackBuffer.reset();
-        _pRenderPass.reset();
+        _pForwardPass.reset();
         _pSwapChain.reset();
     }
 
