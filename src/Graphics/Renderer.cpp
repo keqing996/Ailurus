@@ -103,17 +103,25 @@ namespace Ailurus
 
         _pRenderObj = std::make_unique<RenderObject>(this);
 
-        static std::vector vertices = {
+        static std::array vertices = {
             -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
             0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
             0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-            0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-            -0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
-            -0.5f, -0.5f, 1.0f, 0.0f, 0.0f
+            -0.5f, 0.5f, 1.0f, 1.0f, 1.0f
         };
 
-        auto pInputAssemble = std::make_unique<InputAssemble>(this, reinterpret_cast<const char*>(vertices.data()),
-            vertices.size() * sizeof(float), InputAttribute{AttributeType::Vector2, AttributeType::Vector3});
+        const std::vector<uint16_t> indices = {
+            0, 1, 2, 2, 3, 0
+        };
+
+        auto pVertexBuffer = std::make_unique<VertexBuffer>(this, reinterpret_cast<const char*>(vertices.data()),
+            vertices.size() * sizeof(float));
+        auto pIndexBuffer = std::make_unique<IndexBuffer>(this, indices);
+
+        auto pInputAssemble = std::make_unique<InputAssemble>(this,
+            std::move(pVertexBuffer),
+            InputAttribute{AttributeType::Vector2, AttributeType::Vector3},
+            std::move(pIndexBuffer));
 
         auto pVertexShader = _pShaderLibrary->GetShader<ShaderStage::Vertex>("./triangle.vert.spv");
         auto pFragmentShader = _pShaderLibrary->GetShader<ShaderStage::Fragment>("./triangle.frag.spv");

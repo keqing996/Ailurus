@@ -8,7 +8,7 @@ namespace Ailurus
     class VertexBuffer : public Buffer
     {
     public:
-        VertexBuffer(const Renderer* pRenderer, const char* vertexData, size_t vertexSize);
+        VertexBuffer(const Renderer* pRenderer, const char* vertexData, size_t dataSizeInBytes);
         ~VertexBuffer() override;
 
         vk::Buffer GetBuffer() const;

@@ -3,13 +3,13 @@
 
 namespace Ailurus
 {
-    VertexBuffer::VertexBuffer(const Renderer* pRenderer, const char* vertexData, size_t vertexSize)
+    VertexBuffer::VertexBuffer(const Renderer* pRenderer, const char* vertexData, size_t dataSizeInBytes)
         : Buffer(pRenderer)
         , _buffer(nullptr)
-        , _size(vertexSize)
+        , _size(dataSizeInBytes)
         , _bufferMemory(nullptr)
     {
-        auto ret = CreateBuffer(BufferType::Vertex, vertexData, vertexSize);
+        auto ret = CreateBuffer(BufferType::Vertex, vertexData, dataSizeInBytes);
         if (!ret)
             return;
 

@@ -12,9 +12,10 @@ namespace Ailurus
     class InputAssemble
     {
     public:
-        InputAssemble(const Renderer* pRenderer, const char* vertexData, size_t vertexSize, const InputAttribute& inputAttr);
-        InputAssemble(const Renderer* pRenderer, const char* vertexData, size_t vertexSize, const InputAttribute& inputAttr,
-            const char* indexData, size_t indexSize);
+        InputAssemble(const Renderer* pRenderer, std::unique_ptr<VertexBuffer>&& pVertexBuffer,
+            const InputAttribute& inputAttr);
+        InputAssemble(const Renderer* pRenderer, std::unique_ptr<VertexBuffer>&& pVertexBuffer,
+            const InputAttribute& inputAttr, std::unique_ptr<IndexBuffer>&& pIndexBuffer);
         ~InputAssemble();
 
     public:

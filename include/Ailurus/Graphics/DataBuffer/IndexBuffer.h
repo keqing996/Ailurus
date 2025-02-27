@@ -8,13 +8,21 @@ namespace Ailurus
     class IndexBuffer : public Buffer
     {
     public:
-        IndexBuffer(const Renderer* pRenderer, const char* indexData, size_t indexSize);
+        IndexBuffer(const Renderer* pRenderer, std::vector<uint16_t> indexData);
+        IndexBuffer(const Renderer* pRenderer, std::vector<uint32_t> indexData);
         ~IndexBuffer() override;
 
+        vk::IndexType GetIndexType() const;
         vk::Buffer GetBuffer() const;
+        size_t GetIndexCount() const;
 
     private:
+        void InternalCreate(const char* dataBuffer, size_t dataSizeInBytes);
+
+    private:
+        vk::IndexType _indexType;
         vk::Buffer _buffer;
+        size_t _indexCount;
         vk::DeviceMemory _bufferMemory;
     };
 }

@@ -3,6 +3,7 @@
 #include "Ailurus/Graphics/RenderPass/RenderPass.h"
 #include "Ailurus/Graphics/RenderObject/RenderObject.h"
 #include "Ailurus/Graphics/DataBuffer/VertexBuffer.h"
+#include "Ailurus/Graphics/DataBuffer/IndexBuffer.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
@@ -55,23 +56,37 @@ namespace Ailurus
         if (!optStageShaders.has_value())
             return; // This object should not be drawn under this pass;
 
-        PipelineConfig pipelineConfig;
-        pipelineConfig.pInputAssemble = pRenderObject->GetInputAssemble();
-        pipelineConfig.shaderStages = *optStageShaders.value();
+        const InputAssemble* pInputAssemble = pRenderObject->GetInputAssemble();
 
+        // Bind pipeline
+        PipelineConfig pipelineConfig;
+        pipelineConfig.pInputAssemble = pInputAssemble;
+        pipelineConfig.shaderStages = *optStageShaders.value();
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _pCurrentRenderPass->GetPipeline(pipelineConfig)->GetPipeline());
 
+        // Set viewport & scissor
         auto extent = _pRenderer->GetSwapChain()->GetSwapChainConfig().extent;
         vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
         vk::Rect2D scissor(vk::Offset2D{0, 0}, extent);
-
         commandBuffer.setViewport(0, 1, &viewport);
         commandBuffer.setScissor(0, 1, &scissor);
 
-        vk::Buffer vertexBuffers[] = { pRenderObject->GetInputAssemble()->GetVertexBuffer()->GetBuffer() };
+        // Bind vertex buffer
+        vk::Buffer vertexBuffers[] = { pInputAssemble->GetVertexBuffer()->GetBuffer() };
         vk::DeviceSize offsets[] = { 0 };
         commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-        commandBuffer.draw(pRenderObject->GetInputAssemble()->GetVertexCount(), 1, 0, 0);
+        // Draw by index
+        auto pIndexBuffer = pInputAssemble->GetIndexBuffer();
+        if (pIndexBuffer != nullptr)
+        {
+            commandBuffer.bindIndexBuffer(pIndexBuffer->GetBuffer(), 0, pIndexBuffer->GetIndexType());
+            commandBuffer.drawIndexed(pIndexBuffer->GetIndexCount(), 1, 0, 0, 0);
+        }
+        // Draw by vertex
+        else
+        {
+            commandBuffer.draw(pInputAssemble->GetVertexCount(), 1, 0, 0);
+        }
     }
 }

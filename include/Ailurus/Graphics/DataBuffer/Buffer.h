@@ -23,7 +23,7 @@ namespace Ailurus
 
     protected:
         std::optional<BufferWithMem>
-        CreateBuffer(BufferType type, const char* bufferData, size_t bufferSize) const;
+        CreateBuffer(BufferType type, const char* bufferData, size_t bufferSizeInBytes) const;
 
         std::optional<BufferWithMem>
         CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties) const;
