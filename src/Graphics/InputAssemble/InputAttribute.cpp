@@ -52,13 +52,12 @@ namespace Ailurus
         std::vector<vk::VertexInputAttributeDescription> result;
 
         uint32_t offset = 0;
-        uint32_t binding = 0;
         for (auto i = 0; i < _attribute.size(); i++)
         {
             AttributeType attr = _attribute[i];
 
             vk::VertexInputAttributeDescription attributeDescriptions;
-            attributeDescriptions.setBinding(binding)
+            attributeDescriptions.setBinding(0)
                 .setLocation(i)
                 .setFormat(ConvertToVkFormat(attr))
                 .setOffset(offset);
@@ -66,7 +65,6 @@ namespace Ailurus
             result.push_back(attributeDescriptions);
 
             offset += GetAttributeSize(attr);
-            binding++;
         }
 
         return result;

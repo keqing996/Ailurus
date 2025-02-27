@@ -6,6 +6,7 @@ namespace Ailurus
     VertexBuffer::VertexBuffer(const Renderer* pRenderer, const char* vertexData, size_t vertexSize)
         : Buffer(pRenderer)
         , _buffer(nullptr)
+        , _size(vertexSize)
         , _bufferMemory(nullptr)
     {
         auto ret = CreateBuffer(BufferType::Vertex, vertexData, vertexSize);
@@ -26,5 +27,10 @@ namespace Ailurus
     vk::Buffer VertexBuffer::GetBuffer() const
     {
         return _buffer;
+    }
+
+    size_t VertexBuffer::GetSize() const
+    {
+        return _size;
     }
 }

@@ -21,6 +21,7 @@ namespace Ailurus
         const VertexBuffer* GetVertexBuffer() const;
         const InputAttribute& GetInputAttribute() const;
         const IndexBuffer* GetIndexBuffer() const;
+        size_t GetVertexCount() const;
 
     private:
         const Renderer* _pRenderer;

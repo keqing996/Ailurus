@@ -40,4 +40,11 @@ namespace Ailurus
     {
         return _pIndexBuffer.get();
     }
+
+    size_t InputAssemble::GetVertexCount() const
+    {
+        auto vertexSizeBytes = _pVertexBuffer->GetSize();
+        auto stride = _inputAttr.GetStride();
+        return vertexSizeBytes /stride;
+    }
 }

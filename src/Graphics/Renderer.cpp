@@ -107,11 +107,13 @@ namespace Ailurus
             -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
             0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
             0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-            -0.5f, 0.5f, 1.0f, 1.0f, 1.0f
+            0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+            -0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+            -0.5f, -0.5f, 1.0f, 0.0f, 0.0f
         };
 
         auto pInputAssemble = std::make_unique<InputAssemble>(this, reinterpret_cast<const char*>(vertices.data()),
-            vertices.size(), InputAttribute{AttributeType::Vector2, AttributeType::Vector3});
+            vertices.size() * sizeof(float), InputAttribute{AttributeType::Vector2, AttributeType::Vector3});
 
         auto pVertexShader = _pShaderLibrary->GetShader<ShaderStage::Vertex>("./triangle.vert.spv");
         auto pFragmentShader = _pShaderLibrary->GetShader<ShaderStage::Fragment>("./triangle.frag.spv");
@@ -166,7 +168,7 @@ namespace Ailurus
                     vk::DeviceSize offsets[] = {0};
                     commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-                    commandBuffer.draw(3, 1, 0, 0);
+                    commandBuffer.draw(_pRenderObj->GetInputAssemble()->GetVertexCount(), 1, 0, 0);
                 }
                 commandBuffer.endRenderPass();
             }
