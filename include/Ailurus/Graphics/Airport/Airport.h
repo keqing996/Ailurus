@@ -18,7 +18,7 @@ namespace Ailurus
 
     public:
         std::optional<Flight> WaitNextFlight(const SwapChain* pSwapChain, bool* needRebuild);
-        bool TakeOff(Flight flight, const SwapChain* pSwapChain, bool* needRebuild);
+        bool TakeOff(const Flight& flight, const SwapChain* pSwapChain, bool* needRebuild);
 
         inline static uint32_t MAX_FLIGHTS = 2;
 

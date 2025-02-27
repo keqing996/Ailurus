@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.hpp>
 #include <memory>
 #include <unordered_map>
+
+#include "RenderPassType.h"
 #include "Ailurus/Graphics/Airport/Flight.h"
 #include "Ailurus/Graphics/Pipeline/Pipeline.h"
 
@@ -18,6 +20,7 @@ namespace Ailurus
         virtual ~RenderPass() = default;
 
     public:
+        virtual RenderPassType GetRenderPassType() = 0;
         virtual vk::RenderPass GetRenderPass() const = 0;
         virtual vk::RenderPassBeginInfo GetRenderPassBeginInfo(const Flight& flight) = 0;
 

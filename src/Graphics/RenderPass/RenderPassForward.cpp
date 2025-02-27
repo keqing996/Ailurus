@@ -17,6 +17,11 @@ namespace Ailurus
         _pRenderer->GetLogicalDevice().destroyRenderPass(_vkRenderPass);
     }
 
+    RenderPassType RenderPassForward::GetRenderPassType()
+    {
+        return RenderPassType::Forward;
+    }
+
     vk::RenderPass RenderPassForward::GetRenderPass() const
     {
         return _vkRenderPass;

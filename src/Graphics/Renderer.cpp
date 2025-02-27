@@ -143,37 +143,15 @@ namespace Ailurus
         if (!flight.has_value())
             return;
 
-        auto commandBuffer = flight->commandBuffer;
+        flight->Begin();
         {
-            vk::CommandBufferBeginInfo beginInfo;
-            beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-            commandBuffer.begin(beginInfo);
+            flight->BeginRenderPass(_pForwardPass.get());
             {
-                commandBuffer.beginRenderPass(_pForwardPass->GetRenderPassBeginInfo(flight.value()), {});
-                {
-                    PipelineConfig pipelineConfig;
-                    pipelineConfig.pInputAssemble = _pRenderObj->GetInputAssemble();
-                    pipelineConfig.shaderStages = *_pRenderObj->GetRenderPassShaders<RenderPassType::Forward>().value();
-
-                    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _pForwardPass->GetPipeline(pipelineConfig)->GetPipeline());
-
-                    auto extent = _pSwapChain->GetSwapChainConfig().extent;
-                    vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
-                    vk::Rect2D scissor(vk::Offset2D{0, 0}, extent);
-
-                    commandBuffer.setViewport(0, 1, &viewport);
-                    commandBuffer.setScissor(0, 1, &scissor);
-
-                    vk::Buffer vertexBuffers[] = {_pRenderObj->GetInputAssemble()->GetVertexBuffer()->GetBuffer()};
-                    vk::DeviceSize offsets[] = {0};
-                    commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-
-                    commandBuffer.draw(_pRenderObj->GetInputAssemble()->GetVertexCount(), 1, 0, 0);
-                }
-                commandBuffer.endRenderPass();
+                flight->DrawObject(_pRenderObj.get());
             }
-            commandBuffer.end();
+            flight->EndRenderPass();
         }
+        flight->End();
 
         _pAirport->TakeOff(flight.value(), _pSwapChain.get(), &_needRebuildSwapChain);
     }

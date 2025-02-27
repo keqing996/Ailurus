@@ -45,12 +45,11 @@ namespace Ailurus
 
     std::optional<Flight> Airport::WaitNextFlight(const SwapChain* pSwapChain, bool* needRebuild)
     {
-        Flight flight { 0,
-            _vkCommandBuffers[_currentFlightIndex],
-            _vkImageReadySemaphore[_currentFlightIndex],
-            _vkFinishRenderSemaphore[_currentFlightIndex],
-            _vkFences[_currentFlightIndex]
-        };
+        Flight flight(_pRenderer);
+        flight.commandBuffer = _vkCommandBuffers[_currentFlightIndex];
+        flight.imageReadySemaphore = _vkImageReadySemaphore[_currentFlightIndex];
+        flight.renderFinishSemaphore = _vkFinishRenderSemaphore[_currentFlightIndex];
+        flight.fence = _vkFences[_currentFlightIndex];
 
         // Acquire swap chain next image
         auto acquireImage = _pRenderer->GetLogicalDevice().acquireNextImageKHR(
@@ -84,12 +83,10 @@ namespace Ailurus
 
         _pRenderer->GetLogicalDevice().resetFences(flight.fence);
 
-        _currentFlightIndex = (_currentFlightIndex + 1) % MAX_FLIGHTS;
-
         return flight;
     }
 
-    bool Airport::TakeOff(Flight flight, const SwapChain* pSwapChain, bool* needRebuild)
+    bool Airport::TakeOff(const Flight& flight, const SwapChain* pSwapChain, bool* needRebuild)
     {
         std::array<vk::PipelineStageFlags, 1> waitStages = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
@@ -121,6 +118,8 @@ namespace Ailurus
                 Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
                 return false;
         }
+
+        _currentFlightIndex = (_currentFlightIndex + 1) % MAX_FLIGHTS;
 
         return true;
     }
