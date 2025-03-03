@@ -13,12 +13,8 @@ jobs:
       matrix:
         c_compiler: [cl, clang]
         include:
-          - c_compiler: cl
-            cpp_compiler: cl
-            generator: Ninja
           - c_compiler: clang
-            cpp_compiler: clang++
-            generator: Ninja
+            add_command: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     steps:
       - name: Install Ninja on Windows
         run: choco install ninja --yes
@@ -42,9 +38,7 @@ jobs:
       - name: Configure CMake
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -G "${{ matrix.generator }}"
-          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+          -G Ninja ${{ matrix.add_command }}
           -DCMAKE_BUILD_TYPE=Release
           -DAILURUS_ENABLE_TEST:BOOL=ON
           -S ${{ github.workspace }}
