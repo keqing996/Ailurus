@@ -15,7 +15,7 @@ jobs:
         include:
           - c_compiler: cl
             cpp_compiler: cl
-            generator: Visual Studio 17 2022
+            generator: Ninja
           - c_compiler: clang
             cpp_compiler: clang++
             generator: Ninja
