@@ -50,7 +50,7 @@ namespace Ailurus
         void CreateStaticContext(bool enableValidation, const WindowCreateSurfaceCallback& createSurface);
         void DestroyStaticContext();
         void CreateInstance(bool enableValidation);
-        void CreatDebugReportCallbackExt();
+        void CreatDebugUtilsMessenger();
         void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
         void ChoosePhysicsDevice();
         void CreateLogicDevice();
@@ -74,7 +74,7 @@ namespace Ailurus
 
         // Static context
         vk::Instance _vkInstance = nullptr;
-        vk::DebugReportCallbackEXT _vkDebugReportCallbackExt = nullptr;
+        vk::DebugUtilsMessengerEXT _vkDebugUtilsMessenger = nullptr;
         vk::SurfaceKHR _vkSurface = nullptr;
         vk::PhysicalDevice _vkPhysicalDevice = nullptr;
         vk::Device _vkLogicalDevice = nullptr;

@@ -10,18 +10,13 @@ namespace Ailurus
 {
     namespace Verbose
     {
-        static VKAPI_ATTR VkBool32 VKAPI_CALL
-        DebugReportExtCallback(
-            VkDebugReportFlagsEXT,
-            VkDebugReportObjectTypeEXT,
-            std::uint64_t,
-            std::size_t,
-            std::int32_t,
-            const char*,
-            const char* pMessage,
-            void*)
+        static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
+            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+            VkDebugUtilsMessageTypeFlagsEXT messageType,
+            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+            void* pUserData)
         {
-            Logger::LogError(pMessage);
+            Logger::LogError(pCallbackData->pMessage);
             return VK_FALSE;
         }
 
@@ -232,7 +227,7 @@ namespace Ailurus
         CreateInstance(enableValidation);
 
         if (enableValidation)
-            CreatDebugReportCallbackExt();
+            CreatDebugUtilsMessenger();
 
         CreateSurface(createSurface);
 
@@ -258,12 +253,7 @@ namespace Ailurus
 
         _windowDestroySurfaceCallback(_vkInstance, _vkSurface);
 
-        if (_vkDebugReportCallbackExt)
-        {
-            vk::DispatchLoaderDynamic dynamicLoader(_vkInstance, vkGetInstanceProcAddr);
-            _vkInstance.destroyDebugReportCallbackEXT(_vkDebugReportCallbackExt, nullptr, dynamicLoader);
-        }
-
+        _vkInstance.destroyDebugUtilsMessengerEXT(_vkDebugUtilsMessenger);
         _vkInstance.destroy();
     }
 
@@ -285,7 +275,7 @@ namespace Ailurus
         // Extensions
         std::vector<const char*> requiredExtensions;
         if (enableValidation)
-            requiredExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+            requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
         std::vector<const char*> windowInstExtensions = _getWindowInstExtensionsCallback();
         requiredExtensions.insert(requiredExtensions.end(),
@@ -307,21 +297,18 @@ namespace Ailurus
         _vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
     }
 
-    void Renderer::CreatDebugReportCallbackExt()
+    void Renderer::CreatDebugUtilsMessenger()
     {
-        auto flags = vk::DebugReportFlagBitsEXT::eWarning
-                     | vk::DebugReportFlagBitsEXT::ePerformanceWarning
-                     | vk::DebugReportFlagBitsEXT::eError;
+        vk::DebugUtilsMessengerCreateInfoEXT createInfo;
+        createInfo.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
+                        | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+            .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
+                        | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+                        | vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
+            .setPUserData(nullptr)
+            .setPfnUserCallback(Verbose::DebugCallback);
 
-        vk::DebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo;
-        debugReportCallbackCreateInfo
-                .setFlags(flags)
-                .setPfnCallback(Verbose::DebugReportExtCallback);
-
-        vk::DispatchLoaderDynamic dynamicLoader(_vkInstance, vkGetInstanceProcAddr);
-
-        _vkDebugReportCallbackExt = _vkInstance.createDebugReportCallbackEXT(
-            debugReportCallbackCreateInfo, nullptr, dynamicLoader);
+        _vkDebugUtilsMessenger = _vkInstance.createDebugUtilsMessengerEXT(createInfo);
     }
 
     void Renderer::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
