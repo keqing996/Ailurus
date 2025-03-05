@@ -3,13 +3,8 @@ cmake_minimum_required(VERSION 3.22)
 project (AILURUS_INFRASTRUCTURE)
 set (CMAKE_CXX_STANDARD 20)
 
-# SDL
-set (SDL_STATIC ON) # static link sdl
-set (SDL_SHARED OFF)
-add_subdirectory(submodule/sdl)
-
-# spdlog
-add_subdirectory(submodule/spdlog)
+add_subdirectory(submodule)
+add_subdirectory(thirdparty)
 
 # Vulkan
 find_package(Vulkan REQUIRED)
@@ -17,21 +12,11 @@ find_package(Vulkan REQUIRED)
 # Source files
 file (GLOB_RECURSE AILURUS_SRC ./src/*.cpp)
 
-set (AILURUS_IMGUI_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_draw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_tables.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_widgets.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_vulkan.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_sdl3.cpp
-)
-
 # Core Library
-add_library                 (ailurus-core STATIC ${AILURUS_SRC} ${AILURUS_IMGUI_SRC})
+add_library                 (ailurus-core STATIC ${AILURUS_SRC})
 target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
-target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/)
-target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/) # for imgui source
-target_link_libraries       (ailurus-core PUBLIC SDL3-static Vulkan::Vulkan spdlog)
+target_link_libraries       (ailurus-core PUBLIC vulkan_hpp imgui)
+target_link_libraries       (ailurus-core PRIVATE stb_image spdlog SDL3-static)
 
 if (WIN32)
     target_link_libraries   (ailurus-core PRIVATE wsock32 ws2_32) # for socket
