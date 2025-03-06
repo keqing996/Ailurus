@@ -6,6 +6,8 @@
 #include "Ailurus/Graphics/InputAssemble/InputAssemble.h"
 #include "Ailurus/Utility/Logger.h"
 
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 namespace Ailurus
 {
     namespace Verbose
@@ -221,10 +223,17 @@ namespace Ailurus
 
     void Renderer::CreateStaticContext(bool enableValidation, const WindowCreateSurfaceCallback& createSurface)
     {
+        vk::DynamicLoader dl;
+        PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
+            dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+
         Verbose::LogInstanceLayerProperties();
         Verbose::LogInstanceExtensionProperties();
 
         CreateInstance(enableValidation);
+
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkInstance);
 
         if (enableValidation)
             CreatDebugUtilsMessenger();
@@ -238,6 +247,8 @@ namespace Ailurus
         Verbose::LogChosenPhysicalCard(_vkPhysicalDevice, _vkSurface);
 
         CreateLogicDevice();
+
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkLogicalDevice);
 
         CreateCommandPool();
 
