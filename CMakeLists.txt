@@ -15,6 +15,7 @@ file (GLOB_RECURSE AILURUS_SRC ./src/*.cpp)
 # Core Library
 add_library                 (ailurus-core STATIC ${AILURUS_SRC})
 target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+target_include_directories  (ailurus-core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 target_link_libraries       (ailurus-core PUBLIC vulkan_hpp imgui)
 target_link_libraries       (ailurus-core PRIVATE stb_image spdlog SDL3-static)
 

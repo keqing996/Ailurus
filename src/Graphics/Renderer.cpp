@@ -5,98 +5,14 @@
 #include "Ailurus/Graphics/Pipeline/Pipeline.h"
 #include "Ailurus/Graphics/InputAssemble/InputAssemble.h"
 #include "Ailurus/Utility/Logger.h"
-
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+#include "VulkanContext/VulkanContext.h"
 
 namespace Ailurus
 {
-    namespace Verbose
+    Renderer::Renderer(const GetWindowSizeCallback& getWindowSize)
+        : _getWindowSizeCallback(getWindowSize)
     {
-        static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
-            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-            VkDebugUtilsMessageTypeFlagsEXT messageType,
-            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-            void* pUserData)
-        {
-            Logger::LogError(pCallbackData->pMessage);
-            return VK_FALSE;
-        }
-
-        static void LogInstanceLayerProperties()
-        {
-            auto allLayerProperties = vk::enumerateInstanceLayerProperties();
-
-            Logger::LogInfo("Instance layer properties:");
-            for (auto layerProperty: allLayerProperties)
-                Logger::LogInfo("    {}", layerProperty.layerName.data());
-        }
-
-        static void LogInstanceExtensionProperties()
-        {
-            auto allExt = vk::enumerateInstanceExtensionProperties();
-            Logger::LogInfo("Instance extensions:");
-            for (auto ext: allExt)
-                Logger::LogInfo("    {}", ext.extensionName.data());
-        }
-
-        static void LogPhysicalCards(const vk::Instance& vkInstance)
-        {
-            auto graphicCards = vkInstance.enumeratePhysicalDevices();
-            Logger::LogInfo("All graphic cards:");
-            for (auto& graphicCard: graphicCards)
-            {
-                auto property = graphicCard.getProperties();
-                Logger::LogInfo("    {}", property.deviceName.data());
-            }
-        }
-
-        static void LogChosenPhysicalCard(const vk::PhysicalDevice& vkPhysicalDevice, const vk::SurfaceKHR& vkSurface)
-        {
-            auto physicalDeviceProperty = vkPhysicalDevice.getProperties();
-            Logger::LogInfo("Choose physical device: {}, API version: {}, vendor id: {}",
-                            physicalDeviceProperty.deviceName.data(),
-                            physicalDeviceProperty.apiVersion, physicalDeviceProperty.vendorID);
-
-            auto queueFamilyProperties = vkPhysicalDevice.getQueueFamilyProperties();
-            Logger::LogInfo("    Queue family size: {}", queueFamilyProperties.size());
-            for (std::size_t i = 0; i < queueFamilyProperties.size(); ++i)
-            {
-                auto& queueProperty = queueFamilyProperties[i];
-
-                bool canPresent = vkPhysicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), vkSurface);
-                bool canGraphic = static_cast<bool>(queueProperty.queueFlags & vk::QueueFlagBits::eGraphics);
-                bool canCompute = static_cast<bool>(queueProperty.queueFlags & vk::QueueFlagBits::eCompute);
-                bool canTransfer = static_cast<bool>(queueProperty.queueFlags & vk::QueueFlagBits::eTransfer);
-
-                Logger::LogInfo("        {}:\tPresent: {},\tGraphic: {}\t, Compute: {}\t, Transfer: {}",
-                                i, canPresent, canGraphic, canCompute, canTransfer);
-            }
-
-#if false // Too long to show details
-        Logger::LogInfo("    Physical device layer properties:");
-        auto allLayerProperties = vkPhysicalDevice.enumerateDeviceLayerProperties();
-        for (auto layerProperty: allLayerProperties)
-            Logger::LogInfo("        {}", layerProperty.layerName.data());
-
-        Logger::LogInfo("    Physical device extensions:");
-        auto allExt = vkPhysicalDevice.enumerateDeviceExtensionProperties();
-        for (auto ext: allExt)
-            Logger::LogInfo("        {}", ext.extensionName.data());
-#endif
-        }
-    }
-
-    Renderer::Renderer(
-        const GetWindowSizeCallback& getWindowSize,
-        const GetWindowInstanceExtension& getWindowInstExt,
-        const WindowCreateSurfaceCallback& createSurface,
-        const WindowDestroySurfaceCallback& destroySurface,
-        bool enableValidationLayer)
-            : _getWindowSizeCallback(getWindowSize)
-            , _getWindowInstExtensionsCallback(getWindowInstExt)
-            , _windowDestroySurfaceCallback(destroySurface)
-    {
-        CreateStaticContext(enableValidationLayer, createSurface);
+        CreateStaticContext();
 
         _pRenderObj = std::make_unique<RenderObject>(this);
 
@@ -166,44 +82,9 @@ namespace Ailurus
         _needRebuildSwapChain = true;
     }
 
-    vk::Instance Renderer::GetInstance() const
-    {
-        return _vkInstance;
-    }
-
     vk::SurfaceKHR Renderer::GetSurface() const
     {
         return _vkSurface;
-    }
-
-    vk::PhysicalDevice Renderer::GetPhysicalDevice() const
-    {
-        return _vkPhysicalDevice;
-    }
-
-    vk::Device Renderer::GetLogicalDevice() const
-    {
-        return _vkLogicalDevice;
-    }
-
-    uint32_t Renderer::GetGraphicQueueIndex() const
-    {
-        return _graphicQueueIndex;
-    }
-
-    uint32_t Renderer::GetPresentQueueIndex() const
-    {
-        return _presentQueueIndex;
-    }
-
-    vk::Queue Renderer::GetGraphicQueue() const
-    {
-        return _vkGraphicQueue;
-    }
-
-    vk::Queue Renderer::GetPresentQueue() const
-    {
-        return _vkPresentQueue;
     }
 
     vk::CommandPool Renderer::GetCommandPool() const
@@ -221,34 +102,10 @@ namespace Ailurus
         return _pSwapChain.get();
     }
 
-    void Renderer::CreateStaticContext(bool enableValidation, const WindowCreateSurfaceCallback& createSurface)
+    void Renderer::CreateStaticContext()
     {
-        vk::DynamicLoader dl;
-        PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
-            dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-
-        Verbose::LogInstanceLayerProperties();
-        Verbose::LogInstanceExtensionProperties();
-
-        CreateInstance(enableValidation);
-
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkInstance);
-
-        if (enableValidation)
-            CreatDebugUtilsMessenger();
-
-        CreateSurface(createSurface);
-
-        Verbose::LogPhysicalCards(_vkInstance);
-
-        ChoosePhysicsDevice();
-
-        Verbose::LogChosenPhysicalCard(_vkPhysicalDevice, _vkSurface);
-
-        CreateLogicDevice();
-
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkLogicalDevice);
+        if (!VulkanContext::Register(this, &_vkSurface))
+            return;
 
         CreateCommandPool();
 
@@ -259,178 +116,17 @@ namespace Ailurus
     {
         _pShaderLibrary.reset();
 
-        _vkLogicalDevice.destroyCommandPool(_vkGraphicCommandPool);
-        _vkLogicalDevice.destroy();
-
-        _windowDestroySurfaceCallback(_vkInstance, _vkSurface);
-
-        _vkInstance.destroyDebugUtilsMessengerEXT(_vkDebugUtilsMessenger);
-        _vkInstance.destroy();
-    }
-
-    void Renderer::CreateInstance(bool enableValidation)
-    {
-        // Validation layers
-        static const char* VALIDATION_LAYER_NAME = "VK_LAYER_KHRONOS_validation";
-        std::vector<const char*> validationLayers;
-        if (enableValidation)
-        {
-            auto allLayerProperties = vk::enumerateInstanceLayerProperties();
-            for (auto layerProperty: allLayerProperties)
-            {
-                if (std::string(layerProperty.layerName.data()) == VALIDATION_LAYER_NAME)
-                    validationLayers.push_back(VALIDATION_LAYER_NAME);
-            }
-        }
-
-        // Extensions
-        std::vector<const char*> requiredExtensions;
-        if (enableValidation)
-            requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-        std::vector<const char*> windowInstExtensions = _getWindowInstExtensionsCallback();
-        requiredExtensions.insert(requiredExtensions.end(),
-                                  windowInstExtensions.begin(), windowInstExtensions.end());
-
-        // Create instance
-        vk::ApplicationInfo applicationInfo;
-        applicationInfo
-                .setPApplicationName("Ailurus")
-                .setApiVersion(VK_API_VERSION_1_3)
-                .setPEngineName("No Engine");
-
-        vk::InstanceCreateInfo instanceCreateInfo;
-        instanceCreateInfo
-                .setPApplicationInfo(&applicationInfo)
-                .setPEnabledLayerNames(validationLayers)
-                .setPEnabledExtensionNames(requiredExtensions);
-
-        _vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
-    }
-
-    void Renderer::CreatDebugUtilsMessenger()
-    {
-        vk::DebugUtilsMessengerCreateInfoEXT createInfo;
-        createInfo.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
-                        | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
-            .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
-                        | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
-                        | vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
-            .setPUserData(nullptr)
-            .setPfnUserCallback(Verbose::DebugCallback);
-
-        _vkDebugUtilsMessenger = _vkInstance.createDebugUtilsMessengerEXT(createInfo);
-    }
-
-    void Renderer::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
-    {
-        _vkSurface = createSurface(_vkInstance);
-    }
-
-    void Renderer::ChoosePhysicsDevice()
-    {
-        auto graphicCards = _vkInstance.enumeratePhysicalDevices();
-
-        vk::PhysicalDeviceType lastFoundDeviceType = vk::PhysicalDeviceType::eOther;
-        for (auto& graphicCard: graphicCards)
-        {
-            auto property = graphicCard.getProperties();
-
-            // Discrete gpu found, no need to continue.
-            if (property.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
-            {
-                _vkPhysicalDevice = graphicCard;
-                break;
-            }
-
-            // Integrated gpu found, record it and keep finding discrete gpu.
-            if (property.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
-            {
-                _vkPhysicalDevice = graphicCard;
-                lastFoundDeviceType = vk::PhysicalDeviceType::eIntegratedGpu;
-            }
-
-            // Cpu found, record it only if that no gpu was found.
-            if (property.deviceType == vk::PhysicalDeviceType::eCpu
-                && lastFoundDeviceType != vk::PhysicalDeviceType::eIntegratedGpu)
-            {
-                _vkPhysicalDevice = graphicCard;
-                lastFoundDeviceType = vk::PhysicalDeviceType::eCpu;
-            }
-        }
-    }
-
-    void Renderer::CreateLogicDevice()
-    {
-        // Find graphic queue and present queue.
-        std::optional<uint32_t> optGraphicQueue = std::nullopt;
-        std::optional<uint32_t> optPresentQueue = std::nullopt;
-        auto queueFamilyProperties = _vkPhysicalDevice.getQueueFamilyProperties();
-        for (std::size_t i = 0; i < queueFamilyProperties.size(); ++i)
-        {
-            auto& property = queueFamilyProperties[i];
-            if ((property.queueFlags & vk::QueueFlagBits::eGraphics) && !optGraphicQueue.has_value())
-                optGraphicQueue = static_cast<uint32_t>(i);
-
-            bool canPresent = _vkPhysicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), _vkSurface);
-            if (canPresent && !optPresentQueue.has_value())
-                optPresentQueue = static_cast<uint32_t>(i);
-
-            if (optGraphicQueue.has_value() && optPresentQueue.has_value())
-                break;
-        }
-
-        if (!optGraphicQueue.has_value() || !optPresentQueue.has_value())
-        {
-            Logger::LogError("Fail to get graphic queue and present queue.");
-            return;
-        }
-
-        _graphicQueueIndex = *optGraphicQueue;
-        _presentQueueIndex = *optPresentQueue;
-
-        // Queue create info
-        const float queuePriority = 1.0f;
-        std::vector<vk::DeviceQueueCreateInfo> queueCreateInfoList;
-        queueCreateInfoList.emplace_back();
-        queueCreateInfoList.back().setQueueCount(1)
-                .setQueuePriorities(queuePriority)
-                .setQueueFamilyIndex(_graphicQueueIndex);
-
-        if (_presentQueueIndex != _graphicQueueIndex)
-        {
-            queueCreateInfoList.emplace_back();
-            queueCreateInfoList.back()
-                    .setQueueCount(1)
-                    .setQueuePriorities(queuePriority)
-                    .setQueueFamilyIndex(_presentQueueIndex);
-        }
-
-        // Features
-        vk::PhysicalDeviceFeatures physicalDeviceFeatures;
-        physicalDeviceFeatures.setSamplerAnisotropy(true);
-
-        // Swap chain is required
-        const char* extensions[1] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
-        vk::DeviceCreateInfo deviceCreateInfo;
-        deviceCreateInfo
-                .setPEnabledExtensionNames(extensions)
-                .setQueueCreateInfos(queueCreateInfoList)
-                .setPEnabledFeatures(&physicalDeviceFeatures);
-
-        _vkLogicalDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
-        _vkGraphicQueue = _vkLogicalDevice.getQueue(_graphicQueueIndex, 0);
-        _vkPresentQueue = _vkLogicalDevice.getQueue(_presentQueueIndex, 0);
+        VulkanContext::GetDevice().destroyCommandPool(_vkGraphicCommandPool);
+        VulkanContext::Unregister(this);
     }
 
     void Renderer::CreateCommandPool()
     {
         vk::CommandPoolCreateInfo poolInfo;
         poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-            .setQueueFamilyIndex(_graphicQueueIndex);
+            .setQueueFamilyIndex(VulkanContext::GetGraphicQueueIndex());
 
-        _vkGraphicCommandPool = _vkLogicalDevice.createCommandPool(poolInfo);
+        _vkGraphicCommandPool = VulkanContext::GetDevice().createCommandPool(poolInfo);
     }
 
     void Renderer::CreateDynamicContext()

@@ -15,17 +15,9 @@ namespace Ailurus
     class Renderer
     {
         using GetWindowSizeCallback = std::function<Vector2i()>;
-        using GetWindowInstanceExtension = std::function<std::vector<const char*>()>;
-        using WindowCreateSurfaceCallback = std::function<vk::SurfaceKHR(const vk::Instance&)>;
-        using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
 
     public:
-        Renderer(const GetWindowSizeCallback& getWindowSize,
-                 const GetWindowInstanceExtension& getWindowInstExt,
-                 const WindowCreateSurfaceCallback& createSurface,
-                 const WindowDestroySurfaceCallback& destroySurface,
-                 bool enableValidationLayer);
-
+        explicit Renderer(const GetWindowSizeCallback& getWindowSize);
         ~Renderer();
 
         void Render();
@@ -33,27 +25,15 @@ namespace Ailurus
         void NeedRecreateSwapChain();
 
     public: // Getter
-        vk::Instance GetInstance() const;
         vk::SurfaceKHR GetSurface() const;
-        vk::PhysicalDevice GetPhysicalDevice() const;
-        vk::Device GetLogicalDevice() const;
-        uint32_t GetGraphicQueueIndex() const;
-        uint32_t GetPresentQueueIndex() const;
-        vk::Queue GetGraphicQueue() const;
-        vk::Queue GetPresentQueue() const;
         vk::CommandPool GetCommandPool() const;
         ShaderLibrary* GetShaderLibrary();
         SwapChain* GetSwapChain() const;
 
     private:
         // Static Context
-        void CreateStaticContext(bool enableValidation, const WindowCreateSurfaceCallback& createSurface);
+        void CreateStaticContext();
         void DestroyStaticContext();
-        void CreateInstance(bool enableValidation);
-        void CreatDebugUtilsMessenger();
-        void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
-        void ChoosePhysicsDevice();
-        void CreateLogicDevice();
         void CreateCommandPool();
 
         // Dynamic Context
@@ -69,19 +49,9 @@ namespace Ailurus
 
         // Callback
         GetWindowSizeCallback _getWindowSizeCallback;
-        GetWindowInstanceExtension _getWindowInstExtensionsCallback;
-        WindowDestroySurfaceCallback _windowDestroySurfaceCallback;
 
         // Static context
-        vk::Instance _vkInstance = nullptr;
-        vk::DebugUtilsMessengerEXT _vkDebugUtilsMessenger = nullptr;
         vk::SurfaceKHR _vkSurface = nullptr;
-        vk::PhysicalDevice _vkPhysicalDevice = nullptr;
-        vk::Device _vkLogicalDevice = nullptr;
-        uint32_t _graphicQueueIndex = 0;
-        uint32_t _presentQueueIndex = 0;
-        vk::Queue _vkGraphicQueue = nullptr;
-        vk::Queue _vkPresentQueue = nullptr;
         vk::CommandPool _vkGraphicCommandPool = nullptr;
         std::unique_ptr<ShaderLibrary> _pShaderLibrary = nullptr;
 
