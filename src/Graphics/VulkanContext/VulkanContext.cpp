@@ -190,7 +190,7 @@ namespace Ailurus
 
     bool VulkanContext::InitVulkan()
     {
-        vk::DynamicLoader loader;
+        vk::detail::DynamicLoader loader;
         PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
             loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
 
