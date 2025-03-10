@@ -1,4 +1,4 @@
-#include <SDL3/SDL_main.h>
+#include <../../submodule/sdl/include/SDL3/SDL_main.h>
 
 extern int Main(int argc, char* argv[]);
 

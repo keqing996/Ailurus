@@ -1,6 +1,6 @@
 
 #include <algorithm>
-#include <stb/stb_image.h>
+#include <../../thirdparty/stb/include/stb/stb_image.h>
 #include "Ailurus/Utility/ScopeGuard.h"
 #include "Ailurus/Graphics/Image.h"
 

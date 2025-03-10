@@ -6,33 +6,24 @@ set (CMAKE_CXX_STANDARD 20)
 add_subdirectory(submodule)
 add_subdirectory(thirdparty)
 
-# Vulkan
-find_package(Vulkan REQUIRED)
-
 # Source files
-file (GLOB_RECURSE AILURUS_SRC ./src/*.cpp)
+file (GLOB_RECURSE AILURUS_CORE_SRC ./src/Core/*.cpp)
+file (GLOB_RECURSE AILURUS_APP_SRC ./src/App/*.cpp)
 
 # Core Library
-add_library                 (ailurus-core STATIC ${AILURUS_SRC})
-target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
-target_include_directories  (ailurus-core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/)
-target_link_libraries       (ailurus-core PUBLIC vulkan_hpp imgui)
-target_link_libraries       (ailurus-core PRIVATE stb_image spdlog SDL3-static)
+add_library                 (ailurus-core STATIC ${AILURUS_CORE_SRC})
+target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/Core/)
+target_link_libraries       (ailurus-core PRIVATE stb_image spdlog)
 
 if (WIN32)
     target_link_libraries   (ailurus-core PRIVATE wsock32 ws2_32) # for socket
     target_link_libraries   (ailurus-core PRIVATE dwmapi) # to fix some 'DwmXXX' link errors under mingw
 endif ()
 
-# Interface
-set (AILURUS_TARGET_NAME ailurus)
-add_library (${AILURUS_TARGET_NAME} INTERFACE)
-if (WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # To fix Mingw link order problem, "undefined reference to WinMain".
-    target_link_libraries (${AILURUS_TARGET_NAME} INTERFACE mingw32 ailurus-core)
-else ()
-    target_link_libraries (${AILURUS_TARGET_NAME} INTERFACE ailurus-core)
-endif()
+# App Library
+add_library                 (ailurus-app STATIC ${AILURUS_APP_SRC})
+target_link_libraries       (ailurus-app PUBLIC vulkan_hpp imgui ailurus-core)
+target_link_libraries       (ailurus-app PRIVATE SDL3-static)
 
 # Test code
 option (AILURUS_ENABLE_TEST OFF)
