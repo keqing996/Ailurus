@@ -2,7 +2,6 @@
 #include <mutex>
 #include "VulkanContext.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Ailurus/Graphics/Renderer.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -82,9 +81,6 @@ namespace Ailurus
         }
     }
 
-    static std::mutex gRegisterMutex;
-    static std::unordered_set<const Renderer*> gRegisteredRenders;
-
     VulkanContext::GetWindowInstanceExtension   VulkanContext::_getWindowRequiredExtension  = nullptr;
     VulkanContext::WindowCreateSurfaceCallback  VulkanContext::_createSurface               = nullptr;
     VulkanContext::WindowDestroySurfaceCallback VulkanContext::_destroySurface              = nullptr;
@@ -93,6 +89,7 @@ namespace Ailurus
     vk::Instance                VulkanContext::_vkInstance              = nullptr;
     vk::DebugUtilsMessengerEXT  VulkanContext::_vkDebugUtilsMessenger   = nullptr;
     vk::PhysicalDevice          VulkanContext::_vkPhysicalDevice        = nullptr;
+    vk::SurfaceKHR              VulkanContext::_vkSurface               = nullptr;
     vk::Device                  VulkanContext::_vkDevice                = nullptr;
     uint32_t                    VulkanContext::_graphicQueueIndex       = 0;
     uint32_t                    VulkanContext::_computeQueueIndex       = 0;
@@ -112,6 +109,16 @@ namespace Ailurus
     void VulkanContext::SetCallbackWindowDestroySurfaceCallback(const WindowDestroySurfaceCallback& f)
     {
         _destroySurface = f;
+    }
+
+    void VulkanContext::Init()
+    {
+
+    }
+
+    void VulkanContext::Destroy()
+    {
+
     }
 
     bool VulkanContext::Register(const Renderer* pRenderer, vk::SurfaceKHR* outSurface)

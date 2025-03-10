@@ -22,6 +22,9 @@ namespace Ailurus
         static void SetCallbackGetWindowInstanceExtension(const GetWindowInstanceExtension& f);
         static void SetCallbackWindowCreateSurfaceCallback(const WindowCreateSurfaceCallback& f);
         static void SetCallbackWindowDestroySurfaceCallback(const WindowDestroySurfaceCallback& f);
+
+        static void Init();
+        static void Destroy();
         static bool Register(const Renderer* pRenderer, vk::SurfaceKHR* outSurface);
         static void Unregister(const Renderer* pRenderer);
 
@@ -47,6 +50,7 @@ namespace Ailurus
         static vk::Instance _vkInstance;
         static vk::DebugUtilsMessengerEXT _vkDebugUtilsMessenger;
         static vk::PhysicalDevice _vkPhysicalDevice;
+        static vk::SurfaceKHR _vkSurface;
         static vk::Device _vkDevice;
         static uint32_t _graphicQueueIndex;
         static uint32_t _computeQueueIndex;

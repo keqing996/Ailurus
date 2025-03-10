@@ -9,7 +9,6 @@
 #include "ImGui/ImGui.h"
 #include "Ailurus/Math/Vector.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
-#include "Ailurus/Graphics/Renderer.h"
 
 namespace Ailurus
 {
@@ -23,8 +22,7 @@ namespace Ailurus
         };
 
     public:
-        Window();
-        ~Window();
+        Window() = delete;
 
     public:
         /// Create window instance.
@@ -33,141 +31,138 @@ namespace Ailurus
         /// @param title Window title in UTF8.
         /// @param style Window style.
         /// @return Create success.
-        bool Create(int width, int height, const std::string& title, Style style);
+        static bool Create(int width, int height, const std::string& title, Style style);
 
         /// Destroy window instance.
-        void Destroy();
+        static void Destroy();
 
         /// Check is window instance created.
-        bool IsWindowValid() const;
+        static bool IsWindowValid();
 
         /// Window main loop.
         /// @param loopFunction called every frame.
-        void Loop(const std::function<void()>& loopFunction);
+        static void Loop(const std::function<void()>& loopFunction);
 
         /// Get native window's size(client area, without borders, caption bar, etc.).
-        Vector2i GetSize() const;
+        static Vector2i GetSize();
 
         /// Set native window's size.
-        void SetSize(int width, int height);
+        static void SetSize(int width, int height);
 
         /// Set native window's size.
-        void SetSize(const Vector2i& size);
+        static void SetSize(const Vector2i& size);
 
         /// Get native window's position in screen.
-        Vector2i GetPosition() const;
+        static Vector2i GetPosition();
 
         /// Set native window's position in screen.
-        void SetPosition(int x, int y);
+        static void SetPosition(int x, int y);
 
         /// Set native window's position in screen.
-        void SetPosition(const Vector2i& pos);
+        static void SetPosition(const Vector2i& pos);
 
         /// Set icon of window through bytes in memory.
         /// @param width Icon width.
         /// @param height Icon height.
         /// @param pixels Icon bytes data in RGBA8888.
-        void SetIcon(unsigned int width, unsigned int height, const std::byte* pixels);
+        static void SetIcon(unsigned int width, unsigned int height, const std::byte* pixels);
 
         /// Set window title in UTF8.
-        void SetTitle(const std::string& title);
+        static void SetTitle(const std::string& title);
 
         /// Set window visible.
-        void SetWindowVisible(bool show);
+        static void SetWindowVisible(bool show);
 
         /// Get is cursor visible.
-        bool IsCursorVisible() const;
+        static bool IsCursorVisible();
 
         /// Set cursor visible.
-        void SetCursorVisible(bool show);
+        static void SetCursorVisible(bool show);
 
         /// Is cursor limited in window client area.
-        bool IsCursorLimitedInWindow() const;
+        static bool IsCursorLimitedInWindow();
 
         /// Set cursor limited in window client area.
-        void SetCursorLimitedInWindow(bool capture);
+        static void SetCursorLimitedInWindow(bool capture);
 
         /// Get is cursor inside window now (frame not included).
-        bool IsCursorInsideWindow() const;
+        static bool IsCursorInsideWindow();
 
         /// Called when window is created.
-        void SetCallbackOnWindowCreated(const std::function<void()>& callback);
+        static void SetCallbackOnWindowCreated(const std::function<void()>& callback);
 
         /// Called when window is trying to close, return true to let
         /// window close, return false to refuse window to close.
-        void SetCallbackOnWindowTryToClose(const std::function<bool()>& callback);
+        static void SetCallbackOnWindowTryToClose(const std::function<bool()>& callback);
 
         /// Called when window is closed.
-        void SetCallbackOnWindowClosed(const std::function<void()>& callback);
+        static void SetCallbackOnWindowClosed(const std::function<void()>& callback);
 
         /// Called when window is about to be destroyed, at this moment, WM_DESTROY
         /// is not sent to window yet, and all resources (icon, or something) are still
         /// held by window.
-        void SetCallbackOnWindowPreDestroyed(const std::function<void()>& callback);
+        static void SetCallbackOnWindowPreDestroyed(const std::function<void()>& callback);
 
         /// Called when window is already destroyed, at this moment, WM_DESTROY is
         /// already received, all resources are released, window is closed.
-        void SetCallbackOnWindowPostDestroyed(const std::function<void()>& callback);
+        static void SetCallbackOnWindowPostDestroyed(const std::function<void()>& callback);
 
         /// Called when window received WM_MOVE
         ///
         /// - int: left up corner x.
         /// - int: left up corner y.
-        void SetCallbackOnWindowMoved(const std::function<void(Vector2i)>& callback);
+        static void SetCallbackOnWindowMoved(const std::function<void(Vector2i)>& callback);
 
         /// Called when window received WM_SIZE
         /// - int: new size width.
         /// - int: new size height.
-        void SetCallbackOnWindowResize(const std::function<void(Vector2i)>& callback);
+        static void SetCallbackOnWindowResize(const std::function<void(Vector2i)>& callback);
 
         /// Called when window get or lost focus,
         /// true for enter focus and false for lose focus.
-        void SetCallbackOnWindowFocusChanged(const std::function<void(bool)>& callback);
+        static void SetCallbackOnWindowFocusChanged(const std::function<void(bool)>& callback);
 
         /// Called when cursor enters or leaves window, true for
         /// enters window and false for leaves window.
-        void SetCallbackOnWindowCursorEnteredOrLeaved(const std::function<void(bool)>& callback);
+        static void SetCallbackOnWindowCursorEnteredOrLeaved(const std::function<void(bool)>& callback);
 
         /// Called when cursor's visibility changes, true for shown and false for hided.
-        void SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback);
+        static void SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback);
 
-        void* GetSDLWindowPtr();
+        static void* GetSDLWindowPtr();
 
-        const Input* GetInput() const;
+        static const Input* GetInput();
 
-        const ImGui* GetImGui() const;
+        static const ImGui* GetImGui();
 
     private:
-        void EventLoop(bool* quitLoop);
-        void HandleEvent(const void* pEvent, bool* quitLoop);
+        static void EventLoop(bool* quitLoop);
+        static void HandleEvent(const void* pEvent, bool* quitLoop);
 
     private:
         // Window handle
-        void* _pWindow = nullptr;
+        static void* _pWindow = nullptr;
 
         // Close request
-        bool _ignoreNextQuit = false;
-
-        // Renderer
-        std::unique_ptr<Renderer> _pRenderer = nullptr;
+        static bool _ignoreNextQuit = false;
 
         // Window callbacks
-        std::function<void()>           _onWindowCreated = nullptr;
-        std::function<void(Vector2i)>   _onWindowMoved = nullptr;
-        std::function<bool()>           _onWindowTryToClose = nullptr;
-        std::function<void()>           _onWindowClosed = nullptr;
-        std::function<void()>           _onWindowPreDestroyed = nullptr;
-        std::function<void()>           _onWindowPostDestroyed = nullptr;
-        std::function<void(Vector2i)>   _onWindowResize = nullptr;
-        std::function<void(bool)>       _onWindowFocusChanged = nullptr;
-        std::function<void(bool)>       _onWindowCursorEnteredOrLeaved = nullptr;
-        std::function<void(bool)>       _onWindowCursorVisibleChanged = nullptr;
+        static std::function<void()>           _onWindowCreated = nullptr;
+        static std::function<void(Vector2i)>   _onWindowMoved = nullptr;
+        static std::function<bool()>           _onWindowTryToClose = nullptr;
+        static std::function<void()>           _onWindowClosed = nullptr;
+        static std::function<void()>           _onWindowPreDestroyed = nullptr;
+        static std::function<void()>           _onWindowPostDestroyed = nullptr;
+        static std::function<void(Vector2i)>   _onWindowResize = nullptr;
+        static std::function<void(bool)>       _onWindowFocusChanged = nullptr;
+        static std::function<void(bool)>       _onWindowCursorEnteredOrLeaved = nullptr;
+        static std::function<void(bool)>       _onWindowCursorVisibleChanged = nullptr;
 
         // Input
-        std::unique_ptr<Input> _pInput = nullptr;
+        static std::unique_ptr<Input> _pInput = nullptr;
 
         // ImGui
-        std::unique_ptr<ImGui> _pImGui = nullptr;
+        static std::unique_ptr<ImGui> _pImGui = nullptr;
     };
 }
 

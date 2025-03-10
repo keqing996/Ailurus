@@ -6,12 +6,22 @@
 
 namespace Ailurus
 {
-    Window::Window() = default;
+    void*   Window::_pWindow        = nullptr;
+    bool    Window::_ignoreNextQuit = false;
 
-    Window::~Window()
-    {
-        Destroy();
-    }
+    std::function<void()>           Window::_onWindowCreated = nullptr;
+    std::function<void(Vector2i)>   Window::_onWindowMoved = nullptr;
+    std::function<bool()>           Window::_onWindowTryToClose = nullptr;
+    std::function<void()>           Window::_onWindowClosed = nullptr;
+    std::function<void()>           Window::_onWindowPreDestroyed = nullptr;
+    std::function<void()>           Window::_onWindowPostDestroyed = nullptr;
+    std::function<void(Vector2i)>   Window::_onWindowResize = nullptr;
+    std::function<void(bool)>       Window::_onWindowFocusChanged = nullptr;
+    std::function<void(bool)>       Window::_onWindowCursorEnteredOrLeaved = nullptr;
+    std::function<void(bool)>       Window::_onWindowCursorVisibleChanged = nullptr;
+
+    std::unique_ptr<Input> Window::_pInput = nullptr;
+    std::unique_ptr<ImGui> Window::_pImGui = nullptr;
 
     bool Window::Create(int width, int height, const std::string& title, Style style)
     {
@@ -85,7 +95,7 @@ namespace Ailurus
         }
     }
 
-    bool Window::IsWindowValid() const
+    bool Window::IsWindowValid()
     {
         return _pWindow != nullptr;
     }
@@ -110,7 +120,7 @@ namespace Ailurus
         Destroy();
     }
 
-    Vector2i Window::GetSize() const
+    Vector2i Window::GetSize()
     {
         if (_pWindow != nullptr)
         {
@@ -133,7 +143,7 @@ namespace Ailurus
         SetSize(size.x(), size.y());
     }
 
-    Vector2i Window::GetPosition() const
+    Vector2i Window::GetPosition()
     {
         if (_pWindow == nullptr)
             return Vector2i(0, 0);
@@ -183,7 +193,7 @@ namespace Ailurus
             SDL_HideWindow(static_cast<SDL_Window*>(_pWindow));
     }
 
-    bool Window::IsCursorVisible() const
+    bool Window::IsCursorVisible()
     {
         return SDL_CursorVisible();
     }
@@ -196,7 +206,7 @@ namespace Ailurus
             SDL_HideCursor();
     }
 
-    bool Window::IsCursorLimitedInWindow() const
+    bool Window::IsCursorLimitedInWindow()
     {
         if (_pWindow == nullptr)
             return false;
@@ -212,7 +222,7 @@ namespace Ailurus
         SDL_SetWindowMouseGrab(static_cast<SDL_Window*>(_pWindow), capture);
     }
 
-    bool Window::IsCursorInsideWindow() const
+    bool Window::IsCursorInsideWindow()
     {
         if (_pWindow == nullptr)
             return false;
@@ -287,12 +297,12 @@ namespace Ailurus
         return _pWindow;
     }
 
-    const Input* Window::GetInput() const
+    const Input* Window::GetInput()
     {
         return _pInput.get();
     }
 
-    const ImGui* Window::GetImGui() const
+    const ImGui* Window::GetImGui()
     {
         return _pImGui.get();
     }
