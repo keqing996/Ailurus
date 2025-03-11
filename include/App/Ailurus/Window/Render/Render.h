@@ -53,9 +53,6 @@ namespace Ailurus
         // temp
         std::unique_ptr<class RenderObject> _pRenderObj = nullptr;
 
-        // Dynamic context
-        std::unique_ptr<SwapChain> _pSwapChain = nullptr;
-        std::unique_ptr<class RenderPassForward> _pForwardPass = nullptr;
-        std::unique_ptr<class Airport> _pAirport = nullptr;
+
     };
 }
