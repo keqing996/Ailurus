@@ -23,8 +23,8 @@ endif ()
 # App Library
 add_library                 (ailurus-app STATIC ${AILURUS_APP_SRC})
 target_include_directories  (ailurus-app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/App/)
-target_link_libraries       (ailurus-app PUBLIC vulkan_hpp imgui ailurus-core)
-target_link_libraries       (ailurus-app PRIVATE SDL3-static)
+target_link_libraries       (ailurus-app PUBLIC imgui ailurus-core)
+target_link_libraries       (ailurus-app PRIVATE SDL3-static vulkan_hpp)
 
 # Test code
 option (AILURUS_ENABLE_TEST OFF)

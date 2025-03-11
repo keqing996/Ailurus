@@ -1,5 +1,5 @@
 #include "Ailurus/Window/Window.h"
-#include "../Render/VulkanContext/VulkanContext.h"
+#include "Render/VulkanContext/VulkanContext.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
@@ -19,8 +19,9 @@ namespace Ailurus
     std::function<void(bool)>       Window::_onWindowCursorEnteredOrLeaved = nullptr;
     std::function<void(bool)>       Window::_onWindowCursorVisibleChanged = nullptr;
 
-    std::unique_ptr<Input> Window::_pInput = nullptr;
-    std::unique_ptr<ImGui> Window::_pImGui = nullptr;
+    std::unique_ptr<Input>          Window::_pInput = nullptr;
+    std::unique_ptr<ImGui>          Window::_pImGui = nullptr;
+    std::unique_ptr<Render>         Window::_pRender = nullptr;
 
     static std::vector<const char*> VulkanContextGetInstanceExtensions()
     {
@@ -70,10 +71,7 @@ namespace Ailurus
         if (!VulkanContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface))
             return false;
 
-        _pRenderer = std::make_unique<Renderer>(
-            [this]() -> Vector2i { return GetSize(); },
-
-            true);
+        _pRender = std::make_unique<Render>([]() -> Vector2i { return GetSize(); });
 
         if (_onWindowCreated != nullptr)
             _onWindowCreated();
@@ -88,7 +86,7 @@ namespace Ailurus
             if (_onWindowPreDestroyed)
                 _onWindowPreDestroyed();
 
-            _pRenderer = nullptr;
+            _pRender = nullptr;
             _pInput = nullptr;
             _pImGui = nullptr;
 
@@ -121,8 +119,8 @@ namespace Ailurus
             if (loopFunction != nullptr)
                 loopFunction();
 
-            if (_pRenderer)
-                _pRenderer->Render();
+            if (_pRender)
+                _pRender->RenderScene();
         }
 
         Destroy();
@@ -310,9 +308,14 @@ namespace Ailurus
         return _pInput.get();
     }
 
-    const ImGui* Window::GetImGui()
+    ImGui* Window::GetImGui()
     {
         return _pImGui.get();
+    }
+
+    Render* Window::GetRender()
+    {
+        return _pRender.get();
     }
 
     void Window::EventLoop(bool* quitLoop)
@@ -381,8 +384,8 @@ namespace Ailurus
             }
             case SDL_EVENT_WINDOW_RESIZED:
             {
-                if (_pRenderer)
-                    _pRenderer->NeedRecreateSwapChain();
+                if (_pRender)
+                    _pRender->NeedRecreateSwapChain();
 
                 if (windowId == pSDLEvent->window.windowID && _onWindowResize != nullptr)
                     _onWindowResize(Vector2i(pSDLEvent->window.data1, pSDLEvent->window.data2));

@@ -9,6 +9,7 @@
 #include "ImGui/ImGui.h"
 #include "Ailurus/Math/Vector.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
+#include "Render/Render.h"
 
 namespace Ailurus
 {
@@ -133,7 +134,9 @@ namespace Ailurus
 
         static const Input* GetInput();
 
-        static const ImGui* GetImGui();
+        static ImGui* GetImGui();
+
+        static Render* GetRender();
 
     private:
         static void EventLoop(bool* quitLoop);
@@ -163,6 +166,9 @@ namespace Ailurus
 
         // ImGui
         static std::unique_ptr<ImGui> _pImGui;
+
+        // Render
+        static std::unique_ptr<Render> _pRender;
     };
 }
 

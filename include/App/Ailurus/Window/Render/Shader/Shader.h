@@ -1,0 +1,31 @@
+#pragma once
+
+#include <vulkan/vulkan.hpp>
+#include "ShaderStage.h"
+
+namespace Ailurus
+{
+    class Render;
+
+    class Shader
+    {
+    public:
+        Shader(const Render* pRenderer, ShaderStage stage, const std::string& path);
+        Shader(const Render* pRenderer, ShaderStage stage, const char* binaryData, size_t size);
+        ~Shader();
+
+    public:
+        ShaderStage GetStage() const;
+        vk::ShaderModule GetShaderModule() const;
+        vk::PipelineShaderStageCreateInfo GeneratePipelineCreateInfo() const;
+
+    private:
+        void CreateShaderModule(const char* binaryData, size_t size);
+
+    private:
+        const Render* _pRenderer;
+
+        ShaderStage _stage;
+        vk::ShaderModule _vkShaderModule = nullptr;
+    };
+}
