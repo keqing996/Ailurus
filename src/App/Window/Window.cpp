@@ -1,6 +1,5 @@
 #include "Ailurus/Window/Window.h"
-
-#include <vulkan/vulkan.hpp>
+#include "../Render/VulkanContext/VulkanContext.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
@@ -22,6 +21,28 @@ namespace Ailurus
 
     std::unique_ptr<Input> Window::_pInput = nullptr;
     std::unique_ptr<ImGui> Window::_pImGui = nullptr;
+
+    static std::vector<const char*> VulkanContextGetInstanceExtensions()
+    {
+        std::vector<const char*> extensions;
+        uint32_t size;
+        char const* const* pExt = SDL_Vulkan_GetInstanceExtensions(&size);
+        for (uint32_t n = 0; n < size; n++)
+            extensions.push_back(pExt[n]);
+        return extensions;
+    }
+
+    static vk::SurfaceKHR VulkanContextCreateSurface(const vk::Instance& instance)
+    {
+        VkSurfaceKHR surface;
+        SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(Window::GetSDLWindowPtr()), instance, nullptr, &surface);
+        return surface;
+    }
+
+    static void VulkanContextDestroySurface(const vk::Instance& instance, const vk::SurfaceKHR& surface)
+    {
+        SDL_Vulkan_DestroySurface(instance, surface, nullptr);
+    }
 
     bool Window::Create(int width, int height, const std::string& title, Style style)
     {
@@ -46,27 +67,12 @@ namespace Ailurus
 
         SetWindowVisible(true);
 
+        if (!VulkanContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface))
+            return false;
+
         _pRenderer = std::make_unique<Renderer>(
             [this]() -> Vector2i { return GetSize(); },
-            [this]() -> std::vector<const char*>
-            {
-                std::vector<const char*> extensions;
-                uint32_t size;
-                char const* const* pExt = SDL_Vulkan_GetInstanceExtensions(&size);
-                for (uint32_t n = 0; n < size; n++)
-                    extensions.push_back(pExt[n]);
-                return extensions;
-            },
-            [this](const vk::Instance& instance) -> vk::SurfaceKHR
-            {
-                VkSurfaceKHR surface;
-                SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(_pWindow), instance, nullptr, &surface);
-                return surface;
-            },
-            [this](const vk::Instance& instance, const vk::SurfaceKHR& surface) -> void
-            {
-                SDL_Vulkan_DestroySurface(instance, surface, nullptr);
-            },
+
             true);
 
         if (_onWindowCreated != nullptr)
@@ -92,6 +98,8 @@ namespace Ailurus
 
             if (_onWindowPostDestroyed)
                 _onWindowPostDestroyed();
+
+            VulkanContext::Destroy(VulkanContextDestroySurface);
         }
     }
 

@@ -1,9 +1,9 @@
 #include <array>
-#include "Ailurus/Graphics/Renderer.h"
-#include "Ailurus/Graphics/DataBuffer/VertexBuffer.h"
-#include "Ailurus/Graphics/DataBuffer/IndexBuffer.h"
-#include "Ailurus/Graphics/Pipeline/Pipeline.h"
-#include "Ailurus/Graphics/InputAssemble/InputAssemble.h"
+#include "Ailurus/Render/Renderer.h"
+#include "Ailurus/Render/DataBuffer/VertexBuffer.h"
+#include "Ailurus/Render/DataBuffer/IndexBuffer.h"
+#include "Ailurus/Render/Pipeline/Pipeline.h"
+#include "Ailurus/Render/InputAssemble/InputAssemble.h"
 #include "Ailurus/Utility/Logger.h"
 #include "VulkanContext/VulkanContext.h"
 

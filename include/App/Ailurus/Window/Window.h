@@ -141,28 +141,28 @@ namespace Ailurus
 
     private:
         // Window handle
-        static void* _pWindow = nullptr;
+        static void* _pWindow;
 
         // Close request
-        static bool _ignoreNextQuit = false;
+        static bool _ignoreNextQuit;
 
         // Window callbacks
-        static std::function<void()>           _onWindowCreated = nullptr;
-        static std::function<void(Vector2i)>   _onWindowMoved = nullptr;
-        static std::function<bool()>           _onWindowTryToClose = nullptr;
-        static std::function<void()>           _onWindowClosed = nullptr;
-        static std::function<void()>           _onWindowPreDestroyed = nullptr;
-        static std::function<void()>           _onWindowPostDestroyed = nullptr;
-        static std::function<void(Vector2i)>   _onWindowResize = nullptr;
-        static std::function<void(bool)>       _onWindowFocusChanged = nullptr;
-        static std::function<void(bool)>       _onWindowCursorEnteredOrLeaved = nullptr;
-        static std::function<void(bool)>       _onWindowCursorVisibleChanged = nullptr;
+        static std::function<void()>           _onWindowCreated;
+        static std::function<void(Vector2i)>   _onWindowMoved;
+        static std::function<bool()>           _onWindowTryToClose;
+        static std::function<void()>           _onWindowClosed;
+        static std::function<void()>           _onWindowPreDestroyed;
+        static std::function<void()>           _onWindowPostDestroyed;
+        static std::function<void(Vector2i)>   _onWindowResize;
+        static std::function<void(bool)>       _onWindowFocusChanged;
+        static std::function<void(bool)>       _onWindowCursorEnteredOrLeaved;
+        static std::function<void(bool)>       _onWindowCursorVisibleChanged;
 
         // Input
-        static std::unique_ptr<Input> _pInput = nullptr;
+        static std::unique_ptr<Input> _pInput;
 
         // ImGui
-        static std::unique_ptr<ImGui> _pImGui = nullptr;
+        static std::unique_ptr<ImGui> _pImGui;
     };
 }
 

@@ -23,39 +23,42 @@ namespace Ailurus
         static void SetCallbackWindowCreateSurfaceCallback(const WindowCreateSurfaceCallback& f);
         static void SetCallbackWindowDestroySurfaceCallback(const WindowDestroySurfaceCallback& f);
 
-        static void Init();
-        static void Destroy();
-        static bool Register(const Renderer* pRenderer, vk::SurfaceKHR* outSurface);
-        static void Unregister(const Renderer* pRenderer);
+        static bool Init(const GetWindowInstanceExtension& getWindowRequiredExtension, const WindowCreateSurfaceCallback& createSurface);
+        static void Destroy(const WindowDestroySurfaceCallback& destroySurface);
 
         static vk::Device GetDevice();
-        static uint32_t GetGraphicQueueIndex();
-        static vk::Queue GetGraphicQueue();
+        static uint32_t GetPresentQueueIndex();
         static uint32_t GetComputeQueueIndex();
+        static uint32_t GetGraphicQueueIndex();
+        static vk::Queue GetPresentQueue();
+        static vk::Queue GetGraphicQueue();
         static vk::Queue GetComputeQueue();
+        static vk::CommandPool GetCommandPool();
 
     private:
-        static bool InitVulkan();
-        static void DestroyVulkan();
-        static void CreateInstance();
+        static void PrepareDispatcher();
+        static void CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension);
         static void CreatDebugUtilsMessenger();
+        static void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
         static void ChoosePhysicsDevice();
         static bool CreateLogicalDevice();
+        static void CreateCommandPool();
 
     private:
-        static GetWindowInstanceExtension _getWindowRequiredExtension;
-        static WindowCreateSurfaceCallback _createSurface;
-        static WindowDestroySurfaceCallback _destroySurface;
-
+        static bool _initialized;
         static vk::Instance _vkInstance;
         static vk::DebugUtilsMessengerEXT _vkDebugUtilsMessenger;
         static vk::PhysicalDevice _vkPhysicalDevice;
         static vk::SurfaceKHR _vkSurface;
         static vk::Device _vkDevice;
+
+        static uint32_t _presentQueueIndex;
         static uint32_t _graphicQueueIndex;
         static uint32_t _computeQueueIndex;
+        static vk::Queue _vkPresentQueue;
         static vk::Queue _vkGraphicQueue;
         static vk::Queue _vkComputeQueue;
 
+        static vk::CommandPool _vkGraphicCommandPool;
     };
 }

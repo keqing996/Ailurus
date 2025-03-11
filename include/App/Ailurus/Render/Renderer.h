@@ -50,9 +50,8 @@ namespace Ailurus
         // Callback
         GetWindowSizeCallback _getWindowSizeCallback;
 
-        // Static context
-        vk::SurfaceKHR _vkSurface = nullptr;
-        vk::CommandPool _vkGraphicCommandPool = nullptr;
+
+
         std::unique_ptr<ShaderLibrary> _pShaderLibrary = nullptr;
 
         // temp
