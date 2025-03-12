@@ -7,7 +7,7 @@
 
 namespace Ailurus
 {
-    class Window;
+    class Application;
 
     class Input
     {
@@ -29,7 +29,7 @@ namespace Ailurus
         void SetCallbackOnButtonReleased(const std::function<void(ButtonType)>& callback);
 
     private:
-        friend class Window;
+        friend class Application;
 
     private:
         void OnEventButtonPressed(ButtonType button);

@@ -13,7 +13,7 @@
 
 namespace Ailurus
 {
-    class Window final: NonCopyable
+    class Application final: NonCopyable
     {
     public:
         struct Style
@@ -23,7 +23,7 @@ namespace Ailurus
         };
 
     public:
-        Window() = delete;
+        Application() = delete;
 
     public:
         /// Create window instance.

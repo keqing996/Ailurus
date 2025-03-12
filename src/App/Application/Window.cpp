@@ -1,27 +1,27 @@
-#include "Ailurus/Window/Window.h"
+#include "Ailurus/Application/Window.h"
 #include "Render/VulkanContext/VulkanContext.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
 namespace Ailurus
 {
-    void*   Window::_pWindow        = nullptr;
-    bool    Window::_ignoreNextQuit = false;
+    void*   Application::_pWindow        = nullptr;
+    bool    Application::_ignoreNextQuit = false;
 
-    std::function<void()>           Window::_onWindowCreated = nullptr;
-    std::function<void(Vector2i)>   Window::_onWindowMoved = nullptr;
-    std::function<bool()>           Window::_onWindowTryToClose = nullptr;
-    std::function<void()>           Window::_onWindowClosed = nullptr;
-    std::function<void()>           Window::_onWindowPreDestroyed = nullptr;
-    std::function<void()>           Window::_onWindowPostDestroyed = nullptr;
-    std::function<void(Vector2i)>   Window::_onWindowResize = nullptr;
-    std::function<void(bool)>       Window::_onWindowFocusChanged = nullptr;
-    std::function<void(bool)>       Window::_onWindowCursorEnteredOrLeaved = nullptr;
-    std::function<void(bool)>       Window::_onWindowCursorVisibleChanged = nullptr;
+    std::function<void()>           Application::_onWindowCreated = nullptr;
+    std::function<void(Vector2i)>   Application::_onWindowMoved = nullptr;
+    std::function<bool()>           Application::_onWindowTryToClose = nullptr;
+    std::function<void()>           Application::_onWindowClosed = nullptr;
+    std::function<void()>           Application::_onWindowPreDestroyed = nullptr;
+    std::function<void()>           Application::_onWindowPostDestroyed = nullptr;
+    std::function<void(Vector2i)>   Application::_onWindowResize = nullptr;
+    std::function<void(bool)>       Application::_onWindowFocusChanged = nullptr;
+    std::function<void(bool)>       Application::_onWindowCursorEnteredOrLeaved = nullptr;
+    std::function<void(bool)>       Application::_onWindowCursorVisibleChanged = nullptr;
 
-    std::unique_ptr<Input>          Window::_pInput = nullptr;
-    std::unique_ptr<ImGui>          Window::_pImGui = nullptr;
-    std::unique_ptr<Render>         Window::_pRender = nullptr;
+    std::unique_ptr<Input>          Application::_pInput = nullptr;
+    std::unique_ptr<ImGui>          Application::_pImGui = nullptr;
+    std::unique_ptr<Render>         Application::_pRender = nullptr;
 
     static std::vector<const char*> VulkanContextGetInstanceExtensions()
     {
@@ -36,7 +36,7 @@ namespace Ailurus
     static vk::SurfaceKHR VulkanContextCreateSurface(const vk::Instance& instance)
     {
         VkSurfaceKHR surface;
-        SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(Window::GetSDLWindowPtr()), instance, nullptr, &surface);
+        SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(Application::GetSDLWindowPtr()), instance, nullptr, &surface);
         return surface;
     }
 
@@ -45,7 +45,7 @@ namespace Ailurus
         SDL_Vulkan_DestroySurface(instance, surface, nullptr);
     }
 
-    bool Window::Create(int width, int height, const std::string& title, Style style)
+    bool Application::Create(int width, int height, const std::string& title, Style style)
     {
         if (!SDL_Init(SDL_INIT_VIDEO))
             return false;
@@ -79,7 +79,7 @@ namespace Ailurus
         return true;
     }
 
-    void Window::Destroy()
+    void Application::Destroy()
     {
         if (_pWindow)
         {
@@ -101,12 +101,12 @@ namespace Ailurus
         }
     }
 
-    bool Window::IsWindowValid()
+    bool Application::IsWindowValid()
     {
         return _pWindow != nullptr;
     }
 
-    void Window::Loop(const std::function<void()>& loopFunction)
+    void Application::Loop(const std::function<void()>& loopFunction)
     {
         while(true)
         {
@@ -126,7 +126,7 @@ namespace Ailurus
         Destroy();
     }
 
-    Vector2i Window::GetSize()
+    Vector2i Application::GetSize()
     {
         if (_pWindow != nullptr)
         {
@@ -138,18 +138,18 @@ namespace Ailurus
         return Vector2i(0, 0);
     }
 
-    void Window::SetSize(int width, int height)
+    void Application::SetSize(int width, int height)
     {
         if (_pWindow != nullptr)
             SDL_SetWindowSize(static_cast<SDL_Window*>(_pWindow), width, height);
     }
 
-    void Window::SetSize(const Vector2i& size)
+    void Application::SetSize(const Vector2i& size)
     {
         SetSize(size.x(), size.y());
     }
 
-    Vector2i Window::GetPosition()
+    Vector2i Application::GetPosition()
     {
         if (_pWindow == nullptr)
             return Vector2i(0, 0);
@@ -159,7 +159,7 @@ namespace Ailurus
         return Vector2i(x, y);
     }
 
-    void Window::SetPosition(int x, int y)
+    void Application::SetPosition(int x, int y)
     {
         if (_pWindow == nullptr)
             return;
@@ -167,12 +167,12 @@ namespace Ailurus
         SDL_SetWindowPosition(static_cast<SDL_Window*>(_pWindow), x, y);
     }
 
-    void Window::SetPosition(const Vector2i& pos)
+    void Application::SetPosition(const Vector2i& pos)
     {
         SetPosition(pos.x(), pos.y());
     }
 
-    void Window::SetIcon(unsigned int width, unsigned int height, const std::byte* pixels)
+    void Application::SetIcon(unsigned int width, unsigned int height, const std::byte* pixels)
     {
         if (_pWindow == nullptr)
             return;
@@ -182,13 +182,13 @@ namespace Ailurus
         SDL_SetWindowIcon(static_cast<SDL_Window*>(_pWindow), surface);
     }
 
-    void Window::SetTitle(const std::string& title)
+    void Application::SetTitle(const std::string& title)
     {
         if (_pWindow != nullptr)
             SDL_SetWindowTitle(static_cast<SDL_Window*>(_pWindow), title.c_str());
     }
 
-    void Window::SetWindowVisible(bool show)
+    void Application::SetWindowVisible(bool show)
     {
         if (_pWindow == nullptr)
             return;
@@ -199,12 +199,12 @@ namespace Ailurus
             SDL_HideWindow(static_cast<SDL_Window*>(_pWindow));
     }
 
-    bool Window::IsCursorVisible()
+    bool Application::IsCursorVisible()
     {
         return SDL_CursorVisible();
     }
 
-    void Window::SetCursorVisible(bool show)
+    void Application::SetCursorVisible(bool show)
     {
         if (show)
             SDL_ShowCursor();
@@ -212,7 +212,7 @@ namespace Ailurus
             SDL_HideCursor();
     }
 
-    bool Window::IsCursorLimitedInWindow()
+    bool Application::IsCursorLimitedInWindow()
     {
         if (_pWindow == nullptr)
             return false;
@@ -220,7 +220,7 @@ namespace Ailurus
         return SDL_GetWindowMouseGrab(static_cast<SDL_Window*>(_pWindow));
     }
 
-    void Window::SetCursorLimitedInWindow(bool capture)
+    void Application::SetCursorLimitedInWindow(bool capture)
     {
         if (_pWindow == nullptr)
             return;
@@ -228,7 +228,7 @@ namespace Ailurus
         SDL_SetWindowMouseGrab(static_cast<SDL_Window*>(_pWindow), capture);
     }
 
-    bool Window::IsCursorInsideWindow()
+    bool Application::IsCursorInsideWindow()
     {
         if (_pWindow == nullptr)
             return false;
@@ -248,77 +248,77 @@ namespace Ailurus
                 mouseY <= windowY + windowHeight);
     }
 
-    void Window::SetCallbackOnWindowCreated(const std::function<void()>& callback)
+    void Application::SetCallbackOnWindowCreated(const std::function<void()>& callback)
     {
         _onWindowCreated = callback;
     }
 
-    void Window::SetCallbackOnWindowTryToClose(const std::function<bool()>& callback)
+    void Application::SetCallbackOnWindowTryToClose(const std::function<bool()>& callback)
     {
         _onWindowTryToClose = callback;
     }
 
-    void Window::SetCallbackOnWindowClosed(const std::function<void()>& callback)
+    void Application::SetCallbackOnWindowClosed(const std::function<void()>& callback)
     {
         _onWindowClosed = callback;
     }
 
-    void Window::SetCallbackOnWindowPreDestroyed(const std::function<void()>& callback)
+    void Application::SetCallbackOnWindowPreDestroyed(const std::function<void()>& callback)
     {
         _onWindowPreDestroyed = callback;
     }
 
-    void Window::SetCallbackOnWindowPostDestroyed(const std::function<void()>& callback)
+    void Application::SetCallbackOnWindowPostDestroyed(const std::function<void()>& callback)
     {
         _onWindowPostDestroyed = callback;
     }
 
-    void Window::SetCallbackOnWindowMoved(const std::function<void(Vector2i)>& callback)
+    void Application::SetCallbackOnWindowMoved(const std::function<void(Vector2i)>& callback)
     {
         _onWindowMoved = callback;
     }
 
-    void Window::SetCallbackOnWindowResize(const std::function<void(Vector2i)>& callback)
+    void Application::SetCallbackOnWindowResize(const std::function<void(Vector2i)>& callback)
     {
         _onWindowResize = callback;
     }
 
-    void Window::SetCallbackOnWindowFocusChanged(const std::function<void(bool)>& callback)
+    void Application::SetCallbackOnWindowFocusChanged(const std::function<void(bool)>& callback)
     {
         _onWindowFocusChanged = callback;
     }
 
-    void Window::SetCallbackOnWindowCursorEnteredOrLeaved(const std::function<void(bool)>& callback)
+    void Application::SetCallbackOnWindowCursorEnteredOrLeaved(const std::function<void(bool)>& callback)
     {
         _onWindowCursorEnteredOrLeaved = callback;
     }
 
-    void Window::SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback)
+    void Application::SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback)
     {
         _onWindowCursorVisibleChanged = callback;
     }
 
-    void* Window::GetSDLWindowPtr()
+    void* Application::GetSDLWindowPtr()
     {
         return _pWindow;
     }
 
-    const Input* Window::GetInput()
+    const Input* Application::GetInput()
     {
         return _pInput.get();
     }
 
-    ImGui* Window::GetImGui()
+    ImGui* Application::GetImGui()
     {
         return _pImGui.get();
     }
 
-    Render* Window::GetRender()
+    Render* Application::GetRender()
     {
         return _pRender.get();
     }
 
-    void Window::EventLoop(bool* quitLoop)
+    void Application::EventLoop(bool* quitLoop)
     {
         if (_pInput != nullptr)
             _pInput->BeforeEventLoop();
@@ -343,7 +343,7 @@ namespace Ailurus
             _pInput->AfterEventLoop();
     }
 
-    void Window::HandleEvent(const void* pEvent, bool* quitLoop)
+    void Application::HandleEvent(const void* pEvent, bool* quitLoop)
     {
         const SDL_Event* pSDLEvent = static_cast<const SDL_Event*>(pEvent);
         const SDL_WindowID windowId = SDL_GetWindowID(static_cast<SDL_Window*>(_pWindow));
