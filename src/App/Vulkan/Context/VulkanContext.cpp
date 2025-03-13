@@ -7,6 +7,7 @@
 #include "Vulkan/SwapChain/SwapChain.h"
 #include "Vulkan/RenderPass/RenderPassForward.h"
 #include "Vulkan/Airport/Airport.h"
+#include "Vulkan/Shader/ShaderLibrary.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -87,25 +88,26 @@ namespace Ailurus
         }
     }
 
-    bool                        VulkanContext::enableValidation         = true;
-    bool                        VulkanContext::_initialized             = false;
-    vk::Instance                VulkanContext::_vkInstance              = nullptr;
-    vk::DebugUtilsMessengerEXT  VulkanContext::_vkDebugUtilsMessenger   = nullptr;
-    vk::PhysicalDevice          VulkanContext::_vkPhysicalDevice        = nullptr;
-    vk::SurfaceKHR              VulkanContext::_vkSurface               = nullptr;
-    vk::Device                  VulkanContext::_vkDevice                = nullptr;
-    uint32_t                    VulkanContext::_presentQueueIndex       = 0;
-    uint32_t                    VulkanContext::_graphicQueueIndex       = 0;
-    uint32_t                    VulkanContext::_computeQueueIndex       = 0;
-    vk::Queue                   VulkanContext::_vkPresentQueue          = nullptr;
-    vk::Queue                   VulkanContext::_vkGraphicQueue          = nullptr;
-    vk::Queue                   VulkanContext::_vkComputeQueue          = nullptr;
-    vk::CommandPool             VulkanContext::_vkGraphicCommandPool    = nullptr;
+    bool                                    VulkanContext::enableValidation         = true;
+    bool                                    VulkanContext::_initialized             = false;
+    vk::Instance                            VulkanContext::_vkInstance              = nullptr;
+    vk::DebugUtilsMessengerEXT              VulkanContext::_vkDebugUtilsMessenger   = nullptr;
+    vk::PhysicalDevice                      VulkanContext::_vkPhysicalDevice        = nullptr;
+    vk::SurfaceKHR                          VulkanContext::_vkSurface               = nullptr;
+    vk::Device                              VulkanContext::_vkDevice                = nullptr;
+    uint32_t                                VulkanContext::_presentQueueIndex       = 0;
+    uint32_t                                VulkanContext::_graphicQueueIndex       = 0;
+    uint32_t                                VulkanContext::_computeQueueIndex       = 0;
+    vk::Queue                               VulkanContext::_vkPresentQueue          = nullptr;
+    vk::Queue                               VulkanContext::_vkGraphicQueue          = nullptr;
+    vk::Queue                               VulkanContext::_vkComputeQueue          = nullptr;
+    vk::CommandPool                         VulkanContext::_vkGraphicCommandPool    = nullptr;
+    std::unique_ptr<ShaderLibrary>          VulkanContext::_pShaderLibrary          = nullptr;
 
-    bool                        VulkanContext::_needRebuildSwapChain    = nullptr;
-    std::unique_ptr<SwapChain>  VulkanContext::_pSwapChain              = nullptr;
-    std::unique_ptr<RenderPassForward> VulkanContext::_pForwardPass     = nullptr;
-    std::unique_ptr<Airport>    VulkanContext::_pAirport                = nullptr;
+    bool                                    VulkanContext::_needRebuildSwapChain    = nullptr;
+    std::unique_ptr<SwapChain>              VulkanContext::_pSwapChain              = nullptr;
+    std::unique_ptr<RenderPassForward>      VulkanContext::_pForwardPass            = nullptr;
+    std::unique_ptr<Airport>                VulkanContext::_pAirport                = nullptr;
 
     bool VulkanContext::Init(const GetWindowInstanceExtension& getWindowRequiredExtension, const WindowCreateSurfaceCallback& createSurface)
     {
@@ -146,6 +148,8 @@ namespace Ailurus
 
         DestroyDynamicContext();
 
+        _pShaderLibrary.reset();
+
         if (_vkDevice)
         {
             _vkDevice.destroyCommandPool(_vkGraphicCommandPool);
@@ -164,6 +168,11 @@ namespace Ailurus
     vk::Device VulkanContext::GetDevice()
     {
         return _vkDevice;
+    }
+
+    vk::PhysicalDevice VulkanContext::GetPhysicalDevice()
+    {
+        return _vkPhysicalDevice;
     }
 
     uint32_t VulkanContext::GetPresentQueueIndex()
@@ -199,6 +208,11 @@ namespace Ailurus
     vk::CommandPool VulkanContext::GetCommandPool()
     {
         return _vkGraphicCommandPool;
+    }
+
+    ShaderLibrary* VulkanContext::GetShaderLibrary()
+    {
+        return _pShaderLibrary.get();
     }
 
     void VulkanContext::RebuildDynamicContext()
@@ -411,6 +425,11 @@ namespace Ailurus
             .setQueueFamilyIndex(GetGraphicQueueIndex());
 
         _vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
+    }
+
+    void VulkanContext::CreateShaderLibrary()
+    {
+        _pShaderLibrary = std::make_unique<ShaderLibrary>();
     }
 
     void VulkanContext::CreateDynamicContext()

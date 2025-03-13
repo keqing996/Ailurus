@@ -8,6 +8,7 @@ namespace Ailurus
     class SwapChain;
     class RenderPassForward;
     class Airport;
+    class ShaderLibrary;
 
     class VulkanContext
     {
@@ -29,6 +30,7 @@ namespace Ailurus
         static void Destroy(const WindowDestroySurfaceCallback& destroySurface);
 
         static vk::Device GetDevice();
+        static vk::PhysicalDevice GetPhysicalDevice();
         static uint32_t GetPresentQueueIndex();
         static uint32_t GetComputeQueueIndex();
         static uint32_t GetGraphicQueueIndex();
@@ -36,6 +38,7 @@ namespace Ailurus
         static vk::Queue GetGraphicQueue();
         static vk::Queue GetComputeQueue();
         static vk::CommandPool GetCommandPool();
+        static ShaderLibrary* GetShaderLibrary();
 
         static void RebuildDynamicContext();
         static SwapChain* GetSwapChain();
@@ -49,6 +52,7 @@ namespace Ailurus
         static void ChoosePhysicsDevice();
         static bool CreateLogicalDevice();
         static void CreateCommandPool();
+        static void CreateShaderLibrary();
 
         static void CreateDynamicContext();
         static void DestroyDynamicContext();
@@ -71,6 +75,7 @@ namespace Ailurus
         static vk::Queue _vkComputeQueue;
 
         static vk::CommandPool _vkGraphicCommandPool;
+        static std::unique_ptr<ShaderLibrary> _pShaderLibrary;
 
         // Dynamic context
         static bool _needRebuildSwapChain;

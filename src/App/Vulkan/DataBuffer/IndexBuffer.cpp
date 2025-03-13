@@ -1,11 +1,11 @@
-#include "Ailurus/Graphics/DataBuffer/IndexBuffer.h"
-#include "Ailurus/Graphics/Renderer.h"
+#include "IndexBuffer.h"
+#include "DataBufferUtil.h"
+#include "Vulkan/Context/VulkanContext.h"
 
 namespace Ailurus
 {
-    IndexBuffer::IndexBuffer(const Renderer* pRenderer, std::vector<uint16_t> indexData)
-        : Buffer(pRenderer)
-        , _indexType(vk::IndexType::eUint16)
+    IndexBuffer::IndexBuffer(std::vector<uint16_t> indexData)
+        : _indexType(vk::IndexType::eUint16)
         , _buffer(nullptr)
         , _indexCount(indexData.size())
         , _bufferMemory(nullptr)
@@ -14,9 +14,8 @@ namespace Ailurus
             indexData.size() * sizeof(uint16_t));
     }
 
-    IndexBuffer::IndexBuffer(const Renderer* pRenderer, std::vector<uint32_t> indexData)
-        : Buffer(pRenderer)
-        , _indexType(vk::IndexType::eUint32)
+    IndexBuffer::IndexBuffer(std::vector<uint32_t> indexData)
+        : _indexType(vk::IndexType::eUint32)
         , _buffer(nullptr)
         , _indexCount(indexData.size())
         , _bufferMemory(nullptr)
@@ -27,7 +26,7 @@ namespace Ailurus
 
     void IndexBuffer::InternalCreate(const char* dataBuffer, size_t dataSizeInBytes)
     {
-        auto ret = CreateBuffer(BufferType::Index, dataBuffer, dataSizeInBytes);
+        auto ret = DataBufferUtil::CreateBuffer(BufferType::Index, dataBuffer, dataSizeInBytes);
         if (!ret)
             return;
 
@@ -37,7 +36,7 @@ namespace Ailurus
 
     IndexBuffer::~IndexBuffer()
     {
-        const auto device = _pRenderer->GetLogicalDevice();
+        const auto device = VulkanContext::GetDevice();
         device.freeMemory(_bufferMemory);
         device.destroyBuffer(_buffer);
     }

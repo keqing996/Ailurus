@@ -1,16 +1,15 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "Buffer.h"
 
 namespace Ailurus
 {
-    class IndexBuffer : public Buffer
+    class IndexBuffer
     {
     public:
-        IndexBuffer(const Render* pRenderer, std::vector<uint16_t> indexData);
-        IndexBuffer(const Render* pRenderer, std::vector<uint32_t> indexData);
-        ~IndexBuffer() override;
+        explicit IndexBuffer(std::vector<uint16_t> indexData);
+        explicit IndexBuffer(std::vector<uint32_t> indexData);
+        ~IndexBuffer();
 
         vk::IndexType GetIndexType() const;
         vk::Buffer GetBuffer() const;

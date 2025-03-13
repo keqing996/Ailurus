@@ -1,16 +1,12 @@
-#include "Ailurus/Graphics/DataBuffer/Buffer.h"
-#include "Ailurus/Graphics/Renderer.h"
+#include "DataBufferUtil.h"
 #include "Ailurus/Utility/ScopeGuard.h"
 #include "Ailurus/Utility/Logger.h"
+#include "Vulkan/Context/VulkanContext.h"
 
 namespace Ailurus
 {
-    Buffer::Buffer(const Renderer* pRenderer)
-        : _pRenderer(pRenderer)
-    {
-    }
-
-    std::optional<Buffer::BufferWithMem> Buffer::CreateBuffer(BufferType type, const char* bufferData, size_t bufferSizeInBytes) const
+    std::optional<BufferWithMem>
+    DataBufferUtil::CreateBuffer(BufferType type, const char* bufferData, size_t bufferSizeInBytes)
     {
         auto stagingBufferRet = CreateBuffer(bufferSizeInBytes, vk::BufferUsageFlagBits::eTransferSrc,
             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
@@ -23,12 +19,12 @@ namespace Ailurus
         auto [stagingBuffer, stagingBufferMemory] = stagingBufferRet.value();
         ScopeGuard stagingBufferReleaseGuard = [&]() -> void
         {
-            const auto device = _pRenderer->GetLogicalDevice();
+            const auto device = VulkanContext::GetDevice();
             device.destroyBuffer(stagingBuffer);
             device.freeMemory(stagingBufferMemory);
         };
 
-        const auto device = _pRenderer->GetLogicalDevice();
+        const auto device = VulkanContext::GetDevice();
         void* mappedAddr = device.mapMemory(stagingBufferMemory, 0, bufferSizeInBytes, {});
         ::memcpy(mappedAddr, bufferData, bufferSizeInBytes);
         device.unmapMemory(stagingBufferMemory);
@@ -60,10 +56,10 @@ namespace Ailurus
         return *targetBufferRet;
     }
 
-    std::optional<Buffer::BufferWithMem> Buffer::CreateBuffer(vk::DeviceSize size,
-                                                              vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties) const
+    std::optional<BufferWithMem>
+    DataBufferUtil::CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties)
     {
-        auto device = _pRenderer->GetLogicalDevice();
+        auto device = VulkanContext::GetDevice();
 
         vk::BufferCreateInfo bufferInfo;
         bufferInfo.setSize(size)
@@ -76,7 +72,7 @@ namespace Ailurus
 
         // Find memory type
         std::optional<uint32_t> memoryTypeIndex = std::nullopt;
-        vk::PhysicalDeviceMemoryProperties memProperties = _pRenderer->GetPhysicalDevice().getMemoryProperties();
+        vk::PhysicalDeviceMemoryProperties memProperties = VulkanContext::GetPhysicalDevice().getMemoryProperties();
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
         {
             if ((memRequirements.memoryTypeBits & (1 << i))
@@ -103,20 +99,19 @@ namespace Ailurus
         return BufferWithMem{buffer, deviceMem};
     }
 
-    void Buffer::CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size) const
+    void DataBufferUtil::CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
     {
-        auto device = _pRenderer->GetLogicalDevice();
+        auto device = VulkanContext::GetDevice();
 
         vk::CommandBufferAllocateInfo allocInfo;
         allocInfo.setLevel(vk::CommandBufferLevel::ePrimary)
-                .setCommandPool(_pRenderer->GetCommandPool())
+                .setCommandPool(VulkanContext::GetCommandPool())
                 .setCommandBufferCount(1);
 
         std::vector<vk::CommandBuffer> tempCmdBuffer = device.allocateCommandBuffers(allocInfo);
         ScopeGuard bufferReleaseGuard = [&]() -> void
         {
-            _pRenderer->GetLogicalDevice().freeCommandBuffers(
-                _pRenderer->GetCommandPool(), tempCmdBuffer);
+            VulkanContext::GetDevice().freeCommandBuffers(VulkanContext::GetCommandPool(), tempCmdBuffer);
         };
 
         vk::CommandBufferBeginInfo beginInfo;
@@ -137,7 +132,7 @@ namespace Ailurus
         vk::SubmitInfo submitInfo;
         submitInfo.setCommandBuffers(tempCmdBuffer);
 
-        auto renderQueue = _pRenderer->GetGraphicQueue();
+        auto renderQueue = VulkanContext::GetGraphicQueue();
         renderQueue.submit(submitInfo);
         renderQueue.waitIdle();
     }

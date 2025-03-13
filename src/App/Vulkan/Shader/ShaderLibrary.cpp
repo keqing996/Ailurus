@@ -1,12 +1,7 @@
-#include "Ailurus/Graphics/Shader/ShaderLibrary.h"
+#include "ShaderLibrary.h"
 
 namespace Ailurus
 {
-    ShaderLibrary::ShaderLibrary(const Renderer* pRenderer)
-        : _pRenderer(pRenderer)
-    {
-    }
-
     Shader* ShaderLibrary::GetShader(ShaderStage stage, const std::string& path)
     {
         auto& map = _library[stage];
@@ -23,7 +18,7 @@ namespace Ailurus
 
     Shader* ShaderLibrary::LoadShader(ShaderStage stage, const std::string& path)
     {
-        _library[stage][path] = std::make_unique<Shader>(_pRenderer, stage, path);
+        _library[stage][path] = std::make_unique<Shader>(stage, path);
         return _library[stage][path].get();
     }
 }

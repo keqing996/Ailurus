@@ -6,12 +6,10 @@
 
 namespace Ailurus
 {
-    class Render;
-
     class ShaderLibrary
     {
     public:
-        explicit ShaderLibrary(const Render* pRenderer);
+        ShaderLibrary() = default;
 
     public:
         void Clear();
@@ -27,7 +25,6 @@ namespace Ailurus
         Shader* LoadShader(ShaderStage stage, const std::string& path);
 
     private:
-        const Render* _pRenderer;
         std::unordered_map<ShaderStage, std::unordered_map<std::string, std::unique_ptr<Shader>>> _library;
     };
 }

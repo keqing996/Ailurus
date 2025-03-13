@@ -1,15 +1,15 @@
-#include "Ailurus/Graphics/DataBuffer/VertexBuffer.h"
-#include "Ailurus/Graphics/Renderer.h"
+#include "VertexBuffer.h"
+#include "DataBufferUtil.h"
+#include "Vulkan/Context/VulkanContext.h"
 
 namespace Ailurus
 {
-    VertexBuffer::VertexBuffer(const Renderer* pRenderer, const char* vertexData, size_t dataSizeInBytes)
-        : Buffer(pRenderer)
-        , _buffer(nullptr)
+    VertexBuffer::VertexBuffer(const char* vertexData, size_t dataSizeInBytes)
+        : _buffer(nullptr)
         , _size(dataSizeInBytes)
         , _bufferMemory(nullptr)
     {
-        auto ret = CreateBuffer(BufferType::Vertex, vertexData, dataSizeInBytes);
+        auto ret = DataBufferUtil::CreateBuffer(BufferType::Vertex, vertexData, dataSizeInBytes);
         if (!ret)
             return;
 
@@ -19,7 +19,7 @@ namespace Ailurus
 
     VertexBuffer::~VertexBuffer()
     {
-        const auto device = _pRenderer->GetLogicalDevice();
+        const auto device = VulkanContext::GetDevice();
         device.freeMemory(_bufferMemory);
         device.destroyBuffer(_buffer);
     }

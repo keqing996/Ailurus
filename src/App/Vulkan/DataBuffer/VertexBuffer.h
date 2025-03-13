@@ -1,15 +1,14 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "Buffer.h"
 
 namespace Ailurus
 {
-    class VertexBuffer : public Buffer
+    class VertexBuffer
     {
     public:
-        VertexBuffer(const Render* pRenderer, const char* vertexData, size_t dataSizeInBytes);
-        ~VertexBuffer() override;
+        VertexBuffer(const char* vertexData, size_t dataSizeInBytes);
+        ~VertexBuffer();
 
         vk::Buffer GetBuffer() const;
         size_t GetSize() const;
