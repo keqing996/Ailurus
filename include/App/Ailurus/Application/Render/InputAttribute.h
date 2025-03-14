@@ -2,8 +2,7 @@
 
 #include <vector>
 #include <initializer_list>
-#include <vulkan/vulkan.hpp>
-#include "../../Utility/EnumReflection.h"
+#include "Ailurus/Utility/EnumReflection.h"
 
 namespace Ailurus
 {
@@ -18,8 +17,11 @@ namespace Ailurus
         explicit InputAttribute(const std::initializer_list<AttributeType>& attributes);
         explicit InputAttribute(const std::vector<AttributeType>& attributes);
 
-        std::vector<vk::VertexInputAttributeDescription> GetAttributeDescription() const;
+    public:
         uint32_t GetStride() const;
+        const std::vector<AttributeType>& GetAttributes() const;
+
+        static uint32_t SizeOf(AttributeType type);
 
     private:
         std::vector<AttributeType> _attribute;

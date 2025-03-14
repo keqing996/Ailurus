@@ -11,13 +11,12 @@ namespace Ailurus
     class BackBuffer
     {
     public:
-        BackBuffer(const Renderer* pRenderer, const SwapChain* pSwapChain, const RenderPass* pRenderPass);
+        explicit BackBuffer(const RenderPass* pRenderPass);
         ~BackBuffer();
 
         const std::vector<vk::Framebuffer>& GetBackBuffers();
 
     protected:
-        const Renderer* _pRenderer;
         std::vector<vk::Framebuffer> _vkFrameBuffer;
 
     };

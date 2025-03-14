@@ -1,5 +1,6 @@
 #include "RenderPassForward.h"
 #include "Vulkan/Context/VulkanContext.h"
+#include "Vulkan/SwapChain/SwapChain.h"
 
 namespace Ailurus
 {
@@ -36,7 +37,7 @@ namespace Ailurus
                 .setFramebuffer(_backBuffers[flight.imageIndex])
                 .setRenderArea(vk::Rect2D{
                     vk::Offset2D{0, 0},
-                    _pRenderer->GetSwapChain()->GetSwapChainConfig().extent
+                    VulkanContext::GetSwapChain()->GetSwapChainConfig().extent
                 })
                 .setClearValues(clearColor);
 
@@ -46,7 +47,7 @@ namespace Ailurus
     void RenderPassForward::SetupRenderPass()
     {
         vk::AttachmentDescription colorAttachment;
-        colorAttachment.setFormat(_pRenderer->GetSwapChain()->GetSwapChainConfig().surfaceFormat.format)
+        colorAttachment.setFormat(VulkanContext::GetSwapChain()->GetSwapChainConfig().surfaceFormat.format)
                 .setSamples(vk::SampleCountFlagBits::e1)
                 .setLoadOp(vk::AttachmentLoadOp::eClear)
                 .setStoreOp(vk::AttachmentStoreOp::eStore)
@@ -76,13 +77,13 @@ namespace Ailurus
                 .setSubpasses(subpass)
                 .setDependencies(dependency);
 
-        _vkRenderPass = _pRenderer->GetLogicalDevice().createRenderPass(renderPassInfo);
+        _vkRenderPass = VulkanContext::GetDevice().createRenderPass(renderPassInfo);
     }
 
     void RenderPassForward::SetupBackBuffers()
     {
-        auto vkLogicalDevice = _pRenderer->GetLogicalDevice();
-        auto pSwapChain = _pRenderer->GetSwapChain();
+        auto vkLogicalDevice = VulkanContext::GetDevice();
+        auto pSwapChain = VulkanContext::GetSwapChain();
         auto extent = pSwapChain->GetSwapChainConfig().extent;
         auto& swapChainImageViews = pSwapChain->GetImageViews();
         for (auto i = 0; i < swapChainImageViews.size(); i++)

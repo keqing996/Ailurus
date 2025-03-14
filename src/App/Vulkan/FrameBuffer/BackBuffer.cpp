@@ -1,14 +1,15 @@
-#include "Ailurus/Graphics/FrameBuffer/BackBuffer.h"
-#include "Ailurus/Graphics/Renderer.h"
+#include "BackBuffer.h"
+#include "Vulkan/Context/VulkanContext.h"
+#include "Vulkan/SwapChain/SwapChain.h"
+#include "Vulkan/RenderPass/RenderPass.h"
 
 namespace Ailurus
 {
-    BackBuffer::BackBuffer(const Renderer* pRenderer, const SwapChain* pSwapChain, const RenderPass* pRenderPass)
-        : _pRenderer(pRenderer)
+    BackBuffer::BackBuffer(const RenderPass* pRenderPass)
     {
-        auto vkLogicalDevice = _pRenderer->GetLogicalDevice();
-        auto extent = pSwapChain->GetSwapChainConfig().extent;
-        auto& swapChainImageViews = pSwapChain->GetImageViews();
+        auto vkLogicalDevice = VulkanContext::GetDevice();
+        auto extent = VulkanContext::GetSwapChain()->GetSwapChainConfig().extent;
+        auto& swapChainImageViews = VulkanContext::GetSwapChain()->GetImageViews();
         for (auto i = 0; i < swapChainImageViews.size(); i++)
         {
             vk::FramebufferCreateInfo framebufferInfo;
@@ -25,7 +26,7 @@ namespace Ailurus
     BackBuffer::~BackBuffer()
     {
         for (auto frameBuffer: _vkFrameBuffer)
-            _pRenderer->GetLogicalDevice().destroyFramebuffer(frameBuffer);
+            VulkanContext::GetDevice().destroyFramebuffer(frameBuffer);
     }
 
     const std::vector<vk::Framebuffer>& BackBuffer::GetBackBuffers()
