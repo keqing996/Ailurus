@@ -1,32 +1,39 @@
 #include "IndexBuffer.h"
 #include "DataBufferUtil.h"
 #include "Vulkan/Context/VulkanContext.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
-    IndexBuffer::IndexBuffer(std::vector<uint16_t> indexData)
-        : _indexType(vk::IndexType::eUint16)
-        , _buffer(nullptr)
-        , _indexCount(indexData.size())
-        , _bufferMemory(nullptr)
+    IndexBuffer::IndexBuffer(IndexBufferFormat format, const char* indexData, size_t sizeInBytes)
     {
-        InternalCreate(reinterpret_cast<const char*>(indexData.data()),
-            indexData.size() * sizeof(uint16_t));
-    }
+        switch (format)
+        {
+            case IndexBufferFormat::UInt16:
+            {
+                _indexType = vk::IndexType::eUint16;
+                _indexCount = sizeInBytes / sizeof(uint16_t);
+                if (sizeInBytes % sizeof(uint16_t) != 0)
+                    Logger::LogError("Index buffer data size is not a multiple of uint16_t");
+                break;
+            }
+            case IndexBufferFormat::UInt32:
+            {
+                _indexType = vk::IndexType::eUint32;
+                _indexCount = sizeInBytes / sizeof(uint32_t);
+                if (sizeInBytes % sizeof(uint32_t) != 0)
+                    Logger::LogError("Index buffer data size is not a multiple of uint32_t");
+                break;
+            }
+            default:
+            {
+                Logger::LogError("Index buffer type {} does not have related vulkan type",
+                    EnumReflection<IndexBufferFormat>::ToString(format));
+                return;
+            }
+        }
 
-    IndexBuffer::IndexBuffer(std::vector<uint32_t> indexData)
-        : _indexType(vk::IndexType::eUint32)
-        , _buffer(nullptr)
-        , _indexCount(indexData.size())
-        , _bufferMemory(nullptr)
-    {
-        InternalCreate(reinterpret_cast<const char*>(indexData.data()),
-                    indexData.size() * sizeof(uint32_t));
-    }
-
-    void IndexBuffer::InternalCreate(const char* dataBuffer, size_t dataSizeInBytes)
-    {
-        auto ret = DataBufferUtil::CreateBuffer(BufferType::Index, dataBuffer, dataSizeInBytes);
+        auto ret = DataBufferUtil::CreateBuffer(BufferType::Index, indexData, sizeInBytes);
         if (!ret)
             return;
 

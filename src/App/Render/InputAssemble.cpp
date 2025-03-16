@@ -23,7 +23,7 @@ namespace Ailurus
     }
 
     InputAssemble::InputAssemble(std::unique_ptr<VertexBuffer>&& pVertexBuffer,
-        const InputAttribute& inputAttr)
+                                 const InputAttribute& inputAttr)
         : _pVertexBuffer(std::move(pVertexBuffer))
         , _inputAttr(inputAttr)
         , _pIndexBuffer(nullptr)

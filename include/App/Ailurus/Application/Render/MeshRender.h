@@ -3,17 +3,24 @@
 #include <memory>
 #include "Render.h"
 #include "InputAttribute.h"
-#include "Ailurus/Application/Material/Material.h"
 
 namespace Ailurus
 {
-    class MeshRenderImpl;
+    class InputAssemble;
+    class Material;
 
     class MeshRender: public Render
     {
     public:
+        MeshRender(const char* vertexData, size_t vertexDataSizeInBytes, const InputAttribute& vertexDataAttribute);
+        MeshRender(const char* vertexData, size_t vertexDataSizeInBytes, const InputAttribute& vertexDataAttribute,
+            IndexBufferFormat format, const char* indexData, size_t indexDtaSizeInBytes);
+
+    public:
+        void SetMaterial(const Material* pMat);
 
     private:
-        std::unique_ptr<MeshRenderImpl> _pImpl = nullptr;
+        std::unique_ptr<InputAssemble> _pInputAssemble = nullptr;
+        const Material* _pMaterial = nullptr;
     };
 }

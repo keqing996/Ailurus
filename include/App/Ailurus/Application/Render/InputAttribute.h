@@ -11,6 +11,10 @@ namespace Ailurus
         Vector3,
         Vector4);
 
+    REFLECTION_ENUM(IndexBufferFormat,
+        UInt16,
+        UInt32);
+
     class InputAttribute
     {
     public:
