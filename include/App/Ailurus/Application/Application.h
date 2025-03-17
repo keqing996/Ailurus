@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 
-#include "Input/Input.h"
+#include "Input/InputManager.h"
 #include "ImGui/ImGui.h"
 #include "Ailurus/Math/Vector.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
@@ -132,7 +132,7 @@ namespace Ailurus
 
         static void* GetSDLWindowPtr();
 
-        static const Input* GetInput();
+        static const InputManager* GetInput();
 
         static ImGui* GetImGui();
 
@@ -162,7 +162,7 @@ namespace Ailurus
         static std::function<void(bool)>       _onWindowCursorVisibleChanged;
 
         // Input
-        static std::unique_ptr<Input> _pInput;
+        static std::unique_ptr<InputManager> _pInput;
 
         // ImGui
         static std::unique_ptr<ImGui> _pImGui;

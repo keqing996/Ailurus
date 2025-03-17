@@ -16,6 +16,8 @@ namespace Ailurus
         MeshRender(const char* vertexData, size_t vertexDataSizeInBytes, const InputAttribute& vertexDataAttribute,
             IndexBufferFormat format, const char* indexData, size_t indexDtaSizeInBytes);
 
+        ~MeshRender() override = default;
+
     public:
         void SetMaterial(const Material* pMat);
 

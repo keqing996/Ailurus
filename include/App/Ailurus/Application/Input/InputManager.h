@@ -4,16 +4,15 @@
 #include <unordered_set>
 #include "InputEnum.h"
 #include "Ailurus/Math/Vector.hpp"
+#include "Ailurus/Utility/NonCopyable.h"
 
 namespace Ailurus
 {
-    class Application;
-
-    class Input
+    class InputManager: public NonCopyable
     {
     public:
-        explicit Input(void* pSdlWindow);
-        ~Input();
+        explicit InputManager(void* pSdlWindow);
+        ~InputManager();
 
     public:
         bool IsButtonPressed(ButtonType key) const;

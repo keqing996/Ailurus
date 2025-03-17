@@ -2,13 +2,14 @@
 
 #include <unordered_map>
 #include <vulkan/vulkan.hpp>
-#include "Ailurus/Application/Render/RenderPass/RenderPassType.h"
+#include "Ailurus/Application/RenderPass/RenderPassType.h"
+#include "Ailurus/Utility/NonCopyable.h"
 #include "Vulkan/Airport/Flight.h"
 #include "Vulkan/Pipeline/Pipeline.h"
 
 namespace Ailurus
 {
-    class RenderPass
+    class RenderPass: public NonCopyable
     {
     public:
         virtual ~RenderPass() = default;

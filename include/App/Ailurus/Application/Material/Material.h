@@ -3,10 +3,11 @@
 #include <unordered_map>
 #include "Ailurus/Application/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/Shader/ShaderStage.h"
+#include "Ailurus/Utility/NonCopyable.h"
 
 namespace Ailurus
 {
-    class Material
+    class Material: public NonCopyable
     {
         struct RenderPassParameters
         {
