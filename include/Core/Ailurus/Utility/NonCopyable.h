@@ -6,7 +6,7 @@ namespace Ailurus
     {
     public:
         NonCopyable() = default;
-        ~NonCopyable() = default;
+        virtual ~NonCopyable() = default;
 
     public:
         NonCopyable( const NonCopyable& ) = delete;
