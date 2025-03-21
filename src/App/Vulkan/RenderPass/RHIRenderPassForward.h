@@ -5,11 +5,11 @@
 
 namespace Ailurus
 {
-	class RenderPassForward : public RHIRenderPass
+	class RHIRenderPassForward : public RHIRenderPass
 	{
 	public:
-		RenderPassForward();
-		~RenderPassForward() override;
+		RHIRenderPassForward();
+		~RHIRenderPassForward() override;
 
 	public:
 		RenderPassType GetRenderPassType() override;
