@@ -5,83 +5,80 @@
 
 namespace Ailurus
 {
-    class SwapChain;
-    class RenderPassForward;
-    class Airport;
-    class ShaderLibrary;
+	class SwapChain;
+	class RenderPassForward;
+	class Airport;
+	class ShaderLibrary;
 
-    class VulkanContext
-    {
-        using GetWindowInstanceExtension = std::function<std::vector<const char*>()>;
-        using WindowCreateSurfaceCallback = std::function<vk::SurfaceKHR(const vk::Instance&)>;
-        using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
+	class VulkanContext
+	{
+		using GetWindowInstanceExtension = std::function<std::vector<const char*>()>;
+		using WindowCreateSurfaceCallback = std::function<vk::SurfaceKHR(const vk::Instance&)>;
+		using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
 
-        VulkanContext() = default;
+		VulkanContext() = default;
 
-    public:
-        static bool enableValidation;
+	public:
+		static bool enableValidation;
 
-    public:
-        static void SetCallbackGetWindowInstanceExtension(const GetWindowInstanceExtension& f);
-        static void SetCallbackWindowCreateSurfaceCallback(const WindowCreateSurfaceCallback& f);
-        static void SetCallbackWindowDestroySurfaceCallback(const WindowDestroySurfaceCallback& f);
+	public:
+		static void SetCallbackGetWindowInstanceExtension(const GetWindowInstanceExtension& f);
+		static void SetCallbackWindowCreateSurfaceCallback(const WindowCreateSurfaceCallback& f);
+		static void SetCallbackWindowDestroySurfaceCallback(const WindowDestroySurfaceCallback& f);
 
-        static bool Init(const GetWindowInstanceExtension& getWindowRequiredExtension, const WindowCreateSurfaceCallback& createSurface);
-        static void Destroy(const WindowDestroySurfaceCallback& destroySurface);
+		static bool Init(const GetWindowInstanceExtension& getWindowRequiredExtension, const WindowCreateSurfaceCallback& createSurface);
+		static void Destroy(const WindowDestroySurfaceCallback& destroySurface);
 
-        static vk::Device GetDevice();
-        static vk::PhysicalDevice GetPhysicalDevice();
-        static uint32_t GetPresentQueueIndex();
-        static uint32_t GetComputeQueueIndex();
-        static uint32_t GetGraphicQueueIndex();
-        static vk::Queue GetPresentQueue();
-        static vk::Queue GetGraphicQueue();
-        static vk::Queue GetComputeQueue();
-        static vk::CommandPool GetCommandPool();
-        static ShaderLibrary* GetShaderLibrary();
+		static vk::Device GetDevice();
+		static vk::PhysicalDevice GetPhysicalDevice();
+		static uint32_t GetPresentQueueIndex();
+		static uint32_t GetComputeQueueIndex();
+		static uint32_t GetGraphicQueueIndex();
+		static vk::Queue GetPresentQueue();
+		static vk::Queue GetGraphicQueue();
+		static vk::Queue GetComputeQueue();
+		static vk::CommandPool GetCommandPool();
+		static ShaderLibrary* GetShaderLibrary();
 
-        static void RebuildDynamicContext();
-        static SwapChain* GetSwapChain();
-        static Airport* GetAirport();
+		static void RebuildDynamicContext();
+		static SwapChain* GetSwapChain();
+		static Airport* GetAirport();
 
-    private:
-        static void PrepareDispatcher();
-        static void CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension);
-        static void CreatDebugUtilsMessenger();
-        static void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
-        static void ChoosePhysicsDevice();
-        static bool CreateLogicalDevice();
-        static void CreateCommandPool();
-        static void CreateShaderLibrary();
+	private:
+		static void PrepareDispatcher();
+		static void CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension);
+		static void CreatDebugUtilsMessenger();
+		static void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
+		static void ChoosePhysicsDevice();
+		static bool CreateLogicalDevice();
+		static void CreateCommandPool();
+		static void CreateShaderLibrary();
 
-        static void CreateDynamicContext();
-        static void DestroyDynamicContext();
+		static void CreateDynamicContext();
+		static void DestroyDynamicContext();
 
-    private:
-        static bool _initialized;
+	private:
+		static bool _initialized;
 
-        // Static context
-        static vk::Instance _vkInstance;
-        static vk::DebugUtilsMessengerEXT _vkDebugUtilsMessenger;
-        static vk::PhysicalDevice _vkPhysicalDevice;
-        static vk::SurfaceKHR _vkSurface;
-        static vk::Device _vkDevice;
+		// Static context
+		static vk::Instance _vkInstance;
+		static vk::DebugUtilsMessengerEXT _vkDebugUtilsMessenger;
+		static vk::PhysicalDevice _vkPhysicalDevice;
+		static vk::SurfaceKHR _vkSurface;
+		static vk::Device _vkDevice;
 
-        static uint32_t _presentQueueIndex;
-        static uint32_t _graphicQueueIndex;
-        static uint32_t _computeQueueIndex;
-        static vk::Queue _vkPresentQueue;
-        static vk::Queue _vkGraphicQueue;
-        static vk::Queue _vkComputeQueue;
+		static uint32_t _presentQueueIndex;
+		static uint32_t _graphicQueueIndex;
+		static uint32_t _computeQueueIndex;
+		static vk::Queue _vkPresentQueue;
+		static vk::Queue _vkGraphicQueue;
+		static vk::Queue _vkComputeQueue;
 
-        static vk::CommandPool _vkGraphicCommandPool;
-        static std::unique_ptr<ShaderLibrary> _pShaderLibrary;
+		static vk::CommandPool _vkGraphicCommandPool;
+		static std::unique_ptr<ShaderLibrary> _pShaderLibrary;
 
-        // Dynamic context
-        static bool _needRebuildSwapChain;
-
-        static std::unique_ptr<SwapChain> _pSwapChain;
-        static std::unique_ptr<RenderPassForward> _pForwardPass;
-        static std::unique_ptr<Airport> _pAirport;
-    };
-}
+		static std::unique_ptr<SwapChain> _pSwapChain;
+		static std::unique_ptr<RenderPassForward> _pForwardPass;
+		static std::unique_ptr<Airport> _pAirport;
+	};
+} // namespace Ailurus

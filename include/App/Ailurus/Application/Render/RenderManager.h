@@ -22,6 +22,7 @@ namespace Ailurus
 		void RenderScene();
 
 	private:
+		bool _needRebuildSwapChain;
 		std::unordered_map<std::string, std::unique_ptr<Material>> _materialMap;
 	};
 } // namespace Ailurus
