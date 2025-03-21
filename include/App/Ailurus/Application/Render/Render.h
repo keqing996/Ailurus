@@ -4,10 +4,10 @@
 
 namespace Ailurus
 {
-    class Render: public NonCopyable
-    {
-    public:
-        Render() = default;
-        virtual ~Render() = default;
-    };
-}
+	class Render : public NonCopyable
+	{
+	public:
+		Render() = default;
+		virtual ~Render() = default;
+	};
+} // namespace Ailurus

@@ -3,19 +3,24 @@
 #include <string>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
-
-namespace Ailurus 
+#include "Ailurus/Application/Shader/ShaderStage.h"
+namespace Ailurus
 {
-    class Shader: public NonCopyable
-    {
-    public:
-        Shader();
-        ~Shader() override;
+	class Shader : public NonCopyable
+	{
+	public:
+		Shader(ShaderStage stage, const std::string& name);
+		~Shader() override;
 
-        class RHIShader* GetImpl() const;
+	public:
+		ShaderStage GetStage() const;
+		const std::string& GetName() const;
 
-    private:
-        std::string _name;
-        std::unique_ptr<class RHIShader> _pImpl = nullptr;
-    };
-}
+		const class RHIShader* GetImpl() const;
+
+	private:
+		ShaderStage _stage;
+		std::string _name;
+		std::unique_ptr<class RHIShader> _pImpl = nullptr;
+	};
+} // namespace Ailurus

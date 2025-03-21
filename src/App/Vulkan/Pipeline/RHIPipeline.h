@@ -5,17 +5,17 @@
 
 namespace Ailurus
 {
-    class Pipeline
-    {
-    public:
-        Pipeline(const class RenderPass* pRenderPass, const PipelineConfig& config);
-        ~Pipeline();
+	class Pipeline
+	{
+	public:
+		Pipeline(const class RenderPass* pRenderPass, const PipelineConfig& config);
+		~Pipeline();
 
-    public:
-        vk::Pipeline GetPipeline() const;
+	public:
+		vk::Pipeline GetPipeline() const;
 
-    private:
-        vk::PipelineLayout _vkPipelineLayout;
-        vk::Pipeline _vkPipeline;
-    };
-}
+	private:
+		vk::PipelineLayout _vkPipelineLayout;
+		vk::Pipeline _vkPipeline;
+	};
+} // namespace Ailurus

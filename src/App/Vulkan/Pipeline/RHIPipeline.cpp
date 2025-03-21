@@ -1,125 +1,129 @@
 #include "RHIPipeline.h"
+#include "Ailurus/Application/Shader/Shader.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Vulkan/RenderPass/RHIRenderPass.h"
+#include "Render/InputAssemble.h"
 #include "Vulkan/Context/VulkanContext.h"
-#include "Vulkan/InputAssemble/InputAssemble.h"
-#include "Vulkan/Shader/Shader.h"
+#include "Vulkan/Shader/RHIShader.h"
 
 namespace Ailurus
 {
-    Pipeline::Pipeline(const RenderPass* pRenderPass, const PipelineConfig& config)
-    {
-        vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-        pipelineLayoutInfo.setSetLayouts(nullptr);
+	Pipeline::Pipeline(const RenderPass* pRenderPass, const PipelineConfig& config)
+	{
+		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+		pipelineLayoutInfo.setSetLayouts(nullptr);
 
-        _vkPipelineLayout = VulkanContext::GetDevice().createPipelineLayout(pipelineLayoutInfo);
+		_vkPipelineLayout = VulkanContext::GetDevice().createPipelineLayout(pipelineLayoutInfo);
 
-        // Shader stages
-        std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
-        for (const Shader* pShader: config.shaderStages)
-        {
-            if (pShader == nullptr)
-                continue;
+		// Shader stages
+		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
+		for (const Shader* pShader : config.shaderStages)
+		{
+			if (pShader == nullptr)
+				continue;
 
-            shaderStages.push_back(pShader->GeneratePipelineCreateInfo());
-        }
+			const auto* pRHIShader = pShader->GetImpl();
+			if (pRHIShader == nullptr)
+				continue;
 
-        // Vertex input description
-        vk::VertexInputBindingDescription vertexInputDesc;
-        vertexInputDesc.setBinding(0)
-            .setStride(config.pInputAssemble->GetInputAttribute().GetStride())
-            .setInputRate(vk::VertexInputRate::eVertex);
+			shaderStages.push_back(pRHIShader->GeneratePipelineCreateInfo(pShader->GetStage()));
+		}
 
-        // Vertex input attribute description
-        std::vector<vk::VertexInputAttributeDescription> vertexAttrDesc =
-            config.pInputAssemble->GetInputAttribute().GetAttributeDescription();
+		// Vertex input description
+		vk::VertexInputBindingDescription vertexInputDesc;
+		vertexInputDesc.setBinding(0)
+			.setStride(config.pInputAssemble->GetInputAttribute().GetStride())
+			.setInputRate(vk::VertexInputRate::eVertex);
 
-        // Vertex input
-        vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
-        vertexInputInfo.setVertexBindingDescriptions(vertexInputDesc)
-            .setVertexAttributeDescriptions(vertexAttrDesc);
+		// Vertex input attribute description
+		std::vector<vk::VertexInputAttributeDescription> vertexAttrDesc =
+			config.pInputAssemble->GetAttributeDescription();
 
-        // Input assemble
-        vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
-        inputAssembly.setTopology(vk::PrimitiveTopology::eTriangleList)
-            .setPrimitiveRestartEnable(false);
+		// Vertex input
+		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+		vertexInputInfo.setVertexBindingDescriptions(vertexInputDesc)
+			.setVertexAttributeDescriptions(vertexAttrDesc);
 
-        // Viewport & Scissor
-        vk::PipelineViewportStateCreateInfo viewportState;
-        viewportState.setViewportCount(1)
-            .setScissorCount(1);
+		// Input assemble
+		vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
+		inputAssembly.setTopology(vk::PrimitiveTopology::eTriangleList)
+			.setPrimitiveRestartEnable(false);
 
-        // Rasterization
-        vk::PipelineRasterizationStateCreateInfo rasterizer;
-        rasterizer.setDepthClampEnable(false)
-            .setDepthBiasEnable(false)
-            .setRasterizerDiscardEnable(false)
-            .setPolygonMode(vk::PolygonMode::eFill)
-            .setLineWidth(1.0f)
-            .setCullMode(vk::CullModeFlagBits::eBack)
-            .setFrontFace(vk::FrontFace::eClockwise);
+		// Viewport & Scissor
+		vk::PipelineViewportStateCreateInfo viewportState;
+		viewportState.setViewportCount(1)
+			.setScissorCount(1);
 
-        // Multisample
-        vk::PipelineMultisampleStateCreateInfo multisampling;
-        multisampling.setSampleShadingEnable(false)
-            .setAlphaToOneEnable(false)
-            .setPSampleMask(nullptr)
-            .setAlphaToCoverageEnable(false) // todo may true ?
-            .setRasterizationSamples(vk::SampleCountFlagBits::e1);
+		// Rasterization
+		vk::PipelineRasterizationStateCreateInfo rasterizer;
+		rasterizer.setDepthClampEnable(false)
+			.setDepthBiasEnable(false)
+			.setRasterizerDiscardEnable(false)
+			.setPolygonMode(vk::PolygonMode::eFill)
+			.setLineWidth(1.0f)
+			.setCullMode(vk::CullModeFlagBits::eBack)
+			.setFrontFace(vk::FrontFace::eClockwise);
 
-        // Color blend
-        vk::PipelineColorBlendAttachmentState colorBlendAttachment;
-        colorBlendAttachment.setBlendEnable(false)
-            .setColorWriteMask(vk::ColorComponentFlagBits::eR
-                | vk::ColorComponentFlagBits::eG
-                | vk::ColorComponentFlagBits::eB
-                | vk::ColorComponentFlagBits::eA);
+		// Multisample
+		vk::PipelineMultisampleStateCreateInfo multisampling;
+		multisampling.setSampleShadingEnable(false)
+			.setAlphaToOneEnable(false)
+			.setPSampleMask(nullptr)
+			.setAlphaToCoverageEnable(false) // todo may true ?
+			.setRasterizationSamples(vk::SampleCountFlagBits::e1);
 
-        vk::PipelineColorBlendStateCreateInfo colorBlending;
-        colorBlending.setLogicOpEnable(false)
-            .setLogicOp(vk::LogicOp::eCopy)
-            .setAttachments(colorBlendAttachment)
-            .setBlendConstants(std::array{0.0f, 0.0f, 0.0f, 0.0f});
+		// Color blend
+		vk::PipelineColorBlendAttachmentState colorBlendAttachment;
+		colorBlendAttachment.setBlendEnable(false)
+			.setColorWriteMask(vk::ColorComponentFlagBits::eR
+				| vk::ColorComponentFlagBits::eG
+				| vk::ColorComponentFlagBits::eB
+				| vk::ColorComponentFlagBits::eA);
 
-        // Dynamic state
-        std::array dynamicStates = {
-            vk::DynamicState::eViewport,
-            vk::DynamicState::eScissor
-        };
+		vk::PipelineColorBlendStateCreateInfo colorBlending;
+		colorBlending.setLogicOpEnable(false)
+			.setLogicOp(vk::LogicOp::eCopy)
+			.setAttachments(colorBlendAttachment)
+			.setBlendConstants(std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
 
-        vk::PipelineDynamicStateCreateInfo dynamicState;
-        dynamicState.setDynamicStates(dynamicStates);
+		// Dynamic state
+		std::array dynamicStates = {
+			vk::DynamicState::eViewport,
+			vk::DynamicState::eScissor
+		};
 
-        // Create pipeline
-        vk::GraphicsPipelineCreateInfo pipelineInfo;
-        pipelineInfo.setStages(shaderStages)
-            .setPVertexInputState(&vertexInputInfo)
-            .setPInputAssemblyState(&inputAssembly)
-            .setPViewportState(&viewportState)
-            .setPRasterizationState(&rasterizer)
-            .setPMultisampleState(&multisampling)
-            .setPColorBlendState(&colorBlending)
-            .setPDynamicState(&dynamicState)
-            .setLayout(_vkPipelineLayout)
-            .setRenderPass(pRenderPass->GetRenderPass())
-            .setSubpass(0)
-            .setBasePipelineHandle(nullptr);
+		vk::PipelineDynamicStateCreateInfo dynamicState;
+		dynamicState.setDynamicStates(dynamicStates);
 
-        auto pipelineCreateResult = VulkanContext::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
-        if (pipelineCreateResult.result == vk::Result::eSuccess)
-            _vkPipeline = pipelineCreateResult.value;
-        else
-            Logger::LogError("Failed to create graphics pipeline");
-    }
+		// Create pipeline
+		vk::GraphicsPipelineCreateInfo pipelineInfo;
+		pipelineInfo.setStages(shaderStages)
+			.setPVertexInputState(&vertexInputInfo)
+			.setPInputAssemblyState(&inputAssembly)
+			.setPViewportState(&viewportState)
+			.setPRasterizationState(&rasterizer)
+			.setPMultisampleState(&multisampling)
+			.setPColorBlendState(&colorBlending)
+			.setPDynamicState(&dynamicState)
+			.setLayout(_vkPipelineLayout)
+			.setRenderPass(pRenderPass->GetRenderPass())
+			.setSubpass(0)
+			.setBasePipelineHandle(nullptr);
 
-    Pipeline::~Pipeline()
-    {
-        VulkanContext::GetDevice().destroyPipelineLayout(_vkPipelineLayout);
-        VulkanContext::GetDevice().destroyPipeline(_vkPipeline);
-    }
+		auto pipelineCreateResult = VulkanContext::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
+		if (pipelineCreateResult.result == vk::Result::eSuccess)
+			_vkPipeline = pipelineCreateResult.value;
+		else
+			Logger::LogError("Failed to create graphics pipeline");
+	}
 
-    vk::Pipeline Pipeline::GetPipeline() const
-    {
-        return _vkPipeline;
-    }
-}
+	Pipeline::~Pipeline()
+	{
+		VulkanContext::GetDevice().destroyPipelineLayout(_vkPipelineLayout);
+		VulkanContext::GetDevice().destroyPipeline(_vkPipeline);
+	}
+
+	vk::Pipeline Pipeline::GetPipeline() const
+	{
+		return _vkPipeline;
+	}
+} // namespace Ailurus

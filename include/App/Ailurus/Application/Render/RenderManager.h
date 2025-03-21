@@ -8,24 +8,20 @@
 
 namespace Ailurus
 {
-    class Material;
-    class MeshRender;
+	class Material;
+	class MeshRender;
 
-    class RenderManager: public NonCopyable
-    {
-    public:
+	class RenderManager : public NonCopyable
+	{
+	public:
+		// Material
+		Material* GetMaterial(const std::string& name) const;
+		Material* AddMaterial(const std::string& name);
 
+		// Draw
+		void RenderScene();
 
-    public:
-        // Material
-        Material* GetMaterial(const std::string& name) const;
-        Material* AddMaterial(const std::string& name);
-
-        // Draw
-        void RenderScene();
-
-    private:
-        std::unordered_map<std::string, std::unique_ptr<Material>> _materialMap;
-
-    };
-}
+	private:
+		std::unordered_map<std::string, std::unique_ptr<Material>> _materialMap;
+	};
+} // namespace Ailurus

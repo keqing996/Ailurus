@@ -5,17 +5,16 @@
 
 namespace Ailurus
 {
-    class Shader
+    class RHIShader
     {
     public:
-        Shader(ShaderStage stage, const std::string& path);
-        Shader(ShaderStage stage, const char* binaryData, size_t size);
-        ~Shader();
+        RHIShader(const std::string& path);
+        RHIShader(const char* binaryData, size_t size);
+        ~RHIShader();
 
     public:
-        ShaderStage GetStage() const;
         vk::ShaderModule GetShaderModule() const;
-        vk::PipelineShaderStageCreateInfo GeneratePipelineCreateInfo() const;
+        vk::PipelineShaderStageCreateInfo GeneratePipelineCreateInfo(ShaderStage stage) const;
 
     public:
         static vk::ShaderStageFlagBits ToVulkanEnum(ShaderStage stage);
@@ -24,7 +23,6 @@ namespace Ailurus
         void CreateShaderModule(const char* binaryData, size_t size);
 
     private:
-        ShaderStage _stage;
         vk::ShaderModule _vkShaderModule = nullptr;
     };
 

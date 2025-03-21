@@ -1,49 +1,42 @@
-#include "Shader.h"
+#include "RHIShader.h"
 #include "Ailurus/Utility/File.h"
 #include "Vulkan/Context/VulkanContext.h"
 
 namespace Ailurus
 {
-    Shader::Shader(ShaderStage stage, const std::string& path)
-        : _stage(stage)
+    RHIShader::RHIShader(const std::string& path)
     {
         auto binaryFile = File::LoadBinary(path);
         if (binaryFile.has_value())
             CreateShaderModule(binaryFile.value().data(), binaryFile.value().size());
     }
 
-    Shader::Shader(ShaderStage stage, const char* binaryData, size_t size)
-        : _stage(stage)
+    RHIShader::RHIShader(const char* binaryData, size_t size)
     {
         CreateShaderModule(binaryData, size);
     }
 
-    Shader::~Shader()
+    RHIShader::~RHIShader()
     {
         VulkanContext::GetDevice().destroyShaderModule(_vkShaderModule);
     }
 
-    ShaderStage Shader::GetStage() const
-    {
-        return _stage;
-    }
-
-    vk::ShaderModule Shader::GetShaderModule() const
+    vk::ShaderModule RHIShader::GetShaderModule() const
     {
         return _vkShaderModule;
     }
 
-    vk::PipelineShaderStageCreateInfo Shader::GeneratePipelineCreateInfo() const
+    vk::PipelineShaderStageCreateInfo RHIShader::GeneratePipelineCreateInfo(ShaderStage stage) const
     {
         vk::PipelineShaderStageCreateInfo createInfo;
         createInfo.setModule(_vkShaderModule)
-                .setStage(ToVulkanEnum(_stage))
+                .setStage(ToVulkanEnum(stage))
                 .setPName("main");
 
         return createInfo;
     }
 
-    vk::ShaderStageFlagBits Shader::ToVulkanEnum(ShaderStage stage)
+    vk::ShaderStageFlagBits RHIShader::ToVulkanEnum(ShaderStage stage)
     {
         vk::ShaderStageFlagBits vkStage = vk::ShaderStageFlagBits::eAll;
         switch (stage)
@@ -59,7 +52,7 @@ namespace Ailurus
         return vkStage;
     }
 
-    void Shader::CreateShaderModule(const char* binaryData, size_t size)
+    void RHIShader::CreateShaderModule(const char* binaryData, size_t size)
     {
         vk::ShaderModuleCreateInfo createInfo;
         createInfo.setPCode(reinterpret_cast<const uint32_t*>(binaryData))

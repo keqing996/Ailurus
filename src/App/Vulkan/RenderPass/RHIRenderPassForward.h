@@ -5,24 +5,23 @@
 
 namespace Ailurus
 {
-    class RenderPassForward: public RenderPass
-    {
-    public:
-        RenderPassForward();
-        ~RenderPassForward() override;
+	class RenderPassForward : public RHIRenderPass
+	{
+	public:
+		RenderPassForward();
+		~RenderPassForward() override;
 
-    public:
-        RenderPassType GetRenderPassType() override;
-        vk::RenderPass GetRenderPass() const override;
-        vk::RenderPassBeginInfo GetRenderPassBeginInfo(const Flight& flight) override;
+	public:
+		RenderPassType GetRenderPassType() override;
+		vk::RenderPass GetRenderPass() const override;
+		vk::RenderPassBeginInfo GetRenderPassBeginInfo(const Flight& flight) override;
 
-    private:
-        void SetupRenderPass();
-        void SetupBackBuffers();
+	private:
+		void SetupRenderPass();
+		void SetupBackBuffers();
 
-    private:
-        vk::RenderPass _vkRenderPass;
-        std::vector<vk::Framebuffer> _backBuffers;
-
-    };
-}
+	private:
+		vk::RenderPass _vkRenderPass;
+		std::vector<vk::Framebuffer> _backBuffers;
+	};
+} // namespace Ailurus

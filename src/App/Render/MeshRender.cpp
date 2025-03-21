@@ -5,26 +5,26 @@
 
 namespace Ailurus
 {
-    MeshRender::MeshRender(const char* vertexData, size_t vertexDataSizeInBytes,
-        const InputAttribute& vertexDataAttribute)
-    {
-        _pInputAssemble = std::make_unique<InputAssemble>(
-            std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes),
-            vertexDataAttribute);
-    }
+	MeshRender::MeshRender(const char* vertexData, size_t vertexDataSizeInBytes,
+		const InputAttribute& vertexDataAttribute)
+	{
+		_pInputAssemble = std::make_unique<InputAssemble>(
+			std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes),
+			vertexDataAttribute);
+	}
 
-    MeshRender::MeshRender(const char* vertexData, size_t vertexDataSizeInBytes,
-        const InputAttribute& vertexDataAttribute, IndexBufferFormat format, const char* indexData,
-        size_t indexDtaSizeInBytes)
-    {
-        _pInputAssemble = std::make_unique<InputAssemble>(
-            std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes),
-            vertexDataAttribute,
-            std::make_unique<IndexBuffer>(format, indexData, indexDtaSizeInBytes));
-    }
+	MeshRender::MeshRender(const char* vertexData, size_t vertexDataSizeInBytes,
+		const InputAttribute& vertexDataAttribute, IndexBufferFormat format, const char* indexData,
+		size_t indexDtaSizeInBytes)
+	{
+		_pInputAssemble = std::make_unique<InputAssemble>(
+			std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes),
+			vertexDataAttribute,
+			std::make_unique<IndexBuffer>(format, indexData, indexDtaSizeInBytes));
+	}
 
-    void MeshRender::SetMaterial(const Material* pMat)
-    {
-        _pMaterial = pMat;
-    }
-}
+	void MeshRender::SetMaterial(const Material* pMat)
+	{
+		_pMaterial = pMat;
+	}
+} // namespace Ailurus
