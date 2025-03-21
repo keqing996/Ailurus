@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 project (AILURUS_INFRASTRUCTURE)
 set (CMAKE_CXX_STANDARD 20)
+set (CMAKE_COLOR_DIAGNOSTICS ON)
 
 add_subdirectory(submodule)
 add_subdirectory(thirdparty)

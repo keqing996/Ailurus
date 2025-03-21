@@ -1,6 +1,6 @@
-#include "Pipeline.h"
+#include "RHIPipeline.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Vulkan/RenderPass/RenderPass.h"
+#include "Vulkan/RenderPass/RHIRenderPass.h"
 #include "Vulkan/Context/VulkanContext.h"
 #include "Vulkan/InputAssemble/InputAssemble.h"
 #include "Vulkan/Shader/Shader.h"

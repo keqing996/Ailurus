@@ -1,5 +1,4 @@
-#include "Ailurus/Application/RenderPass/RenderPass.h"
-#include "RenderPRHIassRHI.h"
+#include "RHIRenderPass.h"
 
 namespace Ailurus
 {

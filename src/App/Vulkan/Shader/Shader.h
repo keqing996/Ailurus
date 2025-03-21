@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "Ailurus/Application/Render/Shader/ShaderStage.h"
+#include "Ailurus/Application/Shader/ShaderStage.h"
 
 namespace Ailurus
 {
@@ -27,7 +27,5 @@ namespace Ailurus
         ShaderStage _stage;
         vk::ShaderModule _vkShaderModule = nullptr;
     };
-
-    using PipelineShaderStages = std::array<const Shader*, EnumReflection<ShaderStage>::Size()>;
 
 }

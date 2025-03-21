@@ -1,15 +1,13 @@
 #pragma once
 
-#include "Ailurus/Graphics/Shader/ShaderStage.h"
+#include "Ailurus/Application/Shader/ShaderStage.h"
 
 namespace Ailurus
 {
-    class InputAssemble;
-
     struct PipelineConfig
     {
-        const InputAssemble* pInputAssemble;
-        PipelineShaderStages shaderStages;
+        const class InputAssemble* pInputAssemble;
+        std::array<class Shader*, EnumReflection<ShaderStage>::Size()> shaderStages;
 
         bool operator==(const PipelineConfig& rhs) const
         {
