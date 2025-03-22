@@ -14,7 +14,7 @@ namespace Ailurus
 	public:
 		virtual RenderPassType GetRenderPassType() = 0;
 		virtual vk::RenderPass GetRenderPass() const = 0;
-		virtual vk::RenderPassBeginInfo GetRenderPassBeginInfo(const Flight& flight) = 0;
+		virtual vk::RenderPassBeginInfo GetRenderPassBeginInfo(const Flight& flight) const = 0;
 		const Pipeline* GetPipeline(const PipelineConfig& config);
 
 	private:

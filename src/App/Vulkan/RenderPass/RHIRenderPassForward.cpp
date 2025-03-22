@@ -28,7 +28,7 @@ namespace Ailurus
 		return _vkRenderPass;
 	}
 
-	vk::RenderPassBeginInfo RHIRenderPassForward::GetRenderPassBeginInfo(const Flight& flight)
+	vk::RenderPassBeginInfo RHIRenderPassForward::GetRenderPassBeginInfo(const Flight& flight) const
 	{
 		static vk::ClearValue clearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
 
