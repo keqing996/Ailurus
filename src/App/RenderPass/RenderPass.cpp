@@ -15,7 +15,7 @@ namespace Ailurus
 
 	RenderPass::~RenderPass() = default;
 
-	RenderPassType RenderPass::GetRenderPassType()
+	RenderPassType RenderPass::GetRenderPassType() const
 	{
 		return _pRHI->GetRenderPassType();
 	}

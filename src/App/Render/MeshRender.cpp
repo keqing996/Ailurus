@@ -1,30 +1,28 @@
 #include "Ailurus/Application/Render/MeshRender.h"
-#include "InputAssemble.h"
-#include "Vulkan/DataBuffer/VertexBuffer.h"
-#include "Vulkan/DataBuffer/IndexBuffer.h"
 
 namespace Ailurus
 {
-	MeshRender::MeshRender(const char* vertexData, size_t vertexDataSizeInBytes,
-		const InputAttribute& vertexDataAttribute)
+	MeshRender::MeshRender() = default;
+
+	MeshRender::~MeshRender() = default;
+
+	Mesh* MeshRender::GetMesh() const
 	{
-		_pInputAssemble = std::make_unique<InputAssemble>(
-			std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes),
-			vertexDataAttribute);
+		return _pMesh.get();
 	}
 
-	MeshRender::MeshRender(const char* vertexData, size_t vertexDataSizeInBytes,
-		const InputAttribute& vertexDataAttribute, IndexBufferFormat format, const char* indexData,
-		size_t indexDtaSizeInBytes)
+	Material* MeshRender::GetMaterial() const
 	{
-		_pInputAssemble = std::make_unique<InputAssemble>(
-			std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes),
-			vertexDataAttribute,
-			std::make_unique<IndexBuffer>(format, indexData, indexDtaSizeInBytes));
+		return _pMaterial.get();
 	}
 
-	void MeshRender::SetMaterial(const Material* pMat)
+	void MeshRender::SetMaterial(const std::shared_ptr<Material>& pMat)
 	{
 		_pMaterial = pMat;
+	}
+
+	void MeshRender::SetMesh(const std::shared_ptr<Mesh>& pMesh)
+	{
+		_pMesh = pMesh;
 	}
 } // namespace Ailurus

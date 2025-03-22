@@ -9,8 +9,9 @@
 namespace Ailurus
 {
 	class Material;
-	class MeshRender;
 	class RenderPass;
+	class MeshRender;
+	class Flight;
 
 	class RenderManager : public NonCopyable
 	{
@@ -27,7 +28,8 @@ namespace Ailurus
 		void RenderScene();
 
 	private:
-		void RenderForwardPass(const class Flight* pFlight);
+		void RenderForwardPass(const Flight* pFlight);
+		void RenderMesh(const Flight* pFlight, const MeshRender* pMeshRender);
 
 	private:
 		bool _needRebuildSwapChain = false;

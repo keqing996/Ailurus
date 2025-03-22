@@ -1,28 +1,27 @@
 #pragma once
 
 #include <memory>
-#include "Render.h"
-#include "InputAttribute.h"
+#include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Application/Assets/Mesh.h"
 
 namespace Ailurus
 {
-	class InputAssemble;
 	class Material;
 
-	class MeshRender : public Render
+	class MeshRender : public NonCopyable
 	{
 	public:
-		MeshRender(const char* vertexData, size_t vertexDataSizeInBytes, const InputAttribute& vertexDataAttribute);
-		MeshRender(const char* vertexData, size_t vertexDataSizeInBytes, const InputAttribute& vertexDataAttribute,
-			IndexBufferFormat format, const char* indexData, size_t indexDtaSizeInBytes);
-
-		~MeshRender() override = default;
+		MeshRender();
+		~MeshRender() override;
 
 	public:
-		void SetMaterial(const Material* pMat);
+		Mesh* GetMesh() const;
+		Material* GetMaterial() const;
+		void SetMaterial(const std::shared_ptr<Material>& pMat);
+		void SetMesh(const std::shared_ptr<Mesh>& pMesh);
 
 	private:
-		std::unique_ptr<InputAssemble> _pInputAssemble = nullptr;
-		const Material* _pMaterial = nullptr;
+		std::shared_ptr<Mesh> _pMesh;
+		std::shared_ptr<Material> _pMaterial;
 	};
 } // namespace Ailurus

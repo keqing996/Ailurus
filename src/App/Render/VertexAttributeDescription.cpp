@@ -3,17 +3,17 @@
 
 namespace Ailurus
 {
-	InputAttribute::InputAttribute(const std::initializer_list<AttributeType>& attributes)
+	VertexAttributeDescription::VertexAttributeDescription(const std::initializer_list<AttributeType>& attributes)
 	{
 		_attribute.insert(_attribute.end(), attributes.begin(), attributes.end());
 	}
 
-	InputAttribute::InputAttribute(const std::vector<AttributeType>& attributes)
+	VertexAttributeDescription::VertexAttributeDescription(const std::vector<AttributeType>& attributes)
 		: _attribute(attributes)
 	{
 	}
 
-	uint32_t InputAttribute::GetStride() const
+	uint32_t VertexAttributeDescription::GetStride() const
 	{
 		uint32_t stride = 0;
 		for (auto i = 0; i < _attribute.size(); i++)
@@ -21,12 +21,12 @@ namespace Ailurus
 		return stride;
 	}
 
-	const std::vector<AttributeType>& InputAttribute::GetAttributes() const
+	const std::vector<AttributeType>& VertexAttributeDescription::GetAttributes() const
 	{
 		return _attribute;
 	}
 
-	uint32_t InputAttribute::SizeOf(AttributeType type)
+	uint32_t VertexAttributeDescription::SizeOf(AttributeType type)
 	{
 		switch (type)
 		{

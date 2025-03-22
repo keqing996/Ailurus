@@ -15,7 +15,7 @@ namespace Ailurus
 		~RenderPass() override;
 
 	public:
-		RenderPassType GetRenderPassType();
+		RenderPassType GetRenderPassType() const;
 		const RHIRenderPass* GetRHIRenderPass() const;
 
 	private:
