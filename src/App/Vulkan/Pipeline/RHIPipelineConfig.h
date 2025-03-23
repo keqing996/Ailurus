@@ -6,12 +6,12 @@ namespace Ailurus
 {
 	struct PipelineConfig
 	{
-		const class InputAssemble* pInputAssemble;
-		std::array<class Shader*, EnumReflection<ShaderStage>::Size()> shaderStages;
+		const class Mesh* pMesh;
+		StageShaderArray shaderStages;
 
 		bool operator==(const PipelineConfig& rhs) const
 		{
-			return pInputAssemble == rhs.pInputAssemble && shaderStages == rhs.shaderStages;
+			return pMesh == rhs.pMesh && shaderStages == rhs.shaderStages;
 		}
 
 		struct Hash

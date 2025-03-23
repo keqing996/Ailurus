@@ -1,5 +1,5 @@
-#include "Ailurus/Application/Window.h"
-#include "Render/VulkanContext/VulkanContext.h"
+#include "Ailurus/Application/Application.h"
+#include "Vulkan/Context/VulkanContext.h"
 #include <../../submodule/sdl/include/SDL3/SDL.h>
 #include <../../submodule/sdl/include/SDL3/SDL_vulkan.h>
 
@@ -19,9 +19,8 @@ namespace Ailurus
     std::function<void(bool)>       Application::_onWindowCursorEnteredOrLeaved = nullptr;
     std::function<void(bool)>       Application::_onWindowCursorVisibleChanged = nullptr;
 
-    std::unique_ptr<Input>          Application::_pInput = nullptr;
-    std::unique_ptr<ImGui>          Application::_pImGui = nullptr;
-    std::unique_ptr<Render>         Application::_pRender = nullptr;
+    std::unique_ptr<InputManager>			Application::_pInputManager = nullptr;
+    std::unique_ptr<ShaderManager>          Application::_pShaderManager = nullptr;
 
     static std::vector<const char*> VulkanContextGetInstanceExtensions()
     {
@@ -64,7 +63,8 @@ namespace Ailurus
         if (_pWindow == nullptr)
             return false;
 
-        _pInput = std::make_unique<Input>(_pWindow);
+        _pInputManager = std::make_unique<InputManager>(_pWindow);
+    	_pShaderManager = std::make_unique<ShaderManager>();
 
         SetWindowVisible(true);
 
@@ -86,8 +86,8 @@ namespace Ailurus
             if (_onWindowPreDestroyed)
                 _onWindowPreDestroyed();
 
-            _pRender = nullptr;
-            _pInput = nullptr;
+            _pShaderManager = nullptr;
+            _pInputManager = nullptr;
             _pImGui = nullptr;
 
             //ClearServices();
@@ -303,25 +303,25 @@ namespace Ailurus
         return _pWindow;
     }
 
-    const Input* Application::GetInput()
-    {
-        return _pInput.get();
-    }
+    InputManager& Application::GetInputManager()
+	{
+		return *_pInputManager.get();
+	}
 
-    ImGui* Application::GetImGui()
+	ShaderManager& Application::GetShaderManager()
+	{
+    	return *_pShaderManager.get();
+	}
+
+	ImGui* Application::GetImGui()
     {
         return _pImGui.get();
     }
 
-    Render* Application::GetRender()
-    {
-        return _pRender.get();
-    }
-
     void Application::EventLoop(bool* quitLoop)
     {
-        if (_pInput != nullptr)
-            _pInput->BeforeEventLoop();
+        if (_pInputManager != nullptr)
+            _pInputManager->BeforeEventLoop();
 
         while(true)
         {
@@ -332,15 +332,15 @@ namespace Ailurus
             bool closeWindow = false;
             HandleEvent(&event, &closeWindow);
 
-            if (_pInput != nullptr)
-                _pInput->HandleEvent(&event);
+            if (_pInputManager != nullptr)
+                _pInputManager->HandleEvent(&event);
 
             if (closeWindow)
                 *quitLoop = true;
         }
 
-        if (_pInput != nullptr)
-            _pInput->AfterEventLoop();
+        if (_pInputManager != nullptr)
+            _pInputManager->AfterEventLoop();
     }
 
     void Application::HandleEvent(const void* pEvent, bool* quitLoop)

@@ -6,10 +6,10 @@
 
 namespace Ailurus
 {
-	class ShaderLibrary
+	class ShaderManager
 	{
 	public:
-		ShaderLibrary() = default;
+		ShaderManager() = default;
 
 	public:
 		void Clear();

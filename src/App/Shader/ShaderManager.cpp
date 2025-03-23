@@ -1,8 +1,8 @@
-#include "ShaderLibrary.h"
+#include "Ailurus/Application/Shader/ShaderManager.h"
 
 namespace Ailurus
 {
-    Shader* ShaderLibrary::GetShader(ShaderStage stage, const std::string& path)
+    Shader* ShaderManager::GetShader(ShaderStage stage, const std::string& path)
     {
         auto& map = _library[stage];
         if (const auto itr = map.find(path); itr == map.end())
@@ -11,12 +11,12 @@ namespace Ailurus
             return itr->second.get();
     }
 
-    void ShaderLibrary::Clear()
+    void ShaderManager::Clear()
     {
         _library.clear();
     }
 
-    Shader* ShaderLibrary::LoadShader(ShaderStage stage, const std::string& path)
+    Shader* ShaderManager::LoadShader(ShaderStage stage, const std::string& path)
     {
         _library[stage][path] = std::make_unique<Shader>(stage, path);
         return _library[stage][path].get();

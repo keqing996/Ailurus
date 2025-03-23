@@ -6,10 +6,12 @@
 #include <memory>
 
 #include "Input/InputManager.h"
+#include "Shader/ShaderManager.h"
+#include "Render/RenderManager.h"
+#include "Assets/AssetsManager.h"
 #include "ImGui/ImGui.h"
 #include "Ailurus/Math/Vector.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
-#include "Render/Render.h"
 
 namespace Ailurus
 {
@@ -132,11 +134,12 @@ namespace Ailurus
 
         static void* GetSDLWindowPtr();
 
-        static const InputManager* GetInput();
 
         static ImGui* GetImGui();
 
-        static Render* GetRender();
+        static InputManager& GetInputManager();
+        static ShaderManager& GetShaderManager();
+
 
     private:
         static void EventLoop(bool* quitLoop);
@@ -162,13 +165,13 @@ namespace Ailurus
         static std::function<void(bool)>       _onWindowCursorVisibleChanged;
 
         // Input
-        static std::unique_ptr<InputManager> _pInput;
+        static std::unique_ptr<InputManager> _pInputManager;
+        static std::unique_ptr<ShaderManager> _pShaderManager;
+
 
         // ImGui
         static std::unique_ptr<ImGui> _pImGui;
 
-        // Render
-        static std::unique_ptr<Render> _pRender;
     };
 }
 

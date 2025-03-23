@@ -7,16 +7,18 @@
 
 namespace Ailurus
 {
+    class Shader;
+
     class Material: public NonCopyable
     {
         struct RenderPassParameters
         {
-            std::unordered_map<ShaderStage, std::string> shaderMap;
+            StageShaderArray stageShaders;
             // todo uniform
         };
     public:
         void SetShader(RenderPassType pass, ShaderStage stage, const std::string& shader);
-        const std::string& GetShader(RenderPassType pass, ShaderStage stage);
+        std::optional<StageShaderArray> GetStageShaderArray(RenderPassType pass) const;
 
     private:
          std::unordered_map<RenderPassType, RenderPassParameters> _renderPassParaMap;

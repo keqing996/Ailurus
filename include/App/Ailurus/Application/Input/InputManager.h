@@ -12,7 +12,7 @@ namespace Ailurus
     {
     public:
         explicit InputManager(void* pSdlWindow);
-        ~InputManager();
+        ~InputManager() override;
 
     public:
         bool IsButtonPressed(ButtonType key) const;

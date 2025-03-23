@@ -102,7 +102,7 @@ namespace Ailurus
 	vk::Queue VulkanContext::_vkGraphicQueue = nullptr;
 	vk::Queue VulkanContext::_vkComputeQueue = nullptr;
 	vk::CommandPool VulkanContext::_vkGraphicCommandPool = nullptr;
-	std::unique_ptr<ShaderLibrary> VulkanContext::_pShaderLibrary = nullptr;
+	std::unique_ptr<ShaderManager> VulkanContext::_pShaderLibrary = nullptr;
 
 	std::unique_ptr<SwapChain> VulkanContext::_pSwapChain = nullptr;
 	std::unique_ptr<RenderPassForward> VulkanContext::_pForwardPass = nullptr;
@@ -209,7 +209,7 @@ namespace Ailurus
 		return _vkGraphicCommandPool;
 	}
 
-	ShaderLibrary* VulkanContext::GetShaderLibrary()
+	ShaderManager* VulkanContext::GetShaderLibrary()
 	{
 		return _pShaderLibrary.get();
 	}
@@ -426,7 +426,7 @@ namespace Ailurus
 
 	void VulkanContext::CreateShaderLibrary()
 	{
-		_pShaderLibrary = std::make_unique<ShaderLibrary>();
+		_pShaderLibrary = std::make_unique<ShaderManager>();
 	}
 
 	void VulkanContext::CreateDynamicContext()

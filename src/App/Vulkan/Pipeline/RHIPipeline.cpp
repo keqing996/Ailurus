@@ -31,12 +31,12 @@ namespace Ailurus
 		// Vertex input description
 		vk::VertexInputBindingDescription vertexInputDesc;
 		vertexInputDesc.setBinding(0)
-			.setStride(config.pInputAssemble->GetInputAttribute().GetStride())
+			.setStride(config.pMesh->GetInputAttribute().GetStride())
 			.setInputRate(vk::VertexInputRate::eVertex);
 
 		// Vertex input attribute description
 		std::vector<vk::VertexInputAttributeDescription> vertexAttrDesc =
-			config.pInputAssemble->GetAttributeDescription();
+			config.pMesh->GetAttributeDescription();
 
 		// Vertex input
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;

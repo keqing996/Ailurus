@@ -1,22 +1,20 @@
 #include "Ailurus/Application/Material/Material.h"
+#include "Ailurus/Application/Application.h"
 
 namespace Ailurus
 {
     void Material::SetShader(RenderPassType pass, ShaderStage stage, const std::string& shader)
-    {
-        _renderPassParaMap[pass].shaderMap[stage] = shader;
-    }
+	{
+    	const Shader* pShader = Application::GetShaderManager().GetShader(stage, shader);
+		_renderPassParaMap[pass].stageShaders[stage] = pShader;
+	}
 
-    const std::string& Material::GetShader(RenderPassType pass, ShaderStage stage)
-    {
-        auto const passItr = _renderPassParaMap.find(pass);
-        if (passItr == _renderPassParaMap.end())
-            return "";
+	std::optional<StageShaderArray> Material::GetStageShaderArray(RenderPassType pass) const
+	{
+    	auto const passItr = _renderPassParaMap.find(pass);
+    	if (passItr == _renderPassParaMap.end())
+    		return std::nullopt;
 
-        auto& shaderMap = passItr->second.shaderMap;
-        if (const auto shaderItr = shaderMap.find(stage); shaderItr != shaderMap.end())
-            return shaderItr->second;
-
-        return "";
-    }
+    	return passItr->second.stageShaders;
+	}
 }

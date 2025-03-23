@@ -5,6 +5,9 @@
 #include "Ailurus/Application/Render/MeshRender.h"
 #include "Vulkan/Context/VulkanContext.h"
 #include "Vulkan/Airport/Airport.h"
+#include "Vulkan/DataBuffer/VertexBuffer.h"
+#include "Vulkan/DataBuffer/IndexBuffer.h"
+#include "Vulkan/SwapChain/SwapChain.h"
 #include "Vulkan/RenderPass/RHIRenderPass.h"
 
 namespace Ailurus
@@ -108,8 +111,8 @@ namespace Ailurus
 
 		_pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
 
-		pFlight->commandBuffer.beginRenderPass(_pCurrentRenderPass->GetRHIRenderPass()
-												   ->GetRenderPassBeginInfo(*pFlight),
+		pFlight->commandBuffer.beginRenderPass(
+			_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(*pFlight),
 			{});
 
 		//	flight->DrawObject(_pRenderObj.get());
@@ -127,39 +130,38 @@ namespace Ailurus
 			return;
 		}
 
-		auto commandBuffer = pFlight->commandBuffer;
-		auto pMesh = pMeshRender->GetMesh();
-		auto pMaterial = pMeshRender->GetMaterial();
+		const auto commandBuffer = pFlight->commandBuffer;
+		const auto pMesh = pMeshRender->GetMesh();
+		const auto pMaterial = pMeshRender->GetMaterial();
 
 		if (pMesh == nullptr || pMaterial == nullptr)
 			return;
 
-		auto optStageShaders = pMaterial->GetRenderPassShaders(_pCurrentRenderPass->GetRenderPassType());
+		auto optStageShaders = pMaterial->GetStageShaderArray(_pCurrentRenderPass->GetRenderPassType());
 		if (!optStageShaders.has_value())
 			return; // This object should not be drawn under this pass;
 
-		const InputAssemble* pInputAssemble = pRenderObject->GetInputAssemble();
-
 		// Bind pipeline
 		PipelineConfig pipelineConfig;
-		pipelineConfig.pInputAssemble = pInputAssemble;
-		pipelineConfig.shaderStages = *optStageShaders.value();
-		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, _pCurrentRenderPass->GetPipeline(pipelineConfig)->GetPipeline());
+		pipelineConfig.pMesh = pMesh;
+		pipelineConfig.shaderStages = optStageShaders.value();
+		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+			_pCurrentRenderPass->GetRHIRenderPass()->GetPipeline(pipelineConfig)->GetPipeline());
 
 		// Set viewport & scissor
-		auto extent = _pRenderer->GetSwapChain()->GetSwapChainConfig().extent;
+		auto extent = VulkanContext::GetSwapChain()->GetSwapChainConfig().extent;
 		vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
-		vk::Rect2D scissor(vk::Offset2D{0, 0}, extent);
+		vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
 		commandBuffer.setViewport(0, 1, &viewport);
 		commandBuffer.setScissor(0, 1, &scissor);
 
 		// Bind vertex buffer
-		vk::Buffer vertexBuffers[] = { pInputAssemble->GetVertexBuffer()->GetBuffer() };
+		vk::Buffer vertexBuffers[] = { pMesh->GetVertexBuffer()->GetBuffer() };
 		vk::DeviceSize offsets[] = { 0 };
 		commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
 		// Draw by index
-		auto pIndexBuffer = pInputAssemble->GetIndexBuffer();
+		auto pIndexBuffer = pMesh->GetIndexBuffer();
 		if (pIndexBuffer != nullptr)
 		{
 			commandBuffer.bindIndexBuffer(pIndexBuffer->GetBuffer(), 0, pIndexBuffer->GetIndexType());
@@ -168,7 +170,7 @@ namespace Ailurus
 		// Draw by vertex
 		else
 		{
-			commandBuffer.draw(pInputAssemble->GetVertexCount(), 1, 0, 0);
+			commandBuffer.draw(pMesh->GetVertexCount(), 1, 0, 0);
 		}
 	}
 

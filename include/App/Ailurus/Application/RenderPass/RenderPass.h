@@ -16,7 +16,7 @@ namespace Ailurus
 
 	public:
 		RenderPassType GetRenderPassType() const;
-		const RHIRenderPass* GetRHIRenderPass() const;
+		RHIRenderPass* GetRHIRenderPass() const;
 
 	private:
 		std::unique_ptr<RHIRenderPass> _pRHI = nullptr;

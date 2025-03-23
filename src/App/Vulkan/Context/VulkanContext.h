@@ -8,7 +8,6 @@ namespace Ailurus
 	class SwapChain;
 	class RenderPassForward;
 	class Airport;
-	class ShaderLibrary;
 
 	class VulkanContext
 	{
@@ -38,7 +37,6 @@ namespace Ailurus
 		static vk::Queue GetGraphicQueue();
 		static vk::Queue GetComputeQueue();
 		static vk::CommandPool GetCommandPool();
-		static ShaderLibrary* GetShaderLibrary();
 
 		static void RebuildDynamicContext();
 		static SwapChain* GetSwapChain();
@@ -75,7 +73,6 @@ namespace Ailurus
 		static vk::Queue _vkComputeQueue;
 
 		static vk::CommandPool _vkGraphicCommandPool;
-		static std::unique_ptr<ShaderLibrary> _pShaderLibrary;
 
 		static std::unique_ptr<SwapChain> _pSwapChain;
 		static std::unique_ptr<RenderPassForward> _pForwardPass;

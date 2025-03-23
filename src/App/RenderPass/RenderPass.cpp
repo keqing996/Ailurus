@@ -20,7 +20,7 @@ namespace Ailurus
 		return _pRHI->GetRenderPassType();
 	}
 
-	const RHIRenderPass* RenderPass::GetRHIRenderPass() const
+	RHIRenderPass* RenderPass::GetRHIRenderPass() const
 	{
 		return _pRHI.get();
 	}
