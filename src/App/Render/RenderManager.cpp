@@ -12,47 +12,6 @@
 
 namespace Ailurus
 {
-	static vk::Format ConvertToVkFormat(AttributeType type)
-	{
-		switch (type)
-		{
-			case AttributeType::Vector2:
-				return vk::Format::eR32G32Sfloat;
-			case AttributeType::Vector3:
-				return vk::Format::eR32G32B32Sfloat;
-			case AttributeType::Vector4:
-				return vk::Format::eR32G32B32A32Sfloat;
-		}
-
-		Logger::LogError("Fail to convert attribute type to vk format, attribute type = {}",
-			EnumReflection<AttributeType>::ToString(type));
-		return vk::Format::eUndefined;
-	}
-
-	static std::vector<vk::VertexInputAttributeDescription> GetMeshVulkanAttributeDescription(const Mesh* pMesh)
-	{
-		std::vector<vk::VertexInputAttributeDescription> result;
-
-		uint32_t offset = 0;
-		auto attributes = pMesh->GetInputAttribute().GetAttributes();
-		for (auto i = 0; i < attributes.size(); i++)
-		{
-			AttributeType attr = attributes[i];
-
-			vk::VertexInputAttributeDescription attributeDescriptions;
-			attributeDescriptions.setBinding(0)
-				.setLocation(i)
-				.setFormat(ConvertToVkFormat(attr))
-				.setOffset(offset);
-
-			result.push_back(attributeDescriptions);
-
-			offset += VertexAttributeDescription::SizeOf(attr);
-		}
-
-		return result;
-	}
-
 	RenderManager::RenderManager()
 	{
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);

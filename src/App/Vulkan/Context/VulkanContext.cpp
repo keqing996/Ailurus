@@ -5,9 +5,7 @@
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "Vulkan/SwapChain/SwapChain.h"
-#include "Vulkan/RenderPass/RenderPassForward.h"
 #include "Vulkan/Airport/Airport.h"
-#include "Vulkan/Shader/ShaderLibrary.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -102,7 +100,6 @@ namespace Ailurus
 	vk::Queue VulkanContext::_vkGraphicQueue = nullptr;
 	vk::Queue VulkanContext::_vkComputeQueue = nullptr;
 	vk::CommandPool VulkanContext::_vkGraphicCommandPool = nullptr;
-	std::unique_ptr<ShaderManager> VulkanContext::_pShaderLibrary = nullptr;
 
 	std::unique_ptr<SwapChain> VulkanContext::_pSwapChain = nullptr;
 	std::unique_ptr<RenderPassForward> VulkanContext::_pForwardPass = nullptr;
@@ -146,8 +143,6 @@ namespace Ailurus
 			return;
 
 		DestroyDynamicContext();
-
-		_pShaderLibrary.reset();
 
 		if (_vkDevice)
 		{
@@ -207,11 +202,6 @@ namespace Ailurus
 	vk::CommandPool VulkanContext::GetCommandPool()
 	{
 		return _vkGraphicCommandPool;
-	}
-
-	ShaderManager* VulkanContext::GetShaderLibrary()
-	{
-		return _pShaderLibrary.get();
 	}
 
 	void VulkanContext::RebuildDynamicContext()
@@ -422,11 +412,6 @@ namespace Ailurus
 			.setQueueFamilyIndex(GetGraphicQueueIndex());
 
 		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
-	}
-
-	void VulkanContext::CreateShaderLibrary()
-	{
-		_pShaderLibrary = std::make_unique<ShaderManager>();
 	}
 
 	void VulkanContext::CreateDynamicContext()

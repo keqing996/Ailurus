@@ -50,7 +50,6 @@ namespace Ailurus
 		static void ChoosePhysicsDevice();
 		static bool CreateLogicalDevice();
 		static void CreateCommandPool();
-		static void CreateShaderLibrary();
 
 		static void CreateDynamicContext();
 		static void DestroyDynamicContext();

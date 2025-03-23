@@ -1,12 +1,56 @@
 #include "RHIPipeline.h"
 #include "Ailurus/Application/Shader/Shader.h"
+#include "Ailurus/Application/RenderPass/RenderPass.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Render/InputAssemble.h"
+#include "Ailurus/Application/Assets/Mesh.h"
 #include "Vulkan/Context/VulkanContext.h"
+#include "Vulkan/RenderPass/RHIRenderPass.h"
 #include "Vulkan/Shader/RHIShader.h"
+
 
 namespace Ailurus
 {
+	static vk::Format ConvertToVkFormat(AttributeType type)
+	{
+		switch (type)
+		{
+			case AttributeType::Vector2:
+				return vk::Format::eR32G32Sfloat;
+			case AttributeType::Vector3:
+				return vk::Format::eR32G32B32Sfloat;
+			case AttributeType::Vector4:
+				return vk::Format::eR32G32B32A32Sfloat;
+		}
+
+		Logger::LogError("Fail to convert attribute type to vk format, attribute type = {}",
+			EnumReflection<AttributeType>::ToString(type));
+		return vk::Format::eUndefined;
+	}
+
+	static std::vector<vk::VertexInputAttributeDescription> GetMeshVulkanAttributeDescription(const Mesh* pMesh)
+	{
+		std::vector<vk::VertexInputAttributeDescription> result;
+
+		uint32_t offset = 0;
+		auto attributes = pMesh->GetInputAttribute().GetAttributes();
+		for (auto i = 0; i < attributes.size(); i++)
+		{
+			AttributeType attr = attributes[i];
+
+			vk::VertexInputAttributeDescription attributeDescriptions;
+			attributeDescriptions.setBinding(0)
+				.setLocation(i)
+				.setFormat(ConvertToVkFormat(attr))
+				.setOffset(offset);
+
+			result.push_back(attributeDescriptions);
+
+			offset += VertexAttributeDescription::SizeOf(attr);
+		}
+
+		return result;
+	}
+
 	Pipeline::Pipeline(const RenderPass* pRenderPass, const PipelineConfig& config)
 	{
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
@@ -36,7 +80,7 @@ namespace Ailurus
 
 		// Vertex input attribute description
 		std::vector<vk::VertexInputAttributeDescription> vertexAttrDesc =
-			config.pMesh->GetAttributeDescription();
+			GetMeshVulkanAttributeDescription(config.pMesh);
 
 		// Vertex input
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
@@ -105,7 +149,7 @@ namespace Ailurus
 			.setPColorBlendState(&colorBlending)
 			.setPDynamicState(&dynamicState)
 			.setLayout(_vkPipelineLayout)
-			.setRenderPass(pRenderPass->GetRenderPass())
+			.setRenderPass(pRenderPass->GetRHIRenderPass()->GetRenderPass())
 			.setSubpass(0)
 			.setBasePipelineHandle(nullptr);
 
