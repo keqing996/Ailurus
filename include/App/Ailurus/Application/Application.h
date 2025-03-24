@@ -15,7 +15,7 @@
 
 namespace Ailurus
 {
-    class Application final: NonCopyable
+    class Application final : NonCopyable
     {
     public:
         struct Style
@@ -134,15 +134,15 @@ namespace Ailurus
 
         static void* GetSDLWindowPtr();
 
-
         static ImGui* GetImGui();
 
         static InputManager& GetInputManager();
-        static ShaderManager& GetShaderManager();
 
+        static ShaderManager& GetShaderManager();
 
     private:
         static void EventLoop(bool* quitLoop);
+
         static void HandleEvent(const void* pEvent, bool* quitLoop);
 
     private:
@@ -153,25 +153,23 @@ namespace Ailurus
         static bool _ignoreNextQuit;
 
         // Window callbacks
-        static std::function<void()>           _onWindowCreated;
-        static std::function<void(Vector2i)>   _onWindowMoved;
-        static std::function<bool()>           _onWindowTryToClose;
-        static std::function<void()>           _onWindowClosed;
-        static std::function<void()>           _onWindowPreDestroyed;
-        static std::function<void()>           _onWindowPostDestroyed;
-        static std::function<void(Vector2i)>   _onWindowResize;
-        static std::function<void(bool)>       _onWindowFocusChanged;
-        static std::function<void(bool)>       _onWindowCursorEnteredOrLeaved;
-        static std::function<void(bool)>       _onWindowCursorVisibleChanged;
+        static std::function<void()> _onWindowCreated;
+        static std::function<void(Vector2i)> _onWindowMoved;
+        static std::function<bool()> _onWindowTryToClose;
+        static std::function<void()> _onWindowClosed;
+        static std::function<void()> _onWindowPreDestroyed;
+        static std::function<void()> _onWindowPostDestroyed;
+        static std::function<void(Vector2i)> _onWindowResize;
+        static std::function<void(bool)> _onWindowFocusChanged;
+        static std::function<void(bool)> _onWindowCursorEnteredOrLeaved;
+        static std::function<void(bool)> _onWindowCursorVisibleChanged;
 
         // Input
         static std::unique_ptr<InputManager> _pInputManager;
+        static std::unique_ptr<RenderManager> _pRenderManager;
         static std::unique_ptr<ShaderManager> _pShaderManager;
-
 
         // ImGui
         static std::unique_ptr<ImGui> _pImGui;
-
     };
 }
-

@@ -1,48 +1,27 @@
 #include "Ailurus/Application/Application.h"
 #include "Vulkan/Context/VulkanContext.h"
-#include <../../submodule/sdl/include/SDL3/SDL.h>
-#include <../../submodule/sdl/include/SDL3/SDL_vulkan.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 
 namespace Ailurus
 {
-    void*   Application::_pWindow        = nullptr;
-    bool    Application::_ignoreNextQuit = false;
+    void* Application::_pWindow = nullptr;
+    bool Application::_ignoreNextQuit = false;
 
-    std::function<void()>           Application::_onWindowCreated = nullptr;
-    std::function<void(Vector2i)>   Application::_onWindowMoved = nullptr;
-    std::function<bool()>           Application::_onWindowTryToClose = nullptr;
-    std::function<void()>           Application::_onWindowClosed = nullptr;
-    std::function<void()>           Application::_onWindowPreDestroyed = nullptr;
-    std::function<void()>           Application::_onWindowPostDestroyed = nullptr;
-    std::function<void(Vector2i)>   Application::_onWindowResize = nullptr;
-    std::function<void(bool)>       Application::_onWindowFocusChanged = nullptr;
-    std::function<void(bool)>       Application::_onWindowCursorEnteredOrLeaved = nullptr;
-    std::function<void(bool)>       Application::_onWindowCursorVisibleChanged = nullptr;
+    std::function<void()> Application::_onWindowCreated = nullptr;
+    std::function<void(Vector2i)> Application::_onWindowMoved = nullptr;
+    std::function<bool()> Application::_onWindowTryToClose = nullptr;
+    std::function<void()> Application::_onWindowClosed = nullptr;
+    std::function<void()> Application::_onWindowPreDestroyed = nullptr;
+    std::function<void()> Application::_onWindowPostDestroyed = nullptr;
+    std::function<void(Vector2i)> Application::_onWindowResize = nullptr;
+    std::function<void(bool)> Application::_onWindowFocusChanged = nullptr;
+    std::function<void(bool)> Application::_onWindowCursorEnteredOrLeaved = nullptr;
+    std::function<void(bool)> Application::_onWindowCursorVisibleChanged = nullptr;
 
-    std::unique_ptr<InputManager>			Application::_pInputManager = nullptr;
-    std::unique_ptr<ShaderManager>          Application::_pShaderManager = nullptr;
-
-    static std::vector<const char*> VulkanContextGetInstanceExtensions()
-    {
-        std::vector<const char*> extensions;
-        uint32_t size;
-        char const* const* pExt = SDL_Vulkan_GetInstanceExtensions(&size);
-        for (uint32_t n = 0; n < size; n++)
-            extensions.push_back(pExt[n]);
-        return extensions;
-    }
-
-    static vk::SurfaceKHR VulkanContextCreateSurface(const vk::Instance& instance)
-    {
-        VkSurfaceKHR surface;
-        SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(Application::GetSDLWindowPtr()), instance, nullptr, &surface);
-        return surface;
-    }
-
-    static void VulkanContextDestroySurface(const vk::Instance& instance, const vk::SurfaceKHR& surface)
-    {
-        SDL_Vulkan_DestroySurface(instance, surface, nullptr);
-    }
+    std::unique_ptr<InputManager> Application::_pInputManager = nullptr;
+    std::unique_ptr<RenderManager> Application::_pRenderManager = nullptr;
+    std::unique_ptr<ShaderManager> Application::_pShaderManager = nullptr;
 
     bool Application::Create(int width, int height, const std::string& title, Style style)
     {
@@ -63,15 +42,11 @@ namespace Ailurus
         if (_pWindow == nullptr)
             return false;
 
-        _pInputManager = std::make_unique<InputManager>(_pWindow);
-    	_pShaderManager = std::make_unique<ShaderManager>();
-
         SetWindowVisible(true);
 
-        if (!VulkanContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface))
-            return false;
-
-        _pRender = std::make_unique<Render>([]() -> Vector2i { return GetSize(); });
+        _pInputManager = std::make_unique<InputManager>(_pWindow);
+        _pRenderManager = std::make_unique<RenderManager>();
+        _pShaderManager = std::make_unique<ShaderManager>();
 
         if (_onWindowCreated != nullptr)
             _onWindowCreated();
@@ -87,6 +62,7 @@ namespace Ailurus
                 _onWindowPreDestroyed();
 
             _pShaderManager = nullptr;
+            _pRenderManager = nullptr;
             _pInputManager = nullptr;
             _pImGui = nullptr;
 
@@ -96,8 +72,6 @@ namespace Ailurus
 
             if (_onWindowPostDestroyed)
                 _onWindowPostDestroyed();
-
-            VulkanContext::Destroy(VulkanContextDestroySurface);
         }
     }
 
@@ -108,7 +82,7 @@ namespace Ailurus
 
     void Application::Loop(const std::function<void()>& loopFunction)
     {
-        while(true)
+        while (true)
         {
             bool shouldBreakLoop = false;
             EventLoop(&shouldBreakLoop);
@@ -178,7 +152,7 @@ namespace Ailurus
             return;
 
         auto surface = SDL_CreateSurfaceFrom(width, height, SDL_PIXELFORMAT_RGBA8888,
-            const_cast<std::byte*>(pixels), width * 4);
+                                             const_cast<std::byte*>(pixels), width * 4);
         SDL_SetWindowIcon(static_cast<SDL_Window*>(_pWindow), surface);
     }
 
@@ -304,16 +278,16 @@ namespace Ailurus
     }
 
     InputManager& Application::GetInputManager()
-	{
-		return *_pInputManager.get();
-	}
+    {
+        return *_pInputManager.get();
+    }
 
-	ShaderManager& Application::GetShaderManager()
-	{
-    	return *_pShaderManager.get();
-	}
+    ShaderManager& Application::GetShaderManager()
+    {
+        return *_pShaderManager.get();
+    }
 
-	ImGui* Application::GetImGui()
+    ImGui* Application::GetImGui()
     {
         return _pImGui.get();
     }
@@ -323,7 +297,7 @@ namespace Ailurus
         if (_pInputManager != nullptr)
             _pInputManager->BeforeEventLoop();
 
-        while(true)
+        while (true)
         {
             SDL_Event event;
             if (!SDL_PollEvent(&event))
@@ -370,7 +344,7 @@ namespace Ailurus
                 if (windowId == pSDLEvent->window.windowID
                     && _onWindowTryToClose != nullptr && !_onWindowTryToClose())
                 {
-                        _ignoreNextQuit = true;
+                    _ignoreNextQuit = true;
                 }
 
                 break;
@@ -384,8 +358,8 @@ namespace Ailurus
             }
             case SDL_EVENT_WINDOW_RESIZED:
             {
-                if (_pRender)
-                    _pRender->NeedRecreateSwapChain();
+                if (_pRenderManager)
+                    _pRenderManager->NeedRecreateSwapChain();
 
                 if (windowId == pSDLEvent->window.windowID && _onWindowResize != nullptr)
                     _onWindowResize(Vector2i(pSDLEvent->window.data1, pSDLEvent->window.data2));

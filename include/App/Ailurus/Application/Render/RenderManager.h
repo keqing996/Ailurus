@@ -20,16 +20,20 @@ namespace Ailurus
 		~RenderManager() override;
 
 	public:
+		void NeedRecreateSwapChain();
+
 		// Material
 		Material* GetMaterial(const std::string& name) const;
 		Material* AddMaterial(const std::string& name);
 
 		// Draw
-		void RenderScene();
+		void RenderScene(std::vector<MeshRender*>& objectList);
 
 	private:
-		void RenderForwardPass(const Flight* pFlight);
-		void RenderMesh(const Flight* pFlight, const MeshRender* pMeshRender);
+		void ReBuildSwapChain();
+		void BuildRenderPass();
+		void RenderForwardPass(std::vector<MeshRender*>& objectList, const Flight* pFlight);
+		void RenderMesh(const Flight* pFlight, const MeshRender* pMeshRender) const;
 
 	private:
 		bool _needRebuildSwapChain = false;

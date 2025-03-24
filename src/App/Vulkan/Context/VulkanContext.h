@@ -6,7 +6,6 @@
 namespace Ailurus
 {
 	class SwapChain;
-	class RenderPassForward;
 	class Airport;
 
 	class VulkanContext
@@ -15,16 +14,12 @@ namespace Ailurus
 		using WindowCreateSurfaceCallback = std::function<vk::SurfaceKHR(const vk::Instance&)>;
 		using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
 
-		VulkanContext() = default;
+		VulkanContext() = delete;
 
 	public:
 		static bool enableValidation;
 
 	public:
-		static void SetCallbackGetWindowInstanceExtension(const GetWindowInstanceExtension& f);
-		static void SetCallbackWindowCreateSurfaceCallback(const WindowCreateSurfaceCallback& f);
-		static void SetCallbackWindowDestroySurfaceCallback(const WindowDestroySurfaceCallback& f);
-
 		static bool Init(const GetWindowInstanceExtension& getWindowRequiredExtension, const WindowCreateSurfaceCallback& createSurface);
 		static void Destroy(const WindowDestroySurfaceCallback& destroySurface);
 
@@ -74,7 +69,6 @@ namespace Ailurus
 		static vk::CommandPool _vkGraphicCommandPool;
 
 		static std::unique_ptr<SwapChain> _pSwapChain;
-		static std::unique_ptr<RenderPassForward> _pForwardPass;
 		static std::unique_ptr<Airport> _pAirport;
 	};
 } // namespace Ailurus

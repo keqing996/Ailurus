@@ -102,7 +102,6 @@ namespace Ailurus
 	vk::CommandPool VulkanContext::_vkGraphicCommandPool = nullptr;
 
 	std::unique_ptr<SwapChain> VulkanContext::_pSwapChain = nullptr;
-	std::unique_ptr<RenderPassForward> VulkanContext::_pForwardPass = nullptr;
 	std::unique_ptr<Airport> VulkanContext::_pAirport = nullptr;
 
 	bool VulkanContext::Init(const GetWindowInstanceExtension& getWindowRequiredExtension, const WindowCreateSurfaceCallback& createSurface)
@@ -418,7 +417,6 @@ namespace Ailurus
 	{
 		Vector2i windowSize = Application::GetSize();
 		_pSwapChain = std::make_unique<SwapChain>(windowSize.x(), windowSize.y());
-		_pForwardPass = std::make_unique<RenderPassForward>();
 		_pAirport = std::make_unique<Airport>();
 	}
 
