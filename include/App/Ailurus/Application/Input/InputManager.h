@@ -11,7 +11,6 @@ namespace Ailurus
     class InputManager: public NonCopyable
     {
     public:
-        explicit InputManager(void* pSdlWindow);
         ~InputManager() override;
 
     public:
@@ -29,17 +28,16 @@ namespace Ailurus
 
     private:
         friend class Application;
+        InputManager();
 
     private:
         void OnEventButtonPressed(ButtonType button);
         void OnEventButtonReleased(ButtonType button);
         void BeforeEventLoop();
-        void HandleEvent(const void* pEvent);
+        void HandleEvent(void* sdlWindowPtr, const void* pEvent);
         void AfterEventLoop();
 
     private:
-        void* _pSDLWindow;
-
         Vector2f _lastMousePos;
         Vector2f _mousePos;
         Vector2f _mouseWheel;

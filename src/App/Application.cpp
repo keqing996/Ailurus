@@ -5,6 +5,28 @@
 
 namespace Ailurus
 {
+    static std::vector<const char*> VulkanContextGetInstanceExtensions()
+    {
+        std::vector<const char*> extensions;
+        uint32_t size;
+        char const* const* pExt = SDL_Vulkan_GetInstanceExtensions(&size);
+        for (uint32_t n = 0; n < size; n++)
+            extensions.push_back(pExt[n]);
+        return extensions;
+    }
+
+    static vk::SurfaceKHR VulkanContextCreateSurface(const vk::Instance& instance)
+    {
+        VkSurfaceKHR surface;
+        SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(Application::GetSDLWindowPtr()), instance, nullptr, &surface);
+        return surface;
+    }
+
+    static void VulkanContextDestroySurface(const vk::Instance& instance, const vk::SurfaceKHR& surface)
+    {
+        SDL_Vulkan_DestroySurface(instance, surface, nullptr);
+    }
+
     void* Application::_pWindow = nullptr;
     bool Application::_ignoreNextQuit = false;
 
@@ -44,9 +66,12 @@ namespace Ailurus
 
         SetWindowVisible(true);
 
-        _pInputManager = std::make_unique<InputManager>(_pWindow);
-        _pRenderManager = std::make_unique<RenderManager>();
-        _pShaderManager = std::make_unique<ShaderManager>();
+        if (!VulkanContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface))
+            return false;
+
+        _pInputManager.reset(new InputManager());
+        _pRenderManager.reset(new RenderManager());
+        _pShaderManager.reset(new ShaderManager());
 
         if (_onWindowCreated != nullptr)
             _onWindowCreated();
@@ -66,7 +91,8 @@ namespace Ailurus
             _pInputManager = nullptr;
             _pImGui = nullptr;
 
-            //ClearServices();
+            VulkanContext::Destroy(VulkanContextDestroySurface);
+
             SDL_DestroyWindow(static_cast<SDL_Window*>(_pWindow));
             _pWindow = nullptr;
 
@@ -307,7 +333,7 @@ namespace Ailurus
             HandleEvent(&event, &closeWindow);
 
             if (_pInputManager != nullptr)
-                _pInputManager->HandleEvent(&event);
+                _pInputManager->HandleEvent(_pWindow, &event);
 
             if (closeWindow)
                 *quitLoop = true;

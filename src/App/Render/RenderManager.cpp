@@ -1,12 +1,9 @@
 #include "Ailurus/Application/Render/RenderManager.h"
-
-#include <SDL3/SDL_vulkan.h>
-
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/Material/Material.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/RenderPass/RenderPass.h"
-#include "Ailurus/Application/Render/MeshRender.h"
+#include "Ailurus/Application/Component/CompMeshRender.h"
 #include "Vulkan/Context/VulkanContext.h"
 #include "Vulkan/Airport/Airport.h"
 #include "Vulkan/DataBuffer/VertexBuffer.h"
@@ -16,39 +13,12 @@
 
 namespace Ailurus
 {
-    static std::vector<const char*> VulkanContextGetInstanceExtensions()
-    {
-        std::vector<const char*> extensions;
-        uint32_t size;
-        char const* const* pExt = SDL_Vulkan_GetInstanceExtensions(&size);
-        for (uint32_t n = 0; n < size; n++)
-            extensions.push_back(pExt[n]);
-        return extensions;
-    }
-
-    static vk::SurfaceKHR VulkanContextCreateSurface(const vk::Instance& instance)
-    {
-        VkSurfaceKHR surface;
-        SDL_Vulkan_CreateSurface(static_cast<SDL_Window*>(Application::GetSDLWindowPtr()), instance, nullptr, &surface);
-        return surface;
-    }
-
-    static void VulkanContextDestroySurface(const vk::Instance& instance, const vk::SurfaceKHR& surface)
-    {
-        SDL_Vulkan_DestroySurface(instance, surface, nullptr);
-    }
-
     RenderManager::RenderManager()
     {
-        VulkanContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface);
         BuildRenderPass();
     }
 
-    RenderManager::~RenderManager()
-    {
-        _renderPassMap.clear();
-        VulkanContext::Destroy(VulkanContextDestroySurface);
-    }
+    RenderManager::~RenderManager() = default;
 
     void RenderManager::NeedRecreateSwapChain()
     {
@@ -69,7 +39,7 @@ namespace Ailurus
         return GetMaterial(name);
     }
 
-    void RenderManager::RenderScene(std::vector<MeshRender*>& objectList)
+    void RenderManager::RenderScene(std::vector<CompMeshRender*>& objectList)
     {
         if (_needRebuildSwapChain)
             ReBuildSwapChain();
@@ -109,7 +79,7 @@ namespace Ailurus
         _renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
     }
 
-    void RenderManager::RenderForwardPass(std::vector<MeshRender*>& objectList, const Flight* pFlight)
+    void RenderManager::RenderForwardPass(std::vector<CompMeshRender*>& objectList, const Flight* pFlight)
     {
         if (_pCurrentRenderPass != nullptr)
         {
@@ -131,7 +101,7 @@ namespace Ailurus
         _pCurrentRenderPass = nullptr;
     }
 
-    void RenderManager::RenderMesh(const Flight* pFlight, const MeshRender* pMeshRender) const
+    void RenderManager::RenderMesh(const Flight* pFlight, const CompMeshRender* pMeshRender) const
     {
         if (pMeshRender == nullptr)
             return;
@@ -157,8 +127,8 @@ namespace Ailurus
         PipelineConfig pipelineConfig;
         pipelineConfig.pMesh = pMesh;
         pipelineConfig.shaderStages = optStageShaders.value();
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                   _pCurrentRenderPass->GetRHIRenderPass()->GetPipeline(pipelineConfig)->GetPipeline());
+        vk::Pipeline pipeline = _pCurrentRenderPass->GetRHIRenderPass()->GetPipeline(pipelineConfig)->GetPipeline();
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 
         // Set viewport & scissor
         auto extent = VulkanContext::GetSwapChain()->GetSwapChainConfig().extent;

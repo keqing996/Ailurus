@@ -11,6 +11,10 @@ namespace Ailurus
             return itr->second.get();
     }
 
+    ShaderManager::~ShaderManager()
+    {
+    }
+
     void ShaderManager::Clear()
     {
         _library.clear();

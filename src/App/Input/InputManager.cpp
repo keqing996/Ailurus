@@ -1,5 +1,6 @@
 #include "Ailurus/Application/Input/InputManager.h"
 
+#include <Ailurus/Application/Application.h>
 #include <SDL3/SDL.h>
 
 namespace Ailurus
@@ -169,8 +170,7 @@ namespace Ailurus
         }
     }
 
-    InputManager::InputManager(void* pSdlWindow)
-        : _pSDLWindow(pSdlWindow)
+    InputManager::InputManager()
     {
         float x, y;
         SDL_GetMouseState(&x, &y);
@@ -233,10 +233,10 @@ namespace Ailurus
         _mouseWheel = Vector2f(0, 0);
     }
 
-    void InputManager::HandleEvent(const void* pEvent)
+    void InputManager::HandleEvent(void* sdlWindowPtr, const void* pEvent)
     {
         const SDL_Event* pSDLEvent = static_cast<const SDL_Event*>(pEvent);
-        const SDL_WindowID windowId = SDL_GetWindowID(static_cast<SDL_Window*>(_pSDLWindow));
+        const SDL_WindowID windowId = SDL_GetWindowID(static_cast<SDL_Window*>(sdlWindowPtr));
 
         switch (pSDLEvent->type)
         {

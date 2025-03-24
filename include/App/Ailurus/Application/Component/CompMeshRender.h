@@ -1,18 +1,18 @@
 #pragma once
 
 #include <memory>
-#include "Ailurus/Utility/NonCopyable.h"
+#include "BaseComponent.h"
 #include "Ailurus/Application/Assets/Mesh.h"
 
 namespace Ailurus
 {
 	class Material;
 
-	class MeshRender : public NonCopyable
+	class CompMeshRender : public Component
 	{
 	public:
-		MeshRender();
-		~MeshRender() override;
+		CompMeshRender();
+		~CompMeshRender() override;
 
 	public:
 		Mesh* GetMesh() const;

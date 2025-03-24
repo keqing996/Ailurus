@@ -10,13 +10,12 @@ namespace Ailurus
 {
 	class Material;
 	class RenderPass;
-	class MeshRender;
+	class CompMeshRender;
 	class Flight;
 
 	class RenderManager : public NonCopyable
 	{
 	public:
-		RenderManager();
 		~RenderManager() override;
 
 	public:
@@ -27,13 +26,17 @@ namespace Ailurus
 		Material* AddMaterial(const std::string& name);
 
 		// Draw
-		void RenderScene(std::vector<MeshRender*>& objectList);
+		void RenderScene(std::vector<CompMeshRender*>& objectList);
+
+	private:
+		friend class Application;
+		RenderManager();
 
 	private:
 		void ReBuildSwapChain();
 		void BuildRenderPass();
-		void RenderForwardPass(std::vector<MeshRender*>& objectList, const Flight* pFlight);
-		void RenderMesh(const Flight* pFlight, const MeshRender* pMeshRender) const;
+		void RenderForwardPass(std::vector<CompMeshRender*>& objectList, const Flight* pFlight);
+		void RenderMesh(const Flight* pFlight, const CompMeshRender* pMeshRender) const;
 
 	private:
 		bool _needRebuildSwapChain = false;

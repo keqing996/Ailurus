@@ -2,14 +2,15 @@
 
 #include <memory>
 #include <unordered_map>
+#include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Application/Shader/Shader.h"
 
 namespace Ailurus
 {
-	class ShaderManager
+	class ShaderManager: public NonCopyable
 	{
 	public:
-		ShaderManager() = default;
+		~ShaderManager() override;
 
 	public:
 		void Clear();
@@ -20,6 +21,10 @@ namespace Ailurus
 		{
 			return GetShader(stage, path);
 		}
+
+	private:
+		friend class Application;
+		ShaderManager() = default;
 
 	private:
 		Shader* LoadShader(ShaderStage stage, const std::string& path);

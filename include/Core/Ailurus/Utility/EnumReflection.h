@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <array>
 #include <string>
 #include <sstream>
@@ -94,7 +95,7 @@ namespace Ailurus
 
 #define REFLECTION_ENUM(EnumName,...)                           \
                                                                 \
-enum class EnumName : int                                       \
+enum class EnumName : uint32_t                                  \
 {                                                               \
     __VA_ARGS__                                                 \
 };                                                              \
