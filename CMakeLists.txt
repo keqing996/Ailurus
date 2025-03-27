@@ -2,45 +2,31 @@ cmake_minimum_required(VERSION 3.22)
 
 project (AILURUS_INFRASTRUCTURE)
 set (CMAKE_CXX_STANDARD 20)
-set (AILURUS_TARGET_NAME ailurus)
+set (CMAKE_COLOR_DIAGNOSTICS ON)
 
-# SDL
-set (SDL_STATIC ON) # static link sdl
-set (SDL_SHARED OFF)
-add_subdirectory(submodule/sdl)
-
-# spdlog
-add_subdirectory(submodule/spdlog)
-
-# Vulkan
-find_package(Vulkan REQUIRED)
-
-# Set output path
-set (LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/artifacts/${CMAKE_CXX_COMPILER_ID}/${CMAKE_BUILD_TYPE}/)
+add_subdirectory(submodule)
+add_subdirectory(thirdparty)
 
 # Source files
-file (GLOB_RECURSE AILURUS_SRC ./src/*.cpp)
+file (GLOB_RECURSE AILURUS_CORE_SRC ./src/Core/*.cpp)
+file (GLOB_RECURSE AILURUS_APP_SRC ./src/App/*.cpp)
 
-set (AILURUS_IMGUI_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_draw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_tables.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/imgui_widgets.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_vulkan.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/backends/imgui_impl_sdl3.cpp
-)
-
-# Library
-add_library                 (${AILURUS_TARGET_NAME} STATIC ${AILURUS_SRC} ${AILURUS_IMGUI_SRC})
-target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
-target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/)
-target_include_directories  (${AILURUS_TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/submodule/imgui/) # for imgui source
-target_link_libraries       (${AILURUS_TARGET_NAME} PUBLIC SDL3-static Vulkan::Vulkan spdlog)
+# Core Library
+add_library                 (ailurus-core STATIC ${AILURUS_CORE_SRC})
+target_include_directories  (ailurus-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/Core/)
+target_link_libraries       (ailurus-core PRIVATE stb_image spdlog)
 
 if (WIN32)
-    target_link_libraries   (${AILURUS_TARGET_NAME} PRIVATE wsock32 ws2_32) # for socket
-    target_link_libraries   (${AILURUS_TARGET_NAME} PRIVATE dwmapi) # to fix some 'DwmXXX' link errors under mingw
+    target_link_libraries   (ailurus-core PRIVATE wsock32 ws2_32) # for socket
+    target_link_libraries   (ailurus-core PRIVATE dwmapi) # to fix some 'DwmXXX' link errors under mingw
 endif ()
+
+# App Library
+add_library                 (ailurus-app STATIC ${AILURUS_APP_SRC})
+target_include_directories  (ailurus-app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/App/)
+target_include_directories  (ailurus-app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/App/)
+target_link_libraries       (ailurus-app PUBLIC imgui ailurus-core)
+target_link_libraries       (ailurus-app PRIVATE SDL3-static vulkan_hpp)
 
 # Test code
 option (AILURUS_ENABLE_TEST OFF)
