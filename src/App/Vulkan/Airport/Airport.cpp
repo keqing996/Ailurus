@@ -43,13 +43,22 @@ namespace Ailurus
         VulkanContext::GetDevice().freeCommandBuffers(VulkanContext::GetCommandPool(), _vkCommandBuffers);
     }
 
-    std::optional<Flight> Airport::WaitNextFlight(const SwapChain* pSwapChain, bool* needRebuild)
-    {
+    std::optional<Flight> Airport::WaitNextFlight(bool* needRebuild) const
+	{
         Flight flight;
         flight.commandBuffer = _vkCommandBuffers[_currentFlightIndex];
         flight.imageReadySemaphore = _vkImageReadySemaphore[_currentFlightIndex];
         flight.renderFinishSemaphore = _vkFinishRenderSemaphore[_currentFlightIndex];
         flight.fence = _vkFences[_currentFlightIndex];
+
+    	// Wait fence
+    	auto waitFence = VulkanContext::GetDevice().waitForFences(flight.fence, true,
+			std::numeric_limits<uint64_t>::max());
+    	if (waitFence != vk::Result::eSuccess)
+    	{
+    		Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
+    		return std::nullopt;
+    	}
 
         // Acquire swap chain next image
         auto acquireImage = VulkanContext::GetDevice().acquireNextImageKHR(
@@ -72,21 +81,12 @@ namespace Ailurus
 
         flight.imageIndex = acquireImage.value;
 
-        // Wait fence
-        auto waitFence = VulkanContext::GetDevice().waitForFences( flight.fence, true,
-            std::numeric_limits<uint64_t>::max());
-        if (waitFence != vk::Result::eSuccess)
-        {
-            Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
-            return std::nullopt;
-        }
-
-        VulkanContext::GetDevice().resetFences(flight.fence);
+    	VulkanContext::GetDevice().resetFences(flight.fence);
 
         return flight;
     }
 
-    bool Airport::TakeOff(const Flight& flight, const SwapChain* pSwapChain, bool* needRebuild)
+    bool Airport::TakeOff(const Flight& flight, bool* needRebuild)
     {
         std::array<vk::PipelineStageFlags, 1> waitStages = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
@@ -100,10 +100,10 @@ namespace Ailurus
 
         vk::PresentInfoKHR presentInfo;
         presentInfo.setWaitSemaphores(flight.renderFinishSemaphore)
-                .setSwapchains(pSwapChain->GetSwapChain())
+                .setSwapchains(VulkanContext::GetSwapChain()->GetSwapChain())
                 .setImageIndices(flight.imageIndex);
 
-        auto present = VulkanContext::GetPresentQueue().presentKHR(presentInfo);
+        const auto present = VulkanContext::GetPresentQueue().presentKHR(presentInfo);
         switch (present)
         {
             case vk::Result::eErrorOutOfDateKHR:

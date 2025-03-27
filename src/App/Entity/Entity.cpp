@@ -12,7 +12,8 @@ namespace Ailurus
 	{
 		for (const auto& pComp : _components)
 		{
-			if (Component::IsDerivedFrom(pComp->GetType(), type))
+			const auto compType = pComp->GetType();
+			if (compType == type || Component::IsDerivedFrom(compType, type))
 				return pComp.get();
 		}
 

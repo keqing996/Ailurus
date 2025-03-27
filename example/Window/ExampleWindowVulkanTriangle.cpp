@@ -20,25 +20,26 @@ int Main(int argc, char* argv[])
 
 	VertexAttributeDescription desc{ AttributeType::Vector2, AttributeType::Vector3 };
 
-	auto pMesh = std::make_shared<Mesh>(
+	Application::Create(800, 600, "Triangle", Application::Style{});
+	{
+		auto pMesh = std::make_shared<Mesh>(
 		vertices.data(), vertices.size() * sizeof(float),
 		desc, IndexBufferFormat::UInt16,
 		indices.data(), indices.size() * sizeof(uint16_t));
 
-	auto pMaterial = std::make_shared<Material>();
-	pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Vertex, "./triangle.vert.spv");
-	pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Fragment, "./triangle.frag.spv");
+		auto pMaterial = std::make_shared<Material>();
+		pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Vertex, "./triangle.vert.spv");
+		pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Fragment, "./triangle.frag.spv");
 
-	Application::Create(800, 600, "Triangle", Application::Style{});
-
-	auto pEntityWeak = Application::GetSceneManager().CreateEntity();
-	if (auto pEntity = pEntityWeak.lock())
-	{
-		auto pMeshRender = pEntity->AddComponent<CompMeshRender>(ComponentType::MeshRender);
-		if (pMeshRender != nullptr)
+		auto pEntityWeak = Application::GetSceneManager().CreateEntity();
+		if (auto pEntity = pEntityWeak.lock())
 		{
-			pMeshRender->SetMesh(pMesh);
-			pMeshRender->SetMaterial(pMaterial);
+			auto pMeshRender = pEntity->AddComponent<CompMeshRender>(ComponentType::MeshRender);
+			if (pMeshRender != nullptr)
+			{
+				pMeshRender->SetMesh(pMesh);
+				pMeshRender->SetMaterial(pMaterial);
+			}
 		}
 	}
 

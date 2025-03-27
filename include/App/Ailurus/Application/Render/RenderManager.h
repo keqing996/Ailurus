@@ -35,7 +35,7 @@ namespace Ailurus
 	private:
 		void ReBuildSwapChain();
 		void BuildRenderPass();
-		void RenderForwardPass(std::vector<CompMeshRender*>& objectList, const Flight* pFlight);
+		void RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList, const Flight* pFlight);
 		void RenderMesh(const Flight* pFlight, const CompMeshRender* pMeshRender) const;
 
 	private:

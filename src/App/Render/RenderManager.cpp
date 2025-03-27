@@ -44,8 +44,7 @@ namespace Ailurus
 		if (_needRebuildSwapChain)
 			ReBuildSwapChain();
 
-		const auto pSwapChain = VulkanContext::GetSwapChain();
-		const auto opFlight = VulkanContext::GetAirport()->WaitNextFlight(pSwapChain, &_needRebuildSwapChain);
+		const auto opFlight = VulkanContext::GetAirport()->WaitNextFlight(&_needRebuildSwapChain);
 		if (!opFlight.has_value())
 			return;
 
@@ -76,7 +75,7 @@ namespace Ailurus
 		flight.commandBuffer.end();
 
 		// Fire
-		VulkanContext::GetAirport()->TakeOff(flight, pSwapChain, &_needRebuildSwapChain);
+		VulkanContext::GetAirport()->TakeOff(flight, &_needRebuildSwapChain);
 	}
 
 	void RenderManager::ReBuildSwapChain()
@@ -92,7 +91,7 @@ namespace Ailurus
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
 	}
 
-	void RenderManager::RenderForwardPass(std::vector<CompMeshRender*>& objectList, const Flight* pFlight)
+	void RenderManager::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList, const Flight* pFlight)
 	{
 		if (_pCurrentRenderPass != nullptr)
 		{
@@ -106,7 +105,7 @@ namespace Ailurus
 			_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(*pFlight),
 			{});
 
-		for (const auto pMeshRender : objectList)
+		for (const auto pMeshRender : meshRenderList)
 			RenderMesh(pFlight, pMeshRender);
 
 		pFlight->commandBuffer.endRenderPass();
