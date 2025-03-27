@@ -13,146 +13,159 @@
 
 namespace Ailurus
 {
-    RenderManager::RenderManager()
-    {
-        BuildRenderPass();
-    }
+	RenderManager::RenderManager()
+	{
+		BuildRenderPass();
+	}
 
-    RenderManager::~RenderManager() = default;
+	RenderManager::~RenderManager() = default;
 
-    void RenderManager::NeedRecreateSwapChain()
-    {
-        _needRebuildSwapChain = true;
-    }
+	void RenderManager::NeedRecreateSwapChain()
+	{
+		_needRebuildSwapChain = true;
+	}
 
-    Material* RenderManager::GetMaterial(const std::string& name) const
-    {
-        if (const auto itr = _materialMap.find(name); itr != _materialMap.end())
-            return itr->second.get();
+	Material* RenderManager::GetMaterial(const std::string& name) const
+	{
+		if (const auto itr = _materialMap.find(name); itr != _materialMap.end())
+			return itr->second.get();
 
-        return nullptr;
-    }
+		return nullptr;
+	}
 
-    Material* RenderManager::AddMaterial(const std::string& name)
-    {
-        _materialMap[name] = std::make_unique<Material>();
-        return GetMaterial(name);
-    }
+	Material* RenderManager::AddMaterial(const std::string& name)
+	{
+		_materialMap[name] = std::make_unique<Material>();
+		return GetMaterial(name);
+	}
 
-    void RenderManager::RenderScene(std::vector<CompMeshRender*>& objectList)
-    {
-        if (_needRebuildSwapChain)
-            ReBuildSwapChain();
+	void RenderManager::RenderScene()
+	{
+		if (_needRebuildSwapChain)
+			ReBuildSwapChain();
 
-        auto pSwapChain = VulkanContext::GetSwapChain();
-        auto opFlight = VulkanContext::GetAirport()->WaitNextFlight(pSwapChain, &_needRebuildSwapChain);
-        if (!opFlight.has_value())
-            return;
+		const auto pSwapChain = VulkanContext::GetSwapChain();
+		const auto opFlight = VulkanContext::GetAirport()->WaitNextFlight(pSwapChain, &_needRebuildSwapChain);
+		if (!opFlight.has_value())
+			return;
 
-        auto flight = opFlight.value();
+		const auto flight = opFlight.value();
 
-        // Begin
-        vk::CommandBufferBeginInfo beginInfo;
-        beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-        flight.commandBuffer.begin(beginInfo);
+		// Prepare objects
+		std::vector<Entity*> allEntities = Application::GetSceneManager().GetAllRawEntities();
+		std::vector<CompMeshRender*> allMeshRender;
+		allMeshRender.reserve(allEntities.size());
+		for (auto pEntity : allEntities)
+		{
+			if (auto pMeshRender = pEntity->GetComponent<CompMeshRender>(ComponentType::MeshRender);
+				pMeshRender != nullptr)
+			{
+				allMeshRender.push_back(pMeshRender);
+			}
+		}
 
-        // Render pass
-        RenderForwardPass(objectList, &flight);
+		// Begin
+		vk::CommandBufferBeginInfo beginInfo;
+		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		flight.commandBuffer.begin(beginInfo);
 
-        // End
-        flight.commandBuffer.end();
+		// Render pass
+		RenderForwardPass(allMeshRender, &flight);
 
-        // Fire
-        VulkanContext::GetAirport()->TakeOff(flight, pSwapChain, &_needRebuildSwapChain);
-    }
+		// End
+		flight.commandBuffer.end();
 
-    void RenderManager::ReBuildSwapChain()
-    {
-        _renderPassMap.clear();
-        VulkanContext::RebuildDynamicContext();
-        BuildRenderPass();
-        _needRebuildSwapChain = false;
-    }
+		// Fire
+		VulkanContext::GetAirport()->TakeOff(flight, pSwapChain, &_needRebuildSwapChain);
+	}
 
-    void RenderManager::BuildRenderPass()
-    {
-        _renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
-    }
+	void RenderManager::ReBuildSwapChain()
+	{
+		_renderPassMap.clear();
+		VulkanContext::RebuildDynamicContext();
+		BuildRenderPass();
+		_needRebuildSwapChain = false;
+	}
 
-    void RenderManager::RenderForwardPass(std::vector<CompMeshRender*>& objectList, const Flight* pFlight)
-    {
-        if (_pCurrentRenderPass != nullptr)
-        {
-            Logger::LogError("Command buffer begin render pass while last render pass not ended");
-            return;
-        }
+	void RenderManager::BuildRenderPass()
+	{
+		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
+	}
 
-        _pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
+	void RenderManager::RenderForwardPass(std::vector<CompMeshRender*>& objectList, const Flight* pFlight)
+	{
+		if (_pCurrentRenderPass != nullptr)
+		{
+			Logger::LogError("Command buffer begin render pass while last render pass not ended");
+			return;
+		}
 
-        pFlight->commandBuffer.beginRenderPass(
-            _pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(*pFlight),
-            {});
+		_pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
 
-        for (const auto pMeshRender: objectList)
-            RenderMesh(pFlight, pMeshRender);
+		pFlight->commandBuffer.beginRenderPass(
+			_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(*pFlight),
+			{});
 
-        pFlight->commandBuffer.endRenderPass();
+		for (const auto pMeshRender : objectList)
+			RenderMesh(pFlight, pMeshRender);
 
-        _pCurrentRenderPass = nullptr;
-    }
+		pFlight->commandBuffer.endRenderPass();
 
-    void RenderManager::RenderMesh(const Flight* pFlight, const CompMeshRender* pMeshRender) const
-    {
-        if (pMeshRender == nullptr)
-            return;
+		_pCurrentRenderPass = nullptr;
+	}
 
-        if (_pCurrentRenderPass == nullptr)
-        {
-            Logger::LogError("Command buffer draw object but not in any render pass");
-            return;
-        }
+	void RenderManager::RenderMesh(const Flight* pFlight, const CompMeshRender* pMeshRender) const
+	{
+		if (pMeshRender == nullptr)
+			return;
 
-        const auto commandBuffer = pFlight->commandBuffer;
-        const auto pMesh = pMeshRender->GetMesh();
-        const auto pMaterial = pMeshRender->GetMaterial();
+		if (_pCurrentRenderPass == nullptr)
+		{
+			Logger::LogError("Command buffer draw object but not in any render pass");
+			return;
+		}
 
-        if (pMesh == nullptr || pMaterial == nullptr)
-            return;
+		const auto commandBuffer = pFlight->commandBuffer;
+		const auto pMesh = pMeshRender->GetMesh();
+		const auto pMaterial = pMeshRender->GetMaterial();
 
-        auto optStageShaders = pMaterial->GetStageShaderArray(_pCurrentRenderPass->GetRenderPassType());
-        if (!optStageShaders.has_value())
-            return; // This object should not be drawn under this pass;
+		if (pMesh == nullptr || pMaterial == nullptr)
+			return;
 
-        // Bind pipeline
-        PipelineConfig pipelineConfig;
-        pipelineConfig.pMesh = pMesh;
-        pipelineConfig.shaderStages = optStageShaders.value();
-        vk::Pipeline pipeline = _pCurrentRenderPass->GetRHIRenderPass()->GetPipeline(pipelineConfig)->GetPipeline();
-        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+		auto optStageShaders = pMaterial->GetStageShaderArray(_pCurrentRenderPass->GetRenderPassType());
+		if (!optStageShaders.has_value())
+			return; // This object should not be drawn under this pass;
 
-        // Set viewport & scissor
-        auto extent = VulkanContext::GetSwapChain()->GetSwapChainConfig().extent;
-        vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
-        vk::Rect2D scissor(vk::Offset2D{0, 0}, extent);
-        commandBuffer.setViewport(0, 1, &viewport);
-        commandBuffer.setScissor(0, 1, &scissor);
+		// Bind pipeline
+		PipelineConfig pipelineConfig;
+		pipelineConfig.pMesh = pMesh;
+		pipelineConfig.shaderStages = optStageShaders.value();
+		vk::Pipeline pipeline = _pCurrentRenderPass->GetRHIRenderPass()->GetPipeline(pipelineConfig)->GetPipeline();
+		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 
-        // Bind vertex buffer
-        vk::Buffer vertexBuffers[] = {pMesh->GetVertexBuffer()->GetBuffer()};
-        vk::DeviceSize offsets[] = {0};
-        commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+		// Set viewport & scissor
+		auto extent = VulkanContext::GetSwapChain()->GetSwapChainConfig().extent;
+		vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
+		vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
+		commandBuffer.setViewport(0, 1, &viewport);
+		commandBuffer.setScissor(0, 1, &scissor);
 
-        // Draw by index
-        auto pIndexBuffer = pMesh->GetIndexBuffer();
-        if (pIndexBuffer != nullptr)
-        {
-            commandBuffer.bindIndexBuffer(pIndexBuffer->GetBuffer(), 0, pIndexBuffer->GetIndexType());
-            commandBuffer.drawIndexed(pIndexBuffer->GetIndexCount(), 1, 0, 0, 0);
-        }
-        // Draw by vertex
-        else
-        {
-            commandBuffer.draw(pMesh->GetVertexCount(), 1, 0, 0);
-        }
-    }
+		// Bind vertex buffer
+		vk::Buffer vertexBuffers[] = { pMesh->GetVertexBuffer()->GetBuffer() };
+		vk::DeviceSize offsets[] = { 0 };
+		commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+		// Draw by index
+		auto pIndexBuffer = pMesh->GetIndexBuffer();
+		if (pIndexBuffer != nullptr)
+		{
+			commandBuffer.bindIndexBuffer(pIndexBuffer->GetBuffer(), 0, pIndexBuffer->GetIndexType());
+			commandBuffer.drawIndexed(pIndexBuffer->GetIndexCount(), 1, 0, 0, 0);
+		}
+		// Draw by vertex
+		else
+		{
+			commandBuffer.draw(pMesh->GetVertexCount(), 1, 0, 0);
+		}
+	}
 } // namespace Ailurus

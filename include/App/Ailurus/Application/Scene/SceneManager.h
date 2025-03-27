@@ -17,7 +17,7 @@ namespace Ailurus
 		std::weak_ptr<Entity> GetEntity(uint32_t guid) const;
 		bool DestroyEntity(uint32_t guid);
 		bool DestroyEntity(const std::weak_ptr<Entity>& pEntity);
-		void GetAllRawEntities(std::vector<Entity*>& container) const;
+		std::vector<Entity*> GetAllRawEntities() const;
 
 	private:
 		friend class Application;

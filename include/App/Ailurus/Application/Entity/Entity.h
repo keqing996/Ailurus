@@ -10,11 +10,18 @@ namespace Ailurus
 	class Entity
 	{
 	public:
-		Entity(const Entity& rhs) = delete;			   // temp
-		Entity& operator=(const Entity& rhs) = delete; // temp
+		Entity(const Entity& rhs) = delete;
+		Entity& operator=(const Entity& rhs) = delete;
 
 	public:
 		uint32_t GetGuid() const;
+		Component* GetComponent(ComponentType type) const;
+
+		template <typename T>
+		T* GetComponent(ComponentType type) const
+		{
+			return reinterpret_cast<T*>(GetComponent(type));
+		}
 
 	private:
 		friend class SceneManager;
@@ -22,6 +29,6 @@ namespace Ailurus
 
 	private:
 		uint32_t _guid;
-		std::vector<std::unique_ptr<BaseComponent>> _components;
+		std::vector<std::unique_ptr<Component>> _components;
 	};
 } // namespace Ailurus

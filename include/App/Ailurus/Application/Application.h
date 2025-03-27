@@ -9,6 +9,7 @@
 #include "Shader/ShaderManager.h"
 #include "Render/RenderManager.h"
 #include "Assets/AssetsManager.h"
+#include "Scene/SceneManager.h"
 #include "ImGui/ImGui.h"
 #include "Ailurus/Math/Vector.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
@@ -140,6 +141,8 @@ namespace Ailurus
 
         static ShaderManager& GetShaderManager();
 
+        static SceneManager& GetSceneManager();
+
     private:
         static void EventLoop(bool* quitLoop);
 
@@ -168,6 +171,7 @@ namespace Ailurus
         static std::unique_ptr<InputManager> _pInputManager;
         static std::unique_ptr<RenderManager> _pRenderManager;
         static std::unique_ptr<ShaderManager> _pShaderManager;
+        static std::unique_ptr<SceneManager> _pSceneManager;
 
         // ImGui
         static std::unique_ptr<ImGui> _pImGui;

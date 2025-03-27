@@ -6,6 +6,11 @@ namespace Ailurus
 
 	CompMeshRender::~CompMeshRender() = default;
 
+	ComponentType CompMeshRender::GetType() const
+	{
+		return ComponentType::MeshRender;
+	}
+
 	Mesh* CompMeshRender::GetMesh() const
 	{
 		return _pMesh.get();

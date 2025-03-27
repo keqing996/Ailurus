@@ -26,7 +26,7 @@ namespace Ailurus
 		Material* AddMaterial(const std::string& name);
 
 		// Draw
-		void RenderScene(std::vector<CompMeshRender*>& objectList);
+		void RenderScene();
 
 	private:
 		friend class Application;

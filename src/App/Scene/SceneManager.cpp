@@ -42,12 +42,12 @@ namespace Ailurus
 		return false;
 	}
 
-	void SceneManager::GetAllRawEntities(std::vector<Entity*>& container) const
+	std::vector<Entity*> SceneManager::GetAllRawEntities() const
 	{
-		container.clear();
-		container.reserve(_entityMap.size());
+		std::vector<Entity*> result;
+		result.reserve(_entityMap.size());
 		for (const auto kvp : _entityMap)
-			container.push_back(kvp.second.get());
+			result.push_back(kvp.second.get());
 	}
 
 	SceneManager::SceneManager()
