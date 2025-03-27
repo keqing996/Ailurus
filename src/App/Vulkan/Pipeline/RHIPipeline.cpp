@@ -1,6 +1,5 @@
 #include "RHIPipeline.h"
 #include "Ailurus/Application/Shader/Shader.h"
-#include "Ailurus/Application/RenderPass/RenderPass.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Assets/Mesh.h"
 #include "Vulkan/Context/VulkanContext.h"
@@ -51,7 +50,7 @@ namespace Ailurus
 		return result;
 	}
 
-	Pipeline::Pipeline(const RenderPass* pRenderPass, const PipelineConfig& config)
+	Pipeline::Pipeline(const RHIRenderPass* pRenderPass, const PipelineConfig& config)
 	{
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setSetLayouts(nullptr);
@@ -60,8 +59,9 @@ namespace Ailurus
 
 		// Shader stages
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
-		for (const Shader* pShader : config.shaderStages)
+		for (auto i = 0; i < StageShaderArray::Size(); i++)
 		{
+			const Shader* pShader = config.shaderStages[i];
 			if (pShader == nullptr)
 				continue;
 
@@ -149,7 +149,7 @@ namespace Ailurus
 			.setPColorBlendState(&colorBlending)
 			.setPDynamicState(&dynamicState)
 			.setLayout(_vkPipelineLayout)
-			.setRenderPass(pRenderPass->GetRHIRenderPass()->GetRenderPass())
+			.setRenderPass(pRenderPass->GetRenderPass())
 			.setSubpass(0)
 			.setBasePipelineHandle(nullptr);
 

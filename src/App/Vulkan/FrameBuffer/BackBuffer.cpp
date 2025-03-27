@@ -1,7 +1,8 @@
 #include "BackBuffer.h"
+#include "Ailurus/Application/RenderPass/RenderPass.h"
 #include "Vulkan/Context/VulkanContext.h"
+#include "Vulkan/RenderPass/RHIRenderPass.h"
 #include "Vulkan/SwapChain/SwapChain.h"
-#include "Vulkan/RenderPass/RenderPass.h"
 
 namespace Ailurus
 {
@@ -13,7 +14,7 @@ namespace Ailurus
         for (auto i = 0; i < swapChainImageViews.size(); i++)
         {
             vk::FramebufferCreateInfo framebufferInfo;
-            framebufferInfo.setRenderPass(pRenderPass->GetRenderPass())
+            framebufferInfo.setRenderPass(pRenderPass->GetRHIRenderPass()->GetRenderPass())
                     .setAttachments(swapChainImageViews[i])
                     .setWidth(extent.width)
                     .setHeight(extent.height)

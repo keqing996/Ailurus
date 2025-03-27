@@ -48,6 +48,8 @@ namespace Ailurus
 		result.reserve(_entityMap.size());
 		for (const auto kvp : _entityMap)
 			result.push_back(kvp.second.get());
+
+		return result;
 	}
 
 	SceneManager::SceneManager()

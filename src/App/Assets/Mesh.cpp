@@ -5,14 +5,15 @@
 namespace Ailurus
 {
 
-	Mesh::Mesh(const char* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute)
+	Mesh::Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute)
 		: _pVertexBuffer(std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes))
 		, _vertexAttrDesc(vertexDataAttribute)
 		, _pIndexBuffer(nullptr)
 	{
 	}
 
-	Mesh::Mesh(const char* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute, IndexBufferFormat format, const char* indexData, size_t indexDtaSizeInBytes)
+	Mesh::Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute,
+		IndexBufferFormat format, const void* indexData, size_t indexDtaSizeInBytes)
 		: _pVertexBuffer(std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes))
 		, _vertexAttrDesc(vertexDataAttribute)
 		, _pIndexBuffer(std::make_unique<IndexBuffer>(format, indexData, indexDtaSizeInBytes))

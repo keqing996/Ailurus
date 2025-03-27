@@ -25,6 +25,7 @@ namespace Ailurus
 
 		static vk::Device GetDevice();
 		static vk::PhysicalDevice GetPhysicalDevice();
+		static vk::SurfaceKHR GetSurface();
 		static uint32_t GetPresentQueueIndex();
 		static uint32_t GetComputeQueueIndex();
 		static uint32_t GetGraphicQueueIndex();

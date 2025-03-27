@@ -4,7 +4,7 @@
 
 namespace Ailurus
 {
-    VertexBuffer::VertexBuffer(const char* vertexData, size_t dataSizeInBytes)
+    VertexBuffer::VertexBuffer(const void* vertexData, size_t dataSizeInBytes)
         : _buffer(nullptr)
         , _size(dataSizeInBytes)
         , _bufferMemory(nullptr)

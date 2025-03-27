@@ -19,7 +19,7 @@ namespace Ailurus
 
     public:
         static std::optional<BufferWithMem>
-        CreateBuffer(BufferType type, const char* bufferData, size_t bufferSizeInBytes);
+        CreateBuffer(BufferType type, const void* bufferData, size_t bufferSizeInBytes);
 
         static std::optional<BufferWithMem>
         CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties);

@@ -92,7 +92,6 @@ namespace Ailurus
 			_pShaderManager = nullptr;
 			_pRenderManager = nullptr;
 			_pInputManager = nullptr;
-			_pImGui = nullptr;
 
 			VulkanContext::Destroy(VulkanContextDestroySurface);
 
@@ -315,11 +314,6 @@ namespace Ailurus
 	SceneManager& Application::GetSceneManager()
 	{
 		return *_pSceneManager.get();
-	}
-
-	ImGui* Application::GetImGui()
-	{
-		return _pImGui.get();
 	}
 
 	void Application::EventLoop(bool* quitLoop)

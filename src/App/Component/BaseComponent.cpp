@@ -1,4 +1,6 @@
 #include "Ailurus/Application/Component/BaseComponent.h"
+#include "Ailurus/Utility/Logger.h"
+#include "Ailurus/Application/Component/CompMeshRender.h"
 
 namespace Ailurus
 {
@@ -12,5 +14,18 @@ namespace Ailurus
 			return it->second == base || IsDerivedFrom(it->second, base);
 
 		return false;
+	}
+
+	std::unique_ptr<Component> Component::CreateComponent(ComponentType type)
+	{
+		switch (type)
+		{
+			case ComponentType::MeshRender:
+				return std::make_unique<CompMeshRender>();
+			default:
+				Logger::LogError("Component type {} can not be created.",
+					EnumReflection<ComponentType>::ToString(type));
+				return nullptr;
+		}
 	}
 } // namespace Ailurus

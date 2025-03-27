@@ -6,7 +6,7 @@
 namespace Ailurus
 {
     std::optional<BufferWithMem>
-    DataBufferUtil::CreateBuffer(BufferType type, const char* bufferData, size_t bufferSizeInBytes)
+    DataBufferUtil::CreateBuffer(BufferType type, const void* bufferData, size_t bufferSizeInBytes)
     {
         auto stagingBufferRet = CreateBuffer(bufferSizeInBytes, vk::BufferUsageFlagBits::eTransferSrc,
             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);

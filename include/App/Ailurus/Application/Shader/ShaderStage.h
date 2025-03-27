@@ -15,19 +15,34 @@ namespace Ailurus
 	{
 		const Shader* shaders[EnumReflection<ShaderStage>::Size()];
 
+		constexpr static size_t Size()
+		{
+			return EnumReflection<ShaderStage>::Size();
+		}
+
 		const Shader* operator[](ShaderStage stage) const
 		{
-			return shaders[static_cast<int>(stage)];
+			return shaders[static_cast<size_t>(stage)];
 		}
 
 		const Shader*& operator[](ShaderStage stage)
 		{
-			return shaders[static_cast<int>(stage)];
+			return shaders[static_cast<size_t>(stage)];
+		}
+
+		const Shader* operator[](size_t index) const
+		{
+			return shaders[index];
+		}
+
+		const Shader*& operator[](size_t index)
+		{
+			return shaders[index];
 		}
 
 		bool operator==(const StageShaderArray& rhs) const
 		{
-			for (auto i = 0; i < EnumReflection<ShaderStage>::Size(); i++)
+			for (auto i = 0; i < Size(); i++)
 			{
 				if (shaders[i] != rhs.shaders[i])
 					return false;

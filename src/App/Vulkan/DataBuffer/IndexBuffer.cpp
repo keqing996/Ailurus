@@ -5,61 +5,61 @@
 
 namespace Ailurus
 {
-    IndexBuffer::IndexBuffer(IndexBufferFormat format, const char* indexData, size_t sizeInBytes)
-    {
-        switch (format)
-        {
-            case IndexBufferFormat::UInt16:
-            {
-                _indexType = vk::IndexType::eUint16;
-                _indexCount = sizeInBytes / sizeof(uint16_t);
-                if (sizeInBytes % sizeof(uint16_t) != 0)
-                    Logger::LogError("Index buffer data size is not a multiple of uint16_t");
-                break;
-            }
-            case IndexBufferFormat::UInt32:
-            {
-                _indexType = vk::IndexType::eUint32;
-                _indexCount = sizeInBytes / sizeof(uint32_t);
-                if (sizeInBytes % sizeof(uint32_t) != 0)
-                    Logger::LogError("Index buffer data size is not a multiple of uint32_t");
-                break;
-            }
-            default:
-            {
-                Logger::LogError("Index buffer type {} does not have related vulkan type",
-                    EnumReflection<IndexBufferFormat>::ToString(format));
-                return;
-            }
-        }
+	IndexBuffer::IndexBuffer(IndexBufferFormat format, const void* indexData, size_t sizeInBytes)
+	{
+		switch (format)
+		{
+			case IndexBufferFormat::UInt16:
+			{
+				_indexType = vk::IndexType::eUint16;
+				_indexCount = sizeInBytes / sizeof(uint16_t);
+				if (sizeInBytes % sizeof(uint16_t) != 0)
+					Logger::LogError("Index buffer data size is not a multiple of uint16_t");
+				break;
+			}
+			case IndexBufferFormat::UInt32:
+			{
+				_indexType = vk::IndexType::eUint32;
+				_indexCount = sizeInBytes / sizeof(uint32_t);
+				if (sizeInBytes % sizeof(uint32_t) != 0)
+					Logger::LogError("Index buffer data size is not a multiple of uint32_t");
+				break;
+			}
+			default:
+			{
+				Logger::LogError("Index buffer type {} does not have related vulkan type",
+					EnumReflection<IndexBufferFormat>::ToString(format));
+				return;
+			}
+		}
 
-        auto ret = DataBufferUtil::CreateBuffer(BufferType::Index, indexData, sizeInBytes);
-        if (!ret)
-            return;
+		auto ret = DataBufferUtil::CreateBuffer(BufferType::Index, indexData, sizeInBytes);
+		if (!ret)
+			return;
 
-        _buffer = ret->buffer;
-        _bufferMemory = ret->deviceMemory;
-    }
+		_buffer = ret->buffer;
+		_bufferMemory = ret->deviceMemory;
+	}
 
-    IndexBuffer::~IndexBuffer()
-    {
-        const auto device = VulkanContext::GetDevice();
-        device.freeMemory(_bufferMemory);
-        device.destroyBuffer(_buffer);
-    }
+	IndexBuffer::~IndexBuffer()
+	{
+		const auto device = VulkanContext::GetDevice();
+		device.freeMemory(_bufferMemory);
+		device.destroyBuffer(_buffer);
+	}
 
-    vk::IndexType IndexBuffer::GetIndexType() const
-    {
-        return _indexType;
-    }
+	vk::IndexType IndexBuffer::GetIndexType() const
+	{
+		return _indexType;
+	}
 
-    vk::Buffer IndexBuffer::GetBuffer() const
-    {
-        return _buffer;
-    }
+	vk::Buffer IndexBuffer::GetBuffer() const
+	{
+		return _buffer;
+	}
 
-    size_t IndexBuffer::GetIndexCount() const
-    {
-        return _indexCount;
-    }
-}
+	size_t IndexBuffer::GetIndexCount() const
+	{
+		return _indexCount;
+	}
+} // namespace Ailurus

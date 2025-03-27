@@ -1,5 +1,5 @@
-#include "Ailurus/Application/Render/InputAttribute.h"
-#include "../../../include/Core/Ailurus/Utility/Logger.h"
+#include "Ailurus/Application/Assets/VertexAttributeDescription.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {

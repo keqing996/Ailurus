@@ -1,14 +1,14 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "RHIPipeLineConfig.h"
+#include "RHIPipelineConfig.h"
 
 namespace Ailurus
 {
 	class Pipeline
 	{
 	public:
-		Pipeline(const class RenderPass* pRenderPass, const PipelineConfig& config);
+		Pipeline(const class RHIRenderPass* pRenderPass, const PipelineConfig& config);
 		~Pipeline();
 
 	public:

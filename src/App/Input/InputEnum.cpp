@@ -1,4 +1,4 @@
-#include "Ailurus/Window/Input/InputEnum.h"
+#include "Ailurus/Application/Input/InputEnum.h"
 
 namespace Ailurus
 {

@@ -21,5 +21,6 @@ namespace Ailurus
 
 	public:
 		static bool IsDerivedFrom(ComponentType derived, ComponentType base);
+		static std::unique_ptr<Component> CreateComponent(ComponentType type);
 	};
 } // namespace Ailurus

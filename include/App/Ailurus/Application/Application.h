@@ -135,8 +135,6 @@ namespace Ailurus
 
         static void* GetSDLWindowPtr();
 
-        static ImGui* GetImGui();
-
         static InputManager& GetInputManager();
 
         static ShaderManager& GetShaderManager();
@@ -172,8 +170,5 @@ namespace Ailurus
         static std::unique_ptr<RenderManager> _pRenderManager;
         static std::unique_ptr<ShaderManager> _pShaderManager;
         static std::unique_ptr<SceneManager> _pSceneManager;
-
-        // ImGui
-        static std::unique_ptr<ImGui> _pImGui;
     };
 }

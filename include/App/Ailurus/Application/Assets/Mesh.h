@@ -11,9 +11,9 @@ namespace Ailurus
 	class Mesh
 	{
 	public:
-		Mesh(const char* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute);
-		Mesh(const char* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute,
-			IndexBufferFormat format, const char* indexData, size_t indexDtaSizeInBytes);
+		Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute);
+		Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute,
+			IndexBufferFormat format, const void* indexData, size_t indexDtaSizeInBytes);
 		~Mesh();
 
 	public:

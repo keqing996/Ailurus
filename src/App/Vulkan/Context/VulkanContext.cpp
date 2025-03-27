@@ -13,10 +13,10 @@ namespace Ailurus
 {
 	namespace Verbose
 	{
-		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
-			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-			VkDebugUtilsMessageTypeFlagsEXT messageType,
-			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		static vk::Bool32 VKAPI_PTR DebugCallback(
+			vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+			vk::DebugUtilsMessageTypeFlagsEXT messageType,
+			const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
 			void* pUserData)
 		{
 			Logger::LogError(pCallbackData->pMessage);
@@ -166,6 +166,11 @@ namespace Ailurus
 	vk::PhysicalDevice VulkanContext::GetPhysicalDevice()
 	{
 		return _vkPhysicalDevice;
+	}
+
+	vk::SurfaceKHR VulkanContext::GetSurface()
+	{
+		return _vkSurface;
 	}
 
 	uint32_t VulkanContext::GetPresentQueueIndex()
@@ -423,7 +428,6 @@ namespace Ailurus
 	void VulkanContext::DestroyDynamicContext()
 	{
 		_pAirport.reset();
-		_pForwardPass.reset();
 		_pSwapChain.reset();
 	}
 } // namespace Ailurus
