@@ -10,7 +10,9 @@ namespace Ailurus
 		_pImpl = std::make_unique<RHIShader>(name);
 	}
 
-	Shader::~Shader() = default;
+	Shader::~Shader()
+	{
+	}
 
 	ShaderStage Shader::GetStage() const
 	{
