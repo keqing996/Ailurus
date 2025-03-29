@@ -50,7 +50,7 @@ target_link_libraries   (ailurus_example_imgui PUBLIC ailurus-app)
 
 # Process
 add_executable          (ailurus_example_process ExampleProcess.cpp)
-target_link_libraries   (ailurus_example_process PUBLIC ${AILURUS_TARGET_NAME})
+target_link_libraries   (ailurus_example_process PUBLIC ailurus-core)
 
 if (WIN32)
     # Console
