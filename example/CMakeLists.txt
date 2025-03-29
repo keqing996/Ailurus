@@ -48,6 +48,10 @@ add_custom_command(
 add_executable          (ailurus_example_imgui Window/ExampleWindowImGui.cpp ../submodule/imgui/imgui_demo.cpp)
 target_link_libraries   (ailurus_example_imgui PUBLIC ailurus-app)
 
+# Process
+add_executable          (ailurus_example_process ExampleProcess.cpp)
+target_link_libraries   (ailurus_example_process PUBLIC ${AILURUS_TARGET_NAME})
+
 if (WIN32)
     # Console
     add_executable          (ailurus_example_console ExampleConsole.cpp)

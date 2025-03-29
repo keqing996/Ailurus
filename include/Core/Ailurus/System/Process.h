@@ -2,51 +2,32 @@
 
 #include <string>
 #include <optional>
+#include <vector>
 
 namespace Ailurus
 {
-    struct ProcessHandle
+    struct Process
     {
-        void* handle;
-    };
-
-    struct ThreadHandle
-    {
-        void* handle;
-    };
-
-    struct PipeHandle
-    {
-        void* handle;
-    };
-
-    struct ProcessInfo
-    {
-        ProcessHandle hProcess;
-        ThreadHandle hThread;
-        PipeHandle hPipeChildStdIn;
-        PipeHandle hPipeChildStdOut;
-    };
-
-    class Process
-    {
-    public:
-        Process() = delete;
+        using Handle = int64_t;
+        using Pipe = int64_t;
 
     public:
-        static auto GetCurrentProcessId() -> int32_t;
-        static auto GetProcessHandle(int32_t processId) -> ProcessHandle;
-        static auto ReleaseProcessHandle(const ProcessHandle& pProcess) -> void;
-        static auto GetProcessName(const ProcessHandle& hProcess) -> std::string;
+        bool IsRunning() const;
+        int WaitFinish() const;
+        bool WriteStdin(const char* buffer, size_t size) const;
+        std::optional<size_t> ReadStdout(char* buffer, size_t maxSize) const;
+        std::optional<size_t> ReadStderr(char* buffer, size_t maxSize) const;
 
-        static auto CreateProcessAndWaitFinish(const std::string& commandLine) -> std::optional<int>;
-        static auto CreateProcessAndDetach(const std::string& commandLine) -> bool;
-        static auto CreateProcessWithPipe(const std::string& commandLine) -> std::optional<ProcessInfo>;
-        static auto WaitProcessFinish(const ProcessInfo& processInfo) -> int;
-        static auto SendDataToProcess(const ProcessInfo& processInfo, const char* buffer, int sendSize) -> std::optional<int>;
-        static auto ReadDataFromProcess(const ProcessInfo& processInfo, char* buffer, int bufferSize) -> std::optional<int>;
-        static auto DetachProcess(const ProcessInfo& processInfo) -> void;
+    public:
+        Handle handle = -1;
+        Pipe stdinPipe = -1;
+        Pipe stdoutPipe = -1;
+        Pipe stderrPipe = -1;
 
+    public:
+        static int32_t GetCurrentProcessId();
+        static std::string GetProcessName(int32_t pid);
+        static std::optional<Process> Create(const std::string& exeName, const std::vector<std::string>& argv);
     };
 
 }
