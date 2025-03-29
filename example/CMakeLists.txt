@@ -27,9 +27,6 @@ target_link_libraries   (ailurus_example_window_create PUBLIC ailurus-app)
 add_executable          (ailurus_example_window_imgui Window/ExampleWindowImGui.cpp ../submodule/imgui/imgui_demo.cpp)
 target_link_libraries   (ailurus_example_window_imgui PUBLIC ailurus-app)
 
-add_executable          (ailurus_example_window_msg_recv Window/ExampleMessageReceived.cpp)
-target_link_libraries   (ailurus_example_window_msg_recv PUBLIC ailurus-app)
-
 add_executable          (ailurus_example_window_callback Window/ExampleWindowCallback.cpp)
 target_link_libraries   (ailurus_example_window_callback PUBLIC ailurus-app)
 

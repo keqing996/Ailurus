@@ -1,6 +1,11 @@
 #include <iostream>
-#include <Ailurus/Platform/Windows/Window/Window.h>
-#include <Ailurus/Platform/Windows/Window/Service/ImGuiService/ImGuiOpenGLService.h>
+
+int Main(int argc, char *argv[])
+{
+	return 0;
+}
+
+/*
 
 using namespace Ailurus;
 
@@ -111,3 +116,4 @@ void UpdateNativeWindowFunctions(Window& window)
         window.SetCursorLimitedInWindow(!current);
     }
 }
+*/

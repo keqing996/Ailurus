@@ -1,74 +1,74 @@
 
 #include <iostream>
-#include <Ailurus/Platform/Windows/Window/Window.h>
-#include <Ailurus/Platform/Windows/Window/Service/InputService/InputService.h>
+#include <Ailurus/Application/Application.h>
 
-int main()
+using namespace Ailurus;
+
+int Main(int argc, char *argv[])
 {
-    Ailurus::Window window;
-    window.AddService<Ailurus::InputService>();
-
-    window.SetCallbackOnWindowCreated([]()->void
+    Application::SetCallbackOnWindowCreated([]()->void
     {
         std::cout << "Created" << std::endl;
     });
 
-    window.SetCallbackOnWindowTryToClose([]()->bool
+    Application::SetCallbackOnWindowTryToClose([]()->bool
     {
         std::cout << "Try to close" << std::endl;
         return true;
     });
 
-    window.SetCallbackOnWindowClosed([]()->void
+    Application::SetCallbackOnWindowClosed([]()->void
     {
         std::cout << "Closed" << std::endl;
     });
 
-    window.SetCallbackOnWindowPreDestroyed([]()->void
+    Application::SetCallbackOnWindowPreDestroyed([]()->void
     {
         std::cout << "Pre Destroy" << std::endl;
     });
 
-    window.SetCallbackOnWindowPostDestroyed([]()->void
+    Application::SetCallbackOnWindowPostDestroyed([]()->void
     {
         std::cout << "Post Destroy" << std::endl;
     });
 
-    window.SetCallbackOnWindowMoved([](int x, int y)->void
+    Application::SetCallbackOnWindowMoved([](Vector2i pos)->void
     {
-        std::cout << "Move: " << x << ", " << y << std::endl;
+        std::cout << "Move: " << pos.x() << ", " << pos.y() << std::endl;
     });
 
-    window.SetCallbackOnWindowResize([](int width, int height)->void
+    Application::SetCallbackOnWindowResize([](Vector2i size)->void
     {
-        std::cout << "Resize: " << width << ", " << height << std::endl;
+        std::cout << "Resize: " << size.x() << ", " << size.y() << std::endl;
     });
 
-    window.SetCallbackOnWindowFocusChanged([](bool focus)->void
+    Application::SetCallbackOnWindowFocusChanged([](bool focus)->void
     {
         std::cout << (focus ? "Focus get" : "Focus lost") << std::endl;
     });
 
-    window.SetCallbackOnWindowCursorEnteredOrLeaved([](bool enter)->void
+    Application::SetCallbackOnWindowCursorEnteredOrLeaved([](bool enter)->void
     {
         std::cout << (enter ? "Cursor enter" : "Cursor leave") << std::endl;
     });
 
-    window.SetCallbackOnWindowCursorVisibleChanged([](bool visible)->void
+    Application::SetCallbackOnWindowCursorVisibleChanged([](bool visible)->void
     {
         std::cout << (visible ? "Cursor visible" : "Cursor hide") << std::endl;
     });
 
-    window.Create(800, 600, "Test", Ailurus::WindowStyle::DefaultStyle());
+    Application::Create(800, 600, "Test", Application::Style());
 
-    window.Loop([&]()-> void
+    Application::Loop([&]()-> void
     {
-        if (window.GetService<Ailurus::InputService>()->IsButtonPressed(Ailurus::ButtonType::KeyboardU))
+        if (Application::GetInputManager().IsButtonPressed(ButtonType::KeyboardU))
         {
-            bool currentCursorVisible = window.IsCursorVisible();
-            window.SetCursorVisible(!currentCursorVisible);
+            bool currentCursorVisible = Application::IsCursorVisible();
+            Application::SetCursorVisible(!currentCursorVisible);
         }
     });
+
+	Application::Destroy();
 
     return 0;
 }
