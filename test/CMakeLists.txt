@@ -20,5 +20,24 @@ target_link_libraries   (ailurus_test_thread_pool PUBLIC ailurus-core doctest)
 add_test                (NAME ailurus_test_thread_pool COMMAND ailurus_test_thread_pool)
 
 add_executable          (ailurus_test_enum_reflection TestEnumReflection.cpp)
-target_link_libraries   (ailurus_test_enum_reflection PUBLIC ailurus-core doctest)
-add_test                (NAME ailurus_test_enum_reflection COMMAND ailurus_test_enum_reflection)
+# Memory allocator
+add_executable          (test_memory_util Memory/TestMemoryAllocatorUtil.cpp)
+target_link_libraries   (test_memory_util PUBLIC ailurus-core doctest)
+add_test                (NAME test_memory_util COMMAND test_memory_util)
+
+add_executable          (test_memory_linear_allocator Memory/TestLinearAllocator.cpp)
+target_link_libraries   (test_memory_linear_allocator PUBLIC ailurus-core doctest)
+add_test                (NAME test_memory_linear_allocator COMMAND test_memory_linear_allocator)
+
+add_executable          (test_memory_free_list_allocator Memory/TestFreeListAllocator.cpp)
+target_link_libraries   (test_memory_free_list_allocator PUBLIC ailurus-core doctest)
+add_test                (NAME test_memory_free_list_allocator COMMAND test_memory_free_list_allocator)
+
+add_executable          (test_memory_pool_allocator Memory/TestStackAllocator.cpp)
+target_link_libraries   (test_memory_pool_allocator PUBLIC ailurus-core doctest)
+add_test                (NAME test_memory_pool_allocator COMMAND test_memory_pool_allocator)
+
+add_executable          (test_memory_stack_allocator Memory/TestPoolAllocator.cpp)
+target_link_libraries   (test_memory_stack_allocator PUBLIC ailurus-core doctest)
+add_test                (NAME test_memory_stack_allocator COMMAND test_memory_stack_allocator)
+
