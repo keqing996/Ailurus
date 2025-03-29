@@ -24,6 +24,6 @@ namespace Ailurus
 	private:
 		ShaderStage _stage;
 		std::string _name;
-		std::unique_ptr<RHIShader> _pImpl = nullptr;
+		std::unique_ptr<RHIShader> _pImpl;
 	};
 } // namespace Ailurus
