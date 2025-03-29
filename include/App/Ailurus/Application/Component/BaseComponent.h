@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <unordered_map>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/EnumReflection.h"
