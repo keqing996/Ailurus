@@ -256,6 +256,10 @@ namespace Ailurus
 		if (enableValidation)
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
+#if AILURUS_PLATFORM_MAC
+		extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
+
 		// Create instance
 		vk::ApplicationInfo applicationInfo;
 		applicationInfo
@@ -268,6 +272,10 @@ namespace Ailurus
 			.setPApplicationInfo(&applicationInfo)
 			.setPEnabledLayerNames(validationLayers)
 			.setPEnabledExtensionNames(extensions);
+
+#if AILURUS_PLATFORM_MAC
+		instanceCreateInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
+#endif
 
 		_vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
 
@@ -391,7 +399,14 @@ namespace Ailurus
 		physicalDeviceFeatures.setSamplerAnisotropy(true);
 
 		// Swap chain is required
-		const char* extensions[1] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+		std::array extensions = {
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+#if AILURUS_PLATFORM_MAC
+			//VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+			// VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+			"VK_KHR_portability_subset"
+#endif
+		};
 
 		vk::DeviceCreateInfo deviceCreateInfo;
 		deviceCreateInfo
