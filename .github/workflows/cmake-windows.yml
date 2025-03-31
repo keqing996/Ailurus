@@ -11,14 +11,14 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        c_compiler: [cl, clang]
+        compiler: [msvc, clang]
         include:
-          - c_compiler: cl
-            cpp_compiler: cl
-            generator: Visual Studio 17 2022
-          - c_compiler: clang
+          - compiler: msvc
+            c_compiler: cl.exe
+            cpp_compiler: cl.exe
+          - compiler: clang
+            c_compiler: clang
             cpp_compiler: clang++
-            generator: Ninja
     steps:
       - name: Install Ninja on Windows
         run: choco install ninja --yes
@@ -29,16 +29,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Enable Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1.13.0
+
       - name: Set reusable strings
         id: strings
         shell: bash
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.2
+
       - name: Configure CMake
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -G "${{ matrix.generator }}"
+          -G "Ninja"
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=Release

@@ -1,5 +1,7 @@
 .vs/
 .idea/
+.cache/
+.vscode/
 *.pdb
 
 # CMake generated files
@@ -50,3 +52,4 @@ obj
 intermediates
 
 !CppToolSet/Artifacts/*
+.DS_Store

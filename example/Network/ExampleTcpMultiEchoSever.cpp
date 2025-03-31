@@ -71,7 +71,6 @@ int main(int argc, const char** argv)
 
     ScopeGuard pauseGuard([]()->void { getchar(); });
 
-    Logger::SetTreadSafe(true);
     Network::Initialize();
 
     auto socketOpt = TcpSocket::Create(IpAddress::Family::IpV4);

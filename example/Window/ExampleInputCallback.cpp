@@ -1,47 +1,43 @@
 #include <iostream>
-#include <Ailurus/Platform/Windows/Window/Window.h>
-#include <Ailurus/Platform/Windows/Window/Service/InputService/InputService.h>
+#include <Ailurus/Application/Application.h>
 
 using namespace Ailurus;
 
-int main()
+int Main(int argc, char *argv[])
 {
-    Window window;
+    Application::Create(800, 600, "Test", Application::Style());
 
-    window.Create(800, 600, "Test", WindowStyle::DefaultStyle());
-    window.AddService<InputService>();
-
-    auto inputService = window.GetService<InputService>();
-
-    inputService->SetCallbackOnMouseMove([](std::pair<int, int> source, std::pair<int, int> target) -> void
+    Application::GetInputManager().SetCallbackOnMouseMove([](Vector2f source, Vector2f target) -> void
     {
-        std::cout << "[MouseMove]   (" << source.first << ", " << source.second << ") -> ("
-            << target.first << ", " << target.second << ")" << std::endl;
+        std::cout << "[MouseMove]   (" << source.x() << ", " << source.y() << ") -> ("
+            << target.x() << ", " << target.y() << ")" << std::endl;
     });
 
-    inputService->SetCallbackOnMouseWheel([](float delta) -> void
+    Application::GetInputManager().SetCallbackOnMouseWheel([](Vector2f delta) -> void
     {
-        std::cout << "[MouseWheel]   (" << delta << ")" << std::endl;
+        std::cout << "[MouseWheel]   (" << delta.x() << ", " << delta.y() << ")" << std::endl;
     });
 
-    inputService->SetCallbackOnButtonPressed([](ButtonType btn) -> void
+    Application::GetInputManager().SetCallbackOnButtonPressed([](ButtonType btn) -> void
     {
         std::cout << "[BtnPressed]  " << ButtonTypeUtility::GetName(btn) << std::endl;
     });
 
-    inputService->SetCallbackOnButtonReleased([](ButtonType btn) -> void
+    Application::GetInputManager().SetCallbackOnButtonReleased([](ButtonType btn) -> void
     {
         std::cout << "[BtnRelease]  " << ButtonTypeUtility::GetName(btn) << std::endl;
     });
 
-    window.Loop([&]()->void
+    Application::Loop([&]()->void
     {
-        if (inputService->IsButtonPressed(ButtonType::KeyboardU))
+        if (Application::GetInputManager().IsButtonPressed(ButtonType::KeyboardU))
         {
-            bool currentCursorVisible = window.IsCursorVisible();
-            window.SetCursorVisible(!currentCursorVisible);
+            bool currentCursorVisible = Application::IsCursorVisible();
+            Application::SetCursorVisible(!currentCursorVisible);
         }
     });
+
+	Application::Destroy();
 
     return 0;
 }
