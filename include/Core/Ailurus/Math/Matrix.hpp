@@ -79,6 +79,7 @@ namespace Ailurus
 
 	} // namespace _internal
 
+	// Matrix * Scalar
 	template <typename ElementType, size_t Row, size_t Col, typename ScalarType>
 	Matrix<ElementType, Row, Col> operator*(
 		const Matrix<ElementType, Row, Col>& mat,
@@ -96,6 +97,7 @@ namespace Ailurus
 		return mat;
 	}
 
+	// Scalar * Matrix
 	template <typename ElementType, size_t Row, size_t Col, typename ScalarType>
 	Matrix<ElementType, Row, Col> operator*(
 		const ScalarType& scalar,
@@ -105,6 +107,7 @@ namespace Ailurus
 		return mat * scalar;
 	}
 
+	// Matrix *= Scalar
 	template <typename ElementType, size_t Row, size_t Col, typename ScalarType>
 	Matrix<ElementType, Row, Col>& operator*=(
 		Matrix<ElementType, Row, Col>& mat,
@@ -121,6 +124,7 @@ namespace Ailurus
 		return mat;
 	}
 
+	// Matrix * Matrix
 	template <typename ElementType, size_t Row, size_t Col, size_t OtherCol>
 	Matrix<ElementType, Row, OtherCol> operator*(
 		const Matrix<ElementType, Row, Col>& left,
@@ -141,6 +145,7 @@ namespace Ailurus
 		return result;
 	}
 
+	// Matrix + Matrix
 	template <typename ElementType, size_t Row, size_t Col>
 	Matrix<ElementType, Row, Col> operator+(
 		const Matrix<ElementType, Row, Col>& left,
@@ -157,6 +162,7 @@ namespace Ailurus
 		return result;
 	}
 
+	// Matrix += Matrix
 	template <typename ElementType, size_t Row, size_t Col>
 	Matrix<ElementType, Row, Col>& operator+=(
 		Matrix<ElementType, Row, Col>& left,
@@ -172,6 +178,7 @@ namespace Ailurus
 		return left;
 	}
 
+	// Matrix - Matrix
 	template <typename ElementType, size_t Row, size_t Col>
 	Matrix<ElementType, Row, Col> operator-(
 		const Matrix<ElementType, Row, Col>& left,
@@ -188,6 +195,7 @@ namespace Ailurus
 		return result;
 	}
 
+	// Matrix -= Matrix
 	template <typename ElementType, size_t Row, size_t Col>
 	Matrix<ElementType, Row, Col>& operator-=(
 		Matrix<ElementType, Row, Col>& left,
@@ -201,6 +209,48 @@ namespace Ailurus
 			}
 		}
 		return left;
+	}
+
+	// Matrix * Vector
+	template <typename ElementType, size_t Row, size_t Col>
+	Vector<ElementType, Row> operator*(
+		const Matrix<ElementType, Row, Col>& left,
+		const Vector<ElementType, Col>& right)
+	{
+		Vector<ElementType, Row> result;
+		for (auto i = 0; i < Row; ++i)
+		{
+			ElementType sum = ElementType{};
+			for (auto j = 0; j < Col; ++j)
+			{
+				sum += left[i][j] * right[j];
+			}
+
+			result[i] = sum;
+		}
+
+		return result;
+	}
+
+	// Vector * Matrix
+	template <typename ElementType, size_t Row, size_t Col>
+	Vector<ElementType, Col> operator*(
+		const Vector<ElementType, Row>& left,
+		const Matrix<ElementType, Row, Col>& right)
+	{
+		Vector<ElementType, Col> result;
+		for (auto i = 0; i < Col; ++i)
+		{
+			ElementType sum = ElementType{};
+			for (auto j = 0; j < Row; ++j)
+			{
+				sum += left[j] * right[j][i];
+			}
+
+			result[i] = sum;
+		}
+
+		return result;
 	}
 
 } // namespace Ailurus
