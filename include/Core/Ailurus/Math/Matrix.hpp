@@ -14,6 +14,7 @@ namespace Ailurus
 	public:
 		constexpr static size_t RowSize = Row;
 		constexpr static size_t ColSize = Col;
+		constexpr static bool IsSquare = (Row == Col);
 
 		Matrix() = default;
 
@@ -64,6 +65,52 @@ namespace Ailurus
 		const Vector<ElementType, Col>& operator[](size_t rowIndex) const
 		{
 			return _elements[rowIndex];
+		}
+
+		Matrix<ElementType, Col, Row> Transpose() const
+		{
+			Matrix<ElementType, Col, Row> result;
+			for (size_t i = 0; i < Row; ++i)
+			{
+				for (size_t j = 0; j < Col; ++j)
+				{
+					result[j][i] = _elements[i][j];
+				}
+			}
+			return result;
+		}
+
+		ElementType Determinant() const
+			requires(Row == Col)
+		{
+			if constexpr (Row == 1)
+			{
+				return _elements[0][0];
+			}
+			else if constexpr (Row == 2)
+			{
+				return _elements[0][0] * _elements[1][1] - _elements[0][1] * _elements[1][0];
+			}
+			else
+			{
+				ElementType det = 0;
+				for (size_t i = 0; i < Col; ++i)
+				{
+					Matrix<ElementType, Row - 1, Col - 1> subMatrix;
+					for (size_t subRow = 1; subRow < Row; ++subRow)
+					{
+						size_t subColIndex = 0;
+						for (size_t subCol = 0; subCol < Col; ++subCol)
+						{
+							if (subCol == i)
+								continue;
+							subMatrix[subRow - 1][subColIndex++] = _elements[subRow][subCol];
+						}
+					}
+					det += (i % 2 == 0 ? 1 : -1) * _elements[0][i] * subMatrix.Determinant();
+				}
+				return det;
+			}
 		}
 
 	private:

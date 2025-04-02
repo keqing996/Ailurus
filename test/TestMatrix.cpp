@@ -185,17 +185,58 @@ TEST_SUITE("Matrix")
 	{
 		{
 			Matrix<T, 2, 2> mat = { { 1, 2 }, { 3, 4 } };
-			Vector<T, 2> vec = { 5, 6};
+			Vector<T, 2> vec = { 5, 6 };
 			Vector<T, 2> result = mat * vec;
 			CHECK_EQ(result[0], 17);
 			CHECK_EQ(result[1], 39);
 		}
 		{
-			Vector<T, 2> vec = { 5, 6};
+			Vector<T, 2> vec = { 5, 6 };
 			Matrix<T, 2, 2> mat = { { 1, 2 }, { 3, 4 } };
 			Vector<T, 2> result = vec * mat;
 			CHECK_EQ(result[0], 23);
 			CHECK_EQ(result[1], 34);
+		}
+	}
+
+	TEST_CASE_TEMPLATE("Matrix determinant", T, int32_t, uint32_t, float, double)
+	{
+		{
+			Matrix<T, 2, 2> mat = { { 1, 2 }, { 3, 4 } };
+			T det = mat.Determinant();
+			CHECK_EQ(det, -2);
+		}
+		{
+			Matrix<T, 3, 3> mat = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } };
+			T det = mat.Determinant();
+			CHECK_EQ(det, 0);
+		}
+	}
+
+	TEST_CASE_TEMPLATE("Matrix transpose", T, int32_t, uint32_t, float, double)
+	{
+		{
+			Matrix<T, 2, 3> mat = { { 1, 2, 3 }, { 4, 5, 6 } };
+			Matrix<T, 3, 2> transposed = mat.Transpose();
+			CHECK_EQ(transposed[0][0], 1);
+			CHECK_EQ(transposed[0][1], 4);
+			CHECK_EQ(transposed[1][0], 2);
+			CHECK_EQ(transposed[1][1], 5);
+			CHECK_EQ(transposed[2][0], 3);
+			CHECK_EQ(transposed[2][1], 6);
+		}
+		{
+			Matrix<T, 3, 3> mat = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } };
+			Matrix<T, 3, 3> transposed = mat.Transpose();
+			CHECK_EQ(transposed[0][0], 1);
+			CHECK_EQ(transposed[0][1], 4);
+			CHECK_EQ(transposed[0][2], 7);
+			CHECK_EQ(transposed[1][0], 2);
+			CHECK_EQ(transposed[1][1], 5);
+			CHECK_EQ(transposed[1][2], 8);
+			CHECK_EQ(transposed[2][0], 3);
+			CHECK_EQ(transposed[2][1], 6);
+			CHECK_EQ(transposed[2][2], 9);
 		}
 	}
 }
