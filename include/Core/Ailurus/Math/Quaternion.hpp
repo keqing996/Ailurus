@@ -7,6 +7,7 @@
 namespace Ailurus
 {
 	template <typename ElementType>
+		requires std::is_floating_point_v<ElementType>
 	class Quaternion
 	{
 	public:
