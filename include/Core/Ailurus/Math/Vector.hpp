@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cmath>
 #include <cstdint>
+#include "Ailurus/Assert.h"
 
 namespace Ailurus
 {
@@ -25,6 +26,12 @@ namespace Ailurus
         Vector()
         {
             ::memset(_data, 0, Dimension * sizeof(ElementType));
+        }
+
+        Vector(std::initializer_list<ElementType> list)
+        {
+            ASSERT_MSG(list.size() == Dimension, "Initializer list size does not match vector dimension");
+            std::copy(list.begin(), list.end(), _data);
         }
 
         template<typename... Args> requires ((sizeof...(Args) == Dimension))

@@ -94,7 +94,7 @@ namespace Ailurus
 				result[i][j] = mat[i][j] * scalar;
 			}
 		}
-		return mat;
+		return result;
 	}
 
 	// Scalar * Matrix
