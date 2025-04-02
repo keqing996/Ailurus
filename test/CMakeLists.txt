@@ -8,6 +8,7 @@ create_ailurus_core_test (ailurus_test_container_segment_array  Container/TestSe
 create_ailurus_core_test (ailurus_test_lock_free_queue          Container/TestLockFreeQueue.cpp)
 create_ailurus_core_test (ailurus_test_math_vector              TestVector.cpp)
 create_ailurus_core_test (ailurus_test_math_matrix              TestMatrix.cpp)
+create_ailurus_core_test (ailurus_test_math_quaternion          TestQuaternion.cpp)
 create_ailurus_core_test (ailurus_test_string                   TestString.cpp)
 create_ailurus_core_test (ailurus_test_thread_pool              TestThreadPool.cpp)
 create_ailurus_core_test (ailurus_test_enum_reflection          TestEnumReflection.cpp)

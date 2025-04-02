@@ -3,22 +3,11 @@
 #include <cstring>
 #include <cmath>
 #include <cstdint>
+#include "Internal/MathInternal.hpp"
 #include "Ailurus/Assert.h"
 
 namespace Ailurus
 {
-    namespace _internal
-    {
-        template<size_t Dimension, size_t Value>
-        concept DimensionAtLeast = (Dimension >= Value);
-
-        template<typename T, size_t D>
-        concept CanDoCross = std::is_floating_point_v<T> && (D == 3);
-
-        template<typename T>
-        concept CanNormalize = std::is_floating_point_v<T>;
-    }
-
     template<typename ElementType, size_t Dimension>
     class Vector
     {
@@ -226,7 +215,7 @@ namespace Ailurus
         return vec;
     }();
 
-    namespace _internal
+    namespace _internal::Vector
     {
         enum class Op
         {
@@ -271,7 +260,7 @@ namespace Ailurus
     template<typename E, size_t D>
     Vector<E, D> operator+(const Vector<E, D>& left, const Vector<E, D>& right)
     {
-        return _internal::VectorOperationFoldExpression<E, D, _internal::Op::Add>(
+        return _internal::Vector::VectorOperationFoldExpression<E, D, _internal::Vector::Op::Add>(
             left, right, std::make_index_sequence<D>());
     }
 
@@ -286,7 +275,7 @@ namespace Ailurus
     template<typename E, size_t D>
     Vector<E, D> operator-(const Vector<E, D>& left, const Vector<E, D>& right)
     {
-        return _internal::VectorOperationFoldExpression<E, D, _internal::Op::Sub>(
+        return _internal::Vector::VectorOperationFoldExpression<E, D, _internal::Vector::Op::Sub>(
             left, right, std::make_index_sequence<D>());
     }
 
@@ -307,14 +296,14 @@ namespace Ailurus
     template<typename E1, typename E2, size_t D>
     Vector<E1, D> operator*(const Vector<E1, D>& left, E2 right)
     {
-        return _internal::VectorOperationFoldExpression<E1, E2, D, _internal::Op::Multiply>(
+        return _internal::Vector::VectorOperationFoldExpression<E1, E2, D, _internal::Vector::Op::Multiply>(
             left, right, std::make_index_sequence<D>());
     }
 
     template<typename E1, typename E2, size_t D>
     Vector<E1, D> operator*(E2 left, const Vector<E1, D>& right)
     {
-        return _internal::VectorOperationFoldExpression<E1, E2, D, _internal::Op::Multiply>(
+        return _internal::Vector::VectorOperationFoldExpression<E1, E2, D, _internal::Vector::Op::Multiply>(
             right, left, std::make_index_sequence<D>());
     }
 
