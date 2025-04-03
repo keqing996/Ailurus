@@ -34,7 +34,6 @@ TEST_SUITE("Vector")
             CHECK_EQ(vector.y(), 2);
             CHECK_EQ(vector.z(), 3);
         }
-
         {
             Vector<T, 5> vector(1, 2, 3, 4, 5);
             CHECK_EQ(vector[0], 1);
@@ -43,6 +42,14 @@ TEST_SUITE("Vector")
             CHECK_EQ(vector[3], 4);
             CHECK_EQ(vector[4], 5);
         }
+	    {
+        	Vector<T, 5> vector{1, 2, 3, 4, 5};
+        	CHECK_EQ(vector[0], 1);
+        	CHECK_EQ(vector[1], 2);
+        	CHECK_EQ(vector[2], 3);
+        	CHECK_EQ(vector[3], 4);
+        	CHECK_EQ(vector[4], 5);
+	    }
     }
 
     TEST_CASE_TEMPLATE("Copy constructor", T, int32_t, uint32_t, float, double)
