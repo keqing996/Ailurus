@@ -215,7 +215,7 @@ namespace Ailurus
         return vec;
     }();
 
-    namespace _internal::Vector
+    namespace _internal::_Vector
     {
         enum class Op
         {
@@ -260,7 +260,7 @@ namespace Ailurus
     template<typename E, size_t D>
     Vector<E, D> operator+(const Vector<E, D>& left, const Vector<E, D>& right)
     {
-        return _internal::Vector::VectorOperationFoldExpression<E, D, _internal::Vector::Op::Add>(
+        return _internal::_Vector::VectorOperationFoldExpression<E, D, _internal::_Vector::Op::Add>(
             left, right, std::make_index_sequence<D>());
     }
 
@@ -275,7 +275,7 @@ namespace Ailurus
     template<typename E, size_t D>
     Vector<E, D> operator-(const Vector<E, D>& left, const Vector<E, D>& right)
     {
-        return _internal::Vector::VectorOperationFoldExpression<E, D, _internal::Vector::Op::Sub>(
+        return _internal::_Vector::VectorOperationFoldExpression<E, D, _internal::_Vector::Op::Sub>(
             left, right, std::make_index_sequence<D>());
     }
 
@@ -296,14 +296,14 @@ namespace Ailurus
     template<typename E1, typename E2, size_t D>
     Vector<E1, D> operator*(const Vector<E1, D>& left, E2 right)
     {
-        return _internal::Vector::VectorOperationFoldExpression<E1, E2, D, _internal::Vector::Op::Multiply>(
+        return _internal::_Vector::VectorOperationFoldExpression<E1, E2, D, _internal::_Vector::Op::Multiply>(
             left, right, std::make_index_sequence<D>());
     }
 
     template<typename E1, typename E2, size_t D>
     Vector<E1, D> operator*(E2 left, const Vector<E1, D>& right)
     {
-        return _internal::Vector::VectorOperationFoldExpression<E1, E2, D, _internal::Vector::Op::Multiply>(
+        return _internal::_Vector::VectorOperationFoldExpression<E1, E2, D, _internal::_Vector::Op::Multiply>(
             right, left, std::make_index_sequence<D>());
     }
 
