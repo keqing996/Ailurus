@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cmath>
-#include <array>
+#include "Vector.hpp"
 #include "Internal/MathInternal.hpp"
 
 namespace Ailurus
@@ -24,6 +24,40 @@ namespace Ailurus
 
 		Quaternion(Quaternion&& other) noexcept
 			: x(std::move(other.x)), y(std::move(other.y)), z(std::move(other.z)), w(std::move(other.w)) {}
+
+		ElementType& operator[](std::size_t index)
+		{
+			switch (index)
+			{
+				case 0:
+					return x;
+				case 1:
+					return y;
+				case 2:
+					return z;
+				case 3:
+					return w;
+				default:
+					throw std::out_of_range("Index out of range");
+			}
+		}
+
+		const ElementType& operator[](std::size_t index) const
+		{
+			switch (index)
+			{
+				case 0:
+					return x;
+				case 1:
+					return y;
+				case 2:
+					return z;
+				case 3:
+					return w;
+				default:
+					throw std::out_of_range("Index out of range");
+			}
+		}
 
 		Quaternion& operator=(const Quaternion& other)
 		{
@@ -203,6 +237,14 @@ namespace Ailurus
 	Quaternion<ElementType> operator*(const Quaternion<ElementType>& quat, ScalarType scalar)
 	{
 		return Quaternion(quat.x * scalar, quat.y * scalar, quat.z * scalar, quat.w * scalar);
+	}
+
+	template <typename ElementType>
+	Vector<ElementType, 3> operator*(const Quaternion<ElementType>& quat, const Vector<ElementType, 3>& vec)
+	{
+		Quaternion<ElementType> vecQuat(vec.x(), vec.y(), vec.z(), 0);
+		Quaternion<ElementType> result = quat * vecQuat * quat.Conjugate();
+		return Vector<ElementType, 3>(result.x, result.y, result.z);
 	}
 
 	template <typename ElementType, typename ScalarType>
