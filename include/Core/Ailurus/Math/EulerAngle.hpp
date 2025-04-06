@@ -48,50 +48,28 @@ namespace Ailurus
 			return *this;
 		}
 
-		bool operator==(const EulerAngles& other) const
+		template <typename T>
+		explicit operator EulerAngles<T>() const
 		{
-			return pitch == other.pitch && yaw == other.yaw && roll == other.roll;
-		}
+			EulerAngles<T> result;
 
-		bool operator!=(const EulerAngles& other) const
-		{
-			return !(*this == other);
-		}
+			result.yaw = static_cast<T>(yaw);
+			result.pitch = static_cast<T>(pitch);
+			result.roll = static_cast<T>(roll);
 
-		Quaternion<ElementType> ToQuaternion() const
-		{
-			ElementType cy = std::cos(yaw * 0.5);
-			ElementType sy = std::sin(yaw * 0.5);
-			ElementType cp = std::cos(pitch * 0.5);
-			ElementType sp = std::sin(pitch * 0.5);
-			ElementType cr = std::cos(roll * 0.5);
-			ElementType sr = std::sin(roll * 0.5);
-
-			return Quaternion<ElementType>(
-				sr * cp * cy - cr * sp * sy,
-				cr * sp * cy + sr * cp * sy,
-				cr * cp * sy - sr * sp * cy,
-				cr * cp * cy + sr * sp * sy);
-		}
-
-		static EulerAngles FromQuaternion(const Quaternion<ElementType>& q)
-		{
-			ElementType sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
-			ElementType cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
-			ElementType roll = std::atan2(sinr_cosp, cosr_cosp);
-
-			ElementType sinp = 2 * (q.w * q.y - q.z * q.x);
-			ElementType pitch;
-			if (std::abs(sinp) >= 1)
-				pitch = std::copysign(std::numbers::pi / 2, sinp);
-			else
-				pitch = std::asin(sinp);
-
-			ElementType siny_cosp = 2 * (q.w * q.z + q.x * q.y);
-			ElementType cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-			ElementType yaw = std::atan2(siny_cosp, cosy_cosp);
-
-			return EulerAngles(pitch, yaw, roll);
+			return result;
 		}
 	};
+
+	template <typename ElementType>
+	bool operator==(const EulerAngles<ElementType>& left, const EulerAngles<ElementType>& right)
+    {
+        return left.pitch == right.pitch && left.yaw == right.yaw && left.roll == right.roll;
+    }
+
+	template <typename ElementType>
+	bool operator!=(const EulerAngles<ElementType>& left, const EulerAngles<ElementType>& right)
+	{
+		return !(left == right);
+	}
 } // namespace Ailurus

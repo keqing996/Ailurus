@@ -57,6 +57,20 @@ namespace Ailurus
 			return *this;
 		}
 
+		template <typename U>
+		explicit operator Matrix<U, Row, Col>() const
+		{
+		    Matrix<U, Row, Col> result;
+		    for (size_t i = 0; i < Row; ++i)
+		    {
+		        for (size_t j = 0; j < Col; ++j)
+		        {
+		            result[i][j] = static_cast<U>(_elements[i][j]);
+		        }
+		    }
+		    return result;
+		}
+
 		Vector<ElementType, Col>& operator[](size_t rowIndex)
 		{
 			return _elements[rowIndex];
@@ -125,6 +139,26 @@ namespace Ailurus
 		};
 
 	} // namespace _internal
+
+	template <typename ElementType, size_t Row, size_t Col>
+	bool operator==(const Matrix<ElementType, Row, Col>& left, const Matrix<ElementType, Row, Col>& right)
+	{
+		for (size_t i = 0; i < Row; ++i)
+		{
+			for (size_t j = 0; j < Col; ++j)
+			{
+				if (left[i][j] != right[i][j])
+					return false;
+			}
+		}
+		return true;
+	}
+
+	template <typename ElementType, size_t Row, size_t Col>
+	bool operator!=(const Matrix<ElementType, Row, Col>& left, const Matrix<ElementType, Row, Col>& right)
+	{
+		return !(left == right);
+	}
 
 	// Matrix * Scalar
 	template <typename ElementType, size_t Row, size_t Col, typename ScalarType>

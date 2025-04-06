@@ -95,6 +95,39 @@ TEST_SUITE("Matrix")
 		CHECK_EQ(mat2[2][2], 9);
 	}
 
+	TEST_CASE_TEMPLATE("Matrix equality operator", T, int32_t, uint32_t, float, double)
+	{
+		Matrix<T, 2, 2> mat1 = { { 1, 2 }, { 3, 4 } };
+		Matrix<T, 2, 2> mat2 = { { 1, 2 }, { 3, 4 } };
+		Matrix<T, 2, 2> mat3 = { { 5, 6 }, { 7, 8 } };
+		CHECK(mat1 == mat2);
+		CHECK_FALSE(mat1 == mat3);
+	}
+
+	TEST_CASE_TEMPLATE("Matrix inequality operator", T, int32_t, uint32_t, float, double)
+	{
+		Matrix<T, 2, 2> mat1 = { { 1, 2 }, { 3, 4 } };
+		Matrix<T, 2, 2> mat2 = { { 1, 2 }, { 3, 4 } };
+		Matrix<T, 2, 2> mat3 = { { 5, 6 }, { 7, 8 } };
+		CHECK(mat1 != mat3);
+		CHECK_FALSE(mat1 != mat2);
+	}
+
+	TEST_CASE_TEMPLATE("Explicit conversion operator", T, int32_t, uint32_t, float, double)
+	{
+		Matrix<T, 3, 3> mat = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } };
+		Matrix<int, 3, 3> intMat = static_cast<Matrix<int, 3, 3>>(mat);
+		CHECK_EQ(intMat[0][0], 1);
+		CHECK_EQ(intMat[0][1], 2);
+		CHECK_EQ(intMat[0][2], 3);
+		CHECK_EQ(intMat[1][0], 4);
+		CHECK_EQ(intMat[1][1], 5);
+		CHECK_EQ(intMat[1][2], 6);
+		CHECK_EQ(intMat[2][0], 7);
+		CHECK_EQ(intMat[2][1], 8);
+		CHECK_EQ(intMat[2][2], 9);
+	}
+
 	TEST_CASE_TEMPLATE("Matrix multiplication", T, int32_t, uint32_t, float, double)
 	{
 		{

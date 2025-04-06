@@ -49,14 +49,17 @@ namespace Ailurus
 			return *this;
 		}
 
-		bool operator==(const Quaternion& other) const
+		template <typename T>
+		explicit operator Quaternion<T>() const
 		{
-			return x == other.x && y == other.y && z == other.z && w == other.w;
-		}
+			Quaternion<T> result;
 
-		bool operator!=(const Quaternion& other) const
-		{
-			return !(*this == other);
+			result.x = static_cast<T>(x);
+			result.y = static_cast<T>(y);
+			result.z = static_cast<T>(z);
+			result.w = static_cast<T>(w);
+
+			return result;
 		}
 
 		ElementType Dot(const Quaternion& other) const
@@ -135,6 +138,18 @@ namespace Ailurus
 			return q1 * std::cos(theta) + q3 * std::sin(theta);
 		}
 	};
+
+	template <typename ElementType>
+	bool operator==(const Quaternion<ElementType>& left, const Quaternion<ElementType>& right)
+	{
+		return left.x == right.x && left.y == right.y && left.z == right.z && left.w == right.w;
+	}
+
+	template <typename ElementType>
+	bool operator!=(const Quaternion<ElementType>& left, const Quaternion<ElementType>& right)
+	{
+		return !(left == right);
+	}
 
 	template <typename ElementType>
 	Quaternion<ElementType> operator+(const Quaternion<ElementType>& left, const Quaternion<ElementType>& right)

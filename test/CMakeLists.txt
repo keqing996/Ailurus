@@ -10,6 +10,7 @@ create_ailurus_core_test (ailurus_test_math_vector              Math/TestVector.
 create_ailurus_core_test (ailurus_test_math_matrix              Math/TestMatrix.cpp)
 create_ailurus_core_test (ailurus_test_math_quaternion          Math/TestQuaternion.cpp)
 create_ailurus_core_test (ailurus_test_math_euler_angle         Math/TestEulerAngle.cpp)
+create_ailurus_core_test (ailurus_test_math                     Math/TestMath.cpp)
 create_ailurus_core_test (ailurus_test_string                   TestString.cpp)
 create_ailurus_core_test (ailurus_test_thread_pool              TestThreadPool.cpp)
 create_ailurus_core_test (ailurus_test_enum_reflection          TestEnumReflection.cpp)
