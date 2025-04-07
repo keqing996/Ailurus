@@ -32,6 +32,12 @@ namespace Ailurus
 				_swapChainConfig.surfaceFormat = surfaceFormat;
 				break;
 			}
+
+			if (surfaceFormat.format == vk::Format::eB8G8R8A8Unorm && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+			{
+				_swapChainConfig.surfaceFormat = surfaceFormat;
+				break;
+			}
 		}
 
 		if (_swapChainConfig.surfaceFormat == vk::Format::eUndefined)

@@ -152,6 +152,9 @@ namespace Ailurus
 		if (_vkSurface)
 			destroySurface(_vkInstance, _vkSurface);
 
+		if (_vkDebugUtilsMessenger)
+			_vkInstance.destroyDebugUtilsMessengerEXT(_vkDebugUtilsMessenger);
+
 		if (_vkInstance)
 			_vkInstance.destroy();
 
@@ -257,6 +260,8 @@ namespace Ailurus
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
 #if AILURUS_PLATFORM_MAC
+		// Under macOS, the VK_KHR_portability_subset extension is required for portability, because
+		// Metal do not fully support all Vulkan features.
 		extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 
@@ -398,12 +403,11 @@ namespace Ailurus
 		vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 		physicalDeviceFeatures.setSamplerAnisotropy(true);
 
-		// Swap chain is required
+		// Extensions
 		std::array extensions = {
+			// Swap chain is required
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #if AILURUS_PLATFORM_MAC
-			//VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
-			// VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 			"VK_KHR_portability_subset"
 #endif
 		};

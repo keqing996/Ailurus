@@ -6,25 +6,31 @@
 
 namespace Ailurus
 {
-    struct BufferWithMem
-    {
-        vk::Buffer buffer;
-        vk::DeviceMemory deviceMemory;
-    };
+	struct BufferWithMem
+	{
+		vk::Buffer buffer;
+		vk::DeviceMemory deviceMemory;
+	};
 
-    class DataBufferUtil
-    {
-    public:
-        DataBufferUtil() = delete;
+	class DataBufferUtil
+	{
+	public:
+		DataBufferUtil() = delete;
 
-    public:
-        static std::optional<BufferWithMem>
-        CreateBuffer(BufferType type, const void* bufferData, size_t bufferSizeInBytes);
+	public:
+		static std::optional<BufferWithMem>
+		CreateBuffer(BufferType type, const void* bufferData, size_t bufferSizeInBytes);
 
-        static std::optional<BufferWithMem>
-        CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties);
+		static std::optional<BufferWithMem>
+		CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties);
 
-        static void
-        CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
-    };
-}
+		static void
+		DestroyBuffer(BufferWithMem bufferWithMem);
+
+		static void
+		DestroyBuffer(vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+
+		static void
+		CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
+	};
+} // namespace Ailurus

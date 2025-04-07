@@ -78,8 +78,15 @@ namespace Ailurus
 		VulkanContext::GetAirport()->TakeOff(flight, &_needRebuildSwapChain);
 	}
 
+	void RenderManager::GraphicsWaitIdle() const
+	{
+		VulkanContext::GetDevice().waitIdle();
+	}
+
 	void RenderManager::ReBuildSwapChain()
 	{
+		GraphicsWaitIdle();
+
 		_renderPassMap.clear();
 		VulkanContext::RebuildDynamicContext();
 		BuildRenderPass();

@@ -43,9 +43,7 @@ namespace Ailurus
 
 	IndexBuffer::~IndexBuffer()
 	{
-		const auto device = VulkanContext::GetDevice();
-		device.freeMemory(_bufferMemory);
-		device.destroyBuffer(_buffer);
+		DataBufferUtil::DestroyBuffer(_buffer, _bufferMemory);
 	}
 
 	vk::IndexType IndexBuffer::GetIndexType() const

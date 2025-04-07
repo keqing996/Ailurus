@@ -27,6 +27,7 @@ namespace Ailurus
 
 		// Draw
 		void RenderScene();
+		void GraphicsWaitIdle() const;
 
 	private:
 		friend class Application;

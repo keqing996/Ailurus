@@ -124,6 +124,8 @@ namespace Ailurus
 			_pRenderManager->RenderScene();
 		}
 
+		_pRenderManager->GraphicsWaitIdle();
+
 		Destroy();
 	}
 

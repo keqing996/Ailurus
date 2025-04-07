@@ -19,9 +19,7 @@ namespace Ailurus
 
     VertexBuffer::~VertexBuffer()
     {
-        const auto device = VulkanContext::GetDevice();
-        device.freeMemory(_bufferMemory);
-        device.destroyBuffer(_buffer);
+    	DataBufferUtil::DestroyBuffer(_buffer, _bufferMemory);
     }
 
     vk::Buffer VertexBuffer::GetBuffer() const
