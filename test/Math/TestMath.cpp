@@ -35,7 +35,7 @@ TEST_SUITE("Math Rotation")
 	{
 		// Identity quaternion should return identity matrix
 		Quaternion<T> quat = Quaternion<T>::Identity();
-		Matrix<T, 4, 4> mat = QuaternionToMatrix(quat);
+		Matrix<T, 4, 4> mat = QuaternionToRotateMatrix(quat);
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -61,7 +61,7 @@ TEST_SUITE("Math Rotation")
 			}
 		}
 
-		Quaternion<T> quat = MatrixToQuaternion(mat);
+		Quaternion<T> quat = RotateMatrixToQuaternion(mat);
 
 		CHECK(std::abs(quat.x) < 1e-5);
 		CHECK(std::abs(quat.y) < 1e-5);
@@ -73,7 +73,7 @@ TEST_SUITE("Math Rotation")
 	{
 		// Zero euler angles should return identity matrix
 		EulerAngles<T> angles(0, 0, 0);
-		Matrix<T, 4, 4> mat = EulerAngleToMatrix(angles);
+		Matrix<T, 4, 4> mat = EulerAngleToRotateMatrix(angles);
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -103,7 +103,7 @@ TEST_SUITE("Math Rotation")
 			}
 		}
 
-		EulerAngles<T> angles = MatrixToEulerAngle(mat);
+		EulerAngles<T> angles = RotateMatrixToEulerAngle(mat);
 
 		CHECK(std::abs(angles.pitch) < 1e-5);
 		CHECK(std::abs(angles.yaw) < 1e-5);
@@ -136,10 +136,10 @@ TEST_SUITE("Math Rotation")
 		Quaternion<T> quat = EulerAngleToQuaternion(original);
 
 		// Then convert to matrix
-		Matrix<T, 4, 4> mat = QuaternionToMatrix(quat);
+		Matrix<T, 4, 4> mat = QuaternionToRotateMatrix(quat);
 
 		// Then convert back to quaternion
-		Quaternion<T> quat2 = MatrixToQuaternion(mat);
+		Quaternion<T> quat2 = RotateMatrixToQuaternion(mat);
 
 		// Then convert back to euler angles
 		EulerAngles<T> result = QuaternionToEulerAngles(quat2);

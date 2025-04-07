@@ -1,5 +1,6 @@
 #pragma once
 
+#include <numbers>
 #include "Vector.hpp"
 #include "Matrix.hpp"
 #include "Quaternion.hpp"
@@ -146,13 +147,13 @@ namespace Ailurus::Math
 	Matrix4x4<T> EulerAngleToRotateMatrix(const EulerAngles<T>& euler)
 	{
 		Quaternion<T> quaternion = EulerAngleToQuaternion(euler);
-		return QuaternionToMatrix(quaternion);
+		return QuaternionToRotateMatrix(quaternion);
 	}
 
 	template <typename T>
-	EulerAngles<T> MatrixToEulerAngle(const Matrix4x4<T>& matrix)
+	EulerAngles<T> RotateMatrixToEulerAngle(const Matrix4x4<T>& matrix)
 	{
-		Quaternion<T> quaternion = MatrixToQuaternion(matrix);
+		Quaternion<T> quaternion = RotateMatrixToQuaternion(matrix);
 		return QuaternionToEulerAngles(quaternion);
 	}
 
@@ -186,16 +187,18 @@ namespace Ailurus::Math
 		float right = nearPlaneHalfX;
 		float top = nearPlaneHalfY;
 		float bottom = -nearPlaneHalfY;
-		float near = nearPlaneZ;
-		float far = farPlaneZ;
+		float nearV = nearPlaneZ;
+		float farV = farPlaneZ;
 
-		Matrix4x4<T> translationMatrix = TranslateMatrix({ -(right + left) / 2,
+		Matrix4x4<T> translationMatrix = TranslateMatrix(Vector3<T>{
+			-(right + left) / 2,
 			-(top + bottom) / 2,
-			-(near + far) / 2 });
+			-(nearV + farV) / 2 });
 
-		Matrix4x4<T> scaleMatrix = ScaleMatrix({ 2 / (right - left),
+		Matrix4x4<T> scaleMatrix = ScaleMatrix(Vector3<T>{
+			2 / (right - left),
 			2 / (top - bottom),
-			2 / (near - far) });
+			2 / (nearV - farV) });
 
 		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
 
@@ -209,24 +212,27 @@ namespace Ailurus::Math
 		float right = nearPlaneHalfX;
 		float top = nearPlaneHalfY;
 		float bottom = -nearPlaneHalfY;
-		float near = nearPlaneZ;
-		float far = farPlaneZ;
+		float nearV = nearPlaneZ;
+		float farV = farPlaneZ;
 
-		Matrix4x4<T> translationMatrix = TranslateMatrix({ -(right + left) / 2,
+		Matrix4x4<T> translationMatrix = TranslateMatrix(Vector3<T>{
+			-(right + left) / 2,
 			-(top + bottom) / 2,
-			-(near + far) / 2 });
+			-(nearV + farV) / 2 });
 
-		Matrix4x4<T> scaleMatrix = ScaleMatrix({ 2 / (right - left),
+		Matrix4x4<T> scaleMatrix = ScaleMatrix(Vector3<T>{
+			2 / (right - left),
 			2 / (top - bottom),
-			2 / (near - far) });
+			2 / (nearV - farV) });
 
 		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
 
-		Matrix4x4<T> compressMatrix;
-		compressMatrix << near, 0, 0, 0,
-			0, near, 0, 0,
-			0, 0, near + far, -far * near,
-			0, 0, 1, 0;
+		Matrix4x4<T> compressMatrix = {
+			Vector4<T>{nearV, 0, 0, 0},
+			Vector4<T>{0, nearV, 0, 0},
+			Vector4<T>{0, 0, nearV + farV, -farV * nearV},
+			Vector4<T>{0, 0, 1, 0}
+		};
 
 		/* OpenGL
 		Matrix4x4<T> resultWithReverseW = -1 * standardOrthoProj * compressMatrix;
