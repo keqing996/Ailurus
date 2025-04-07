@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <array>
-#include <numbers>
 #include "Quaternion.hpp"
 
 namespace Ailurus

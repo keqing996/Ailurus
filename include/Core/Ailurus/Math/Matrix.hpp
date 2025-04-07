@@ -1,8 +1,6 @@
 #pragma once
 
-#include <cstring>
 #include <cmath>
-#include <concepts>
 #include <cstdint>
 #include "Vector.hpp"
 
@@ -57,18 +55,44 @@ namespace Ailurus
 			return *this;
 		}
 
+		Vector<ElementType, Col> GetRow(size_t rowIndex) const
+		{
+			return _elements[rowIndex];
+		}
+
+		void SetRow(size_t rowIndex, const Vector<ElementType, Col>& row)
+		{
+			_elements[rowIndex] = row;
+		}
+
+		Vector<ElementType, Row> GetCol(size_t colIndex) const
+		{
+			Vector<ElementType, Row> col;
+			for (size_t i = 0; i < Row; ++i)
+			{
+				col[i] = _elements[i][colIndex];
+			}
+			return col;
+		}
+
+		void SetCol(size_t colIndex, const Vector<ElementType, Row>& col)
+		{
+			for (size_t i = 0; i < Row; ++i)
+				_elements[i][colIndex] = col[i];
+		}
+
 		template <typename U>
 		explicit operator Matrix<U, Row, Col>() const
 		{
-		    Matrix<U, Row, Col> result;
-		    for (size_t i = 0; i < Row; ++i)
-		    {
-		        for (size_t j = 0; j < Col; ++j)
-		        {
-		            result[i][j] = static_cast<U>(_elements[i][j]);
-		        }
-		    }
-		    return result;
+			Matrix<U, Row, Col> result;
+			for (size_t i = 0; i < Row; ++i)
+			{
+				for (size_t j = 0; j < Col; ++j)
+				{
+					result[i][j] = static_cast<U>(_elements[i][j]);
+				}
+			}
+			return result;
 		}
 
 		Vector<ElementType, Col>& operator[](size_t rowIndex)
@@ -95,7 +119,7 @@ namespace Ailurus
 		}
 
 		ElementType Determinant() const
-			requires(Row == Col)
+			requires IsSquare
 		{
 			if constexpr (Row == 1)
 			{
@@ -125,6 +149,18 @@ namespace Ailurus
 				}
 				return det;
 			}
+		}
+
+		static Matrix Identity()
+			requires IsSquare
+		{
+			Matrix result;
+			for (size_t i = 0; i < Row; ++i)
+			{
+				for (size_t j = 0; j < Col; ++j)
+					result[i][j] = (i == j) ? ElementType(1) : ElementType(0);
+			}
+			return result;
 		}
 
 	private:
@@ -333,5 +369,21 @@ namespace Ailurus
 
 		return result;
 	}
+
+	template <typename ElementType>
+	using Matrix3x3 = Matrix<ElementType, 3, 3>;
+
+	template <typename ElementType>
+	using Matrix4x4 = Matrix<ElementType, 4, 4>;
+
+	using Matrix3x3i = Matrix<int32_t, 3, 3>;
+	using Matrix3x3u = Matrix<uint32_t, 3, 3>;
+	using Matrix3x3f = Matrix<float, 3, 3>;
+	using Matrix3x3d = Matrix<double, 3, 3>;
+
+	using Matrix4x4i = Matrix<int32_t, 4, 4>;
+	using Matrix4x4u = Matrix<uint32_t, 4, 4>;
+	using Matrix4x4f = Matrix<float, 4, 4>;
+	using Matrix4x4d = Matrix<double, 4, 4>;
 
 } // namespace Ailurus
