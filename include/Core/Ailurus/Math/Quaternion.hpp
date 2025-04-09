@@ -1,7 +1,8 @@
 #pragma once
 
 #include <cmath>
-#include "Vector.hpp"
+#include <stdexcept>
+#include "Vector3.hpp"
 #include "Internal/MathInternal.hpp"
 
 namespace Ailurus
@@ -108,13 +109,17 @@ namespace Ailurus
 
 		template <typename T = ElementType>
 			requires _internal::CanNormalize<T>
-		void Normalize()
+		Quaternion& Normalize()
 		{
 			ElementType mag = Magnitude();
-			x = x / mag;
-			y = y / mag;
-			z = z / mag;
-			w = w / mag;
+			if (mag > 0)
+			{
+				x = x / mag;
+				y = y / mag;
+				z = z / mag;
+				w = w / mag;
+			}
+			return *this;
 		}
 
 		template <typename T = ElementType>
@@ -122,7 +127,7 @@ namespace Ailurus
 		Quaternion Normalized() const
 		{
 			Quaternion result = *this;
-			result.Normalize<>();
+			result.Normalize();
 			return result;
 		}
 
@@ -137,17 +142,8 @@ namespace Ailurus
 			return Conjugate() * (1 / (norm * norm));
 		}
 
-		static Quaternion Zero()
-		{
-			return Quaternion(static_cast<ElementType>(0), static_cast<ElementType>(0),
-				static_cast<ElementType>(0), static_cast<ElementType>(0));
-		}
-
-		static Quaternion Identity()
-		{
-			return Quaternion(static_cast<ElementType>(0), static_cast<ElementType>(0),
-				static_cast<ElementType>(0), static_cast<ElementType>(1));
-		}
+		static const Quaternion Zero;
+		static const Quaternion Identity;
 
 		static Quaternion Lerp(const Quaternion& q1, const Quaternion& q2, ElementType t)
 		{
@@ -172,6 +168,14 @@ namespace Ailurus
 			return q1 * std::cos(theta) + q3 * std::sin(theta);
 		}
 	};
+
+	template <typename ElementType>
+		requires std::is_floating_point_v<ElementType>
+	Quaternion<ElementType> const Quaternion<ElementType>::Zero(ElementType(0), ElementType(0), ElementType(0), ElementType(0));
+
+	template <typename ElementType>
+		requires std::is_floating_point_v<ElementType>
+	Quaternion<ElementType> const Quaternion<ElementType>::Identity(ElementType(1), ElementType(1), ElementType(1), ElementType(1));
 
 	template <typename ElementType>
 	bool operator==(const Quaternion<ElementType>& left, const Quaternion<ElementType>& right)
@@ -240,7 +244,7 @@ namespace Ailurus
 	}
 
 	template <typename ElementType>
-	Vector<ElementType, 3> operator*(const Quaternion<ElementType>& quat, const Vector<ElementType, 3>& vec)
+	Vector3<ElementType> operator*(const Quaternion<ElementType>& quat, const Vector3<ElementType>& vec)
 	{
 		Quaternion<ElementType> vecQuat(vec.x(), vec.y(), vec.z(), 0);
 		Quaternion<ElementType> result = quat * vecQuat * quat.Conjugate();
