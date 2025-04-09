@@ -11,7 +11,7 @@
 #include "Assets/AssetsManager.h"
 #include "Scene/SceneManager.h"
 #include "ImGui/ImGui.h"
-#include "Ailurus/Math/Vector.hpp"
+#include "Ailurus/Math/Vector2.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
 
 namespace Ailurus

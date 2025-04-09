@@ -7,6 +7,7 @@
 namespace Ailurus
 {
 	template <typename ElementType, size_t Row, size_t Col>
+		requires std::is_floating_point_v<ElementType>
 	class Matrix
 	{
 	public:

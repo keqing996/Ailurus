@@ -2,7 +2,10 @@
 
 #include <cmath>
 #include <array>
-#include "Quaternion.hpp"
+
+/* Euler angle describe a ZYX intrinsic rotation, uses +X as forward, so 'row' rotates around
+ * X axis, 'pitch' rotates around Y axis, 'yaw' rotates around Z axis.
+ */
 
 namespace Ailurus
 {
