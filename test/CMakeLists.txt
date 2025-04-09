@@ -8,6 +8,7 @@ create_ailurus_core_test (ailurus_test_container_segment_array  Container/TestSe
 create_ailurus_core_test (ailurus_test_lock_free_queue          Container/TestLockFreeQueue.cpp)
 create_ailurus_core_test (ailurus_test_math_vector2             Math/TestVector2.cpp)
 create_ailurus_core_test (ailurus_test_math_vector3             Math/TestVector3.cpp)
+create_ailurus_core_test (ailurus_test_math_vector4             Math/TestVector4.cpp)
 #create_ailurus_core_test (ailurus_test_math_matrix              Math/TestMatrix.cpp)
 #create_ailurus_core_test (ailurus_test_math_quaternion          Math/TestQuaternion.cpp)
 #create_ailurus_core_test (ailurus_test_math_euler_angle         Math/TestEulerAngle.cpp)

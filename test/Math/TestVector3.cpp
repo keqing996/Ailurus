@@ -7,266 +7,286 @@ using namespace Ailurus;
 
 TEST_SUITE("Vector3")
 {
-    // Test constructors and accessors
-    TEST_CASE("Vector3 constructors and accessors")
-    {
-        // Default constructor
-        Vector3<float> v1;
-        CHECK(v1.x == 0.0f);
-        CHECK(v1.y == 0.0f);
-        CHECK(v1.z == 0.0f);
+	TEST_CASE_TEMPLATE("Vector3 constructors and accessors", T, int32_t, uint32_t, float, double)
+	{
+		// Default constructor
+		Vector3<T> v1;
+		CHECK(v1.x == T(0));
+		CHECK(v1.y == T(0));
+		CHECK(v1.z == T(0));
 
-        // Value constructor
-        Vector3<float> v2(1.0f, 2.0f, 3.0f);
-        CHECK(v2.x == 1.0f);
-        CHECK(v2.y == 2.0f);
-        CHECK(v2.z == 3.0f);
+		// Value constructor
+		Vector3<T> v2(T(1), T(2), T(3));
+		CHECK(v2.x == T(1));
+		CHECK(v2.y == T(2));
+		CHECK(v2.z == T(3));
 
-        // Copy constructor
-        Vector3<float> v3 = v2;
-        CHECK(v3.x == 1.0f);
-        CHECK(v3.y == 2.0f);
-        CHECK(v3.z == 3.0f);
+		// Copy constructor
+		Vector3<T> v3 = v2;
+		CHECK(v3.x == T(1));
+		CHECK(v3.y == T(2));
+		CHECK(v3.z == T(3));
 
-        // Test index operator
-        Vector3<float> v(3.0f, 4.0f, 5.0f);
-        CHECK(v[0] == 3.0f);
-        CHECK(v[1] == 4.0f);
-        CHECK(v[2] == 5.0f);
+		// Test index operator
+		Vector3<T> v(T(3), T(4), T(5));
+		CHECK(v[0] == T(3));
+		CHECK(v[1] == T(4));
+		CHECK(v[2] == T(5));
 
-        // Test index operator assignment
-        v[0] = 6.0f;
-        v[1] = 7.0f;
-        v[2] = 8.0f;
-        CHECK(v.x == 6.0f);
-        CHECK(v.y == 7.0f);
-        CHECK(v.z == 8.0f);
+		// Test index operator assignment
+		v[0] = T(6);
+		v[1] = T(7);
+		v[2] = T(8);
+		CHECK(v.x == T(6));
+		CHECK(v.y == T(7));
+		CHECK(v.z == T(8));
 
-        // Test const index operator
-        const Vector3<float> cv(5.0f, 6.0f, 7.0f);
-        CHECK(cv[0] == 5.0f);
-        CHECK(cv[1] == 6.0f);
-        CHECK(cv[2] == 7.0f);
-    }
+		// Test const index operator
+		const Vector3<T> cv(T(5), T(6), T(7));
+		CHECK(cv[0] == T(5));
+		CHECK(cv[1] == T(6));
+		CHECK(cv[2] == T(7));
+	}
 
-    // Test type conversion
-    TEST_CASE("Vector3 type conversion")
-    {
-        Vector3<float> vf(1.5f, 2.5f, 3.5f);
-        Vector3<int> vi = static_cast<Vector3<int>>(vf);
-        CHECK(vi.x == 1);
-        CHECK(vi.y == 2);
-        CHECK(vi.z == 3);
-    }
+	TEST_CASE_TEMPLATE("Vector3 type conversion", T, float, double)
+	{
+		Vector3<T> vf(T(1.5), T(2.5), T(3.5));
+		Vector3<int> vi = static_cast<Vector3<int>>(vf);
+		CHECK(vi.x == 1);
+		CHECK(vi.y == 2);
+		CHECK(vi.z == 3);
+	}
 
-    // Test magnitude calculations
-    TEST_CASE("Vector3 magnitude calculations")
-    {
-        Vector3<float> v(3.0f, 4.0f, 12.0f);
-        CHECK(v.SquareMagnitude() == 169.0f);
-        CHECK(v.Magnitude() == 13.0f);
-    }
+	TEST_CASE_TEMPLATE("Vector3 magnitude calculations", T, int32_t, uint32_t, float, double)
+	{
+		Vector3<T> v(T(3), T(4), T(12));
+		CHECK(v.SquareMagnitude() == T(169));
+		CHECK(v.Magnitude() == T(13));
+	}
 
-    // Test normalization
-    TEST_CASE("Vector3 normalization")
-    {
-        Vector3<float> v(3.0f, 4.0f, 0.0f);
-        Vector3<float> normalized = v.Normalized();
-        CHECK(normalized.x == doctest::Approx(0.6f));
-        CHECK(normalized.y == doctest::Approx(0.8f));
-        CHECK(normalized.z == doctest::Approx(0.0f));
-        CHECK(normalized.Magnitude() == doctest::Approx(1.0f));
+	TEST_CASE_TEMPLATE("Vector3 normalization", T, float, double)
+	{
+		Vector3<T> v(T(3), T(4), T(0));
+		Vector3<T> normalized = v.Normalized();
+		CHECK(normalized.x == doctest::Approx(T(0.6)));
+		CHECK(normalized.y == doctest::Approx(T(0.8)));
+		CHECK(normalized.z == doctest::Approx(T(0)));
+		CHECK(normalized.Magnitude() == doctest::Approx(T(1)));
 
-        v.Normalize();
-        CHECK(v.x == doctest::Approx(0.6f));
-        CHECK(v.y == doctest::Approx(0.8f));
-        CHECK(v.z == doctest::Approx(0.0f));
-        CHECK(v.Magnitude() == doctest::Approx(1.0f));
+		v.Normalize();
+		CHECK(v.x == doctest::Approx(T(0.6)));
+		CHECK(v.y == doctest::Approx(T(0.8)));
+		CHECK(v.z == doctest::Approx(T(0)));
+		CHECK(v.Magnitude() == doctest::Approx(T(1)));
 
-        // Test edge case: normalizing zero vector
-        Vector3<float> zeroVec;
-        zeroVec.Normalize();
-        CHECK(zeroVec.x == 0.0f);
-        CHECK(zeroVec.y == 0.0f);
-        CHECK(zeroVec.z == 0.0f);
-    }
+		// Test edge case: normalizing zero vector
+		Vector3<T> zeroVec;
+		zeroVec.Normalize();
+		CHECK(zeroVec.x == T(0));
+		CHECK(zeroVec.y == T(0));
+		CHECK(zeroVec.z == T(0));
+	}
 
-    // Test dot product
-    TEST_CASE("Vector3 dot product")
-    {
-        Vector3<float> v1(1.0f, 2.0f, 3.0f);
-        Vector3<float> v2(4.0f, 5.0f, 6.0f);
-        float dot = v1.Dot(v2);
-        CHECK(dot == 32.0f); // 1*4 + 2*5 + 3*6 = 32
-    }
+	TEST_CASE_TEMPLATE("Vector3 dot product", T, int32_t, uint32_t, float, double)
+	{
+		Vector3<T> v1(T(1), T(2), T(3));
+		Vector3<T> v2(T(4), T(5), T(6));
+		T dot = v1.Dot(v2);
+		CHECK(dot == T(32)); // 1*4 + 2*5 + 3*6 = 32
+	}
 
-    // Test cross product (Vector3 specific)
-    TEST_CASE("Vector3 cross product")
-    {
-        Vector3<float> v1(1.0f, 0.0f, 0.0f);
-        Vector3<float> v2(0.0f, 1.0f, 0.0f);
-        Vector3<float> cross = v1.Cross(v2);
-        CHECK(cross.x == 0.0f);
-        CHECK(cross.y == 0.0f);
-        CHECK(cross.z == 1.0f);
+	TEST_CASE_TEMPLATE("Vector3 cross product properties", T, float, double)
+	{
+		// v1 × v2 = -(v2 × v1)
+		Vector3<T> v1(T(2), T(3), T(4));
+		Vector3<T> v2(T(5), T(6), T(7));
 
-        Vector3<float> v3(2.0f, 3.0f, 4.0f);
-        Vector3<float> v4(5.0f, 6.0f, 7.0f);
-        Vector3<float> cross2 = v3.Cross(v4);
-        CHECK(cross2.x == -3.0f);  // 3*7 - 4*6 = -3
-        CHECK(cross2.y == 6.0f);   // 4*5 - 2*7 = 6
-        CHECK(cross2.z == -3.0f);  // 2*6 - 3*5 = -3
-    }
+		Vector3<T> cross1 = v1.Cross(v2);
+		Vector3<T> cross2 = v2.Cross(v1);
+		Vector3<T> negCross2 = cross2 * T(-1);
 
-    // Test static constants
-    TEST_CASE("Vector3 static constants")
-    {
-        CHECK(Vector3<float>::Zero.x == 0.0f);
-        CHECK(Vector3<float>::Zero.y == 0.0f);
-        CHECK(Vector3<float>::Zero.z == 0.0f);
-        CHECK(Vector3<float>::One.x == 1.0f);
-        CHECK(Vector3<float>::One.y == 1.0f);
-        CHECK(Vector3<float>::One.z == 1.0f);
-        CHECK(Vector3<float>::Up.x == 0.0f);
-        CHECK(Vector3<float>::Up.y == 1.0f);
-        CHECK(Vector3<float>::Up.z == 0.0f);
-        CHECK(Vector3<float>::Right.x == 1.0f);
-        CHECK(Vector3<float>::Right.y == 0.0f);
-        CHECK(Vector3<float>::Right.z == 0.0f);
-        CHECK(Vector3<float>::Forward.x == 0.0f);
-        CHECK(Vector3<float>::Forward.y == 0.0f);
-        CHECK(Vector3<float>::Forward.z == 1.0f);
-    }
+		CHECK(cross1.x == negCross2.x);
+		CHECK(cross1.y == negCross2.y);
+		CHECK(cross1.z == negCross2.z);
 
-    // Test comparison operators
-    TEST_CASE("Vector3 comparison operators")
-    {
-        Vector3<float> v1(1.0f, 2.0f, 3.0f);
-        Vector3<float> v2(1.0f, 2.0f, 3.0f);
-        Vector3<float> v3(4.0f, 5.0f, 6.0f);
+		// v × v = 0
+		Vector3<T> selfCross = v1.Cross(v1);
+		CHECK(selfCross.x == T(0));
+		CHECK(selfCross.y == T(0));
+		CHECK(selfCross.z == T(0));
 
-        CHECK(v1 == v2);
-        CHECK(v1 != v3);
-        CHECK_FALSE(v1 == v3);
-        CHECK_FALSE(v1 != v2);
-    }
+		// (s*v1) × v2 = s(v1 × v2)
+		T scalar = T(3);
+		Vector3<T> scaled = v1 * scalar;
+		Vector3<T> crossScaled = scaled.Cross(v2);
+		Vector3<T> scaledCross = v1.Cross(v2) * scalar;
 
-    // Test vector-scalar operations
-    TEST_CASE("Vector3 scalar operations")
-    {
-        Vector3<float> v(2.0f, 3.0f, 4.0f);
-        float scalar = 2.0f;
+		CHECK(crossScaled.x == scaledCross.x);
+		CHECK(crossScaled.y == scaledCross.y);
+		CHECK(crossScaled.z == scaledCross.z);
+	}
 
-        // Addition
-        Vector3<float> vAddScalar = v + scalar;
-        CHECK(vAddScalar.x == 4.0f);
-        CHECK(vAddScalar.y == 5.0f);
-        CHECK(vAddScalar.z == 6.0f);
+	TEST_CASE_TEMPLATE("Vector3 cross product", T, int32_t, uint32_t, float, double)
+	{
+		Vector3<T> v1(T(1), T(0), T(0));
+		Vector3<T> v2(T(0), T(1), T(0));
+		Vector3<T> cross = v1.Cross(v2);
+		CHECK(cross.x == T(0));
+		CHECK(cross.y == T(0));
+		CHECK(cross.z == T(1));
 
-        Vector3<float> scalarAddV = scalar + v;
-        CHECK(scalarAddV.x == 4.0f);
-        CHECK(scalarAddV.y == 5.0f);
-        CHECK(scalarAddV.z == 6.0f);
+		Vector3<T> v3(T(2), T(3), T(4));
+		Vector3<T> v4(T(5), T(6), T(7));
+		Vector3<T> cross2 = v3.Cross(v4);
+		CHECK(cross2.x == T(-3)); // 3*7 - 4*6 = -3
+		CHECK(cross2.y == T(6));  // 4*5 - 2*7 = 6
+		CHECK(cross2.z == T(-3)); // 2*6 - 3*5 = -3
+	}
 
-        // Subtraction
-        Vector3<float> vSubScalar = v - scalar;
-        CHECK(vSubScalar.x == 0.0f);
-        CHECK(vSubScalar.y == 1.0f);
-        CHECK(vSubScalar.z == 2.0f);
+	TEST_CASE_TEMPLATE("Vector3 static constants", T, int32_t, uint32_t, float, double)
+	{
+		CHECK(Vector3<T>::Zero.x == T(0));
+		CHECK(Vector3<T>::Zero.y == T(0));
+		CHECK(Vector3<T>::Zero.z == T(0));
+		CHECK(Vector3<T>::One.x == T(1));
+		CHECK(Vector3<T>::One.y == T(1));
+		CHECK(Vector3<T>::One.z == T(1));
+		CHECK(Vector3<T>::Up.x == T(0));
+		CHECK(Vector3<T>::Up.y == T(0));
+		CHECK(Vector3<T>::Up.z == T(1));
+		CHECK(Vector3<T>::Right.x == T(0));
+		CHECK(Vector3<T>::Right.y == T(1));
+		CHECK(Vector3<T>::Right.z == T(0));
+		CHECK(Vector3<T>::Forward.x == T(1));
+		CHECK(Vector3<T>::Forward.y == T(0));
+		CHECK(Vector3<T>::Forward.z == T(0));
+	}
 
-        Vector3<float> scalarSubV = scalar - v;
-        CHECK(scalarSubV.x == 0.0f);
-        CHECK(scalarSubV.y == -1.0f);
-        CHECK(scalarSubV.z == -2.0f);
+	TEST_CASE_TEMPLATE("Vector3 comparison operators", T, int32_t, uint32_t, float, double)
+	{
+		Vector3<T> v1(T(1), T(2), T(3));
+		Vector3<T> v2(T(1), T(2), T(3));
+		Vector3<T> v3(T(4), T(5), T(6));
 
-        // Multiplication
-        Vector3<float> vMulScalar = v * scalar;
-        CHECK(vMulScalar.x == 4.0f);
-        CHECK(vMulScalar.y == 6.0f);
-        CHECK(vMulScalar.z == 8.0f);
+		CHECK(v1 == v2);
+		CHECK(v1 != v3);
+		CHECK_FALSE(v1 == v3);
+		CHECK_FALSE(v1 != v2);
+	}
 
-        Vector3<float> scalarMulV = scalar * v;
-        CHECK(scalarMulV.x == 4.0f);
-        CHECK(scalarMulV.y == 6.0f);
-        CHECK(scalarMulV.z == 8.0f);
+	TEST_CASE_TEMPLATE("Vector3 scalar operations", T, float, double)
+	{
+		Vector3<T> v(T(2), T(3), T(4));
+		T scalar = T(2);
 
-        // Division
-        Vector3<float> vDivScalar = v / scalar;
-        CHECK(vDivScalar.x == 1.0f);
-        CHECK(vDivScalar.y == 1.5f);
-        CHECK(vDivScalar.z == 2.0f);
+		// Addition
+		Vector3<T> vAddScalar = v + scalar;
+		CHECK(vAddScalar.x == T(4));
+		CHECK(vAddScalar.y == T(5));
+		CHECK(vAddScalar.z == T(6));
 
-        Vector3<float> scalarDivV = scalar / v;
-        CHECK(scalarDivV.x == doctest::Approx(2.0f / 2.0f));
-        CHECK(scalarDivV.y == doctest::Approx(2.0f / 3.0f));
-        CHECK(scalarDivV.z == doctest::Approx(2.0f / 4.0f));
-    }
+		Vector3<T> scalarAddV = scalar + v;
+		CHECK(scalarAddV.x == T(4));
+		CHECK(scalarAddV.y == T(5));
+		CHECK(scalarAddV.z == T(6));
 
-    // Test compound assignment operators with scalars
-    TEST_CASE("Vector3 compound assignment with scalars")
-    {
-        Vector3<float> v(2.0f, 3.0f, 4.0f);
-        float scalar = 2.0f;
+		// Subtraction
+		Vector3<T> vSubScalar = v - scalar;
+		CHECK(vSubScalar.x == T(0));
+		CHECK(vSubScalar.y == T(1));
+		CHECK(vSubScalar.z == T(2));
 
-        // +=
-        Vector3<float> vAddEq = v;
-        vAddEq += scalar;
-        CHECK(vAddEq.x == 4.0f);
-        CHECK(vAddEq.y == 5.0f);
-        CHECK(vAddEq.z == 6.0f);
+		Vector3<T> scalarSubV = scalar - v;
+		CHECK(scalarSubV.x == T(0));
+		CHECK(scalarSubV.y == T(-1));
+		CHECK(scalarSubV.z == T(-2));
 
-        // -=
-        Vector3<float> vSubEq = v;
-        vSubEq -= scalar;
-        CHECK(vSubEq.x == 0.0f);
-        CHECK(vSubEq.y == 1.0f);
-        CHECK(vSubEq.z == 2.0f);
+		// Multiplication
+		Vector3<T> vMulScalar = v * scalar;
+		CHECK(vMulScalar.x == T(4));
+		CHECK(vMulScalar.y == T(6));
+		CHECK(vMulScalar.z == T(8));
 
-        // *=
-        Vector3<float> vMulEq = v;
-        vMulEq *= scalar;
-        CHECK(vMulEq.x == 4.0f);
-        CHECK(vMulEq.y == 6.0f);
-        CHECK(vMulEq.z == 8.0f);
+		Vector3<T> scalarMulV = scalar * v;
+		CHECK(scalarMulV.x == T(4));
+		CHECK(scalarMulV.y == T(6));
+		CHECK(scalarMulV.z == T(8));
 
-        // /=
-        Vector3<float> vDivEq = v;
-        vDivEq /= scalar;
-        CHECK(vDivEq.x == 1.0f);
-        CHECK(vDivEq.y == 1.5f);
-        CHECK(vDivEq.z == 2.0f);
-    }
+		// Division
+		Vector3<T> vDivScalar = v / scalar;
+		CHECK(vDivScalar.x == T(1));
+		CHECK(vDivScalar.y == T(1.5));
+		CHECK(vDivScalar.z == T(2));
 
-    // Test vector-vector operations
-    TEST_CASE("Vector3 vector operations")
-    {
-        Vector3<float> v1(2.0f, 3.0f, 4.0f);
-        Vector3<float> v2(1.0f, 2.0f, 3.0f);
+		Vector3<T> scalarDivV = scalar / v;
+		CHECK(scalarDivV.x == doctest::Approx(T(2) / T(2)));
+		CHECK(scalarDivV.y == doctest::Approx(T(2) / T(3)));
+		CHECK(scalarDivV.z == doctest::Approx(T(2) / T(4)));
+	}
 
-        // Addition
-        Vector3<float> vAdd = v1 + v2;
-        CHECK(vAdd.x == 3.0f);
-        CHECK(vAdd.y == 5.0f);
-        CHECK(vAdd.z == 7.0f);
+	TEST_CASE_TEMPLATE("Vector3 compound assignment with scalars", T, float, double)
+	{
+		Vector3<T> v(T(2), T(3), T(4));
+		T scalar = T(2);
 
-        // Subtraction
-        Vector3<float> vSub = v1 - v2;
-        CHECK(vSub.x == 1.0f);
-        CHECK(vSub.y == 1.0f);
-        CHECK(vSub.z == 1.0f);
+		// +=
+		Vector3<T> vAddEq = v;
+		vAddEq += scalar;
+		CHECK(vAddEq.x == T(4));
+		CHECK(vAddEq.y == T(5));
+		CHECK(vAddEq.z == T(6));
 
-        // Compound addition
-        Vector3<float> vAddEq = v1;
-        vAddEq += v2;
-        CHECK(vAddEq.x == 3.0f);
-        CHECK(vAddEq.y == 5.0f);
-        CHECK(vAddEq.z == 7.0f);
+		// -=
+		Vector3<T> vSubEq = v;
+		vSubEq -= scalar;
+		CHECK(vSubEq.x == T(0));
+		CHECK(vSubEq.y == T(1));
+		CHECK(vSubEq.z == T(2));
 
-        // Compound subtraction
-        Vector3<float> vSubEq = v1;
-        vSubEq -= v2;
-        CHECK(vSubEq.x == 1.0f);
-        CHECK(vSubEq.y == 1.0f);
-        CHECK(vSubEq.z == 1.0f);
-    }
+		// *=
+		Vector3<T> vMulEq = v;
+		vMulEq *= scalar;
+		CHECK(vMulEq.x == T(4));
+		CHECK(vMulEq.y == T(6));
+		CHECK(vMulEq.z == T(8));
+
+		// /=
+		Vector3<T> vDivEq = v;
+		vDivEq /= scalar;
+		CHECK(vDivEq.x == T(1));
+		CHECK(vDivEq.y == T(1.5));
+		CHECK(vDivEq.z == T(2));
+	}
+
+	TEST_CASE_TEMPLATE("Vector3 vector operations", T, int32_t, uint32_t, float, double)
+	{
+		Vector3<T> v1(T(2), T(3), T(4));
+		Vector3<T> v2(T(1), T(2), T(3));
+
+		// Addition
+		Vector3<T> vAdd = v1 + v2;
+		CHECK(vAdd.x == T(3));
+		CHECK(vAdd.y == T(5));
+		CHECK(vAdd.z == T(7));
+
+		// Subtraction
+		Vector3<T> vSub = v1 - v2;
+		CHECK(vSub.x == T(1));
+		CHECK(vSub.y == T(1));
+		CHECK(vSub.z == T(1));
+
+		// Compound addition
+		Vector3<T> vAddEq = v1;
+		vAddEq += v2;
+		CHECK(vAddEq.x == T(3));
+		CHECK(vAddEq.y == T(5));
+		CHECK(vAddEq.z == T(7));
+
+		// Compound subtraction
+		Vector3<T> vSubEq = v1;
+		vSubEq -= v2;
+		CHECK(vSubEq.x == T(1));
+		CHECK(vSubEq.y == T(1));
+		CHECK(vSubEq.z == T(1));
+	}
 }
