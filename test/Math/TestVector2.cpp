@@ -2,8 +2,6 @@
 #include "doctest/doctest.h"
 
 #include <Ailurus/Math/Vector2.hpp>
-#include <Ailurus/Math/Vector3.hpp>
-#include <Ailurus/Math/Vector4.hpp>
 
 using namespace Ailurus;
 

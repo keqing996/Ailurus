@@ -104,6 +104,9 @@ namespace Ailurus
 
 		static const Vector3 Zero;
 		static const Vector3 One;
+		static const Vector3 Up;
+		static const Vector3 Right;
+		static const Vector3 Forward;
 	};
 
 	template <typename ElementType>
@@ -111,6 +114,15 @@ namespace Ailurus
 
 	template <typename ElementType>
 	Vector3<ElementType> const Vector3<ElementType>::One(ElementType(1), ElementType(1), ElementType(1));
+
+	template <typename ElementType>
+	Vector3<ElementType> const Vector3<ElementType>::Up(ElementType(0), ElementType(0), ElementType(1));
+
+	template <typename ElementType>
+	Vector3<ElementType> const Vector3<ElementType>::Right(ElementType(0), ElementType(1), ElementType(0));
+
+	template <typename ElementType>
+	Vector3<ElementType> const Vector3<ElementType>::Forward(ElementType(1), ElementType(0), ElementType(0));
 
 	// == operator
 	template <typename ElementType>
