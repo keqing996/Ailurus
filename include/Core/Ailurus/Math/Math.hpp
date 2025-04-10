@@ -197,17 +197,17 @@ namespace Ailurus::Math
 	}
 
 	/**
-     * @brief Projection matrix of ortho camera, frustum is symmetry by y-axis & z-axis. \n\n
-     *
-     * For standard ortho projection, before projection matrix, camera looks at +x, near value
-     * and far value are greater than zero, near > far > 0. The standard ortho projection maps
-     * near value to -1 and maps far value to +1. \n\n
-     *
-     * @param nearPlaneHalfY Near plane half width.
-     * @param nearPlaneHalfZ Near plane half height.
-     * @param nearPlaneX Near plane x value.
-     * @param farPlaneX Far plane x value.
-     */
+	 * @brief Projection matrix of ortho camera, camera is looking at +x, frustum is symmetry by y-axis
+	 * and z-axis.
+	 *
+	 * @remark The matrix will eventually restrict all points within the range to be between -1 and 1
+	 * on all three coordinate axes.
+	 *
+	 * @param nearPlaneHalfY Near plane half width.
+	 * @param nearPlaneHalfZ Near plane half height.
+	 * @param nearPlaneX Near plane x value.
+	 * @param farPlaneX Far plane x value.
+	 */
 	template <typename T>
 	Matrix4x4<T> MakeOrthoProjectionMatrix(float nearPlaneHalfY, float nearPlaneHalfZ, float nearPlaneX, float farPlaneX)
 	{
@@ -226,7 +226,7 @@ namespace Ailurus::Math
 		Matrix4x4<T> scaleMatrix = ScaleMatrix(Vector3<T>{
 			2 / (vRight - vLeft),
 			2 / (vTop - vBottom),
-			2 / (vNear - vFar) });
+			2 / (vFar - vNear) });
 
 		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
 
@@ -234,20 +234,17 @@ namespace Ailurus::Math
 	}
 
 	/**
-     * @brief Projection matrix of perspective camera, frustum is symmetry by y-axis & z-axis. \n\n
-     *
-	 * @remark In OpenGL, we should apply two modifications to standard perspective projection result. The first
-     * is multiply -1 to result. Because gl_Position's w value can not be less than zero. In OpenGL,
-     * a clip space is defined to -w <= x,y,z < w, so if w is less than zero, clip space flipped,
-     * which leads nothing drew. The second modification is to reverse z. The NDC coordinate in OpenGL
-     * is left-handed system, but our coordinates in every calculation step is right-handed system,
-     * so we need to flip z coordinate to fit OpenGL NDC space.
-     *
-     * @param nearPlaneHalfY Near plane half width.
-     * @param nearPlaneHalfZ Near plane half height.
-     * @param nearPlaneX Near plane x value.
-     * @param farPlaneX Far plane x value.
-     */
+	 * @brief Projection matrix of perspective camera, camera is looking at +x, frustum is symmetry by y-axis
+	 * and z-axis.
+	 *
+	 * @remark The matrix will eventually restrict all points within the range to be between -1 and 1
+	 * on all three coordinate axes.
+	 *
+	 * @param nearPlaneHalfY Near plane half width.
+	 * @param nearPlaneHalfZ Near plane half height.
+	 * @param nearPlaneX Near plane x value.
+	 * @param farPlaneX Far plane x value.
+	 */
 	template <typename T>
 	Matrix4x4<T> MakePerspectiveProjectionMatrix(float nearPlaneHalfY, float nearPlaneHalfZ, float nearPlaneX, float farPlaneX)
 	{
@@ -266,7 +263,7 @@ namespace Ailurus::Math
 		Matrix4x4<T> scaleMatrix = ScaleMatrix(Vector3<T>{
 			2 / (vRight - vLeft),
 			2 / (vTop - vBottom),
-			2 / (vNear - vFar) });
+			2 / (vFar - vNear) });
 
 		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
 
@@ -278,6 +275,79 @@ namespace Ailurus::Math
 		};
 
 		return standardOrthoProj * compressMatrix;
+	}
+
+	/**
+	 * @brief Get matrix that turns clips space to NDC space.
+	 *
+	 * @remark In OpenGL, the camera is looking at +z, up is +y, right is +x, and
+	 * the depth range is [-1, 1].
+	 */
+	template <typename T>
+	constexpr Matrix4x4<T> MakeNdcMatrixOpenGL()
+	{
+		auto matSwitchAxis = Matrix4x4<T>{
+			{ 0, 0, 1, 0 }, // +x -> +z
+			{ 1, 0, 0, 0 }, // +y -> +x
+			{ 0, 1, 0, 0 }, // +z -> +y
+			{ 0, 0, 0, 1 }
+		};
+
+		auto matCompressZ = Matrix4x4<T>::Identity;
+
+		return matCompressZ * matSwitchAxis;
+	}
+
+	/**
+	 * @brief Get matrix that turns clips space to NDC space.
+	 *
+	 * @remark In Vulkan, the camera is looking at +z, up is -y, right is +x, and
+	 * the depth range is [0, 1].
+	 */
+	template <typename T>
+	constexpr Matrix4x4<T> MakeNdcMatrixVulkan()
+	{
+		auto matSwitchAxis = Matrix4x4<T>{
+			{ 0, 0, 1, 0 },	 // +x -> +z
+			{ 1, 0, 0, 0 },	 // +y -> +x
+			{ 0, -1, 0, 0 }, // +z -> -y
+			{ 0, 0, 0, 1 }
+		};
+
+		auto matCompressZ = Matrix4x4<T>{
+			{ 1, 0, 0, 0 },
+			{ 0, 1, 0, 0 },
+			{ 0, 0, 0.5, 0.5 }, // 0.5 * z + 0.6
+			{ 0, 0, 0, 1 }
+		};
+
+		return matCompressZ * matSwitchAxis;
+	}
+
+	/**
+	 * @brief Get matrix that turns clips space to NDC space.
+	 *
+	 * @remark In DirectX, the camera is looking at -z, up is -y, right is +x, and
+	 * the depth range is [0, 1].
+	 */
+	template <typename T>
+	constexpr Matrix4x4<T> MakeNdcMatrixD3D()
+	{
+		auto matSwitchAxis = Matrix4x4<T>{
+			{ 0, 0, -1, 0 }, // +x -> -z
+			{ 1, 0, 0, 0 },	 // +y -> +x
+			{ 0, -1, 0, 0 }, // +z -> -y
+			{ 0, 0, 0, 1 }
+		};
+
+		auto matCompressZ = Matrix4x4<T>{
+			{ 1, 0, 0, 0 },
+			{ 0, 1, 0, 0 },
+			{ 0, 0, 0.5, 0.5 }, // 0.5 * z + 0.6
+			{ 0, 0, 0, 1 }
+		};
+
+		return matCompressZ * matSwitchAxis;
 	}
 
 } // namespace Ailurus::Math
