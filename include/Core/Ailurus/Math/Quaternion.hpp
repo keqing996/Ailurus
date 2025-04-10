@@ -3,7 +3,6 @@
 #include <cmath>
 #include <stdexcept>
 #include "Vector3.hpp"
-#include "Internal/MathInternal.hpp"
 
 namespace Ailurus
 {
