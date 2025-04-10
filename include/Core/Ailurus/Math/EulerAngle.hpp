@@ -74,4 +74,7 @@ namespace Ailurus
 	{
 		return !(left == right);
 	}
+
+	using EulerAnglesf = EulerAngles<float>;
+	using EulerAnglesd = EulerAngles<double>;
 } // namespace Ailurus

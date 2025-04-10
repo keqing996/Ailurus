@@ -1,8 +1,9 @@
 #pragma once
 
 #include <numbers>
-#include "Vector.hpp"
-#include "Matrix.hpp"
+#include "Vector3.hpp"
+#include "Vector4.hpp"
+#include "Matrix4x4.hpp"
 #include "Quaternion.hpp"
 #include "EulerAngle.hpp"
 
@@ -11,18 +12,18 @@ namespace Ailurus::Math
 	template <typename T>
 	Matrix4x4<T> TranslateMatrix(const Vector3<T>& translation)
 	{
-		Matrix4x4<T> matrix = Matrix4x4<T>::Identity();
-		matrix.SetCol(3, Vector4<T>(translation.x(), translation.y(), translation.z(), 1));
+		Matrix4x4<T> matrix = Matrix4x4<T>::Identity;
+		matrix.SetCol(3, Vector4<T>(translation.x, translation.y, translation.z, 1));
 		return matrix;
 	}
 
 	template <typename T>
 	Matrix4x4<T> ScaleMatrix(const Vector3<T>& scale)
 	{
-		Matrix4x4<T> result = Matrix4x4<T>::Identity();
-		result[0][0] = scale.x();
-		result[1][1] = scale.y();
-		result[2][2] = scale.z();
+		Matrix4x4<T> result = Matrix4x4<T>::Identity;
+		result[0][0] = scale.x;
+		result[1][1] = scale.y;
+		result[2][2] = scale.z;
 		return result;
 	}
 
@@ -162,7 +163,7 @@ namespace Ailurus::Math
 	{
 		T halfAngle = angle / 2;
 		T s = std::sin(halfAngle);
-		return Quaternion<T>(axis.x() * s, axis.y() * s, axis.z() * s, std::cos(halfAngle));
+		return Quaternion<T>(axis.x * s, axis.y * s, axis.z * s, std::cos(halfAngle));
 	}
 
 	template <typename T>
@@ -174,7 +175,7 @@ namespace Ailurus::Math
 	template <typename T>
 	Matrix4x4<T> MakeViewMatrix(const Vector3<T>& pos, const Quaternion<T>& rot)
 	{
-		Matrix4x4<T> translationMatrix = TranslateMatrix(-pos);
+		Matrix4x4<T> translationMatrix = TranslateMatrix(-1 * pos);
 		Matrix4x4<T> rotationMatrix = QuaternionToRotateMatrix(rot.Conjugate());
 
 		return rotationMatrix * translationMatrix;

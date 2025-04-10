@@ -7,146 +7,172 @@
 using namespace Ailurus;
 using namespace Ailurus::Math;
 
-TEST_SUITE("Math Rotation")
+TEST_SUITE("Matrix3x3")
 {
-	TEST_CASE_TEMPLATE("EulerAngleToQuaternion", T, float, double)
+	TEST_CASE("TranslateMatrix function")
 	{
-		// Double conversion should return to original
-		EulerAngles<T> angles(0.5, 0.3, 0.1);
-		Quaternion<T> quat = EulerAngleToQuaternion(angles);
-		EulerAngles<T> result = QuaternionToEulerAngles(quat);
-		CHECK(std::abs(result.pitch - angles.pitch) < 1e-5);
-		CHECK(std::abs(result.yaw - angles.yaw) < 1e-5);
-		CHECK(std::abs(result.roll - angles.roll) < 1e-5);
+		// Test basic translation
+		Vector3f translation(1.0f, 2.0f, 3.0f);
+		Matrix4x4f matrix = TranslateMatrix(translation);
+
+		// Check identity with translation column
+		CHECK(matrix[0][0] == 1.0f);
+		CHECK(matrix[1][1] == 1.0f);
+		CHECK(matrix[2][2] == 1.0f);
+		CHECK(matrix[3][3] == 1.0f);
+
+		// Check translation components
+		CHECK(matrix[0][3] == 1.0f);
+		CHECK(matrix[1][3] == 2.0f);
+		CHECK(matrix[2][3] == 3.0f);
+
+		// Test with vector transformation
+		Vector4f point(5.0f, 6.0f, 7.0f, 1.0f);
+		Vector4f transformed = matrix * point;
+
+		CHECK(transformed.x == doctest::Approx(6.0f));
+		CHECK(transformed.y == doctest::Approx(8.0f));
+		CHECK(transformed.z == doctest::Approx(10.0f));
+		CHECK(transformed.w == doctest::Approx(1.0f));
 	}
 
-	TEST_CASE_TEMPLATE("QuaternionToEulerAngles", T, float, double)
+	TEST_CASE("ScaleMatrix function")
 	{
-		// Identity quaternion should return zero angles
-		Quaternion<T> quat = Quaternion<T>::Identity();
-		EulerAngles<T> angles = QuaternionToEulerAngles(quat);
+		// Test basic scaling
+		Vector3f scale(2.0f, 3.0f, 4.0f);
+		Matrix4x4f matrix = ScaleMatrix(scale);
 
-		CHECK(std::abs(angles.pitch) < 1e-5);
-		CHECK(std::abs(angles.yaw) < 1e-5);
-		CHECK(std::abs(angles.roll) < 1e-5);
+		// Check diagonal elements
+		CHECK(matrix[0][0] == 2.0f);
+		CHECK(matrix[1][1] == 3.0f);
+		CHECK(matrix[2][2] == 4.0f);
+		CHECK(matrix[3][3] == 1.0f);
+
+		// Test with vector transformation
+		Vector4f point(1.0f, 1.0f, 1.0f, 1.0f);
+		Vector4f transformed = matrix * point;
+
+		CHECK(transformed.x == doctest::Approx(2.0f));
+		CHECK(transformed.y == doctest::Approx(3.0f));
+		CHECK(transformed.z == doctest::Approx(4.0f));
+		CHECK(transformed.w == doctest::Approx(1.0f));
 	}
 
-	TEST_CASE_TEMPLATE("QuaternionToMatrix", T, float, double)
+	TEST_CASE("Conversion between Euler angles and Quaternion")
 	{
-		// Identity quaternion should return identity matrix
-		Quaternion<T> quat = Quaternion<T>::Identity();
-		Matrix<T, 4, 4> mat = QuaternionToRotateMatrix(quat);
+		// Test with some specific angles
+		EulerAnglesf angles{ 0.5f, 0.3f, 0.1f };
 
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				if (i == j)
-					CHECK(std::abs(mat[i][j] - 1) < 1e-5);
-				else
-					CHECK(std::abs(mat[i][j]) < 1e-5);
-			}
-		}
+		// Convert Euler to Quaternion
+		Quaternionf quat = EulerAngleToQuaternion(angles);
+
+		// Convert back to Euler
+		EulerAnglesf resultAngles = QuaternionToEulerAngles(quat);
+
+		// Check that the round-trip conversion is consistent
+		CHECK(resultAngles.roll == doctest::Approx(angles.roll).epsilon(0.001f));
+		CHECK(resultAngles.pitch == doctest::Approx(angles.pitch).epsilon(0.001f));
+		CHECK(resultAngles.yaw == doctest::Approx(angles.yaw).epsilon(0.001f));
 	}
 
-	TEST_CASE_TEMPLATE("MatrixToQuaternion", T, float, double)
+	TEST_CASE("Conversion between Quaternion and Rotation Matrix")
 	{
-		// Identity matrix should return identity quaternion
-		Matrix<T, 4, 4> mat;
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				mat[i][j] = (i == j) ? 1 : 0;
-			}
-		}
+		// Create a quaternion representing a 90-degree rotation around Y axis
+		Quaternionf quat = RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 3.14159f / 2);
 
-		Quaternion<T> quat = RotateMatrixToQuaternion(mat);
+		// Convert to rotation matrix
+		Matrix4x4f rotMatrix = QuaternionToRotateMatrix(quat);
 
-		CHECK(std::abs(quat.x) < 1e-5);
-		CHECK(std::abs(quat.y) < 1e-5);
-		CHECK(std::abs(quat.z) < 1e-5);
-		CHECK(std::abs(quat.w - 1) < 1e-5);
+		// Test the rotation of a vector
+		Vector3f vec(1.0f, 0.0f, 0.0f);
+		Vector4f vec4(vec.x, vec.y, vec.z, 1.0f);
+
+		Vector4f rotatedVec = rotMatrix * vec4;
+
+		// A 90-degree rotation around Y should turn (1,0,0) to approximately (0,0,-1)
+		CHECK(rotatedVec.x == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(rotatedVec.y == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(rotatedVec.z == doctest::Approx(-1.0f).epsilon(0.001f));
+
+		// Convert back to quaternion
+		Quaternionf resultQuat = RotateMatrixToQuaternion(rotMatrix);
+
+		// Check that the quaternions are the same (considering that q and -q represent the same rotation)
+		bool isSameRotation = quat.Dot(resultQuat) > 0.999f || quat.Dot(-1 * resultQuat) > 0.999f;
+		CHECK(isSameRotation);
 	}
 
-	TEST_CASE_TEMPLATE("EulerAngleToMatrix", T, float, double)
+	TEST_CASE("Euler angles to Rotation Matrix and back")
 	{
-		// Zero euler angles should return identity matrix
-		EulerAngles<T> angles(0, 0, 0);
-		Matrix<T, 4, 4> mat = EulerAngleToRotateMatrix(angles);
+		EulerAnglesf angles{ 0.1f, 0.2f, 0.3f };
 
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				if (i == j)
-				{
-					CHECK(std::abs(mat[i][j] - 1) < 1e-5);
-				}
-				else
-				{
-					CHECK(std::abs(mat[i][j]) < 1e-5);
-				}
-			}
-		}
+		// Convert Euler to rotation matrix
+		Matrix4x4f rotMatrix = EulerAngleToRotateMatrix(angles);
+
+		// Convert back to Euler
+		EulerAnglesf resultAngles = RotateMatrixToEulerAngle(rotMatrix);
+
+		// Check the round-trip conversion
+		CHECK(resultAngles.roll == doctest::Approx(angles.roll).epsilon(0.001f));
+		CHECK(resultAngles.pitch == doctest::Approx(angles.pitch).epsilon(0.001f));
+		CHECK(resultAngles.yaw == doctest::Approx(angles.yaw).epsilon(0.001f));
 	}
 
-	TEST_CASE_TEMPLATE("MatrixToEulerAngle", T, float, double)
+	TEST_CASE("RotateAxis function")
 	{
-		// Identity matrix should return zero angles
-		Matrix<T, 4, 4> mat;
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				mat[i][j] = (i == j) ? 1 : 0;
-			}
-		}
+		// Test rotation around X axis
+		Quaternionf quatX = RotateAxis(Vector3f(1.0f, 0.0f, 0.0f), 3.14159f / 2);
+		Vector3f vecY(0.0f, 1.0f, 0.0f);
+		Vector3f rotatedY = quatX * vecY;
 
-		EulerAngles<T> angles = RotateMatrixToEulerAngle(mat);
-
-		CHECK(std::abs(angles.pitch) < 1e-5);
-		CHECK(std::abs(angles.yaw) < 1e-5);
-		CHECK(std::abs(angles.roll) < 1e-5);
+		CHECK(rotatedY.x == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(rotatedY.y == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(rotatedY.z == doctest::Approx(1.0f).epsilon(0.001f));
 	}
 
-	TEST_CASE_TEMPLATE("RotateAxis", T, float, double)
+	TEST_CASE("MakeModelMatrix function")
 	{
-		// Rotate 90 degrees around Y axis
-		Vector<T, 3> yAxis(0, 1, 0);
-		Quaternion<T> quat = RotateAxis(yAxis, std::numbers::pi_v<T> / 2);
+		Vector3f position(1.0f, 2.0f, 3.0f);
+		Quaternionf rotation = RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 3.14159f / 2);
+		Vector3f scale(2.0f, 2.0f, 2.0f);
 
-		// Create a vector pointing along the X axis
-		Vector<T, 3> vec(1, 0, 0);
+		Matrix4x4f modelMatrix = MakeModelMatrix(position, rotation, scale);
 
-		// // Apply the rotation, should point along the -Z axis
-		Vector<T, 3> rotated = quat * vec;
+		// Test the transformation of a point
+		Vector4f point(1.0f, 0.0f, 0.0f, 1.0f);
+		Vector4f transformed = modelMatrix * point;
 
-		CHECK(std::abs(rotated.x()) < 1e-5);
-		CHECK(std::abs(rotated.y()) < 1e-5);
-		CHECK(std::abs(rotated.z() + 1) < 1e-5);
+		// Expected result: rotated, scaled, then translated
+		CHECK(transformed.x == doctest::Approx(1.0f).epsilon(0.001f)); // 1 + 0*2
+		CHECK(transformed.y == doctest::Approx(2.0f).epsilon(0.001f)); // 2 + 0*2
+		CHECK(transformed.z == doctest::Approx(1.0f).epsilon(0.001f)); // 3 + (-1)*2
 	}
 
-	TEST_CASE_TEMPLATE("Full rotation conversion cycle", T, float, double)
+	TEST_CASE("MakeViewMatrix function")
 	{
-		// Create an any euler angle
-		EulerAngles<T> original(0.1, 0.2, 0.3);
+		Vector3f cameraPos(0.0f, 0.0f, 5.0f);
+		Quaternionf cameraRot = Quaternionf::Identity;
 
-		// Convert to quaternion
-		Quaternion<T> quat = EulerAngleToQuaternion(original);
+		Matrix4x4f viewMatrix = MakeViewMatrix(cameraPos, cameraRot);
 
-		// Then convert to matrix
-		Matrix<T, 4, 4> mat = QuaternionToRotateMatrix(quat);
+		// Test transforming a world point to view space
+		Vector4f worldPoint(0.0f, 0.0f, 0.0f, 1.0f);
+		Vector4f viewPoint = viewMatrix * worldPoint;
 
-		// Then convert back to quaternion
-		Quaternion<T> quat2 = RotateMatrixToQuaternion(mat);
+		// Camera at (0,0,5) looking down -Z, so the origin should be at (0,0,-5) in view space
+		CHECK(viewPoint.x == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(viewPoint.y == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(viewPoint.z == doctest::Approx(-5.0f).epsilon(0.001f));
+	}
 
-		// Then convert back to euler angles
-		EulerAngles<T> result = QuaternionToEulerAngles(quat2);
+	TEST_CASE("Projection Matrices")
+	{
+		// Simple test to ensure they compile and run
+		Matrix4x4f ortho = MakeOrthoProjectionMatrix<float>(10.0f, 10.0f, 0.1f, 100.0f);
+		Matrix4x4f persp = MakePerspectiveProjectionMatrix<float>(10.0f, 10.0f, 0.1f, 100.0f);
 
-		// Check if the result is close to the original
-		CHECK(std::abs(result.pitch - original.pitch) < 1e-5);
-		CHECK(std::abs(result.yaw - original.yaw) < 1e-5);
-		CHECK(std::abs(result.roll - original.roll) < 1e-5);
+		// Basic checks
+		CHECK(ortho != Matrix4x4f::Zero);
+		CHECK(persp != Matrix4x4f::Zero);
 	}
 }

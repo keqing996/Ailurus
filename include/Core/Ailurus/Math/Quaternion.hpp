@@ -106,8 +106,6 @@ namespace Ailurus
 			return std::sqrt(x * x + y * y + z * z + w * w);
 		}
 
-		template <typename T = ElementType>
-			requires _internal::CanNormalize<T>
 		Quaternion& Normalize()
 		{
 			ElementType mag = Magnitude();
@@ -121,8 +119,6 @@ namespace Ailurus
 			return *this;
 		}
 
-		template <typename T = ElementType>
-			requires _internal::CanNormalize<T>
 		Quaternion Normalized() const
 		{
 			Quaternion result = *this;
@@ -245,9 +241,9 @@ namespace Ailurus
 	template <typename ElementType>
 	Vector3<ElementType> operator*(const Quaternion<ElementType>& quat, const Vector3<ElementType>& vec)
 	{
-		Quaternion<ElementType> vecQuat(vec.x(), vec.y(), vec.z(), 0);
+		Quaternion<ElementType> vecQuat(vec.x, vec.y, vec.z, 0);
 		Quaternion<ElementType> result = quat * vecQuat * quat.Conjugate();
-		return Vector<ElementType, 3>(result.x, result.y, result.z);
+		return Vector3<ElementType>(result.x, result.y, result.z);
 	}
 
 	template <typename ElementType, typename ScalarType>
@@ -260,4 +256,6 @@ namespace Ailurus
 		return quat;
 	}
 
+	using Quaternionf = Quaternion<float>;
+	using Quaterniond = Quaternion<double>;
 } // namespace Ailurus
