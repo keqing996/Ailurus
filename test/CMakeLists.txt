@@ -11,7 +11,7 @@ create_ailurus_core_test (ailurus_test_math_vector3             Math/TestVector3
 create_ailurus_core_test (ailurus_test_math_vector4             Math/TestVector4.cpp)
 create_ailurus_core_test (ailurus_test_math_matrix2x2           Math/TestMatrix2x2.cpp)
 create_ailurus_core_test (ailurus_test_math_matrix3x3           Math/TestMatrix3x3.cpp)
-#create_ailurus_core_test (ailurus_test_math_matrix4x4           Math/TestMatrix4x4.cpp)
+create_ailurus_core_test (ailurus_test_math_matrix4x4           Math/TestMatrix4x4.cpp)
 #create_ailurus_core_test (ailurus_test_math_quaternion          Math/TestQuaternion.cpp)
 create_ailurus_core_test (ailurus_test_math_euler_angle         Math/TestEulerAngle.cpp)
 #create_ailurus_core_test (ailurus_test_math                     Math/TestMath.cpp)

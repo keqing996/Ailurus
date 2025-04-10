@@ -36,6 +36,13 @@ TEST_SUITE("Vector4")
 		CHECK(v4.y == T(7));
 		CHECK(v4.z == T(8));
 		CHECK(v4.w == T(9));
+
+		// Initializer list constructor
+		Vector4<T> v5{ T(2), T(3), T(4), T(5) };
+		CHECK(v5.x == T(2));
+		CHECK(v5.y == T(3));
+		CHECK(v5.z == T(4));
+		CHECK(v5.w == T(5));
 	}
 
 	TEST_CASE_TEMPLATE("Vector4 assignment operators", T, int32_t, uint32_t, float, double)

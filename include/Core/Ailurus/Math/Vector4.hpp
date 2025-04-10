@@ -6,13 +6,9 @@
 namespace Ailurus
 {
 	template <typename ElementType>
-	class Vector4
+	struct Vector4
 	{
-	public:
-		ElementType x;
-		ElementType y;
-		ElementType z;
-		ElementType w;
+		ElementType x, y, z, w;
 
 		Vector4()
 			: x(0), y(0), z(0), w(0) {}
