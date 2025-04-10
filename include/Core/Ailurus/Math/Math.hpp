@@ -10,6 +10,20 @@
 namespace Ailurus::Math
 {
 	template <typename T>
+		requires std::is_floating_point_v<T>
+	T DegreeToRadian(T degrees)
+	{
+		return degrees * std::numbers::pi_v<T> / T(180);
+	}
+
+	template <typename T>
+		requires std::is_floating_point_v<T>
+	T RadianToDegree(T radians)
+	{
+		return radians * T(180) / std::numbers::pi_v<T>;
+	}
+
+	template <typename T>
 	Matrix4x4<T> TranslateMatrix(const Vector3<T>& translation)
 	{
 		Matrix4x4<T> matrix = Matrix4x4<T>::Identity;
@@ -30,15 +44,16 @@ namespace Ailurus::Math
 	template <typename T>
 	Quaternion<T> EulerAngleToQuaternion(const EulerAngles<T>& euler)
 	{
-		T cy = std::cos(euler.yaw * 0.5);
-		T sy = std::sin(euler.yaw * 0.5);
-		T cp = std::cos(euler.pitch * 0.5);
-		T sp = std::sin(euler.pitch * 0.5);
 		T cr = std::cos(euler.roll * 0.5);
 		T sr = std::sin(euler.roll * 0.5);
+		T cp = std::cos(euler.pitch * 0.5);
+		T sp = std::sin(euler.pitch * 0.5);
+		T cy = std::cos(euler.yaw * 0.5);
+		T sy = std::sin(euler.yaw * 0.5);
 
-		return Quaternion<T>(cr * sp * cy - sr * cp * sy,
-			sr * cp * cy + cr * sp * sy,
+		return Quaternion<T>(
+			sr * cp * cy - cr * sp * sy,
+			cr * sp * cy + sr * cp * sy,
 			cr * cp * sy - sr * sp * cy,
 			cr * cp * cy + sr * sp * sy);
 	}
@@ -175,72 +190,92 @@ namespace Ailurus::Math
 	template <typename T>
 	Matrix4x4<T> MakeViewMatrix(const Vector3<T>& pos, const Quaternion<T>& rot)
 	{
-		Matrix4x4<T> translationMatrix = TranslateMatrix(-1 * pos);
+		Matrix4x4<T> translationMatrix = TranslateMatrix(-pos);
 		Matrix4x4<T> rotationMatrix = QuaternionToRotateMatrix(rot.Conjugate());
 
 		return rotationMatrix * translationMatrix;
 	}
 
+	/**
+     * @brief Projection matrix of ortho camera, frustum is symmetry by y-axis & z-axis. \n\n
+     *
+     * For standard ortho projection, before projection matrix, camera looks at +x, near value
+     * and far value are greater than zero, near > far > 0. The standard ortho projection maps
+     * near value to -1 and maps far value to +1. \n\n
+     *
+     * @param nearPlaneHalfY Near plane half width.
+     * @param nearPlaneHalfZ Near plane half height.
+     * @param nearPlaneX Near plane x value.
+     * @param farPlaneX Far plane x value.
+     */
 	template <typename T>
-	Matrix4x4<T> MakeOrthoProjectionMatrix(float nearPlaneHalfX, float nearPlaneHalfY, float nearPlaneZ, float farPlaneZ)
+	Matrix4x4<T> MakeOrthoProjectionMatrix(float nearPlaneHalfY, float nearPlaneHalfZ, float nearPlaneX, float farPlaneX)
 	{
-		float left = -nearPlaneHalfX;
-		float right = nearPlaneHalfX;
-		float top = nearPlaneHalfY;
-		float bottom = -nearPlaneHalfY;
-		float nearV = nearPlaneZ;
-		float farV = farPlaneZ;
+		const float vLeft = -nearPlaneHalfY;
+		const float vRight = nearPlaneHalfY;
+		const float vTop = nearPlaneHalfZ;
+		const float vBottom = -nearPlaneHalfZ;
+		const float vNear = nearPlaneX;
+		const float vFar = farPlaneX;
 
 		Matrix4x4<T> translationMatrix = TranslateMatrix(Vector3<T>{
-			-(right + left) / 2,
-			-(top + bottom) / 2,
-			-(nearV + farV) / 2 });
+			-(vRight + vLeft) / 2,
+			-(vTop + vBottom) / 2,
+			-(vNear + vFar) / 2 });
 
 		Matrix4x4<T> scaleMatrix = ScaleMatrix(Vector3<T>{
-			2 / (right - left),
-			2 / (top - bottom),
-			2 / (nearV - farV) });
+			2 / (vRight - vLeft),
+			2 / (vTop - vBottom),
+			2 / (vNear - vFar) });
 
 		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
 
 		return standardOrthoProj;
 	}
 
+	/**
+     * @brief Projection matrix of perspective camera, frustum is symmetry by y-axis & z-axis. \n\n
+     *
+	 * @remark In OpenGL, we should apply two modifications to standard perspective projection result. The first
+     * is multiply -1 to result. Because gl_Position's w value can not be less than zero. In OpenGL,
+     * a clip space is defined to -w <= x,y,z < w, so if w is less than zero, clip space flipped,
+     * which leads nothing drew. The second modification is to reverse z. The NDC coordinate in OpenGL
+     * is left-handed system, but our coordinates in every calculation step is right-handed system,
+     * so we need to flip z coordinate to fit OpenGL NDC space.
+     *
+     * @param nearPlaneHalfY Near plane half width.
+     * @param nearPlaneHalfZ Near plane half height.
+     * @param nearPlaneX Near plane x value.
+     * @param farPlaneX Far plane x value.
+     */
 	template <typename T>
-	Matrix4x4<T> MakePerspectiveProjectionMatrix(float nearPlaneHalfX, float nearPlaneHalfY, float nearPlaneZ, float farPlaneZ)
+	Matrix4x4<T> MakePerspectiveProjectionMatrix(float nearPlaneHalfY, float nearPlaneHalfZ, float nearPlaneX, float farPlaneX)
 	{
-		float left = -nearPlaneHalfX;
-		float right = nearPlaneHalfX;
-		float top = nearPlaneHalfY;
-		float bottom = -nearPlaneHalfY;
-		float nearV = nearPlaneZ;
-		float farV = farPlaneZ;
+		const float vLeft = -nearPlaneHalfY;
+		const float vRight = nearPlaneHalfY;
+		const float vTop = nearPlaneHalfZ;
+		const float vBottom = -nearPlaneHalfZ;
+		const float vNear = nearPlaneX;
+		const float vFar = farPlaneX;
 
 		Matrix4x4<T> translationMatrix = TranslateMatrix(Vector3<T>{
-			-(right + left) / 2,
-			-(top + bottom) / 2,
-			-(nearV + farV) / 2 });
+			-(vRight + vLeft) / 2,
+			-(vTop + vBottom) / 2,
+			-(vNear + vFar) / 2 });
 
 		Matrix4x4<T> scaleMatrix = ScaleMatrix(Vector3<T>{
-			2 / (right - left),
-			2 / (top - bottom),
-			2 / (nearV - farV) });
+			2 / (vRight - vLeft),
+			2 / (vTop - vBottom),
+			2 / (vNear - vFar) });
 
 		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
 
 		Matrix4x4<T> compressMatrix = {
-			Vector4<T>{nearV, 0, 0, 0},
-			Vector4<T>{0, nearV, 0, 0},
-			Vector4<T>{0, 0, nearV + farV, -farV * nearV},
-			Vector4<T>{0, 0, 1, 0}
+			{ vNear, 0, 0, 0 },
+			{ 0, vNear, 0, 0 },
+			{ 0, 0, vNear + vFar, -vFar * vNear },
+			{ 0, 0, 1, 0 }
 		};
-
-		/* OpenGL
-		Matrix4x4<T> resultWithReverseW = -1 * standardOrthoProj * compressMatrix;
-		Matrix4x4<T> reverseZ = Matrix4x4<T>::Identity();
-		reverseZ(2, 2) = -1;
-		return reverseZ * resultWithReverseW;
-		*/
 
 		return standardOrthoProj * compressMatrix;
 	}

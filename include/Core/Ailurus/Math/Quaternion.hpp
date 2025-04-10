@@ -170,7 +170,7 @@ namespace Ailurus
 
 	template <typename ElementType>
 		requires std::is_floating_point_v<ElementType>
-	Quaternion<ElementType> const Quaternion<ElementType>::Identity(ElementType(1), ElementType(1), ElementType(1), ElementType(1));
+	Quaternion<ElementType> const Quaternion<ElementType>::Identity(ElementType(0), ElementType(0), ElementType(0), ElementType(1));
 
 	template <typename ElementType>
 	bool operator==(const Quaternion<ElementType>& left, const Quaternion<ElementType>& right)
@@ -254,6 +254,12 @@ namespace Ailurus
 		quat.z *= scalar;
 		quat.w *= scalar;
 		return quat;
+	}
+
+	template <typename ElementType>
+	Quaternion<ElementType> operator-(Quaternion<ElementType>& quat)
+	{
+		return Quaternion(-quat.x, -quat.y, -quat.z, -quat.w);
 	}
 
 	using Quaternionf = Quaternion<float>;

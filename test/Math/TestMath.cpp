@@ -2,13 +2,40 @@
 #include "doctest/doctest.h"
 
 #include <Ailurus/Math/Math.hpp>
-#include <cmath>
 
 using namespace Ailurus;
 using namespace Ailurus::Math;
 
 TEST_SUITE("Matrix3x3")
 {
+	TEST_CASE("DegreeToRadian function")
+	{
+		// Test basic conversions
+		CHECK(DegreeToRadian(0.0f) == doctest::Approx(0.0f));
+		CHECK(DegreeToRadian(180.0f) == doctest::Approx(3.14159f).epsilon(0.0001f));
+		CHECK(DegreeToRadian(360.0f) == doctest::Approx(6.28318f).epsilon(0.0001f));
+
+		// Test negative values
+		CHECK(DegreeToRadian(-90.0f) == doctest::Approx(-1.57079f).epsilon(0.0001f));
+
+		// Test arbitrary value
+		CHECK(DegreeToRadian(45.0f) == doctest::Approx(0.78539f).epsilon(0.0001f));
+	}
+
+	TEST_CASE("RadianToDegree function")
+	{
+		// Test basic conversions
+		CHECK(RadianToDegree(0.0f) == doctest::Approx(0.0f));
+		CHECK(RadianToDegree(3.14159f) == doctest::Approx(180.0f).epsilon(0.0001f));
+		CHECK(RadianToDegree(6.28318f) == doctest::Approx(360.0f).epsilon(0.0001f));
+
+		// Test negative values
+		CHECK(RadianToDegree(-1.57079f) == doctest::Approx(-90.0f).epsilon(0.0001f));
+
+		// Test arbitrary value
+		CHECK(RadianToDegree(0.78539f) == doctest::Approx(45.0f).epsilon(0.0001f));
+	}
+
 	TEST_CASE("TranslateMatrix function")
 	{
 		// Test basic translation
@@ -150,7 +177,7 @@ TEST_SUITE("Matrix3x3")
 
 	TEST_CASE("MakeViewMatrix function")
 	{
-		Vector3f cameraPos(0.0f, 0.0f, 5.0f);
+		Vector3f cameraPos(-5.0f, 0.0f, 0.0f);
 		Quaternionf cameraRot = Quaternionf::Identity;
 
 		Matrix4x4f viewMatrix = MakeViewMatrix(cameraPos, cameraRot);
@@ -160,19 +187,28 @@ TEST_SUITE("Matrix3x3")
 		Vector4f viewPoint = viewMatrix * worldPoint;
 
 		// Camera at (0,0,5) looking down -Z, so the origin should be at (0,0,-5) in view space
-		CHECK(viewPoint.x == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(viewPoint.x == doctest::Approx(5.0f).epsilon(0.001f));
 		CHECK(viewPoint.y == doctest::Approx(0.0f).epsilon(0.001f));
-		CHECK(viewPoint.z == doctest::Approx(-5.0f).epsilon(0.001f));
+		CHECK(viewPoint.z == doctest::Approx(0.0f).epsilon(0.001f));
 	}
 
 	TEST_CASE("Projection Matrices")
 	{
-		// Simple test to ensure they compile and run
-		Matrix4x4f ortho = MakeOrthoProjectionMatrix<float>(10.0f, 10.0f, 0.1f, 100.0f);
-		Matrix4x4f persp = MakePerspectiveProjectionMatrix<float>(10.0f, 10.0f, 0.1f, 100.0f);
+		Vector3f cameraPos(-5.0f, 0.0f, 0.0f);
+		Quaternionf cameraRot = Quaternionf::Identity;
 
-		// Basic checks
-		CHECK(ortho != Matrix4x4f::Zero);
-		CHECK(persp != Matrix4x4f::Zero);
+		Matrix4x4f modelMatrix = Matrix4x4f::Identity;
+		Matrix4x4f viewMatrix = MakeViewMatrix(cameraPos, cameraRot);
+		Matrix4x4f orthoProjMatrix = MakeOrthoProjectionMatrix<float>(10.0f, 10.0f, 0.1f, 10.0f);
+		Matrix4x4f perspProjMatrix = MakePerspectiveProjectionMatrix<float>(10.0f, 10.0f, 0.1f, 10.0f);
+
+		Matrix4x4f orthoMVP = orthoProjMatrix * viewMatrix * modelMatrix;
+		Matrix4x4f perspMVP = perspProjMatrix * viewMatrix * modelMatrix;
+
+		Vector4f worldSpacePoint1 = Vector4f::Zero;
+		Vector4f orthoClipSpacePoint1 = orthoMVP * worldSpacePoint1;
+		Vector4f perspClipSpacePoint1 = perspMVP * worldSpacePoint1;
+
+		CHECK_EQ()
 	}
 }

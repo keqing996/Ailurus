@@ -238,6 +238,13 @@ namespace Ailurus
 		return left;
 	}
 
+	// -Vector2
+	template <typename ElementType>
+	Vector2<ElementType> operator-(const Vector2<ElementType>& vec)
+	{
+		return { -vec.x, -vec.y };
+	}
+
 	using Vector2i = Vector2<int>;
 	using Vector2f = Vector2<float>;
 	using Vector2d = Vector2<double>;

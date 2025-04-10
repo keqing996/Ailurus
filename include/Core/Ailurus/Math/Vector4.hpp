@@ -259,6 +259,13 @@ namespace Ailurus
 		return left;
 	}
 
+	// -Vector4
+	template <typename ElementType>
+	Vector4<ElementType> operator-(const Vector4<ElementType>& vec)
+	{
+		return { -vec.x, -vec.y, -vec.z, -vec.w };
+	}
+
 	using Vector4i = Vector4<int>;
 	using Vector4f = Vector4<float>;
 	using Vector4d = Vector4<double>;
