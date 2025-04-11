@@ -3,12 +3,14 @@
 #include <cmath>
 #include <array>
 
-/* Euler angle describe a ZYX intrinsic rotation, uses +X as forward, so 'row' rotates around
- * X axis, 'pitch' rotates around Y axis, 'yaw' rotates around Z axis.
- */
-
 namespace Ailurus
 {
+	/**
+	 * @brief Degrees Euler angles.
+	 *
+	 * Euler angle describe a ZYX intrinsic rotation, uses +X as forward, so 'row' rotates around
+	 * X axis, 'pitch' rotates around Y axis, 'yaw' rotates around Z axis.
+	 */
 	template <typename ElementType>
 		requires std::is_floating_point_v<ElementType>
 	class EulerAngles
@@ -65,9 +67,9 @@ namespace Ailurus
 
 	template <typename ElementType>
 	bool operator==(const EulerAngles<ElementType>& left, const EulerAngles<ElementType>& right)
-    {
-        return left.pitch == right.pitch && left.yaw == right.yaw && left.roll == right.roll;
-    }
+	{
+		return left.pitch == right.pitch && left.yaw == right.yaw && left.roll == right.roll;
+	}
 
 	template <typename ElementType>
 	bool operator!=(const EulerAngles<ElementType>& left, const EulerAngles<ElementType>& right)

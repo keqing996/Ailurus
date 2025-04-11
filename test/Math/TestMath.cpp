@@ -2,6 +2,7 @@
 #include "doctest/doctest.h"
 
 #include <Ailurus/Math/Math.hpp>
+#include "MathHelper.hpp"
 
 using namespace Ailurus;
 using namespace Ailurus::Math;
