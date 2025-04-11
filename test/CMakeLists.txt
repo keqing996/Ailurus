@@ -1,6 +1,6 @@
 function(create_ailurus_core_test test_name source_file)
     add_executable          (${test_name} ${source_file})
-    target_link_libraries   (${test_name} PUBLIC ailurus-core doctest)
+    target_link_libraries   (${test_name} PUBLIC ailurus-core doctest glm)
     add_test                (NAME ${test_name} COMMAND ${test_name})
 endfunction()
 

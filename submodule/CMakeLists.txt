@@ -2,6 +2,9 @@
 # spdlog
 add_subdirectory(spdlog)
 
+# glm
+add_subdirectory(glm)
+
 # sdl
 set (SDL_STATIC ON) # static link sdl
 set (SDL_SHARED OFF)

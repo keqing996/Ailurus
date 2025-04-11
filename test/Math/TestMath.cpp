@@ -209,6 +209,6 @@ TEST_SUITE("Matrix3x3")
 		Vector4f orthoClipSpacePoint1 = orthoMVP * worldSpacePoint1;
 		Vector4f perspClipSpacePoint1 = perspMVP * worldSpacePoint1;
 
-		CHECK_EQ()
+
 	}
 }
