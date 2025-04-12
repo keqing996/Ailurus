@@ -1,8 +1,9 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest/doctest.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <Ailurus/Math/Math.hpp>
-#include "MathHelper.hpp"
 
 using namespace Ailurus;
 using namespace Ailurus::Math;
@@ -90,12 +91,24 @@ TEST_SUITE("Matrix3x3")
 	{
 		// Test with some specific angles
 		EulerAnglesf angles{ 0.5f, 0.3f, 0.1f };
+		glm::vec3 glmAngles(0.5f, 0.3f, 0.1f);
 
 		// Convert Euler to Quaternion
 		Quaternionf quat = EulerAngleToQuaternion(angles);
+		glm::quat glmQuat = glm::quat(glmAngles);
+
+		CHECK(quat.w == doctest::Approx(glmQuat.w).epsilon(0.001f));
+		CHECK(quat.x == doctest::Approx(glmQuat.x).epsilon(0.001f));
+		CHECK(quat.y == doctest::Approx(glmQuat.y).epsilon(0.001f));
+		CHECK(quat.z == doctest::Approx(glmQuat.z).epsilon(0.001f));
 
 		// Convert back to Euler
 		EulerAnglesf resultAngles = QuaternionToEulerAngles(quat);
+		glm::vec3 glmResultAngles = glm::eulerAngles(glmQuat);
+
+		CHECK(resultAngles.roll == doctest::Approx(glmResultAngles.x).epsilon(0.001f));
+		CHECK(resultAngles.pitch == doctest::Approx(glmResultAngles.y).epsilon(0.001f));
+		CHECK(resultAngles.yaw == doctest::Approx(glmResultAngles.z).epsilon(0.001f));
 
 		// Check that the round-trip conversion is consistent
 		CHECK(resultAngles.roll == doctest::Approx(angles.roll).epsilon(0.001f));
@@ -191,25 +204,5 @@ TEST_SUITE("Matrix3x3")
 		CHECK(viewPoint.x == doctest::Approx(5.0f).epsilon(0.001f));
 		CHECK(viewPoint.y == doctest::Approx(0.0f).epsilon(0.001f));
 		CHECK(viewPoint.z == doctest::Approx(0.0f).epsilon(0.001f));
-	}
-
-	TEST_CASE("Projection Matrices")
-	{
-		Vector3f cameraPos(-5.0f, 0.0f, 0.0f);
-		Quaternionf cameraRot = Quaternionf::Identity;
-
-		Matrix4x4f modelMatrix = Matrix4x4f::Identity;
-		Matrix4x4f viewMatrix = MakeViewMatrix(cameraPos, cameraRot);
-		Matrix4x4f orthoProjMatrix = MakeOrthoProjectionMatrix<float>(10.0f, 10.0f, 0.1f, 10.0f);
-		Matrix4x4f perspProjMatrix = MakePerspectiveProjectionMatrix<float>(10.0f, 10.0f, 0.1f, 10.0f);
-
-		Matrix4x4f orthoMVP = orthoProjMatrix * viewMatrix * modelMatrix;
-		Matrix4x4f perspMVP = perspProjMatrix * viewMatrix * modelMatrix;
-
-		Vector4f worldSpacePoint1 = Vector4f::Zero;
-		Vector4f orthoClipSpacePoint1 = orthoMVP * worldSpacePoint1;
-		Vector4f perspClipSpacePoint1 = perspMVP * worldSpacePoint1;
-
-
 	}
 }

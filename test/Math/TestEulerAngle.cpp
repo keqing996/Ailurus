@@ -18,27 +18,27 @@ TEST_SUITE("EulerAngle")
 	TEST_CASE_TEMPLATE("Parameterized constructor", T, float, double)
 	{
 		EulerAngles<T> angles(1, 2, 3);
-		CHECK_EQ(angles.pitch, 1);
-		CHECK_EQ(angles.yaw, 2);
-		CHECK_EQ(angles.roll, 3);
+		CHECK_EQ(angles.roll, 1);
+		CHECK_EQ(angles.pitch, 2);
+		CHECK_EQ(angles.yaw, 3);
 	}
 
 	TEST_CASE_TEMPLATE("Copy constructor", T, float, double)
 	{
 		EulerAngles<T> angles1(1, 2, 3);
 		EulerAngles<T> angles2(angles1);
-		CHECK_EQ(angles2.pitch, 1);
-		CHECK_EQ(angles2.yaw, 2);
-		CHECK_EQ(angles2.roll, 3);
+		CHECK_EQ(angles2.roll, 1);
+		CHECK_EQ(angles2.pitch, 2);
+		CHECK_EQ(angles2.yaw, 3);
 	}
 
 	TEST_CASE_TEMPLATE("Move constructor", T, float, double)
 	{
 		EulerAngles<T> angles1(1, 2, 3);
 		EulerAngles<T> angles2(std::move(angles1));
-		CHECK_EQ(angles2.pitch, 1);
-		CHECK_EQ(angles2.yaw, 2);
-		CHECK_EQ(angles2.roll, 3);
+		CHECK_EQ(angles2.roll, 1);
+		CHECK_EQ(angles2.pitch, 2);
+		CHECK_EQ(angles2.yaw, 3);
 	}
 
 	TEST_CASE_TEMPLATE("Copy assignment operator", T, float, double)
@@ -46,9 +46,9 @@ TEST_SUITE("EulerAngle")
 		EulerAngles<T> angles1(1, 2, 3);
 		EulerAngles<T> angles2;
 		angles2 = angles1;
-		CHECK_EQ(angles2.pitch, 1);
-		CHECK_EQ(angles2.yaw, 2);
-		CHECK_EQ(angles2.roll, 3);
+		CHECK_EQ(angles2.roll, 1);
+		CHECK_EQ(angles2.pitch, 2);
+		CHECK_EQ(angles2.yaw, 3);
 	}
 
 	TEST_CASE_TEMPLATE("Move assignment operator", T, float, double)
@@ -56,9 +56,9 @@ TEST_SUITE("EulerAngle")
 		EulerAngles<T> angles1(1, 2, 3);
 		EulerAngles<T> angles2;
 		angles2 = std::move(angles1);
-		CHECK_EQ(angles2.pitch, 1);
-		CHECK_EQ(angles2.yaw, 2);
-		CHECK_EQ(angles2.roll, 3);
+		CHECK_EQ(angles2.roll, 1);
+		CHECK_EQ(angles2.pitch, 2);
+		CHECK_EQ(angles2.yaw, 3);
 	}
 
 	TEST_CASE_TEMPLATE("Equality operator", T, float, double)
@@ -79,8 +79,8 @@ TEST_SUITE("EulerAngle")
 	{
 		EulerAngles<T> angles1(1, 2, 3);
 		EulerAngles<float> angles2 = static_cast<EulerAngles<float>>(angles1);
-		CHECK_EQ(angles2.pitch, 1);
-		CHECK_EQ(angles2.yaw, 2);
-		CHECK_EQ(angles2.roll, 3);
+		CHECK_EQ(angles2.roll, 1);
+		CHECK_EQ(angles2.pitch, 2);
+		CHECK_EQ(angles2.yaw, 3);
 	}
 }

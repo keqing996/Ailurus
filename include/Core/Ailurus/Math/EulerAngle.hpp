@@ -21,7 +21,7 @@ namespace Ailurus
 		EulerAngles()
 			: pitch(0), yaw(0), roll(0) {}
 
-		EulerAngles(ElementType pitch, ElementType yaw, ElementType roll)
+		EulerAngles(ElementType roll, ElementType pitch, ElementType yaw)
 			: pitch(pitch), yaw(yaw), roll(roll) {}
 
 		EulerAngles(const EulerAngles& other)
