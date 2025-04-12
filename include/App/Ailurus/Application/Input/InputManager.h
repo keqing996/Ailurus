@@ -3,7 +3,7 @@
 #include <functional>
 #include <unordered_set>
 #include "InputEnum.h"
-#include "Ailurus/Math/Vector.hpp"
+#include "Ailurus/Math/Vector2.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
 
 namespace Ailurus

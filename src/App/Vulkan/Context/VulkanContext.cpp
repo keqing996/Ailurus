@@ -421,7 +421,7 @@ namespace Ailurus
 	void VulkanContext::CreateDynamicContext()
 	{
 		Vector2i windowSize = Application::GetSize();
-		_pSwapChain = std::make_unique<SwapChain>(windowSize.x(), windowSize.y());
+		_pSwapChain = std::make_unique<SwapChain>(windowSize.x, windowSize.y);
 		_pAirport = std::make_unique<Airport>();
 	}
 

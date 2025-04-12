@@ -2,95 +2,81 @@
 
 #include <cmath>
 #include <array>
-#include "Quaternion.hpp"
 
 namespace Ailurus
 {
-    template <typename ElementType>
-    class EulerAngles
-    {
-    public:
-        ElementType pitch, yaw, roll;
+	/**
+	 * @brief Degrees Euler angles.
+	 *
+	 * Euler angle describe a ZYX intrinsic rotation, uses +X as forward, so 'row' rotates around
+	 * X axis, 'pitch' rotates around Y axis, 'yaw' rotates around Z axis.
+	 */
+	template <typename ElementType>
+		requires std::is_floating_point_v<ElementType>
+	class EulerAngles
+	{
+	public:
+		ElementType pitch, yaw, roll;
 
-        EulerAngles()
-            : pitch(0), yaw(0), roll(0) {}
+		EulerAngles()
+			: pitch(0), yaw(0), roll(0) {}
 
-        EulerAngles(ElementType pitch, ElementType yaw, ElementType roll)
-            : pitch(pitch), yaw(yaw), roll(roll) {}
+		EulerAngles(ElementType roll, ElementType pitch, ElementType yaw)
+			: pitch(pitch), yaw(yaw), roll(roll) {}
 
-        EulerAngles(const EulerAngles& other)
-            : pitch(other.pitch), yaw(other.yaw), roll(other.roll) {}
+		EulerAngles(const EulerAngles& other)
+			: pitch(other.pitch), yaw(other.yaw), roll(other.roll) {}
 
-        EulerAngles(EulerAngles&& other) noexcept
-            : pitch(std::move(other.pitch)), yaw(std::move(other.yaw)), roll(std::move(other.roll)) {}
+		EulerAngles(EulerAngles&& other) noexcept
+			: pitch(std::move(other.pitch)), yaw(std::move(other.yaw)), roll(std::move(other.roll)) {}
 
-        EulerAngles& operator=(const EulerAngles& other)
-        {
-            if (this != &other)
-            {
-                pitch = other.pitch;
-                yaw = other.yaw;
-                roll = other.roll;
-            }
-            return *this;
-        }
+		EulerAngles& operator=(const EulerAngles& other)
+		{
+			if (this != &other)
+			{
+				pitch = other.pitch;
+				yaw = other.yaw;
+				roll = other.roll;
+			}
+			return *this;
+		}
 
-        EulerAngles& operator=(EulerAngles&& other) noexcept
-        {
-            if (this != &other)
-            {
-                pitch = std::move(other.pitch);
-                yaw = std::move(other.yaw);
-                roll = std::move(other.roll);
-            }
-            return *this;
-        }
+		EulerAngles& operator=(EulerAngles&& other) noexcept
+		{
+			if (this != &other)
+			{
+				pitch = std::move(other.pitch);
+				yaw = std::move(other.yaw);
+				roll = std::move(other.roll);
+			}
+			return *this;
+		}
 
-        bool operator==(const EulerAngles& other) const
-        {
-            return pitch == other.pitch && yaw == other.yaw && roll == other.roll;
-        }
+		template <typename T>
+		explicit operator EulerAngles<T>() const
+		{
+			EulerAngles<T> result;
 
-        bool operator!=(const EulerAngles& other) const
-        {
-            return !(*this == other);
-        }
+			result.yaw = static_cast<T>(yaw);
+			result.pitch = static_cast<T>(pitch);
+			result.roll = static_cast<T>(roll);
 
-        Quaternion<ElementType> ToQuaternion() const
-        {
-            ElementType cy = std::cos(yaw * 0.5);
-            ElementType sy = std::sin(yaw * 0.5);
-            ElementType cp = std::cos(pitch * 0.5);
-            ElementType sp = std::sin(pitch * 0.5);
-            ElementType cr = std::cos(roll * 0.5);
-            ElementType sr = std::sin(roll * 0.5);
+			return result;
+		}
+	};
 
-            return Quaternion<ElementType>(
-                sr * cp * cy - cr * sp * sy,
-                cr * sp * cy + sr * cp * sy,
-                cr * cp * sy - sr * sp * cy,
-                cr * cp * cy + sr * sp * sy
-            );
-        }
+	template <typename ElementType>
+	bool operator==(const EulerAngles<ElementType>& left, const EulerAngles<ElementType>& right)
+	{
+		return left.pitch == right.pitch && left.yaw == right.yaw && left.roll == right.roll;
+	}
 
-        static EulerAngles FromQuaternion(const Quaternion<ElementType>& q)
-        {
-            ElementType sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
-            ElementType cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
-            ElementType roll = std::atan2(sinr_cosp, cosr_cosp);
+	template <typename ElementType>
+	bool operator!=(const EulerAngles<ElementType>& left, const EulerAngles<ElementType>& right)
+	{
+		return !(left == right);
+	}
 
-            ElementType sinp = 2 * (q.w * q.y - q.z * q.x);
-            ElementType pitch;
-            if (std::abs(sinp) >= 1)
-                pitch = std::copysign(M_PI / 2, sinp);
-            else
-                pitch = std::asin(sinp);
-
-            ElementType siny_cosp = 2 * (q.w * q.z + q.x * q.y);
-            ElementType cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-            ElementType yaw = std::atan2(siny_cosp, cosy_cosp);
-
-            return EulerAngles(pitch, yaw, roll);
-        }
-    };
-}
+	using EulerAnglesf = EulerAngles<float>;
+	using EulerAnglesd = EulerAngles<double>;
+} // namespace Ailurus
