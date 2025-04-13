@@ -9,13 +9,13 @@ int Main(int argc, char *argv[])
 
     Application::GetInputManager().SetCallbackOnMouseMove([](Vector2f source, Vector2f target) -> void
     {
-        std::cout << "[MouseMove]   (" << source.x() << ", " << source.y() << ") -> ("
-            << target.x() << ", " << target.y() << ")" << std::endl;
+        std::cout << "[MouseMove]   (" << source.x << ", " << source.y << ") -> ("
+            << target.x << ", " << target.y << ")" << std::endl;
     });
 
     Application::GetInputManager().SetCallbackOnMouseWheel([](Vector2f delta) -> void
     {
-        std::cout << "[MouseWheel]   (" << delta.x() << ", " << delta.y() << ")" << std::endl;
+        std::cout << "[MouseWheel]   (" << delta.x << ", " << delta.y << ")" << std::endl;
     });
 
     Application::GetInputManager().SetCallbackOnButtonPressed([](ButtonType btn) -> void

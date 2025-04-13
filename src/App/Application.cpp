@@ -149,7 +149,7 @@ namespace Ailurus
 
 	void Application::SetSize(const Vector2i& size)
 	{
-		SetSize(size.x(), size.y());
+		SetSize(size.x, size.y);
 	}
 
 	Vector2i Application::GetPosition()
@@ -172,7 +172,7 @@ namespace Ailurus
 
 	void Application::SetPosition(const Vector2i& pos)
 	{
-		SetPosition(pos.x(), pos.y());
+		SetPosition(pos.x, pos.y);
 	}
 
 	void Application::SetIcon(unsigned int width, unsigned int height, const std::byte* pixels)

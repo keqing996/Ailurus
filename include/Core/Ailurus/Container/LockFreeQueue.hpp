@@ -8,7 +8,7 @@
 
 namespace Ailurus
 {
-    template<typename T, uint32_t WantedSize>
+    template<typename T, uint32_t WantedSize, uint32_t CACHE_LINE_SIZE = 64>
     class LockFreeQueue
     {
         enum class State: uint8_t
@@ -34,8 +34,7 @@ namespace Ailurus
             return value + 1;
         }
 
-        static constexpr uint32_t CACHE_LINE = 64;
-        static constexpr uint32_t ELEMENT_PRE_CACHELINE = CACHE_LINE / sizeof(T);
+        static constexpr uint32_t ELEMENT_PRE_CACHELINE = CACHE_LINE_SIZE / sizeof(T);
         static constexpr uint32_t Size = UpAlignmentPowerOfTwo(WantedSize);
 
     public:
@@ -173,8 +172,8 @@ namespace Ailurus
 
     private:
         // Padding index, avoid false sharing.
-        alignas(CACHE_LINE) std::atomic<uint32_t> _headIndex {};
-        alignas(CACHE_LINE) std::atomic<uint32_t> _tailIndex {};
+        alignas(CACHE_LINE_SIZE) std::atomic<uint32_t> _headIndex {};
+        alignas(CACHE_LINE_SIZE) std::atomic<uint32_t> _tailIndex {};
         SegmentArray<T, Size, ELEMENT_PRE_CACHELINE> _data;
         SegmentArray<std::atomic<State>, Size, ELEMENT_PRE_CACHELINE> _state;
     };

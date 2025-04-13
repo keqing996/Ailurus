@@ -34,12 +34,12 @@ int Main(int argc, char *argv[])
 
     Application::SetCallbackOnWindowMoved([](Vector2i pos)->void
     {
-        std::cout << "Move: " << pos.x() << ", " << pos.y() << std::endl;
+        std::cout << "Move: " << pos.x << ", " << pos.y << std::endl;
     });
 
     Application::SetCallbackOnWindowResize([](Vector2i size)->void
     {
-        std::cout << "Resize: " << size.x() << ", " << size.y() << std::endl;
+        std::cout << "Resize: " << size.x << ", " << size.y << std::endl;
     });
 
     Application::SetCallbackOnWindowFocusChanged([](bool focus)->void
