@@ -41,8 +41,10 @@ IndentCaseBlocks: false
 IndentCaseLabels: true
 IndentPPDirectives: BeforeHash
 IndentWidth: 4
+IndentRequiresClause: false
 NamespaceIndentation: All
 PointerAlignment: Left
+RequiresClausePosition: WithPreceding
 SortIncludes: false
 SpaceBeforeCaseColon: false
 SeparateDefinitionBlocks: Always

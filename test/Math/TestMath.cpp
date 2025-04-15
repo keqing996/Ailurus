@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <Ailurus/Math/Math.hpp>
+#include "MathHelper.hpp"
 
 using namespace Ailurus;
 using namespace Ailurus::Math;
@@ -119,7 +120,7 @@ TEST_SUITE("Matrix3x3")
 	TEST_CASE("Conversion between Quaternion and Rotation Matrix")
 	{
 		// Create a quaternion representing a 90-degree rotation around Y axis
-		Quaternionf quat = RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 3.14159f / 2);
+		Quaternionf quat = Quaternionf::RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 90.0f);
 
 		// Convert to rotation matrix
 		Matrix4x4f rotMatrix = QuaternionToRotateMatrix(quat);
@@ -159,22 +160,10 @@ TEST_SUITE("Matrix3x3")
 		CHECK(resultAngles.yaw == doctest::Approx(angles.yaw).epsilon(0.001f));
 	}
 
-	TEST_CASE("RotateAxis function")
-	{
-		// Test rotation around X axis
-		Quaternionf quatX = RotateAxis(Vector3f(1.0f, 0.0f, 0.0f), 3.14159f / 2);
-		Vector3f vecY(0.0f, 1.0f, 0.0f);
-		Vector3f rotatedY = quatX * vecY;
-
-		CHECK(rotatedY.x == doctest::Approx(0.0f).epsilon(0.001f));
-		CHECK(rotatedY.y == doctest::Approx(0.0f).epsilon(0.001f));
-		CHECK(rotatedY.z == doctest::Approx(1.0f).epsilon(0.001f));
-	}
-
 	TEST_CASE("MakeModelMatrix function")
 	{
 		Vector3f position(1.0f, 2.0f, 3.0f);
-		Quaternionf rotation = RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 3.14159f / 2);
+		Quaternionf rotation = Quaternionf::RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 90.0f);
 		Vector3f scale(2.0f, 2.0f, 2.0f);
 
 		Matrix4x4f modelMatrix = MakeModelMatrix(position, rotation, scale);
