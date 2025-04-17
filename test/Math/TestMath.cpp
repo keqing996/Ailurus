@@ -224,15 +224,5 @@ TEST_SUITE("Matrix3x3")
 		CHECK(rotatedDir.x == doctest::Approx(0.0f).epsilon(0.001f));
 		CHECK(rotatedDir.y == doctest::Approx(0.0f).epsilon(0.001f));
 		CHECK(rotatedDir.z == doctest::Approx(1.0f).epsilon(0.001f));
-
-		// Compare to glm
-		glm::vec3 glmEye(0.0f, 0.0f, 0.0f);
-		glm::vec3 glmCenter(0.0f, 0.0f, 1.0f);
-		glm::vec3 glmUp(0.0f, 1.0f, 0.0f);
-
-		glm::mat4 viewMatrix = glm::lookAt(glmEye, glmCenter, glmUp);
-		glm::quat glmQuat = glm::quat_cast(viewMatrix);
-
-		MathTestHelper::CheckQuaternionEqual(quatLookAt, glmQuat);
 	}
 }

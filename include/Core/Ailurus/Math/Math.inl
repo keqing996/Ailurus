@@ -51,40 +51,22 @@ namespace Ailurus::Math
 	template <typename T>
 	Matrix4x4<T> LookAtMatrix(const Vector3<T>& forward, const Vector3<T>& up)
 	{
-		Vector3<T> normalizedForward = forward.Normalized();
+		Vector3<T> f = forward.Normalized();	// Normalize the forward vector
+		Vector3<T> u = up.Normalized();			// Normalize the up vector
+		Vector3<T> r = f.Cross(u).Normalized(); // Right vector (cross product of forward and up)
 
-		// Check forward zero
-		if (normalizedForward.SquareMagnitude() < std::numeric_limits<T>::epsilon())
-			return Matrix4x4<T>::Identity;
+		// Ensure up vector is orthogonal to forward and right
+		u = r.Cross(f);
 
-		Vector3<T> right = up.Normalized().Cross(normalizedForward);
-
-		// CHeck parallel
-		if (right.SquareMagnitude() < T(0.001))
-		{
-			Vector3<T> alternativeUp;
-			if (std::abs(normalizedForward.y) < T(0.9))
-				alternativeUp = Vector3<T>(0, 1, 0);
-			else
-				alternativeUp = Vector3<T>(1, 0, 0);
-
-			right = alternativeUp.Cross(normalizedForward).Normalized();
-		}
-		else
-		{
-			right = right.Normalized();
-		}
-
-		Vector3<T> actualUp = normalizedForward.Cross(right);
-
-		Matrix4x4<T> rotMatrix = {
-			{ right.x, right.y, right.z, 0 },
-			{ actualUp.x, actualUp.y, actualUp.z, 0 },
-			{ normalizedForward.x, normalizedForward.y, normalizedForward.z, 0 },
+		// Create rotation matrix from axes (column-major order for column vectors)
+		Matrix4x4<T> rotation = {
+			{ f.x, u.x, r.x, 0 },
+			{ f.y, u.y, r.y, 0 },
+			{ f.z, u.z, r.z, 0 },
 			{ 0, 0, 0, 1 }
 		};
 
-		return rotMatrix;
+		return rotation;
 	}
 
 	template <typename T>
