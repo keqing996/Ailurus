@@ -120,7 +120,7 @@ TEST_SUITE("Matrix3x3")
 	TEST_CASE("Conversion between Quaternion and Rotation Matrix")
 	{
 		// Create a quaternion representing a 90-degree rotation around Y axis
-		Quaternionf quat = Quaternionf::RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 90.0f);
+		Quaternionf quat = RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 90.0f);
 
 		// Convert to rotation matrix
 		Matrix4x4f rotMatrix = QuaternionToRotateMatrix(quat);
@@ -163,7 +163,7 @@ TEST_SUITE("Matrix3x3")
 	TEST_CASE("MakeModelMatrix function")
 	{
 		Vector3f position(1.0f, 2.0f, 3.0f);
-		Quaternionf rotation = Quaternionf::RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 90.0f);
+		Quaternionf rotation = RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 90.0f);
 		Vector3f scale(2.0f, 2.0f, 2.0f);
 
 		Matrix4x4f modelMatrix = MakeModelMatrix(position, rotation, scale);
@@ -193,5 +193,46 @@ TEST_SUITE("Matrix3x3")
 		CHECK(viewPoint.x == doctest::Approx(5.0f).epsilon(0.001f));
 		CHECK(viewPoint.y == doctest::Approx(0.0f).epsilon(0.001f));
 		CHECK(viewPoint.z == doctest::Approx(0.0f).epsilon(0.001f));
+	}
+
+	TEST_CASE("RotateAxis function")
+	{
+		// Test rotation around X axis
+		Quaternionf quatX = RotateAxis(Vector3f(1.0f, 0.0f, 0.0f), 90);
+		Vector3f vecY(0.0f, 1.0f, 0.0f);
+		Vector3f rotatedY = quatX * vecY;
+
+		CHECK(rotatedY.x == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(rotatedY.y == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(rotatedY.z == doctest::Approx(1.0f).epsilon(0.001f));
+
+		// Compare to glm
+		glm::quat glmQuatX = angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		MathTestHelper::CheckQuaternionEqual(quatX, glmQuatX);
+	}
+
+	TEST_CASE("LookAt function")
+	{
+		Vector3f forward(0.0f, 0.0f, 1.0f);
+		Vector3f up(0.0f, 1.0f, 0.0f);
+
+		Quaternionf quatLookAt = LookAtQuaternion(forward, up);
+
+		Vector3f originalDir(1.0f, 0.0f, 0.0f);
+		Vector3f rotatedDir = quatLookAt * originalDir;
+
+		CHECK(rotatedDir.x == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(rotatedDir.y == doctest::Approx(0.0f).epsilon(0.001f));
+		CHECK(rotatedDir.z == doctest::Approx(1.0f).epsilon(0.001f));
+
+		// Compare to glm
+		glm::vec3 glmEye(0.0f, 0.0f, 0.0f);
+		glm::vec3 glmCenter(0.0f, 0.0f, 1.0f);
+		glm::vec3 glmUp(0.0f, 1.0f, 0.0f);
+
+		glm::mat4 viewMatrix = glm::lookAt(glmEye, glmCenter, glmUp);
+		glm::quat glmQuat = glm::quat_cast(viewMatrix);
+
+		MathTestHelper::CheckQuaternionEqual(quatLookAt, glmQuat);
 	}
 }

@@ -36,10 +36,10 @@ namespace Ailurus::Math
 		return result;
 	}
 
-	template <typename T>
-	Quaternion<T> RotateAxis(const Vector3<T>& axis, T angleInDegree)
+	template <typename T, typename F>
+	Quaternion<T> RotateAxis(const Vector3<T>& axis, F angleInDegree)
 	{
-		T angle = Math::DegreeToRadian(angleInDegree);
+		T angle = Math::DegreeToRadian(static_cast<T>(angleInDegree));
 		T halfAngle = angle / 2;
 		T s = std::sin(halfAngle);
 		return Quaternion<T>(axis.x * static_cast<T>(s),
@@ -49,19 +49,48 @@ namespace Ailurus::Math
 	}
 
 	template <typename T>
-	Quaternion<T> LookAt(const Vector3<T>& forward, const Vector3<T>& up)
+	Matrix4x4<T> LookAtMatrix(const Vector3<T>& forward, const Vector3<T>& up)
 	{
 		Vector3<T> normalizedForward = forward.Normalized();
-		Vector3<T> right = up.Normalized().Cross(normalizedForward).Normalized();
+
+		// Check forward zero
+		if (normalizedForward.SquareMagnitude() < std::numeric_limits<T>::epsilon())
+			return Matrix4x4<T>::Identity;
+
+		Vector3<T> right = up.Normalized().Cross(normalizedForward);
+
+		// CHeck parallel
+		if (right.SquareMagnitude() < T(0.001))
+		{
+			Vector3<T> alternativeUp;
+			if (std::abs(normalizedForward.y) < T(0.9))
+				alternativeUp = Vector3<T>(0, 1, 0);
+			else
+				alternativeUp = Vector3<T>(1, 0, 0);
+
+			right = alternativeUp.Cross(normalizedForward).Normalized();
+		}
+		else
+		{
+			right = right.Normalized();
+		}
+
 		Vector3<T> actualUp = normalizedForward.Cross(right);
+
 		Matrix4x4<T> rotMatrix = {
-			{ right.x, actualUp.x, normalizedForward.x, 0 },
-			{ right.y, actualUp.y, normalizedForward.y, 0 },
-			{ right.z, actualUp.z, normalizedForward.z, 0 },
+			{ right.x, right.y, right.z, 0 },
+			{ actualUp.x, actualUp.y, actualUp.z, 0 },
+			{ normalizedForward.x, normalizedForward.y, normalizedForward.z, 0 },
 			{ 0, 0, 0, 1 }
 		};
 
-		return Math::RotateMatrixToQuaternion(rotMatrix);
+		return rotMatrix;
+	}
+
+	template <typename T>
+	Quaternion<T> LookAtQuaternion(const Vector3<T>& forward, const Vector3<T>& up)
+	{
+		return RotateMatrixToQuaternion(LookAtMatrix(forward, up));
 	}
 
 	template <typename T>

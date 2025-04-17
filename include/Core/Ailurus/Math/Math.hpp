@@ -22,8 +22,11 @@ namespace Ailurus::Math
 	template <typename T>
 	Matrix4x4<T> ScaleMatrix(const Vector3<T>& scale);
 
+	template <typename T, typename F>
+	Quaternion<T> RotateAxis(const Vector3<T>& axis, F angleInDegree);
+
 	template <typename T>
-	Quaternion<T> RotateAxis(const Vector3<T>& axis, T angleInDegree);
+	Matrix4x4<T> LookAtMatrix(const Vector3<T>& forward, const Vector3<T>& up);
 
 	/**
 	 * @brief Creates a quaternion that represents a rotation looking in the specified direction.
@@ -33,7 +36,7 @@ namespace Ailurus::Math
 	 * @return Quaternion representing the "look at" rotation.
 	 */
 	template <typename T>
-	static Quaternion<T> LookAt(const Vector3<T>& forward, const Vector3<T>& up);
+	Quaternion<T> LookAtQuaternion(const Vector3<T>& forward, const Vector3<T>& up);
 
 #pragma endregion
 
@@ -140,7 +143,7 @@ namespace Ailurus::Math
 	T Lerp(const T& a, const T& b, U t);
 
 	template <typename T> requires std::is_floating_point_v<T>
-	Quaternion<T> SLerp(const Quaternion<T>& q1, const Quaternion<T> n& q2, T t);
+	Quaternion<T> SLerp(const Quaternion<T>& q1, const Quaternion<T>& q2, T t);
 
 #pragma endregion
 

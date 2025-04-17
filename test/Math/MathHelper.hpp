@@ -3,6 +3,7 @@
 #include <doctest/doctest.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <Ailurus/Math/Matrix2x2.hpp>
 #include <Ailurus/Math/Math.hpp>
 
 using namespace Ailurus;
