@@ -7,7 +7,7 @@
 namespace Ailurus
 {
 	template <typename ElementType>
-		requires std::is_floating_point_v<ElementType>
+	requires std::is_floating_point_v<ElementType>
 	class Quaternion
 	{
 	public:
@@ -139,37 +139,14 @@ namespace Ailurus
 
 		static const Quaternion Zero;
 		static const Quaternion Identity;
-
-		static Quaternion Lerp(const Quaternion& q1, const Quaternion& q2, ElementType t)
-		{
-			return (q1 * (1 - t) + q2 * t).Normalize();
-		}
-
-		static Quaternion SLerp(const Quaternion& q1, const Quaternion& q2, ElementType t)
-		{
-			ElementType dot = q1.Dot(q2);
-			const ElementType threshold = 0.9995;
-
-			if (dot > threshold)
-			{
-				return Lerp(q1, q2, t);
-			}
-
-			dot = std::clamp(dot, static_cast<ElementType>(-1), static_cast<ElementType>(1));
-			ElementType theta_0 = std::acos(dot);
-			ElementType theta = theta_0 * t;
-
-			Quaternion q3 = (q2 - q1 * dot).Normalize();
-			return q1 * std::cos(theta) + q3 * std::sin(theta);
-		}
 	};
 
 	template <typename ElementType>
-		requires std::is_floating_point_v<ElementType>
+	requires std::is_floating_point_v<ElementType>
 	Quaternion<ElementType> const Quaternion<ElementType>::Zero(ElementType(0), ElementType(0), ElementType(0), ElementType(0));
 
 	template <typename ElementType>
-		requires std::is_floating_point_v<ElementType>
+	requires std::is_floating_point_v<ElementType>
 	Quaternion<ElementType> const Quaternion<ElementType>::Identity(ElementType(0), ElementType(0), ElementType(0), ElementType(1));
 
 	template <typename ElementType>
