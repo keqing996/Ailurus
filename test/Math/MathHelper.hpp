@@ -2,6 +2,8 @@
 
 #include <doctest/doctest.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <Ailurus/Math/Matrix2x2.hpp>
 #include <Ailurus/Math/Math.hpp>
 
 using namespace Ailurus;
@@ -9,6 +11,24 @@ using namespace Ailurus::Math;
 
 namespace MathTestHelper
 {
+	template <typename T>
+	void CheckQuaternionEqual(const Quaternion<T>& quat1, const Quaternion<T>& quat2)
+	{
+		CHECK(quat1.w == doctest::Approx(quat2.w));
+		CHECK(quat1.x == doctest::Approx(quat2.x));
+		CHECK(quat1.y == doctest::Approx(quat2.y));
+		CHECK(quat1.z == doctest::Approx(quat2.z));
+	}
+
+	template <typename T>
+	void CheckQuaternionEqual(const Quaternion<T>& quat1, const glm::quat& quat2)
+	{
+		CHECK(quat1.w == doctest::Approx(quat2.w));
+		CHECK(quat1.x == doctest::Approx(quat2.x));
+		CHECK(quat1.y == doctest::Approx(quat2.y));
+		CHECK(quat1.z == doctest::Approx(quat2.z));
+	}
+
 	template <typename T>
 	void CheckVectorEqual(const Vector2<T>& vec1, const Vector2<T>& vec2)
 	{

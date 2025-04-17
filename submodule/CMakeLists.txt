@@ -4,6 +4,7 @@ add_subdirectory(spdlog)
 
 # glm
 add_subdirectory(glm)
+target_compile_definitions(glm PUBLIC GLM_FORCE_LEFT_HANDED)
 
 # sdl
 set (SDL_STATIC ON) # static link sdl
