@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BufferType.h"
 #include <vulkan/vulkan.hpp>
 
 namespace Ailurus
@@ -14,8 +15,7 @@ namespace Ailurus
         size_t GetSize() const;
 
     private:
-        vk::Buffer _buffer;
-        size_t _size;
-        vk::DeviceMemory _bufferMemory;
+    	size_t _sizeInBytes;
+        GpuBuffer _buffer;
     };
 }

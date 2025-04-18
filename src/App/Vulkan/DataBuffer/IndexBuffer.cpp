@@ -1,11 +1,11 @@
 #include "IndexBuffer.h"
 #include "DataBufferUtil.h"
-#include "Vulkan/Context/VulkanContext.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
 	IndexBuffer::IndexBuffer(IndexBufferFormat format, const void* indexData, size_t sizeInBytes)
+		: _sizeInBytes(sizeInBytes)
 	{
 		switch (format)
 		{
@@ -33,17 +33,33 @@ namespace Ailurus
 			}
 		}
 
-		auto ret = DataBufferUtil::CreateBuffer(BufferType::Index, indexData, sizeInBytes);
-		if (!ret)
+		// Create gpu buffer
+		const auto retCreateGpuBuffer = DataBufferUtil::CreateGpuBuffer(sizeInBytes, GpuBufferUsage::Index);
+		if (retCreateGpuBuffer)
 			return;
 
-		_buffer = ret->buffer;
-		_bufferMemory = ret->deviceMemory;
+		_buffer = *retCreateGpuBuffer;
+
+		// Create cpu stage buffer
+		const auto retCreateStageBuffer = DataBufferUtil::CreateCpuBuffer(sizeInBytes, CpuBufferUsage::TransferSrc);
+		if (retCreateStageBuffer)
+			return;
+
+		CpuBuffer stageBuffer = *retCreateStageBuffer;
+
+		// Cpu -> Cpu buffer
+		::memcpy(stageBuffer.mappedAddr, indexData, sizeInBytes);
+
+		// Cpu buffer -> Gpu buffer
+		DataBufferUtil::CopyBuffer(stageBuffer.buffer, _buffer.buffer, sizeInBytes);
+
+		// Destroy stage cpu buffer
+		DataBufferUtil::DestroyBuffer(stageBuffer);
 	}
 
 	IndexBuffer::~IndexBuffer()
 	{
-		DataBufferUtil::DestroyBuffer(_buffer, _bufferMemory);
+		DataBufferUtil::DestroyBuffer(_buffer);
 	}
 
 	vk::IndexType IndexBuffer::GetIndexType() const
@@ -53,7 +69,7 @@ namespace Ailurus
 
 	vk::Buffer IndexBuffer::GetBuffer() const
 	{
-		return _buffer;
+		return _buffer.buffer;
 	}
 
 	size_t IndexBuffer::GetIndexCount() const

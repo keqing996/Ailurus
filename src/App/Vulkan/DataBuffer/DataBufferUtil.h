@@ -3,14 +3,17 @@
 #include <optional>
 #include <vulkan/vulkan.hpp>
 #include "BufferType.h"
+#include "Ailurus/Utility/EnumReflection.h"
 
 namespace Ailurus
 {
-	struct BufferWithMem
-	{
-		vk::Buffer buffer;
-		vk::DeviceMemory deviceMemory;
-	};
+	REFLECTION_ENUM(CpuBufferUsage,
+		TransferSrc,
+		Uniform)
+
+	REFLECTION_ENUM(GpuBufferUsage,
+		Vertex,
+		Index)
 
 	class DataBufferUtil
 	{
@@ -18,19 +21,12 @@ namespace Ailurus
 		DataBufferUtil() = delete;
 
 	public:
-		static std::optional<BufferWithMem>
-		CreateBuffer(BufferType type, const void* bufferData, size_t bufferSizeInBytes);
+		static std::optional<CpuBuffer> CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage);
+		static std::optional<GpuBuffer> CreateGpuBuffer(vk::DeviceSize size, GpuBufferUsage usage);
 
-		static std::optional<BufferWithMem>
-		CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties);
+		static void DestroyBuffer(CpuBuffer& cpuBuffer);
+		static void DestroyBuffer(GpuBuffer& gpuBuffer);
 
-		static void
-		DestroyBuffer(BufferWithMem bufferWithMem);
-
-		static void
-		DestroyBuffer(vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-
-		static void
-		CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
+		static void CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 	};
 } // namespace Ailurus

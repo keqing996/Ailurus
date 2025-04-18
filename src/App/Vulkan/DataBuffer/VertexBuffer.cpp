@@ -1,34 +1,47 @@
 #include "VertexBuffer.h"
 #include "DataBufferUtil.h"
-#include "Vulkan/Context/VulkanContext.h"
 
 namespace Ailurus
 {
-    VertexBuffer::VertexBuffer(const void* vertexData, size_t dataSizeInBytes)
-        : _buffer(nullptr)
-        , _size(dataSizeInBytes)
-        , _bufferMemory(nullptr)
+    VertexBuffer::VertexBuffer(const void* vertexData, size_t sizeInBytes)
+        : _sizeInBytes(sizeInBytes)
     {
-        auto ret = DataBufferUtil::CreateBuffer(BufferType::Vertex, vertexData, dataSizeInBytes);
-        if (!ret)
-            return;
+    	// Create gpu buffer
+    	const auto retCreateGpuBuffer = DataBufferUtil::CreateGpuBuffer(sizeInBytes, GpuBufferUsage::Vertex);
+    	if (retCreateGpuBuffer)
+    		return;
 
-        _buffer = ret->buffer;
-        _bufferMemory = ret->deviceMemory;
+    	_buffer = *retCreateGpuBuffer;
+
+    	// Create cpu stage buffer
+    	const auto retCreateStageBuffer = DataBufferUtil::CreateCpuBuffer(sizeInBytes, CpuBufferUsage::TransferSrc);
+    	if (retCreateStageBuffer)
+    		return;
+
+    	CpuBuffer stageBuffer = *retCreateStageBuffer;
+
+    	// Cpu -> Cpu buffer
+    	::memcpy(stageBuffer.mappedAddr, vertexData, sizeInBytes);
+
+    	// Cpu buffer -> Gpu buffer
+    	DataBufferUtil::CopyBuffer(stageBuffer.buffer, _buffer.buffer, sizeInBytes);
+
+    	// Destroy stage cpu buffer
+    	DataBufferUtil::DestroyBuffer(stageBuffer);
     }
 
     VertexBuffer::~VertexBuffer()
     {
-    	DataBufferUtil::DestroyBuffer(_buffer, _bufferMemory);
+    	DataBufferUtil::DestroyBuffer(_buffer);
     }
 
     vk::Buffer VertexBuffer::GetBuffer() const
     {
-        return _buffer;
+        return _buffer.buffer;
     }
 
     size_t VertexBuffer::GetSize() const
     {
-        return _size;
+        return _sizeInBytes;
     }
 }

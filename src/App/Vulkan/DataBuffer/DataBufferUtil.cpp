@@ -5,67 +5,23 @@
 
 namespace Ailurus
 {
-	std::optional<BufferWithMem>
-	DataBufferUtil::CreateBuffer(BufferType type, const void* bufferData, size_t bufferSizeInBytes)
+	struct BufferMemoryRequirement
 	{
-		auto stagingBufferRet = CreateBuffer(bufferSizeInBytes, vk::BufferUsageFlagBits::eTransferSrc,
-			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-		if (!stagingBufferRet.has_value())
-		{
-			Logger::LogError("Staging buffer create failed.");
-			return std::nullopt;
-		}
+		vk::MemoryRequirements requirements;
+		uint32_t memTypeIndex;
+	};
 
-		auto [stagingBuffer, stagingBufferMemory] = stagingBufferRet.value();
-		ScopeGuard stagingBufferReleaseGuard = [&]() -> void {
-			const auto device = VulkanContext::GetDevice();
-			device.destroyBuffer(stagingBuffer);
-			device.freeMemory(stagingBufferMemory);
-		};
+	struct CreatedBuffer
+	{
+		vk::DeviceSize realSize;
+		vk::Buffer buffer;
+		vk::DeviceMemory deviceMem;
+	};
 
-		const auto device = VulkanContext::GetDevice();
-		void* mappedAddr = device.mapMemory(stagingBufferMemory, 0, bufferSizeInBytes, {});
-		::memcpy(mappedAddr, bufferData, bufferSizeInBytes);
-		device.unmapMemory(stagingBufferMemory);
-
-		vk::BufferUsageFlags targetBufferFlags = vk::BufferUsageFlagBits::eTransferDst;
-		switch (type)
-		{
-			case BufferType::Vertex:
-				targetBufferFlags |= vk::BufferUsageFlagBits::eVertexBuffer;
-				break;
-			case BufferType::Index:
-				targetBufferFlags |= vk::BufferUsageFlagBits::eIndexBuffer;
-				break;
-			default:
-				Logger::LogError("Unknown buffer type: {}", EnumReflection<BufferType>::ToString(type));
-				return std::nullopt;
-		}
-
-		auto targetBufferRet = CreateBuffer(bufferSizeInBytes, targetBufferFlags,
-			vk::MemoryPropertyFlagBits::eDeviceLocal);
-		if (!targetBufferRet.has_value())
-		{
-			Logger::LogError("Vertex buffer create failed.");
-			return std::nullopt;
-		}
-
-		CopyBuffer(stagingBuffer, targetBufferRet->buffer, bufferSizeInBytes);
-
-		return *targetBufferRet;
-	}
-
-	std::optional<BufferWithMem>
-	DataBufferUtil::CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties)
+	static std::optional<BufferMemoryRequirement>
+	GetBufferMemoryRequirement(vk::Buffer buffer, vk::MemoryPropertyFlags propertyFlag)
 	{
 		auto device = VulkanContext::GetDevice();
-
-		vk::BufferCreateInfo bufferInfo;
-		bufferInfo.setSize(size)
-			.setUsage(usage)
-			.setSharingMode(vk::SharingMode::eExclusive);
-
-		vk::Buffer buffer = device.createBuffer(bufferInfo);
 
 		vk::MemoryRequirements memRequirements = device.getBufferMemoryRequirements(buffer);
 
@@ -75,41 +31,149 @@ namespace Ailurus
 		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
 		{
 			if ((memRequirements.memoryTypeBits & (1 << i))
-				&& (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+				&& (memProperties.memoryTypes[i].propertyFlags & propertyFlag) == propertyFlag)
 			{
 				memoryTypeIndex = i;
 				break;
 			}
 		}
 
-		if (!memoryTypeIndex.has_value())
+		if (memoryTypeIndex.has_value())
+			return BufferMemoryRequirement{ memRequirements, *memoryTypeIndex };
+
+		return std::nullopt;
+	}
+
+	static std::optional<CreatedBuffer>
+	CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usageFlag, vk::MemoryPropertyFlags propertyFlag)
+	{
+		const auto device = VulkanContext::GetDevice();
+
+		// Create buffer
+		vk::BufferCreateInfo bufferInfo;
+		bufferInfo.setSize(size)
+			.setUsage(usageFlag)
+			.setSharingMode(vk::SharingMode::eExclusive);
+
+		const vk::Buffer buffer = device.createBuffer(bufferInfo);
+
+		// Get gpu memory requirement
+		const std::optional<BufferMemoryRequirement> memoryRequirement = GetBufferMemoryRequirement(buffer, propertyFlag);
+		if (!memoryRequirement.has_value())
 		{
 			device.destroyBuffer(buffer);
+			Logger::LogError("Failed to get buffer memory requirement when creating buffer.");
 			return std::nullopt;
 		}
 
+		// Alloc memory
 		vk::MemoryAllocateInfo allocInfo;
-		allocInfo.setAllocationSize(memRequirements.size)
-			.setMemoryTypeIndex(*memoryTypeIndex);
+		allocInfo.setAllocationSize(memoryRequirement->requirements.size)
+			.setMemoryTypeIndex(memoryRequirement->memTypeIndex);
 
-		vk::DeviceMemory deviceMem = device.allocateMemory(allocInfo);
+		const vk::DeviceMemory deviceMem = device.allocateMemory(allocInfo);
 		device.bindBufferMemory(buffer, deviceMem, 0);
 
-		return BufferWithMem{ buffer, deviceMem };
+		return CreatedBuffer{ memoryRequirement->requirements.size, buffer, deviceMem };
 	}
 
-	void DataBufferUtil::DestroyBuffer(BufferWithMem bufferWithMem)
+	std::optional<CpuBuffer>
+	DataBufferUtil::CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage)
 	{
-		DestroyBuffer(bufferWithMem.buffer, bufferWithMem.deviceMemory);
+		vk::BufferUsageFlags usageFlag;
+		switch (usage)
+		{
+			case CpuBufferUsage::TransferSrc:
+				usageFlag |= vk::BufferUsageFlagBits::eTransferSrc;
+				break;
+			case CpuBufferUsage::Uniform:
+				usageFlag |= vk::BufferUsageFlagBits::eUniformBuffer;
+				break;
+			default:
+				Logger::LogError("Unknown cpu buffer usage type: {}", EnumReflection<CpuBufferUsage>::ToString(usage));
+				return std::nullopt;
+		}
+
+		constexpr vk::MemoryPropertyFlags propertyFlag = vk::MemoryPropertyFlagBits::eHostVisible
+			| vk::MemoryPropertyFlagBits::eHostCoherent;
+		const std::optional<CreatedBuffer> bufferRet = CreateBuffer(size, usageFlag, propertyFlag);
+		if (!bufferRet.has_value())
+			return std::nullopt;
+
+		// Map memory
+		void* mappedAddr = VulkanContext::GetDevice().mapMemory(bufferRet->deviceMem, 0, size, {});
+
+		return CpuBuffer{ bufferRet->realSize, bufferRet->buffer,
+			bufferRet->deviceMem, mappedAddr };
 	}
 
-	void DataBufferUtil::DestroyBuffer(vk::Buffer buffer, vk::DeviceMemory deviceMemory)
+	std::optional<GpuBuffer>
+	DataBufferUtil::CreateGpuBuffer(vk::DeviceSize size, GpuBufferUsage usage)
+	{
+		vk::BufferUsageFlags usageFlag;
+		usageFlag |= vk::BufferUsageFlagBits::eTransferDst;
+		switch (usage)
+		{
+			case GpuBufferUsage::Vertex:
+				usageFlag |= vk::BufferUsageFlagBits::eVertexBuffer;
+				break;
+			case GpuBufferUsage::Index:
+				usageFlag |= vk::BufferUsageFlagBits::eUniformBuffer;
+				break;
+			default:
+				Logger::LogError("Unknown gpu buffer usage type: {}", EnumReflection<GpuBufferUsage>::ToString(usage));
+				return std::nullopt;
+		}
+
+		constexpr vk::MemoryPropertyFlags propertyFlag = vk::MemoryPropertyFlagBits::eHostVisible
+			| vk::MemoryPropertyFlagBits::eHostCoherent;
+		const std::optional<CreatedBuffer> bufferRet = CreateBuffer(size, usageFlag, propertyFlag);
+		if (!bufferRet.has_value())
+			return std::nullopt;
+
+		return GpuBuffer{ bufferRet->realSize, bufferRet->buffer, bufferRet->deviceMem };
+	}
+
+	void DataBufferUtil::DestroyBuffer(CpuBuffer& cpuBuffer)
+	{
+		const auto device = VulkanContext::GetDevice();
+
+		if (cpuBuffer.mappedAddr != nullptr)
+		{
+			device.unmapMemory(cpuBuffer.deviceMemory);
+			cpuBuffer.mappedAddr = nullptr;
+		}
+
+		// Destroy buffer first, then device memory.
+		if (cpuBuffer.buffer != nullptr)
+		{
+			device.destroyBuffer(cpuBuffer.buffer);
+			cpuBuffer.buffer = nullptr;
+		}
+
+		if (cpuBuffer.deviceMemory != nullptr)
+		{
+			device.freeMemory(cpuBuffer.deviceMemory);
+			cpuBuffer.deviceMemory = nullptr;
+		}
+	}
+
+	void DataBufferUtil::DestroyBuffer(GpuBuffer& gpuBuffer)
 	{
 		const auto device = VulkanContext::GetDevice();
 
 		// Destroy buffer first, then device memory.
-		device.destroyBuffer(buffer);
-		device.freeMemory(deviceMemory);
+		if (gpuBuffer.buffer != nullptr)
+		{
+			device.destroyBuffer(gpuBuffer.buffer);
+			gpuBuffer.buffer = nullptr;
+		}
+
+		if (gpuBuffer.deviceMemory != nullptr)
+		{
+			device.freeMemory(gpuBuffer.deviceMemory);
+			gpuBuffer.deviceMemory = nullptr;
+		}
 	}
 
 	void DataBufferUtil::CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
