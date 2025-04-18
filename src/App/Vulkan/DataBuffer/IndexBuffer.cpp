@@ -48,7 +48,7 @@ namespace Ailurus
 		CpuBuffer stageBuffer = *retCreateStageBuffer;
 
 		// Cpu -> Cpu buffer
-		::memcpy(stageBuffer.mappedAddr, indexData, sizeInBytes);
+		std::memcpy(stageBuffer.mappedAddr, indexData, sizeInBytes);
 
 		// Cpu buffer -> Gpu buffer
 		DataBufferUtil::CopyBuffer(stageBuffer.buffer, _buffer.buffer, sizeInBytes);

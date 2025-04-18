@@ -153,6 +153,16 @@ namespace Ailurus
 			return Adjugate() * invDet;
 		}
 
+		const ElementType* GetRowMajorDataPtr() const
+		{
+			return &m[0][0];
+		}
+
+		ElementType* GetRowMajorDataPtr()
+		{
+			return &m[0][0];
+		}
+
 		static const Matrix2x2 Zero;
 		static const Matrix2x2 Identity;
 

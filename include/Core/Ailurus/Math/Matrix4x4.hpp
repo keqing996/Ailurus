@@ -255,6 +255,16 @@ namespace Ailurus
 			return Adjugate() * invDet;
 		}
 
+		const ElementType* GetRowMajorDataPtr() const
+		{
+			return &m[0][0];
+		}
+
+		ElementType* GetRowMajorDataPtr()
+		{
+			return &m[0][0];
+		}
+
 		// Predefined constants
 		static const Matrix4x4 Zero;
 		static const Matrix4x4 Identity;
