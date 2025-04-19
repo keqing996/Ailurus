@@ -1,11 +1,10 @@
+#include "VulkanContext.h"
 #include <unordered_set>
 #include <mutex>
 #include <optional>
-#include "VulkanContext.h"
+#include <array>
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
-#include "Vulkan/SwapChain/SwapChain.h"
-#include "Vulkan/Airport/Airport.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -86,8 +85,13 @@ namespace Ailurus
 		}
 	} // namespace Verbose
 
+	// Validation
 	bool VulkanContext::enableValidation = true;
+
+	// Init
 	bool VulkanContext::_initialized = false;
+
+	// Static context
 	vk::Instance VulkanContext::_vkInstance = nullptr;
 	vk::DebugUtilsMessengerEXT VulkanContext::_vkDebugUtilsMessenger = nullptr;
 	vk::PhysicalDevice VulkanContext::_vkPhysicalDevice = nullptr;
@@ -101,8 +105,19 @@ namespace Ailurus
 	vk::Queue VulkanContext::_vkComputeQueue = nullptr;
 	vk::CommandPool VulkanContext::_vkGraphicCommandPool = nullptr;
 
-	std::unique_ptr<SwapChain> VulkanContext::_pSwapChain = nullptr;
-	std::unique_ptr<Airport> VulkanContext::_pAirport = nullptr;
+	// Dynamic context - swap chain
+	SwapChainConfig VulkanContext::_swapChainConfig{};
+	vk::SwapchainKHR VulkanContext::_vkSwapChain = nullptr;
+	std::vector<vk::Image> VulkanContext::_vkSwapChainImages{};
+	std::vector<vk::ImageView> VulkanContext::_vkSwapChainImageViews{};
+
+	// Dynamic context - flight
+	uint32_t VulkanContext::_currentParallelFrameIndex = 0;
+	unsigned VulkanContext::_currentSwapChainImageIndex = 0;
+	std::vector<vk::CommandBuffer> VulkanContext::_vkCommandBuffers{};
+	std::vector<vk::Semaphore> VulkanContext::_vkImageReadySemaphore{};
+	std::vector<vk::Semaphore> VulkanContext::_vkFinishRenderSemaphore{};
+	std::vector<vk::Fence> VulkanContext::_vkFences{};
 
 	bool VulkanContext::Init(const GetWindowInstanceExtension& getWindowRequiredExtension, const WindowCreateSurfaceCallback& createSurface)
 	{
@@ -211,23 +226,280 @@ namespace Ailurus
 		return _vkGraphicCommandPool;
 	}
 
+	uint32_t VulkanContext::CurrentParallelFrameIndex()
+	{
+		return _currentParallelFrameIndex;
+	}
+
 	void VulkanContext::RebuildDynamicContext()
 	{
 		if (!_initialized)
 			return;
 
+		_vkDevice.waitIdle();
+
 		DestroyDynamicContext();
 		CreateDynamicContext();
 	}
 
-	SwapChain* VulkanContext::GetSwapChain()
+	void VulkanContext::CreateSwapChain()
 	{
-		return _pSwapChain.get();
+		// Present mode
+		auto allPresentMode = _vkPhysicalDevice.getSurfacePresentModesKHR(_vkSurface);
+		for (const vk::PresentModeKHR& mode : allPresentMode)
+		{
+			if (mode == vk::PresentModeKHR::eMailbox)
+			{
+				_swapChainConfig.presentMode = mode;
+				break;
+			}
+		}
+
+		// Format
+		auto surfaceFormats = _vkPhysicalDevice.getSurfaceFormatsKHR(_vkSurface);
+		for (auto& surfaceFormat : surfaceFormats)
+		{
+			if (surfaceFormat.format == vk::Format::eR8G8B8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+			{
+				_swapChainConfig.surfaceFormat = surfaceFormat;
+				break;
+			}
+
+			if (surfaceFormat.format == vk::Format::eB8G8R8A8Unorm && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+			{
+				_swapChainConfig.surfaceFormat = surfaceFormat;
+				break;
+			}
+		}
+
+		if (_swapChainConfig.surfaceFormat.format == vk::Format::eUndefined)
+			Logger::LogError("No suitable surface format (format R8G8B8SRGB & colorspace SRGB non-linear)");
+
+		// Swap chain image count & size
+		Vector2i windowSize = Application::GetSize();
+		vk::SurfaceCapabilitiesKHR surfaceCapabilities = _vkPhysicalDevice.getSurfaceCapabilitiesKHR(_vkSurface);
+		_swapChainConfig.imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
+		_swapChainConfig.extent.width = std::clamp(static_cast<uint32_t>(windowSize.x),
+			surfaceCapabilities.minImageExtent.width,
+			surfaceCapabilities.maxImageExtent.width);
+		_swapChainConfig.extent.height = std::clamp(static_cast<uint32_t>(windowSize.y),
+			surfaceCapabilities.minImageExtent.height,
+			surfaceCapabilities.maxImageExtent.height);
+
+		// Create
+		vk::SwapchainCreateInfoKHR swapChainCreateInfo;
+		swapChainCreateInfo
+			.setSurface(_vkSurface) // target surface
+			.setImageArrayLayers(1) // not cube image
+			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+			.setClipped(true)										   // clipped when image's pixel outside of window
+			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // No alpha blending when image output to window
+			.setMinImageCount(_swapChainConfig.imageCount)
+			.setImageFormat(_swapChainConfig.surfaceFormat.format)
+			.setImageColorSpace(_swapChainConfig.surfaceFormat.colorSpace)
+			.setImageExtent(_swapChainConfig.extent);
+
+		if (_graphicQueueIndex == _presentQueueIndex)
+		{
+			swapChainCreateInfo
+				.setImageSharingMode(vk::SharingMode::eExclusive)
+				.setQueueFamilyIndices(_graphicQueueIndex);
+		}
+		else
+		{
+			std::array indices = { _graphicQueueIndex, _presentQueueIndex };
+			swapChainCreateInfo
+				.setImageSharingMode(vk::SharingMode::eConcurrent)
+				.setQueueFamilyIndices(indices);
+		}
+
+		_vkSwapChain = _vkDevice.createSwapchainKHR(swapChainCreateInfo);
+
+		// Swap chain image & view
+		_vkSwapChainImages = _vkDevice.getSwapchainImagesKHR(_vkSwapChain);
+		_vkSwapChainImageViews.resize(_vkSwapChainImages.size());
+		for (auto i = 0; i < _vkSwapChainImages.size(); i++)
+		{
+			vk::ImageSubresourceRange range;
+			range.setAspectMask(vk::ImageAspectFlagBits::eColor)
+				.setBaseMipLevel(0)	  // first mipmap level accessible to the view
+				.setLevelCount(1)	  // number of mipmap levels (starting from baseMipLevel) accessible to the view
+				.setBaseArrayLayer(0) // first array layer accessible to the view
+				.setLayerCount(1);	  // number of array layers (starting from baseArrayLayer) accessible to the view
+
+			vk::ImageViewCreateInfo imageViewCreateInfo;
+			imageViewCreateInfo
+				.setImage(_vkSwapChainImages[i])
+				.setViewType(vk::ImageViewType::e2D)
+				.setFormat(_swapChainConfig.surfaceFormat.format)
+				.setComponents(vk::ComponentMapping())
+				.setSubresourceRange(range);
+
+			_vkSwapChainImageViews[i] = _vkDevice.createImageView(imageViewCreateInfo);
+		}
 	}
 
-	Airport* VulkanContext::GetAirport()
+	void VulkanContext::DestroySwapChain()
 	{
-		return _pAirport.get();
+		for (const auto& view : _vkSwapChainImageViews)
+			_vkDevice.destroyImageView(view);
+
+		_vkDevice.destroySwapchainKHR(_vkSwapChain);
+	}
+
+	void VulkanContext::CreateCommandBuffer()
+	{
+		vk::CommandBufferAllocateInfo allocInfo;
+		allocInfo.setCommandPool(_vkGraphicCommandPool)
+				.setLevel(vk::CommandBufferLevel::ePrimary)
+				.setCommandBufferCount(PARALLEL_FRAME);
+
+		_vkCommandBuffers = _vkDevice.allocateCommandBuffers(allocInfo);
+	}
+
+	void VulkanContext::DestroyCommandBuffer()
+	{
+		_vkDevice.freeCommandBuffers(VulkanContext::GetCommandPool(), _vkCommandBuffers);
+	}
+
+	void VulkanContext::CreateSynchronizationObjects()
+	{
+		vk::SemaphoreCreateInfo semaphoreInfo;
+
+		vk::FenceCreateInfo fenceInfo;
+		fenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
+
+		for (size_t i = 0; i < PARALLEL_FRAME; i++)
+		{
+			_vkImageReadySemaphore.push_back(VulkanContext::GetDevice().createSemaphore(semaphoreInfo));
+			_vkFinishRenderSemaphore.push_back(VulkanContext::GetDevice().createSemaphore(semaphoreInfo));
+			_vkFences.push_back(VulkanContext::GetDevice().createFence(fenceInfo));
+		}
+	}
+
+	void VulkanContext::DestroySynchronizationObjects()
+	{
+		for (const auto& fence : _vkFences)
+			_vkDevice.destroyFence(fence);
+
+		for (const auto& sem : _vkImageReadySemaphore)
+			_vkDevice.destroySemaphore(sem);
+
+		for (const auto& sem : _vkFinishRenderSemaphore)
+			_vkDevice.destroySemaphore(sem);
+	}
+
+	const SwapChainConfig& VulkanContext::GetSwapChainConfig()
+	{
+		return _swapChainConfig;
+	}
+
+	const vk::SwapchainKHR& VulkanContext::GetSwapChain()
+	{
+		return _vkSwapChain;
+	}
+
+	const std::vector<vk::ImageView>& VulkanContext::GetSwapChainImageViews()
+	{
+		return _vkSwapChainImageViews;
+	}
+
+	uint32_t VulkanContext::GetCurrentFrameIndex()
+	{
+		return _currentParallelFrameIndex;
+	}
+
+	const vk::CommandBuffer& VulkanContext::GetCurrentFrameCommandBuffer()
+	{
+		return _vkCommandBuffers[_currentParallelFrameIndex];
+	}
+
+	const vk::Semaphore& VulkanContext::GetCurrentFrameImageReadySemaphore()
+	{
+		return _vkImageReadySemaphore[_currentParallelFrameIndex];
+	}
+
+	const vk::Semaphore& VulkanContext::GetCurrentFrameRenderFinishSemaphore()
+	{
+		return _vkFinishRenderSemaphore[_currentParallelFrameIndex];
+	}
+
+	const vk::Fence& VulkanContext::GetCurrentFrameFence()
+	{
+		return _vkFences[_currentParallelFrameIndex];
+	}
+
+	bool VulkanContext::WaitNextFrame(bool* needRebuild)
+	{
+		// Wait fence
+		auto waitFence = _vkDevice.waitForFences(GetCurrentFrameFence(), true, std::numeric_limits<uint64_t>::max());
+		if (waitFence != vk::Result::eSuccess)
+		{
+			Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
+			return false;
+		}
+
+		// Acquire swap chain next image
+		auto acquireImage = _vkDevice.acquireNextImageKHR(_vkSwapChain,
+			std::numeric_limits<uint64_t>::max(), GetCurrentFrameImageReadySemaphore());
+
+		switch (acquireImage.result)
+		{
+			case vk::Result::eErrorOutOfDateKHR:
+				*needRebuild = true;
+				return false;
+			case vk::Result::eSuboptimalKHR:
+				*needRebuild = true;
+				break;
+			case vk::Result::eSuccess:
+				break;
+			default:
+				Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
+				return false;
+		}
+
+		_currentSwapChainImageIndex = acquireImage.value;
+
+		_vkDevice.resetFences(GetCurrentFrameFence());
+
+		return true;
+	}
+
+	bool VulkanContext::SubmitThisFrame(bool* needRebuild)
+	{
+		std::array<vk::PipelineStageFlags, 1> waitStages = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+
+		vk::SubmitInfo submitInfo;
+		submitInfo.setWaitSemaphores(GetCurrentFrameImageReadySemaphore())
+				.setSignalSemaphores(GetCurrentFrameRenderFinishSemaphore())
+				.setWaitDstStageMask(waitStages)
+				.setCommandBuffers(GetCurrentFrameCommandBuffer());
+
+		_vkGraphicQueue.submit(submitInfo, GetCurrentFrameFence());
+
+		vk::PresentInfoKHR presentInfo;
+		presentInfo.setWaitSemaphores(GetCurrentFrameRenderFinishSemaphore())
+				.setSwapchains(_vkSwapChain)
+				.setImageIndices(_currentSwapChainImageIndex);
+
+		switch (const auto present = _vkPresentQueue.presentKHR(presentInfo))
+		{
+			case vk::Result::eErrorOutOfDateKHR:
+				*needRebuild = true;
+				return false;
+			case vk::Result::eSuboptimalKHR:
+				*needRebuild = true;
+				break;
+			case vk::Result::eSuccess:
+				break;
+			default:
+				Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
+				return false;
+		}
+
+		_currentParallelFrameIndex = (_currentParallelFrameIndex + 1) % PARALLEL_FRAME;
+
+		return true;
 	}
 
 	void VulkanContext::PrepareDispatcher()
@@ -439,14 +711,19 @@ namespace Ailurus
 
 	void VulkanContext::CreateDynamicContext()
 	{
-		Vector2i windowSize = Application::GetSize();
-		_pSwapChain = std::make_unique<SwapChain>(windowSize.x, windowSize.y);
-		_pAirport = std::make_unique<Airport>();
+		CreateSwapChain();
+
+		_currentParallelFrameIndex = 0;
+		_currentSwapChainImageIndex = 0;
+
+		CreateCommandBuffer();
+		CreateSynchronizationObjects();
 	}
 
 	void VulkanContext::DestroyDynamicContext()
 	{
-		_pAirport.reset();
-		_pSwapChain.reset();
+		DestroySynchronizationObjects();
+		DestroyCommandBuffer();
+		DestroySwapChain();
 	}
 } // namespace Ailurus

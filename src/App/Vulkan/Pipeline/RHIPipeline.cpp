@@ -2,7 +2,7 @@
 #include "Ailurus/Application/Shader/Shader.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Assets/Mesh.h"
-#include "Vulkan/Context/VulkanContext.h"
+#include "Vulkan/VulkanContext.h"
 #include "Vulkan/RenderPass/RHIRenderPass.h"
 #include "Vulkan/Shader/RHIShader.h"
 

@@ -1,7 +1,7 @@
 #include "DataBufferUtil.h"
 #include "Ailurus/Utility/ScopeGuard.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Vulkan/Context/VulkanContext.h"
+#include "Vulkan/VulkanContext.h"
 
 namespace Ailurus
 {

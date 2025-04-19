@@ -1,5 +1,5 @@
 #include "Ailurus/Application/Application.h"
-#include "Vulkan/Context/VulkanContext.h"
+#include "Vulkan/VulkanContext.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 

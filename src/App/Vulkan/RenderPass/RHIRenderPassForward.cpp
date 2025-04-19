@@ -1,6 +1,5 @@
 #include "RHIRenderPassForward.h"
-#include "Vulkan/Context/VulkanContext.h"
-#include "Vulkan/SwapChain/SwapChain.h"
+#include "Vulkan/VulkanContext.h"
 
 namespace Ailurus
 {
@@ -28,16 +27,16 @@ namespace Ailurus
 		return _vkRenderPass;
 	}
 
-	vk::RenderPassBeginInfo RHIRenderPassForward::GetRenderPassBeginInfo(const Flight& flight) const
+	vk::RenderPassBeginInfo RHIRenderPassForward::GetRenderPassBeginInfo() const
 	{
 		static vk::ClearValue clearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
 
 		vk::RenderPassBeginInfo renderPassInfo;
 		renderPassInfo.setRenderPass(_vkRenderPass)
-			.setFramebuffer(_backBuffers[flight.imageIndex])
+			.setFramebuffer(_backBuffers[VulkanContext::GetCurrentFrameIndex()])
 			.setRenderArea(vk::Rect2D{
 				vk::Offset2D{ 0, 0 },
-				VulkanContext::GetSwapChain()->GetSwapChainConfig().extent })
+				VulkanContext::GetSwapChainConfig().extent })
 			.setClearValues(clearColor);
 
 		return renderPassInfo;
@@ -46,7 +45,7 @@ namespace Ailurus
 	void RHIRenderPassForward::SetupRenderPass()
 	{
 		vk::AttachmentDescription colorAttachment;
-		colorAttachment.setFormat(VulkanContext::GetSwapChain()->GetSwapChainConfig().surfaceFormat.format)
+		colorAttachment.setFormat(VulkanContext::GetSwapChainConfig().surfaceFormat.format)
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
@@ -81,15 +80,14 @@ namespace Ailurus
 
 	void RHIRenderPassForward::SetupBackBuffers()
 	{
-		auto vkLogicalDevice = VulkanContext::GetDevice();
-		auto pSwapChain = VulkanContext::GetSwapChain();
-		auto extent = pSwapChain->GetSwapChainConfig().extent;
-		auto& swapChainImageViews = pSwapChain->GetImageViews();
-		for (auto i = 0; i < swapChainImageViews.size(); i++)
+		const auto vkLogicalDevice = VulkanContext::GetDevice();
+		const auto extent = VulkanContext::GetSwapChainConfig().extent;
+		auto& swapChainImageViews = VulkanContext::GetSwapChainImageViews();
+		for (auto swapChainImageView : swapChainImageViews)
 		{
 			vk::FramebufferCreateInfo framebufferInfo;
 			framebufferInfo.setRenderPass(_vkRenderPass)
-				.setAttachments(swapChainImageViews[i])
+				.setAttachments(swapChainImageView)
 				.setWidth(extent.width)
 				.setHeight(extent.height)
 				.setLayers(1);

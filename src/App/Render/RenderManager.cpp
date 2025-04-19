@@ -4,11 +4,9 @@
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/RenderPass/RenderPass.h"
 #include "Ailurus/Application/Component/CompMeshRender.h"
-#include "Vulkan/Context/VulkanContext.h"
-#include "Vulkan/Airport/Airport.h"
+#include "Vulkan/VulkanContext.h"
 #include "Vulkan/DataBuffer/VertexBuffer.h"
 #include "Vulkan/DataBuffer/IndexBuffer.h"
-#include "Vulkan/SwapChain/SwapChain.h"
 #include "Vulkan/RenderPass/RHIRenderPass.h"
 
 namespace Ailurus
@@ -44,11 +42,8 @@ namespace Ailurus
 		if (_needRebuildSwapChain)
 			ReBuildSwapChain();
 
-		const auto opFlight = VulkanContext::GetAirport()->WaitNextFlight(&_needRebuildSwapChain);
-		if (!opFlight.has_value())
+		if (!VulkanContext::WaitNextFrame(&_needRebuildSwapChain))
 			return;
-
-		const auto flight = opFlight.value();
 
 		// Prepare objects
 		std::vector<Entity*> allEntities = Application::GetSceneManager().GetAllRawEntities();
@@ -66,16 +61,16 @@ namespace Ailurus
 		// Begin
 		vk::CommandBufferBeginInfo beginInfo;
 		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		flight.commandBuffer.begin(beginInfo);
+		VulkanContext::GetCurrentFrameCommandBuffer().begin(beginInfo);
 
 		// Render pass
-		RenderForwardPass(allMeshRender, &flight);
+		RenderForwardPass(allMeshRender);
 
 		// End
-		flight.commandBuffer.end();
+		VulkanContext::GetCurrentFrameCommandBuffer().end();
 
 		// Fire
-		VulkanContext::GetAirport()->TakeOff(flight, &_needRebuildSwapChain);
+		VulkanContext::SubmitThisFrame(&_needRebuildSwapChain);
 	}
 
 	void RenderManager::GraphicsWaitIdle() const
@@ -98,7 +93,7 @@ namespace Ailurus
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
 	}
 
-	void RenderManager::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList, const Flight* pFlight)
+	void RenderManager::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList)
 	{
 		if (_pCurrentRenderPass != nullptr)
 		{
@@ -108,19 +103,19 @@ namespace Ailurus
 
 		_pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
 
-		pFlight->commandBuffer.beginRenderPass(
-			_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(*pFlight),
+		VulkanContext::GetCurrentFrameCommandBuffer().beginRenderPass(
+			_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(),
 			{});
 
 		for (const auto pMeshRender : meshRenderList)
-			RenderMesh(pFlight, pMeshRender);
+			RenderMesh(pMeshRender);
 
-		pFlight->commandBuffer.endRenderPass();
+		VulkanContext::GetCurrentFrameCommandBuffer().endRenderPass();
 
 		_pCurrentRenderPass = nullptr;
 	}
 
-	void RenderManager::RenderMesh(const Flight* pFlight, const CompMeshRender* pMeshRender) const
+	void RenderManager::RenderMesh(const CompMeshRender* pMeshRender) const
 	{
 		if (pMeshRender == nullptr)
 			return;
@@ -131,7 +126,7 @@ namespace Ailurus
 			return;
 		}
 
-		const auto commandBuffer = pFlight->commandBuffer;
+		const auto commandBuffer = VulkanContext::GetCurrentFrameCommandBuffer();
 		const auto pMesh = pMeshRender->GetMesh();
 		const auto pMaterial = pMeshRender->GetMaterial();
 
@@ -150,7 +145,7 @@ namespace Ailurus
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 
 		// Set viewport & scissor
-		auto extent = VulkanContext::GetSwapChain()->GetSwapChainConfig().extent;
+		auto extent = VulkanContext::GetSwapChainConfig().extent;
 		vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
 		vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
 		commandBuffer.setViewport(0, 1, &viewport);

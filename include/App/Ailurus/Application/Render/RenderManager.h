@@ -11,7 +11,6 @@ namespace Ailurus
 	class Material;
 	class RenderPass;
 	class CompMeshRender;
-	class Flight;
 
 	class RenderManager : public NonCopyable
 	{
@@ -36,8 +35,8 @@ namespace Ailurus
 	private:
 		void ReBuildSwapChain();
 		void BuildRenderPass();
-		void RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList, const Flight* pFlight);
-		void RenderMesh(const Flight* pFlight, const CompMeshRender* pMeshRender) const;
+		void RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList);
+		void RenderMesh(const CompMeshRender* pMeshRender) const;
 
 	private:
 		bool _needRebuildSwapChain = false;

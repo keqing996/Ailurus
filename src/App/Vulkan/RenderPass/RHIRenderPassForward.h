@@ -14,7 +14,7 @@ namespace Ailurus
 	public:
 		RenderPassType GetRenderPassType() override;
 		vk::RenderPass GetRenderPass() const override;
-		vk::RenderPassBeginInfo GetRenderPassBeginInfo(const Flight& flight) const override;
+		vk::RenderPassBeginInfo GetRenderPassBeginInfo() const override;
 
 	private:
 		void SetupRenderPass();
