@@ -12,11 +12,13 @@ namespace Ailurus
 		~UniformBuffer();
 
 	public:
-		vk::Buffer GetBuffer() const;
-		void UpdateData(size_t offset, const void* data, size_t updateDataSize) const;
+		uint8_t* GetWriteBeginPos() const;
+		void TransitionDataToGpu() const;
 
 	private:
-		CpuBuffer _buffer;
+		size_t _bufferSize;
+		CpuBuffer _cpuBuffer;
+		GpuBuffer _gpuBuffer;
 	};
 
 }

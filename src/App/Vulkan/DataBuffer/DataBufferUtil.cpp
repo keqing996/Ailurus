@@ -78,7 +78,7 @@ namespace Ailurus
 	}
 
 	std::optional<CpuBuffer>
-	DataBufferUtil::CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage)
+	DataBufferUtil::CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage, bool coherentWithGpu)
 	{
 		vk::BufferUsageFlags usageFlag;
 		switch (usage)
@@ -86,16 +86,15 @@ namespace Ailurus
 			case CpuBufferUsage::TransferSrc:
 				usageFlag |= vk::BufferUsageFlagBits::eTransferSrc;
 				break;
-			case CpuBufferUsage::Uniform:
-				usageFlag |= vk::BufferUsageFlagBits::eUniformBuffer;
-				break;
 			default:
 				Logger::LogError("Unknown cpu buffer usage type: {}", EnumReflection<CpuBufferUsage>::ToString(usage));
 				return std::nullopt;
 		}
 
-		constexpr vk::MemoryPropertyFlags propertyFlag = vk::MemoryPropertyFlagBits::eHostVisible
-			| vk::MemoryPropertyFlagBits::eHostCoherent;
+		vk::MemoryPropertyFlags propertyFlag = vk::MemoryPropertyFlagBits::eHostVisible;
+		if (coherentWithGpu)
+			propertyFlag |= vk::MemoryPropertyFlagBits::eHostCoherent;
+
 		const std::optional<CreatedBuffer> bufferRet = CreateBuffer(size, usageFlag, propertyFlag);
 		if (!bufferRet.has_value())
 			return std::nullopt;
@@ -119,6 +118,9 @@ namespace Ailurus
 				break;
 			case GpuBufferUsage::Index:
 				usageFlag |= vk::BufferUsageFlagBits::eIndexBuffer;
+				break;
+			case GpuBufferUsage::Uniform:
+				usageFlag |= vk::BufferUsageFlagBits::eUniformBuffer;
 				break;
 			default:
 				Logger::LogError("Unknown gpu buffer usage type: {}", EnumReflection<GpuBufferUsage>::ToString(usage));

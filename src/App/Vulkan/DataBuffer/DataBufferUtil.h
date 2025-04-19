@@ -8,12 +8,12 @@
 namespace Ailurus
 {
 	REFLECTION_ENUM(CpuBufferUsage,
-		TransferSrc,
-		Uniform)
+		TransferSrc)
 
 	REFLECTION_ENUM(GpuBufferUsage,
 		Vertex,
-		Index)
+		Index,
+		Uniform)
 
 	class DataBufferUtil
 	{
@@ -21,7 +21,7 @@ namespace Ailurus
 		DataBufferUtil() = delete;
 
 	public:
-		static std::optional<CpuBuffer> CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage);
+		static std::optional<CpuBuffer> CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage, bool coherentWithGpu = true);
 		static std::optional<GpuBuffer> CreateGpuBuffer(vk::DeviceSize size, GpuBufferUsage usage);
 
 		static void DestroyBuffer(CpuBuffer& cpuBuffer);

@@ -5,31 +5,34 @@
 namespace Ailurus
 {
 	UniformBuffer::UniformBuffer(size_t bufferSize)
+		: _bufferSize(bufferSize)
 	{
-		const auto ret = DataBufferUtil::CreateCpuBuffer(bufferSize, CpuBufferUsage::Uniform);
-		if (ret.has_value())
-			_buffer = *ret;
+		const auto retCpuBuffer = DataBufferUtil::CreateCpuBuffer(bufferSize, CpuBufferUsage::TransferSrc, false);
+		if (!retCpuBuffer.has_value())
+			return;
+
+		_cpuBuffer = *retCpuBuffer;
+
+		const auto retGpuBuffer = DataBufferUtil::CreateGpuBuffer(bufferSize, GpuBufferUsage::Uniform);
+		if (!retGpuBuffer.has_value())
+			return;
+
+		_gpuBuffer = *retGpuBuffer;
 	}
 
 	UniformBuffer::~UniformBuffer()
 	{
-		DataBufferUtil::DestroyBuffer(_buffer);
+		DataBufferUtil::DestroyBuffer(_gpuBuffer);
+		DataBufferUtil::DestroyBuffer(_cpuBuffer);
 	}
 
-	vk::Buffer UniformBuffer::GetBuffer() const
+	uint8_t* UniformBuffer::GetWriteBeginPos() const
 	{
-		return _buffer.buffer;
+		return static_cast<uint8_t*>(_cpuBuffer.mappedAddr);
 	}
 
-	void UniformBuffer::UpdateData(size_t offset, const void* data, size_t updateDataSize) const
+	void UniformBuffer::TransitionDataToGpu() const
 	{
-		if (_buffer.mappedAddr == nullptr)
-		{
-			Logger::LogError("Try write an unmapped uniform buffer");
-			return;
-		}
-
-		char* pWritePos = static_cast<char*>(_buffer.mappedAddr) + offset;
-		std::memcpy(pWritePos, data, updateDataSize);
+		DataBufferUtil::CopyBuffer(_cpuBuffer.buffer, _gpuBuffer.buffer, _bufferSize);
 	}
 } // namespace Ailurus

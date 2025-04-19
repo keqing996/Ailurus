@@ -39,13 +39,12 @@ namespace Ailurus
 		void SetInt(const std::string& name, int32_t value);
 		void SetMatrix4x4f(const std::string& name, const Matrix4x4f& value);
 
-		void Upload() const;
+		void TransitionDataToGpu() const;
 
 	public:
 		static size_t GetDataTypeSize(UniformDataType type);
 
 	private:
-		std::vector<char> _data;
 		std::unordered_map<std::string, size_t> _nameToOffsetMap;
 		std::unique_ptr<UniformBuffer> _pUniformBuffer;
 	};

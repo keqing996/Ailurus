@@ -19,16 +19,10 @@ namespace Ailurus
 			totalSize += GetDataTypeSize(type);
 		}
 
-		_data.resize(totalSize);
-		std::fill(_data.begin(), _data.end(), 0);
-
 		_pUniformBuffer = std::make_unique<UniformBuffer>(totalSize);
-		Upload();
 	}
 
-	ShaderUniform::~ShaderUniform()
-	{
-	}
+	ShaderUniform::~ShaderUniform() = default;
 
 	void ShaderUniform::SetFloat(const std::string& name, float value)
 	{
@@ -36,8 +30,9 @@ namespace Ailurus
 		if (itr == _nameToOffsetMap.end())
 			return;
 
+		uint8_t* pStartPos = _pUniformBuffer->GetWriteBeginPos();
 		const size_t offset = itr->second;
-		const auto pWritePos = reinterpret_cast<float*>(_data.data() + offset);
+		const auto pWritePos = reinterpret_cast<float*>(pStartPos + offset);
 		*pWritePos = value;
 	}
 
@@ -47,8 +42,9 @@ namespace Ailurus
 		if (itr == _nameToOffsetMap.end())
 			return;
 
+		uint8_t* pStartPos = _pUniformBuffer->GetWriteBeginPos();
 		const size_t offset = itr->second;
-		const auto pWritePos = reinterpret_cast<bool*>(_data.data() + offset);
+		const auto pWritePos = reinterpret_cast<bool*>(pStartPos + offset);
 		*pWritePos = value;
 	}
 
@@ -58,8 +54,9 @@ namespace Ailurus
 		if (itr == _nameToOffsetMap.end())
 			return;
 
+		uint8_t* pStartPos = _pUniformBuffer->GetWriteBeginPos();
 		const size_t offset = itr->second;
-		const auto pWritePos = reinterpret_cast<int32_t*>(_data.data() + offset);
+		const auto pWritePos = reinterpret_cast<int32_t*>(pStartPos + offset);
 		*pWritePos = value;
 	}
 
@@ -69,16 +66,17 @@ namespace Ailurus
 		if (itr == _nameToOffsetMap.end())
 			return;
 
+		uint8_t* pStartPos = _pUniformBuffer->GetWriteBeginPos();
 		const size_t offset = itr->second;
-		const auto pWritePos = _data.data() + offset;
+		const auto pWritePos = pStartPos + offset;
 
 		auto colMajMat = value.Transpose();
 		std::memcpy(pWritePos, colMajMat.GetRowMajorDataPtr(), sizeof(Matrix4x4f));
 	}
 
-	void ShaderUniform::Upload() const
+	void ShaderUniform::TransitionDataToGpu() const
 	{
-		_pUniformBuffer->UpdateData(0, _data.data(), _data.size());
+		_pUniformBuffer->TransitionDataToGpu();
 	}
 
 	size_t ShaderUniform::GetDataTypeSize(UniformDataType type)
