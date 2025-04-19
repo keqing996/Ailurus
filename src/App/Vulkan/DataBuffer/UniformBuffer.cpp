@@ -29,6 +29,7 @@ namespace Ailurus
 			return;
 		}
 
-		std::memcpy(_buffer.mappedAddr + offset, data, updateDataSize);
+		char* pWritePos = static_cast<char*>(_buffer.mappedAddr) + offset;
+		std::memcpy(pWritePos, data, updateDataSize);
 	}
 } // namespace Ailurus

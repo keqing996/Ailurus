@@ -45,7 +45,7 @@ namespace Ailurus
 		static size_t GetDataTypeSize(UniformDataType type);
 
 	private:
-		std::vector<std::byte> _data;
+		std::vector<char> _data;
 		std::unordered_map<std::string, size_t> _nameToOffsetMap;
 		std::unique_ptr<UniformBuffer> _pUniformBuffer;
 	};

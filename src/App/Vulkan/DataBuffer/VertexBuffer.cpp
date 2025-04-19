@@ -8,14 +8,14 @@ namespace Ailurus
     {
     	// Create gpu buffer
     	const auto retCreateGpuBuffer = DataBufferUtil::CreateGpuBuffer(sizeInBytes, GpuBufferUsage::Vertex);
-    	if (retCreateGpuBuffer)
+    	if (!retCreateGpuBuffer.has_value())
     		return;
 
     	_buffer = *retCreateGpuBuffer;
 
     	// Create cpu stage buffer
     	const auto retCreateStageBuffer = DataBufferUtil::CreateCpuBuffer(sizeInBytes, CpuBufferUsage::TransferSrc);
-    	if (retCreateStageBuffer)
+    	if (!retCreateStageBuffer.has_value())
     		return;
 
     	CpuBuffer stageBuffer = *retCreateStageBuffer;

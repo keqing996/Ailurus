@@ -118,15 +118,14 @@ namespace Ailurus
 				usageFlag |= vk::BufferUsageFlagBits::eVertexBuffer;
 				break;
 			case GpuBufferUsage::Index:
-				usageFlag |= vk::BufferUsageFlagBits::eUniformBuffer;
+				usageFlag |= vk::BufferUsageFlagBits::eIndexBuffer;
 				break;
 			default:
 				Logger::LogError("Unknown gpu buffer usage type: {}", EnumReflection<GpuBufferUsage>::ToString(usage));
 				return std::nullopt;
 		}
 
-		constexpr vk::MemoryPropertyFlags propertyFlag = vk::MemoryPropertyFlagBits::eHostVisible
-			| vk::MemoryPropertyFlagBits::eHostCoherent;
+		constexpr vk::MemoryPropertyFlags propertyFlag = vk::MemoryPropertyFlagBits::eDeviceLocal;
 		const std::optional<CreatedBuffer> bufferRet = CreateBuffer(size, usageFlag, propertyFlag);
 		if (!bufferRet.has_value())
 			return std::nullopt;
