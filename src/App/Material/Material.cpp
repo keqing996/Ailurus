@@ -11,10 +11,15 @@ namespace Ailurus
 
 	std::optional<StageShaderArray> Material::GetStageShaderArray(RenderPassType pass) const
 	{
-    	auto const passItr = _renderPassParaMap.find(pass);
-    	if (passItr == _renderPassParaMap.end())
-    		return std::nullopt;
+		auto const passItr = _renderPassParaMap.find(pass);
+		if (passItr == _renderPassParaMap.end())
+			return std::nullopt;
 
-    	return passItr->second.stageShaders;
+		return passItr->second.stageShaders;
 	}
-}
+
+	const DescriptorSet* Material::GetDescriptorSet() const
+	{
+    	return _pVkDescriptorSet.get();
+	}
+} // namespace Ailurus
