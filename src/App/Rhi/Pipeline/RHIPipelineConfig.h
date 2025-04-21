@@ -4,22 +4,22 @@
 
 namespace Ailurus
 {
-	struct PipelineConfig
+	struct RhiPipelineConfig
 	{
 		const class Mesh* pMesh;
 		StageShaderArray shaderStages;
 
-		bool operator==(const PipelineConfig& rhs) const
+		bool operator==(const RhiPipelineConfig& rhs) const
 		{
 			return pMesh == rhs.pMesh && shaderStages == rhs.shaderStages;
 		}
 
 		struct Hash
 		{
-			size_t operator()(const PipelineConfig& p) const
+			size_t operator()(const RhiPipelineConfig& p) const
 			{
 				const unsigned char* ptr = reinterpret_cast<const unsigned char*>(&p);
-				size_t size = sizeof(PipelineConfig);
+				size_t size = sizeof(RhiPipelineConfig);
 				size_t hash_value = 0;
 				for (size_t i = 0; i < size; ++i)
 					hash_value = hash_value * 31 + ptr[i]; // 31 is a small prime number

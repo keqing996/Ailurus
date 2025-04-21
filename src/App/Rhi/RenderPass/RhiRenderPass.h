@@ -9,15 +9,15 @@
 
 namespace Ailurus
 {
-	class RHIRenderPass : public NonCopyable
+	class RhiRenderPass : public NonCopyable
 	{
 	public:
 		virtual RenderPassType GetRenderPassType() = 0;
 		virtual vk::RenderPass GetRenderPass() const = 0;
 		virtual vk::RenderPassBeginInfo GetRenderPassBeginInfo() const = 0;
-		const Pipeline* GetPipeline(const PipelineConfig& config);
+		const RhiPipeline* GetPipeline(const RhiPipelineConfig& config);
 
 	private:
-		std::unordered_map<PipelineConfig, std::unique_ptr<Pipeline>, PipelineConfig::Hash> _pipelineMap;
+		std::unordered_map<RhiPipelineConfig, std::unique_ptr<RhiPipeline>, RhiPipelineConfig::Hash> _pipelineMap;
 	};
 } // namespace Ailurus

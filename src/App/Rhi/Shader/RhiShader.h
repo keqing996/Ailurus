@@ -5,12 +5,12 @@
 
 namespace Ailurus
 {
-    class RHIShader
+    class RhiShader
     {
     public:
-        RHIShader(const std::string& path);
-        RHIShader(const char* binaryData, size_t size);
-        ~RHIShader();
+        RhiShader(const std::string& path);
+        RhiShader(const char* binaryData, size_t size);
+        ~RhiShader();
 
     public:
         vk::ShaderModule GetShaderModule() const;

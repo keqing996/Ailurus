@@ -50,7 +50,7 @@ namespace Ailurus
 		return result;
 	}
 
-	Pipeline::Pipeline(const RHIRenderPass* pRenderPass, const PipelineConfig& config)
+	RhiPipeline::RhiPipeline(const RhiRenderPass* pRenderPass, const RhiPipelineConfig& config)
 	{
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setSetLayouts(nullptr);
@@ -160,13 +160,13 @@ namespace Ailurus
 			Logger::LogError("Failed to create graphics pipeline");
 	}
 
-	Pipeline::~Pipeline()
+	RhiPipeline::~RhiPipeline()
 	{
 		RhiContext::GetDevice().destroyPipelineLayout(_vkPipelineLayout);
 		RhiContext::GetDevice().destroyPipeline(_vkPipeline);
 	}
 
-	vk::Pipeline Pipeline::GetPipeline() const
+	vk::Pipeline RhiPipeline::GetPipeline() const
 	{
 		return _vkPipeline;
 	}

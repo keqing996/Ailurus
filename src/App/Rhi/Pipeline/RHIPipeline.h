@@ -5,11 +5,11 @@
 
 namespace Ailurus
 {
-	class Pipeline
+	class RhiPipeline
 	{
 	public:
-		Pipeline(const class RHIRenderPass* pRenderPass, const PipelineConfig& config);
-		~Pipeline();
+		RhiPipeline(const class RhiRenderPass* pRenderPass, const RhiPipelineConfig& config);
+		~RhiPipeline();
 
 	public:
 		vk::Pipeline GetPipeline() const;

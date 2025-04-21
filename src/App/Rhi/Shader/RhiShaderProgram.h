@@ -6,11 +6,11 @@
 
 namespace Ailurus
 {
-	class RHIShaderProgram: public NonCopyable
+	class RhiShaderProgram: public NonCopyable
 	{
 	public:
-		RHIShaderProgram();
-		~RHIShaderProgram() override;
+		RhiShaderProgram();
+		~RhiShaderProgram() override;
 
 	public:
 		void SetUniformLayout(const std::vector<UniformLayout>& uniformLayoutVec);

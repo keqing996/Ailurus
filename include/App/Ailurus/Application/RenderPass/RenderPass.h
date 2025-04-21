@@ -6,7 +6,7 @@
 
 namespace Ailurus
 {
-	class RHIRenderPass;
+	class RhiRenderPass;
 
 	class RenderPass : public NonCopyable
 	{
@@ -16,9 +16,9 @@ namespace Ailurus
 
 	public:
 		RenderPassType GetRenderPassType() const;
-		RHIRenderPass* GetRHIRenderPass() const;
+		RhiRenderPass* GetRHIRenderPass() const;
 
 	private:
-		std::unique_ptr<RHIRenderPass> _pRHI = nullptr;
+		std::unique_ptr<RhiRenderPass> _pRHI = nullptr;
 	};
 } // namespace Ailurus

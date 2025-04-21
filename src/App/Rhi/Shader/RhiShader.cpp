@@ -1,32 +1,32 @@
-#include "RHIShader.h"
+#include "RhiShader.h"
 #include "Ailurus/Utility/File.h"
 #include "Rhi/RhiContext.h"
 
 namespace Ailurus
 {
-    RHIShader::RHIShader(const std::string& path)
+    RhiShader::RhiShader(const std::string& path)
     {
         auto binaryFile = File::LoadBinary(path);
         if (binaryFile.has_value())
             CreateShaderModule(binaryFile.value().data(), binaryFile.value().size());
     }
 
-    RHIShader::RHIShader(const char* binaryData, size_t size)
+    RhiShader::RhiShader(const char* binaryData, size_t size)
     {
         CreateShaderModule(binaryData, size);
     }
 
-    RHIShader::~RHIShader()
+    RhiShader::~RhiShader()
     {
         RhiContext::GetDevice().destroyShaderModule(_vkShaderModule);
     }
 
-    vk::ShaderModule RHIShader::GetShaderModule() const
+    vk::ShaderModule RhiShader::GetShaderModule() const
     {
         return _vkShaderModule;
     }
 
-    vk::PipelineShaderStageCreateInfo RHIShader::GeneratePipelineCreateInfo(ShaderStage stage) const
+    vk::PipelineShaderStageCreateInfo RhiShader::GeneratePipelineCreateInfo(ShaderStage stage) const
     {
         vk::PipelineShaderStageCreateInfo createInfo;
         createInfo.setModule(_vkShaderModule)
@@ -36,7 +36,7 @@ namespace Ailurus
         return createInfo;
     }
 
-    vk::ShaderStageFlagBits RHIShader::ToVulkanEnum(ShaderStage stage)
+    vk::ShaderStageFlagBits RhiShader::ToVulkanEnum(ShaderStage stage)
     {
         vk::ShaderStageFlagBits vkStage = vk::ShaderStageFlagBits::eAll;
         switch (stage)
@@ -52,7 +52,7 @@ namespace Ailurus
         return vkStage;
     }
 
-    void RHIShader::CreateShaderModule(const char* binaryData, size_t size)
+    void RhiShader::CreateShaderModule(const char* binaryData, size_t size)
     {
         vk::ShaderModuleCreateInfo createInfo;
         createInfo.setPCode(reinterpret_cast<const uint32_t*>(binaryData))

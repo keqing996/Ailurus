@@ -1,4 +1,4 @@
-#include "RHIShaderProgram.h"
+#include "RhiShaderProgram.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Rhi/RhiContext.h"
 
@@ -39,16 +39,16 @@ namespace Ailurus
 		return result;
 	}
 
-	RHIShaderProgram::RHIShaderProgram()
+	RhiShaderProgram::RhiShaderProgram()
 	{
 	}
 
-	RHIShaderProgram::~RHIShaderProgram()
+	RhiShaderProgram::~RhiShaderProgram()
 	{
 		DestroySetLayout();
 	}
 
-	void RHIShaderProgram::SetUniformLayout(const std::vector<UniformLayout>& uniformLayoutVec)
+	void RhiShaderProgram::SetUniformLayout(const std::vector<UniformLayout>& uniformLayoutVec)
 	{
 		DestroySetLayout();
 
@@ -73,12 +73,12 @@ namespace Ailurus
 		_descriptorSetLayout = RhiContext::GetDevice().createDescriptorSetLayout(layoutCreateInfo);
 	}
 
-	vk::DescriptorSetLayout RHIShaderProgram::GetDescriptorSetLayout() const
+	vk::DescriptorSetLayout RhiShaderProgram::GetDescriptorSetLayout() const
 	{
 		return _descriptorSetLayout;
 	}
 
-	void RHIShaderProgram::DestroySetLayout()
+	void RhiShaderProgram::DestroySetLayout()
 	{
 		if (_descriptorSetLayout != nullptr)
 		{

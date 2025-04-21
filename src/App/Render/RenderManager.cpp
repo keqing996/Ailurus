@@ -7,7 +7,7 @@
 #include "Rhi/RhiContext.h"
 #include "Rhi/DataBuffer/VertexBuffer.h"
 #include "Rhi/DataBuffer/IndexBuffer.h"
-#include "Rhi/RenderPass/RHIRenderPass.h"
+#include "Rhi/RenderPass/RhiRenderPass.h"
 
 namespace Ailurus
 {
@@ -138,7 +138,7 @@ namespace Ailurus
 			return; // This object should not be drawn under this pass;
 
 		// Bind pipeline
-		PipelineConfig pipelineConfig;
+		RhiPipelineConfig pipelineConfig;
 		pipelineConfig.pMesh = pMesh;
 		pipelineConfig.shaderStages = optStageShaders.value();
 		vk::Pipeline pipeline = _pCurrentRenderPass->GetRHIRenderPass()->GetPipeline(pipelineConfig)->GetPipeline();

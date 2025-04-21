@@ -1,5 +1,5 @@
 #include "Ailurus/Application/RenderPass/RenderPass.h"
-#include "Rhi/RenderPass/RHIRenderPassForward.h"
+#include "Rhi/RenderPass/RhiRenderPassForward.h"
 
 namespace Ailurus
 {
@@ -8,7 +8,7 @@ namespace Ailurus
 		switch (passType)
 		{
 			case RenderPassType::Forward:
-				_pRHI = std::make_unique<RHIRenderPassForward>();
+				_pRHI = std::make_unique<RhiRenderPassForward>();
 				break;
 		}
 	}
@@ -20,7 +20,7 @@ namespace Ailurus
 		return _pRHI->GetRenderPassType();
 	}
 
-	RHIRenderPass* RenderPass::GetRHIRenderPass() const
+	RhiRenderPass* RenderPass::GetRHIRenderPass() const
 	{
 		return _pRHI.get();
 	}

@@ -1,15 +1,15 @@
-#include "RHIRenderPassForward.h"
+#include "RhiRenderPassForward.h"
 #include "Rhi/RhiContext.h"
 
 namespace Ailurus
 {
-	RHIRenderPassForward::RHIRenderPassForward()
+	RhiRenderPassForward::RhiRenderPassForward()
 	{
 		SetupRenderPass();
 		SetupBackBuffers();
 	}
 
-	RHIRenderPassForward::~RHIRenderPassForward()
+	RhiRenderPassForward::~RhiRenderPassForward()
 	{
 		for (auto frameBuffer : _backBuffers)
 			RhiContext::GetDevice().destroyFramebuffer(frameBuffer);
@@ -17,17 +17,17 @@ namespace Ailurus
 		RhiContext::GetDevice().destroyRenderPass(_vkRenderPass);
 	}
 
-	RenderPassType RHIRenderPassForward::GetRenderPassType()
+	RenderPassType RhiRenderPassForward::GetRenderPassType()
 	{
 		return RenderPassType::Forward;
 	}
 
-	vk::RenderPass RHIRenderPassForward::GetRenderPass() const
+	vk::RenderPass RhiRenderPassForward::GetRenderPass() const
 	{
 		return _vkRenderPass;
 	}
 
-	vk::RenderPassBeginInfo RHIRenderPassForward::GetRenderPassBeginInfo() const
+	vk::RenderPassBeginInfo RhiRenderPassForward::GetRenderPassBeginInfo() const
 	{
 		static vk::ClearValue clearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
 
@@ -42,7 +42,7 @@ namespace Ailurus
 		return renderPassInfo;
 	}
 
-	void RHIRenderPassForward::SetupRenderPass()
+	void RhiRenderPassForward::SetupRenderPass()
 	{
 		vk::AttachmentDescription colorAttachment;
 		colorAttachment.setFormat(RhiContext::GetSwapChainConfig().surfaceFormat.format)
@@ -78,7 +78,7 @@ namespace Ailurus
 		_vkRenderPass = RhiContext::GetDevice().createRenderPass(renderPassInfo);
 	}
 
-	void RHIRenderPassForward::SetupBackBuffers()
+	void RhiRenderPassForward::SetupBackBuffers()
 	{
 		const auto vkLogicalDevice = RhiContext::GetDevice();
 		const auto extent = RhiContext::GetSwapChainConfig().extent;

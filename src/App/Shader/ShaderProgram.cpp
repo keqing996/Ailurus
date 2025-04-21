@@ -1,12 +1,12 @@
 #include "Ailurus/Application/Shader/ShaderProgram.h"
 #include "Ailurus/Application/Shader/Shader.h"
 #include "Ailurus/Application/Shader/ShaderStage.h"
-#include "Rhi/Shader/RHIShaderProgram.h"
+#include "Rhi/Shader/RhiShaderProgram.h"
 
 namespace Ailurus
 {
     ShaderProgram::ShaderProgram()
-		: _pImpl(std::make_unique<RHIShaderProgram>())
+		: _pImpl(std::make_unique<RhiShaderProgram>())
 		, _shaderStage()
 	{
 	}
@@ -24,7 +24,7 @@ namespace Ailurus
 	{
 	}
 
-	const RHIShaderProgram* ShaderProgram::GetImpl() const
+	const RhiShaderProgram* ShaderProgram::GetImpl() const
 	{
     	return _pImpl.get();
 	}

@@ -7,7 +7,7 @@
 
 namespace Ailurus
 {
-	class RHIShader;
+	class RhiShader;
 
 	class Shader : public NonCopyable
 	{
@@ -19,11 +19,11 @@ namespace Ailurus
 		ShaderStage GetStage() const;
 		const std::string& GetName() const;
 
-		const RHIShader* GetImpl() const;
+		const RhiShader* GetImpl() const;
 
 	private:
 		ShaderStage _stage;
 		std::string _name;
-		std::unique_ptr<RHIShader> _pImpl;
+		std::unique_ptr<RhiShader> _pImpl;
 	};
 } // namespace Ailurus

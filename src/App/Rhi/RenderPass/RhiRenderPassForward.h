@@ -1,15 +1,15 @@
 #pragma once
 
 #include <vector>
-#include "RHIRenderPass.h"
+#include "RhiRenderPass.h"
 
 namespace Ailurus
 {
-	class RHIRenderPassForward : public RHIRenderPass
+	class RhiRenderPassForward : public RhiRenderPass
 	{
 	public:
-		RHIRenderPassForward();
-		~RHIRenderPassForward() override;
+		RhiRenderPassForward();
+		~RhiRenderPassForward() override;
 
 	public:
 		RenderPassType GetRenderPassType() override;
