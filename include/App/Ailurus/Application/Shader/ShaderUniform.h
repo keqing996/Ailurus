@@ -8,23 +8,10 @@
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/EnumReflection.h"
 #include "Ailurus/Math/Matrix4x4.hpp"
+#include "Uniform/UniformDataType.h"
 
 namespace Ailurus
 {
-	REFLECTION_ENUM(UniformDataType,
-		None,
-		Bool,
-		Float,
-		Float2,
-		Float3,
-		Float4,
-		Matrix3x3f,
-		Matrix4x4f,
-		Int,
-		Int2,
-		Int3,
-		Int4)
-
 	class UniformBuffer;
 
 	class ShaderUniform : public NonCopyable
