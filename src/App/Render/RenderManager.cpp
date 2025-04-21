@@ -1,13 +1,13 @@
-#include "Ailurus/Application/Render/RenderManager.h"
-#include "Ailurus/Application/Application.h"
-#include "Ailurus/Application/Material/Material.h"
+#include "RenderManager.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Ailurus/Application/RenderPass/RenderPass.h"
+#include "Ailurus/Application/Application.h"
+#include "Ailurus/Application/Render/Material/Material.h"
+#include "Ailurus/Application/Render/RenderPass/RenderPass.h"
 #include "Ailurus/Application/Component/CompMeshRender.h"
-#include "Rhi/RhiContext.h"
-#include "Rhi/DataBuffer/VertexBuffer.h"
-#include "Rhi/DataBuffer/IndexBuffer.h"
-#include "Rhi/RenderPass/RhiRenderPass.h"
+#include "Context/RhiContext.h"
+#include "Buffer/VertexBuffer.h"
+#include "Buffer/IndexBuffer.h"
+#include "RenderPass/RhiRenderPass.h"
 
 namespace Ailurus
 {

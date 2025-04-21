@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "Input/InputManager.h"
-#include "Shader/ShaderManager.h"
+#include "Render/Shader/ShaderManager.h"
 #include "Render/RenderManager.h"
 #include "Assets/AssetsManager.h"
 #include "Scene/SceneManager.h"
