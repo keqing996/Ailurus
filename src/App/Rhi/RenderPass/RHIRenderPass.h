@@ -5,7 +5,7 @@
 #include <vulkan/vulkan.hpp>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Application/RenderPass/RenderPassType.h"
-#include "Vulkan/Pipeline/RHIPipeline.h"
+#include "Rhi/Pipeline/RHIPipeline.h"
 
 namespace Ailurus
 {

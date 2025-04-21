@@ -1,7 +1,7 @@
 #include "DataBufferUtil.h"
 #include "Ailurus/Utility/ScopeGuard.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Vulkan/VulkanContext.h"
+#include "Rhi/RhiContext.h"
 
 namespace Ailurus
 {
@@ -21,13 +21,13 @@ namespace Ailurus
 	static std::optional<BufferMemoryRequirement>
 	GetBufferMemoryRequirement(vk::Buffer buffer, vk::MemoryPropertyFlags propertyFlag)
 	{
-		auto device = VulkanContext::GetDevice();
+		auto device = RhiContext::GetDevice();
 
 		vk::MemoryRequirements memRequirements = device.getBufferMemoryRequirements(buffer);
 
 		// Find memory type
 		std::optional<uint32_t> memoryTypeIndex = std::nullopt;
-		vk::PhysicalDeviceMemoryProperties memProperties = VulkanContext::GetPhysicalDevice().getMemoryProperties();
+		vk::PhysicalDeviceMemoryProperties memProperties = RhiContext::GetPhysicalDevice().getMemoryProperties();
 		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
 		{
 			if ((memRequirements.memoryTypeBits & (1 << i))
@@ -47,7 +47,7 @@ namespace Ailurus
 	static std::optional<CreatedBuffer>
 	CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usageFlag, vk::MemoryPropertyFlags propertyFlag)
 	{
-		const auto device = VulkanContext::GetDevice();
+		const auto device = RhiContext::GetDevice();
 
 		// Create buffer
 		vk::BufferCreateInfo bufferInfo;
@@ -100,7 +100,7 @@ namespace Ailurus
 			return std::nullopt;
 
 		// Map memory
-		void* mappedAddr = VulkanContext::GetDevice().mapMemory(bufferRet->deviceMem, 0, size, {});
+		void* mappedAddr = RhiContext::GetDevice().mapMemory(bufferRet->deviceMem, 0, size, {});
 
 		return CpuBuffer{ bufferRet->realSize, bufferRet->buffer,
 			bufferRet->deviceMem, mappedAddr };
@@ -137,7 +137,7 @@ namespace Ailurus
 
 	void DataBufferUtil::DestroyBuffer(CpuBuffer& cpuBuffer)
 	{
-		const auto device = VulkanContext::GetDevice();
+		const auto device = RhiContext::GetDevice();
 
 		if (cpuBuffer.mappedAddr != nullptr)
 		{
@@ -161,7 +161,7 @@ namespace Ailurus
 
 	void DataBufferUtil::DestroyBuffer(GpuBuffer& gpuBuffer)
 	{
-		const auto device = VulkanContext::GetDevice();
+		const auto device = RhiContext::GetDevice();
 
 		// Destroy buffer first, then device memory.
 		if (gpuBuffer.buffer != nullptr)
@@ -179,16 +179,16 @@ namespace Ailurus
 
 	void DataBufferUtil::CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
 	{
-		auto device = VulkanContext::GetDevice();
+		auto device = RhiContext::GetDevice();
 
 		vk::CommandBufferAllocateInfo allocInfo;
 		allocInfo.setLevel(vk::CommandBufferLevel::ePrimary)
-			.setCommandPool(VulkanContext::GetCommandPool())
+			.setCommandPool(RhiContext::GetCommandPool())
 			.setCommandBufferCount(1);
 
 		std::vector<vk::CommandBuffer> tempCmdBuffer = device.allocateCommandBuffers(allocInfo);
 		ScopeGuard bufferReleaseGuard = [&]() -> void {
-			VulkanContext::GetDevice().freeCommandBuffers(VulkanContext::GetCommandPool(), tempCmdBuffer);
+			RhiContext::GetDevice().freeCommandBuffers(RhiContext::GetCommandPool(), tempCmdBuffer);
 		};
 
 		vk::CommandBufferBeginInfo beginInfo;
@@ -208,7 +208,7 @@ namespace Ailurus
 		vk::SubmitInfo submitInfo;
 		submitInfo.setCommandBuffers(tempCmdBuffer);
 
-		auto renderQueue = VulkanContext::GetGraphicQueue();
+		auto renderQueue = RhiContext::GetGraphicQueue();
 		renderQueue.submit(submitInfo);
 		renderQueue.waitIdle();
 	}

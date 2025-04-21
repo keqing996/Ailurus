@@ -1,4 +1,4 @@
-#include "VulkanContext.h"
+#include "RhiContext.h"
 #include <unordered_set>
 #include <mutex>
 #include <optional>
@@ -86,40 +86,40 @@ namespace Ailurus
 	} // namespace Verbose
 
 	// Validation
-	bool VulkanContext::enableValidation = true;
+	bool RhiContext::enableValidation = true;
 
 	// Init
-	bool VulkanContext::_initialized = false;
+	bool RhiContext::_initialized = false;
 
 	// Static context
-	vk::Instance VulkanContext::_vkInstance = nullptr;
-	vk::DebugUtilsMessengerEXT VulkanContext::_vkDebugUtilsMessenger = nullptr;
-	vk::PhysicalDevice VulkanContext::_vkPhysicalDevice = nullptr;
-	vk::SurfaceKHR VulkanContext::_vkSurface = nullptr;
-	vk::Device VulkanContext::_vkDevice = nullptr;
-	uint32_t VulkanContext::_presentQueueIndex = 0;
-	uint32_t VulkanContext::_graphicQueueIndex = 0;
-	uint32_t VulkanContext::_computeQueueIndex = 0;
-	vk::Queue VulkanContext::_vkPresentQueue = nullptr;
-	vk::Queue VulkanContext::_vkGraphicQueue = nullptr;
-	vk::Queue VulkanContext::_vkComputeQueue = nullptr;
-	vk::CommandPool VulkanContext::_vkGraphicCommandPool = nullptr;
+	vk::Instance RhiContext::_vkInstance = nullptr;
+	vk::DebugUtilsMessengerEXT RhiContext::_vkDebugUtilsMessenger = nullptr;
+	vk::PhysicalDevice RhiContext::_vkPhysicalDevice = nullptr;
+	vk::SurfaceKHR RhiContext::_vkSurface = nullptr;
+	vk::Device RhiContext::_vkDevice = nullptr;
+	uint32_t RhiContext::_presentQueueIndex = 0;
+	uint32_t RhiContext::_graphicQueueIndex = 0;
+	uint32_t RhiContext::_computeQueueIndex = 0;
+	vk::Queue RhiContext::_vkPresentQueue = nullptr;
+	vk::Queue RhiContext::_vkGraphicQueue = nullptr;
+	vk::Queue RhiContext::_vkComputeQueue = nullptr;
+	vk::CommandPool RhiContext::_vkGraphicCommandPool = nullptr;
 
 	// Dynamic context - swap chain
-	SwapChainConfig VulkanContext::_swapChainConfig{};
-	vk::SwapchainKHR VulkanContext::_vkSwapChain = nullptr;
-	std::vector<vk::Image> VulkanContext::_vkSwapChainImages{};
-	std::vector<vk::ImageView> VulkanContext::_vkSwapChainImageViews{};
+	SwapChainConfig RhiContext::_swapChainConfig{};
+	vk::SwapchainKHR RhiContext::_vkSwapChain = nullptr;
+	std::vector<vk::Image> RhiContext::_vkSwapChainImages{};
+	std::vector<vk::ImageView> RhiContext::_vkSwapChainImageViews{};
 
 	// Dynamic context - flight
-	uint32_t VulkanContext::_currentParallelFrameIndex = 0;
-	unsigned VulkanContext::_currentSwapChainImageIndex = 0;
-	std::vector<vk::CommandBuffer> VulkanContext::_vkCommandBuffers{};
-	std::vector<vk::Semaphore> VulkanContext::_vkImageReadySemaphore{};
-	std::vector<vk::Semaphore> VulkanContext::_vkFinishRenderSemaphore{};
-	std::vector<vk::Fence> VulkanContext::_vkFences{};
+	uint32_t RhiContext::_currentParallelFrameIndex = 0;
+	unsigned RhiContext::_currentSwapChainImageIndex = 0;
+	std::vector<vk::CommandBuffer> RhiContext::_vkCommandBuffers{};
+	std::vector<vk::Semaphore> RhiContext::_vkImageReadySemaphore{};
+	std::vector<vk::Semaphore> RhiContext::_vkFinishRenderSemaphore{};
+	std::vector<vk::Fence> RhiContext::_vkFences{};
 
-	bool VulkanContext::Init(const GetWindowInstanceExtension& getWindowRequiredExtension, const WindowCreateSurfaceCallback& createSurface)
+	bool RhiContext::Init(const GetWindowInstanceExtension& getWindowRequiredExtension, const WindowCreateSurfaceCallback& createSurface)
 	{
 		if (_initialized)
 			return true;
@@ -151,7 +151,7 @@ namespace Ailurus
 		return true;
 	}
 
-	void VulkanContext::Destroy(const WindowDestroySurfaceCallback& destroySurface)
+	void RhiContext::Destroy(const WindowDestroySurfaceCallback& destroySurface)
 	{
 		if (!_initialized)
 			return;
@@ -176,62 +176,62 @@ namespace Ailurus
 		_initialized = false;
 	}
 
-	vk::Device VulkanContext::GetDevice()
+	vk::Device RhiContext::GetDevice()
 	{
 		return _vkDevice;
 	}
 
-	vk::PhysicalDevice VulkanContext::GetPhysicalDevice()
+	vk::PhysicalDevice RhiContext::GetPhysicalDevice()
 	{
 		return _vkPhysicalDevice;
 	}
 
-	vk::SurfaceKHR VulkanContext::GetSurface()
+	vk::SurfaceKHR RhiContext::GetSurface()
 	{
 		return _vkSurface;
 	}
 
-	uint32_t VulkanContext::GetPresentQueueIndex()
+	uint32_t RhiContext::GetPresentQueueIndex()
 	{
 		return _presentQueueIndex;
 	}
 
-	uint32_t VulkanContext::GetGraphicQueueIndex()
+	uint32_t RhiContext::GetGraphicQueueIndex()
 	{
 		return _graphicQueueIndex;
 	}
 
-	vk::Queue VulkanContext::GetPresentQueue()
+	vk::Queue RhiContext::GetPresentQueue()
 	{
 		return _vkPresentQueue;
 	}
 
-	vk::Queue VulkanContext::GetGraphicQueue()
+	vk::Queue RhiContext::GetGraphicQueue()
 	{
 		return _vkGraphicQueue;
 	}
 
-	uint32_t VulkanContext::GetComputeQueueIndex()
+	uint32_t RhiContext::GetComputeQueueIndex()
 	{
 		return _computeQueueIndex;
 	}
 
-	vk::Queue VulkanContext::GetComputeQueue()
+	vk::Queue RhiContext::GetComputeQueue()
 	{
 		return _vkComputeQueue;
 	}
 
-	vk::CommandPool VulkanContext::GetCommandPool()
+	vk::CommandPool RhiContext::GetCommandPool()
 	{
 		return _vkGraphicCommandPool;
 	}
 
-	uint32_t VulkanContext::CurrentParallelFrameIndex()
+	uint32_t RhiContext::CurrentParallelFrameIndex()
 	{
 		return _currentParallelFrameIndex;
 	}
 
-	void VulkanContext::RebuildDynamicContext()
+	void RhiContext::RebuildDynamicContext()
 	{
 		if (!_initialized)
 			return;
@@ -242,7 +242,7 @@ namespace Ailurus
 		CreateDynamicContext();
 	}
 
-	void VulkanContext::CreateSwapChain()
+	void RhiContext::CreateSwapChain()
 	{
 		// Present mode
 		auto allPresentMode = _vkPhysicalDevice.getSurfacePresentModesKHR(_vkSurface);
@@ -339,7 +339,7 @@ namespace Ailurus
 		}
 	}
 
-	void VulkanContext::DestroySwapChain()
+	void RhiContext::DestroySwapChain()
 	{
 		for (const auto& view : _vkSwapChainImageViews)
 			_vkDevice.destroyImageView(view);
@@ -347,7 +347,7 @@ namespace Ailurus
 		_vkDevice.destroySwapchainKHR(_vkSwapChain);
 	}
 
-	void VulkanContext::CreateCommandBuffer()
+	void RhiContext::CreateCommandBuffer()
 	{
 		vk::CommandBufferAllocateInfo allocInfo;
 		allocInfo.setCommandPool(_vkGraphicCommandPool)
@@ -357,12 +357,12 @@ namespace Ailurus
 		_vkCommandBuffers = _vkDevice.allocateCommandBuffers(allocInfo);
 	}
 
-	void VulkanContext::DestroyCommandBuffer()
+	void RhiContext::DestroyCommandBuffer()
 	{
-		_vkDevice.freeCommandBuffers(VulkanContext::GetCommandPool(), _vkCommandBuffers);
+		_vkDevice.freeCommandBuffers(RhiContext::GetCommandPool(), _vkCommandBuffers);
 	}
 
-	void VulkanContext::CreateSynchronizationObjects()
+	void RhiContext::CreateSynchronizationObjects()
 	{
 		vk::SemaphoreCreateInfo semaphoreInfo;
 
@@ -371,13 +371,13 @@ namespace Ailurus
 
 		for (size_t i = 0; i < PARALLEL_FRAME; i++)
 		{
-			_vkImageReadySemaphore.push_back(VulkanContext::GetDevice().createSemaphore(semaphoreInfo));
-			_vkFinishRenderSemaphore.push_back(VulkanContext::GetDevice().createSemaphore(semaphoreInfo));
-			_vkFences.push_back(VulkanContext::GetDevice().createFence(fenceInfo));
+			_vkImageReadySemaphore.push_back(RhiContext::GetDevice().createSemaphore(semaphoreInfo));
+			_vkFinishRenderSemaphore.push_back(RhiContext::GetDevice().createSemaphore(semaphoreInfo));
+			_vkFences.push_back(RhiContext::GetDevice().createFence(fenceInfo));
 		}
 	}
 
-	void VulkanContext::DestroySynchronizationObjects()
+	void RhiContext::DestroySynchronizationObjects()
 	{
 		for (const auto& fence : _vkFences)
 			_vkDevice.destroyFence(fence);
@@ -389,47 +389,47 @@ namespace Ailurus
 			_vkDevice.destroySemaphore(sem);
 	}
 
-	const SwapChainConfig& VulkanContext::GetSwapChainConfig()
+	const SwapChainConfig& RhiContext::GetSwapChainConfig()
 	{
 		return _swapChainConfig;
 	}
 
-	const vk::SwapchainKHR& VulkanContext::GetSwapChain()
+	const vk::SwapchainKHR& RhiContext::GetSwapChain()
 	{
 		return _vkSwapChain;
 	}
 
-	const std::vector<vk::ImageView>& VulkanContext::GetSwapChainImageViews()
+	const std::vector<vk::ImageView>& RhiContext::GetSwapChainImageViews()
 	{
 		return _vkSwapChainImageViews;
 	}
 
-	uint32_t VulkanContext::GetCurrentFrameIndex()
+	uint32_t RhiContext::GetCurrentFrameIndex()
 	{
 		return _currentParallelFrameIndex;
 	}
 
-	const vk::CommandBuffer& VulkanContext::GetCurrentFrameCommandBuffer()
+	const vk::CommandBuffer& RhiContext::GetCurrentFrameCommandBuffer()
 	{
 		return _vkCommandBuffers[_currentParallelFrameIndex];
 	}
 
-	const vk::Semaphore& VulkanContext::GetCurrentFrameImageReadySemaphore()
+	const vk::Semaphore& RhiContext::GetCurrentFrameImageReadySemaphore()
 	{
 		return _vkImageReadySemaphore[_currentParallelFrameIndex];
 	}
 
-	const vk::Semaphore& VulkanContext::GetCurrentFrameRenderFinishSemaphore()
+	const vk::Semaphore& RhiContext::GetCurrentFrameRenderFinishSemaphore()
 	{
 		return _vkFinishRenderSemaphore[_currentParallelFrameIndex];
 	}
 
-	const vk::Fence& VulkanContext::GetCurrentFrameFence()
+	const vk::Fence& RhiContext::GetCurrentFrameFence()
 	{
 		return _vkFences[_currentParallelFrameIndex];
 	}
 
-	bool VulkanContext::WaitNextFrame(bool* needRebuild)
+	bool RhiContext::WaitNextFrame(bool* needRebuild)
 	{
 		// Wait fence
 		auto waitFence = _vkDevice.waitForFences(GetCurrentFrameFence(), true, std::numeric_limits<uint64_t>::max());
@@ -465,7 +465,7 @@ namespace Ailurus
 		return true;
 	}
 
-	bool VulkanContext::SubmitThisFrame(bool* needRebuild)
+	bool RhiContext::SubmitThisFrame(bool* needRebuild)
 	{
 		std::array<vk::PipelineStageFlags, 1> waitStages = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
@@ -502,7 +502,7 @@ namespace Ailurus
 		return true;
 	}
 
-	void VulkanContext::PrepareDispatcher()
+	void RhiContext::PrepareDispatcher()
 	{
 		vk::detail::DynamicLoader loader;
 		PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
@@ -511,7 +511,7 @@ namespace Ailurus
 		VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 	}
 
-	void VulkanContext::CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension)
+	void RhiContext::CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension)
 	{
 		// Validation layers
 		static const char* VALIDATION_LAYER_NAME = "VK_LAYER_KHRONOS_validation";
@@ -559,7 +559,7 @@ namespace Ailurus
 		VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkInstance);
 	}
 
-	void VulkanContext::CreatDebugUtilsMessenger()
+	void RhiContext::CreatDebugUtilsMessenger()
 	{
 		if (!enableValidation)
 			return;
@@ -576,12 +576,12 @@ namespace Ailurus
 		_vkDebugUtilsMessenger = _vkInstance.createDebugUtilsMessengerEXT(createInfo);
 	}
 
-	void VulkanContext::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
+	void RhiContext::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
 	{
 		_vkSurface = createSurface(_vkInstance);
 	}
 
-	void VulkanContext::ChoosePhysicsDevice()
+	void RhiContext::ChoosePhysicsDevice()
 	{
 		auto graphicCards = _vkInstance.enumeratePhysicalDevices();
 
@@ -614,7 +614,7 @@ namespace Ailurus
 		}
 	}
 
-	bool VulkanContext::CreateLogicalDevice()
+	bool RhiContext::CreateLogicalDevice()
 	{
 		// Find graphic queue and present queue.
 		std::optional<uint32_t> optPresentQueue = std::nullopt;
@@ -700,7 +700,7 @@ namespace Ailurus
 		return true;
 	}
 
-	void VulkanContext::CreateCommandPool()
+	void RhiContext::CreateCommandPool()
 	{
 		vk::CommandPoolCreateInfo poolInfo;
 		poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
@@ -709,7 +709,7 @@ namespace Ailurus
 		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
 	}
 
-	void VulkanContext::CreateDynamicContext()
+	void RhiContext::CreateDynamicContext()
 	{
 		CreateSwapChain();
 
@@ -720,7 +720,7 @@ namespace Ailurus
 		CreateSynchronizationObjects();
 	}
 
-	void VulkanContext::DestroyDynamicContext()
+	void RhiContext::DestroyDynamicContext()
 	{
 		DestroySynchronizationObjects();
 		DestroyCommandBuffer();

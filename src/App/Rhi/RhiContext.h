@@ -13,13 +13,13 @@ namespace Ailurus
 		uint32_t imageCount;
 	};
 
-	class VulkanContext
+	class RhiContext
 	{
 		using GetWindowInstanceExtension = std::function<std::vector<const char*>()>;
 		using WindowCreateSurfaceCallback = std::function<vk::SurfaceKHR(const vk::Instance&)>;
 		using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
 
-		VulkanContext() = delete;
+		RhiContext() = delete;
 
 	public:
 		static bool enableValidation;

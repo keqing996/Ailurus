@@ -1,6 +1,6 @@
 #include "Ailurus/Application/Shader/ShaderUniform.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Vulkan/DataBuffer/UniformBuffer.h"
+#include "Rhi/DataBuffer/UniformBuffer.h"
 
 namespace Ailurus
 {

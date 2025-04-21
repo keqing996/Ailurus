@@ -1,5 +1,5 @@
 #include "Ailurus/Application/Application.h"
-#include "Vulkan/VulkanContext.h"
+#include "Rhi/RhiContext.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 
@@ -67,7 +67,7 @@ namespace Ailurus
 
 		SetWindowVisible(true);
 
-		if (!VulkanContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface))
+		if (!RhiContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface))
 			return false;
 
 		_pInputManager.reset(new InputManager());
@@ -93,7 +93,7 @@ namespace Ailurus
 			_pRenderManager = nullptr;
 			_pInputManager = nullptr;
 
-			VulkanContext::Destroy(VulkanContextDestroySurface);
+			RhiContext::Destroy(VulkanContextDestroySurface);
 
 			SDL_DestroyWindow(static_cast<SDL_Window*>(_pWindow));
 			_pWindow = nullptr;

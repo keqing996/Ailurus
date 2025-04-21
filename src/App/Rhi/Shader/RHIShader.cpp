@@ -1,6 +1,6 @@
 #include "RHIShader.h"
 #include "Ailurus/Utility/File.h"
-#include "Vulkan/VulkanContext.h"
+#include "Rhi/RhiContext.h"
 
 namespace Ailurus
 {
@@ -18,7 +18,7 @@ namespace Ailurus
 
     RHIShader::~RHIShader()
     {
-        VulkanContext::GetDevice().destroyShaderModule(_vkShaderModule);
+        RhiContext::GetDevice().destroyShaderModule(_vkShaderModule);
     }
 
     vk::ShaderModule RHIShader::GetShaderModule() const
@@ -58,6 +58,6 @@ namespace Ailurus
         createInfo.setPCode(reinterpret_cast<const uint32_t*>(binaryData))
                 .setCodeSize(size);
 
-        _vkShaderModule = VulkanContext::GetDevice().createShaderModule(createInfo);
+        _vkShaderModule = RhiContext::GetDevice().createShaderModule(createInfo);
     }
 }

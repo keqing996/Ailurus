@@ -2,9 +2,9 @@
 #include "Ailurus/Application/Shader/Shader.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Assets/Mesh.h"
-#include "Vulkan/VulkanContext.h"
-#include "Vulkan/RenderPass/RHIRenderPass.h"
-#include "Vulkan/Shader/RHIShader.h"
+#include "Rhi/RhiContext.h"
+#include "Rhi/RenderPass/RHIRenderPass.h"
+#include "Rhi/Shader/RHIShader.h"
 
 
 namespace Ailurus
@@ -55,7 +55,7 @@ namespace Ailurus
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setSetLayouts(nullptr);
 
-		_vkPipelineLayout = VulkanContext::GetDevice().createPipelineLayout(pipelineLayoutInfo);
+		_vkPipelineLayout = RhiContext::GetDevice().createPipelineLayout(pipelineLayoutInfo);
 
 		// Shader stages
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
@@ -153,7 +153,7 @@ namespace Ailurus
 			.setSubpass(0)
 			.setBasePipelineHandle(nullptr);
 
-		auto pipelineCreateResult = VulkanContext::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
+		auto pipelineCreateResult = RhiContext::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
 		if (pipelineCreateResult.result == vk::Result::eSuccess)
 			_vkPipeline = pipelineCreateResult.value;
 		else
@@ -162,8 +162,8 @@ namespace Ailurus
 
 	Pipeline::~Pipeline()
 	{
-		VulkanContext::GetDevice().destroyPipelineLayout(_vkPipelineLayout);
-		VulkanContext::GetDevice().destroyPipeline(_vkPipeline);
+		RhiContext::GetDevice().destroyPipelineLayout(_vkPipelineLayout);
+		RhiContext::GetDevice().destroyPipeline(_vkPipeline);
 	}
 
 	vk::Pipeline Pipeline::GetPipeline() const

@@ -1,5 +1,5 @@
 #include "Ailurus/Application/Shader/Shader.h"
-#include "Vulkan/Shader/RHIShader.h"
+#include "Rhi/Shader/RHIShader.h"
 
 namespace Ailurus
 {

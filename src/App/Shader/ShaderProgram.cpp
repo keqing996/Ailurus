@@ -1,7 +1,7 @@
 #include "Ailurus/Application/Shader/ShaderProgram.h"
 #include "Ailurus/Application/Shader/Shader.h"
 #include "Ailurus/Application/Shader/ShaderStage.h"
-#include "Vulkan/Shader/RHIShaderProgram.h"
+#include "Rhi/Shader/RHIShaderProgram.h"
 
 namespace Ailurus
 {

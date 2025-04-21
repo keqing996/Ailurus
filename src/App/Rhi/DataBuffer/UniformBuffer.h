@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include "Vulkan/VulkanContext.h"
+#include "Rhi/RhiContext.h"
 #include "BufferType.h"
 
 namespace Ailurus
@@ -18,8 +18,8 @@ namespace Ailurus
 
 	private:
 		size_t _bufferSize;
-		std::array<CpuBuffer, VulkanContext::PARALLEL_FRAME> _cpuBuffers;
-		std::array<GpuBuffer, VulkanContext::PARALLEL_FRAME> _gpuBuffers;
+		std::array<CpuBuffer, RhiContext::PARALLEL_FRAME> _cpuBuffers;
+		std::array<GpuBuffer, RhiContext::PARALLEL_FRAME> _gpuBuffers;
 	};
 
 }

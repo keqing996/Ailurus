@@ -4,10 +4,10 @@
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/RenderPass/RenderPass.h"
 #include "Ailurus/Application/Component/CompMeshRender.h"
-#include "Vulkan/VulkanContext.h"
-#include "Vulkan/DataBuffer/VertexBuffer.h"
-#include "Vulkan/DataBuffer/IndexBuffer.h"
-#include "Vulkan/RenderPass/RHIRenderPass.h"
+#include "Rhi/RhiContext.h"
+#include "Rhi/DataBuffer/VertexBuffer.h"
+#include "Rhi/DataBuffer/IndexBuffer.h"
+#include "Rhi/RenderPass/RHIRenderPass.h"
 
 namespace Ailurus
 {
@@ -42,7 +42,7 @@ namespace Ailurus
 		if (_needRebuildSwapChain)
 			ReBuildSwapChain();
 
-		if (!VulkanContext::WaitNextFrame(&_needRebuildSwapChain))
+		if (!RhiContext::WaitNextFrame(&_needRebuildSwapChain))
 			return;
 
 		// Prepare objects
@@ -61,21 +61,21 @@ namespace Ailurus
 		// Begin
 		vk::CommandBufferBeginInfo beginInfo;
 		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		VulkanContext::GetCurrentFrameCommandBuffer().begin(beginInfo);
+		RhiContext::GetCurrentFrameCommandBuffer().begin(beginInfo);
 
 		// Render pass
 		RenderForwardPass(allMeshRender);
 
 		// End
-		VulkanContext::GetCurrentFrameCommandBuffer().end();
+		RhiContext::GetCurrentFrameCommandBuffer().end();
 
 		// Fire
-		VulkanContext::SubmitThisFrame(&_needRebuildSwapChain);
+		RhiContext::SubmitThisFrame(&_needRebuildSwapChain);
 	}
 
 	void RenderManager::GraphicsWaitIdle() const
 	{
-		VulkanContext::GetDevice().waitIdle();
+		RhiContext::GetDevice().waitIdle();
 	}
 
 	void RenderManager::ReBuildSwapChain()
@@ -83,7 +83,7 @@ namespace Ailurus
 		GraphicsWaitIdle();
 
 		_renderPassMap.clear();
-		VulkanContext::RebuildDynamicContext();
+		RhiContext::RebuildDynamicContext();
 		BuildRenderPass();
 		_needRebuildSwapChain = false;
 	}
@@ -103,14 +103,14 @@ namespace Ailurus
 
 		_pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
 
-		VulkanContext::GetCurrentFrameCommandBuffer().beginRenderPass(
+		RhiContext::GetCurrentFrameCommandBuffer().beginRenderPass(
 			_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(),
 			{});
 
 		for (const auto pMeshRender : meshRenderList)
 			RenderMesh(pMeshRender);
 
-		VulkanContext::GetCurrentFrameCommandBuffer().endRenderPass();
+		RhiContext::GetCurrentFrameCommandBuffer().endRenderPass();
 
 		_pCurrentRenderPass = nullptr;
 	}
@@ -126,7 +126,7 @@ namespace Ailurus
 			return;
 		}
 
-		const auto commandBuffer = VulkanContext::GetCurrentFrameCommandBuffer();
+		const auto commandBuffer = RhiContext::GetCurrentFrameCommandBuffer();
 		const auto pMesh = pMeshRender->GetMesh();
 		const auto pMaterial = pMeshRender->GetMaterial();
 
@@ -145,7 +145,7 @@ namespace Ailurus
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 
 		// Set viewport & scissor
-		auto extent = VulkanContext::GetSwapChainConfig().extent;
+		auto extent = RhiContext::GetSwapChainConfig().extent;
 		vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
 		vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
 		commandBuffer.setViewport(0, 1, &viewport);

@@ -1,6 +1,6 @@
 #include "Ailurus/Application/Assets/Mesh.h"
-#include "Vulkan/DataBuffer/IndexBuffer.h"
-#include "Vulkan/DataBuffer/VertexBuffer.h"
+#include "Rhi/DataBuffer/IndexBuffer.h"
+#include "Rhi/DataBuffer/VertexBuffer.h"
 
 namespace Ailurus
 {

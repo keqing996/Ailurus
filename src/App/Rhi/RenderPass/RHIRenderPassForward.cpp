@@ -1,5 +1,5 @@
 #include "RHIRenderPassForward.h"
-#include "Vulkan/VulkanContext.h"
+#include "Rhi/RhiContext.h"
 
 namespace Ailurus
 {
@@ -12,9 +12,9 @@ namespace Ailurus
 	RHIRenderPassForward::~RHIRenderPassForward()
 	{
 		for (auto frameBuffer : _backBuffers)
-			VulkanContext::GetDevice().destroyFramebuffer(frameBuffer);
+			RhiContext::GetDevice().destroyFramebuffer(frameBuffer);
 
-		VulkanContext::GetDevice().destroyRenderPass(_vkRenderPass);
+		RhiContext::GetDevice().destroyRenderPass(_vkRenderPass);
 	}
 
 	RenderPassType RHIRenderPassForward::GetRenderPassType()
@@ -33,10 +33,10 @@ namespace Ailurus
 
 		vk::RenderPassBeginInfo renderPassInfo;
 		renderPassInfo.setRenderPass(_vkRenderPass)
-			.setFramebuffer(_backBuffers[VulkanContext::GetCurrentFrameIndex()])
+			.setFramebuffer(_backBuffers[RhiContext::GetCurrentFrameIndex()])
 			.setRenderArea(vk::Rect2D{
 				vk::Offset2D{ 0, 0 },
-				VulkanContext::GetSwapChainConfig().extent })
+				RhiContext::GetSwapChainConfig().extent })
 			.setClearValues(clearColor);
 
 		return renderPassInfo;
@@ -45,7 +45,7 @@ namespace Ailurus
 	void RHIRenderPassForward::SetupRenderPass()
 	{
 		vk::AttachmentDescription colorAttachment;
-		colorAttachment.setFormat(VulkanContext::GetSwapChainConfig().surfaceFormat.format)
+		colorAttachment.setFormat(RhiContext::GetSwapChainConfig().surfaceFormat.format)
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
@@ -75,14 +75,14 @@ namespace Ailurus
 			.setSubpasses(subpass)
 			.setDependencies(dependency);
 
-		_vkRenderPass = VulkanContext::GetDevice().createRenderPass(renderPassInfo);
+		_vkRenderPass = RhiContext::GetDevice().createRenderPass(renderPassInfo);
 	}
 
 	void RHIRenderPassForward::SetupBackBuffers()
 	{
-		const auto vkLogicalDevice = VulkanContext::GetDevice();
-		const auto extent = VulkanContext::GetSwapChainConfig().extent;
-		auto& swapChainImageViews = VulkanContext::GetSwapChainImageViews();
+		const auto vkLogicalDevice = RhiContext::GetDevice();
+		const auto extent = RhiContext::GetSwapChainConfig().extent;
+		auto& swapChainImageViews = RhiContext::GetSwapChainImageViews();
 		for (auto swapChainImageView : swapChainImageViews)
 		{
 			vk::FramebufferCreateInfo framebufferInfo;

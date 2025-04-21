@@ -1,5 +1,5 @@
 #include "Ailurus/Application/RenderPass/RenderPass.h"
-#include "Vulkan/RenderPass/RHIRenderPassForward.h"
+#include "Rhi/RenderPass/RHIRenderPassForward.h"
 
 namespace Ailurus
 {
