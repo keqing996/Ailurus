@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
-#include "Ailurus/Application/Shader/ShaderStage.h"
+#include "ShaderStage.h"
 
 namespace Ailurus
 {

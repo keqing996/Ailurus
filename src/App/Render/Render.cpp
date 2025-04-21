@@ -1,4 +1,4 @@
-#include "RenderManager.h"
+#include "Render.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/Render/Material/Material.h"
@@ -11,19 +11,20 @@
 
 namespace Ailurus
 {
-	RenderManager::RenderManager()
+	Render::Render()
 	{
+		_pShaderLibrary.reset(new ShaderLibrary());
 		BuildRenderPass();
 	}
 
-	RenderManager::~RenderManager() = default;
+	Render::~Render() = default;
 
-	void RenderManager::NeedRecreateSwapChain()
+	void Render::NeedRecreateSwapChain()
 	{
 		_needRebuildSwapChain = true;
 	}
 
-	Material* RenderManager::GetMaterial(const std::string& name) const
+	Material* Render::GetMaterial(const std::string& name) const
 	{
 		if (const auto itr = _materialMap.find(name); itr != _materialMap.end())
 			return itr->second.get();
@@ -31,13 +32,18 @@ namespace Ailurus
 		return nullptr;
 	}
 
-	Material* RenderManager::AddMaterial(const std::string& name)
+	Material* Render::AddMaterial(const std::string& name)
 	{
 		_materialMap[name] = std::make_unique<Material>();
 		return GetMaterial(name);
 	}
 
-	void RenderManager::RenderScene()
+	ShaderLibrary* Render::GetShaderLibrary() const
+	{
+		return _pShaderLibrary.get();
+	}
+
+	void Render::RenderScene()
 	{
 		if (_needRebuildSwapChain)
 			ReBuildSwapChain();
@@ -73,12 +79,12 @@ namespace Ailurus
 		RhiContext::SubmitThisFrame(&_needRebuildSwapChain);
 	}
 
-	void RenderManager::GraphicsWaitIdle() const
+	void Render::GraphicsWaitIdle() const
 	{
 		RhiContext::GetDevice().waitIdle();
 	}
 
-	void RenderManager::ReBuildSwapChain()
+	void Render::ReBuildSwapChain()
 	{
 		GraphicsWaitIdle();
 
@@ -88,12 +94,12 @@ namespace Ailurus
 		_needRebuildSwapChain = false;
 	}
 
-	void RenderManager::BuildRenderPass()
+	void Render::BuildRenderPass()
 	{
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
 	}
 
-	void RenderManager::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList)
+	void Render::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList)
 	{
 		if (_pCurrentRenderPass != nullptr)
 		{
@@ -115,7 +121,7 @@ namespace Ailurus
 		_pCurrentRenderPass = nullptr;
 	}
 
-	void RenderManager::RenderMesh(const CompMeshRender* pMeshRender) const
+	void Render::RenderMesh(const CompMeshRender* pMeshRender) const
 	{
 		if (pMeshRender == nullptr)
 			return;

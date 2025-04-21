@@ -6,8 +6,7 @@
 #include <memory>
 
 #include "Input/InputManager.h"
-#include "Render/Shader/ShaderManager.h"
-#include "Render/RenderManager.h"
+#include "Render/Render.h"
 #include "Assets/AssetsManager.h"
 #include "Scene/SceneManager.h"
 #include "ImGui/ImGui.h"
@@ -137,8 +136,6 @@ namespace Ailurus
 
         static InputManager& GetInputManager();
 
-        static ShaderManager& GetShaderManager();
-
         static SceneManager& GetSceneManager();
 
     private:
@@ -167,8 +164,7 @@ namespace Ailurus
 
         // Input
         static std::unique_ptr<InputManager> _pInputManager;
-        static std::unique_ptr<RenderManager> _pRenderManager;
-        static std::unique_ptr<ShaderManager> _pShaderManager;
+        static std::unique_ptr<Render> _pRender;
         static std::unique_ptr<SceneManager> _pSceneManager;
     };
 }

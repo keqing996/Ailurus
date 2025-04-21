@@ -5,6 +5,7 @@
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Application/Render/RenderPass/RenderPassType.h"
+#include "Ailurus/Application/Render/Shader/ShaderLibrary.h"
 
 namespace Ailurus
 {
@@ -12,10 +13,10 @@ namespace Ailurus
 	class RenderPass;
 	class CompMeshRender;
 
-	class RenderManager : public NonCopyable
+	class Render : public NonCopyable
 	{
 	public:
-		~RenderManager() override;
+		~Render() override;
 
 	public:
 		void NeedRecreateSwapChain();
@@ -24,13 +25,16 @@ namespace Ailurus
 		Material* GetMaterial(const std::string& name) const;
 		Material* AddMaterial(const std::string& name);
 
+		// Shader library
+		ShaderLibrary* GetShaderLibrary() const;
+
 		// Draw
 		void RenderScene();
 		void GraphicsWaitIdle() const;
 
 	private:
 		friend class Application;
-		RenderManager();
+		Render();
 
 	private:
 		void ReBuildSwapChain();
@@ -43,5 +47,8 @@ namespace Ailurus
 		std::unordered_map<std::string, std::unique_ptr<Material>> _materialMap;
 		std::unordered_map<RenderPassType, std::unique_ptr<RenderPass>> _renderPassMap;
 		const RenderPass* _pCurrentRenderPass = nullptr;
+
+		// Shader library
+		std::unique_ptr<ShaderLibrary> _pShaderLibrary;
 	};
 } // namespace Ailurus

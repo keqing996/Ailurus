@@ -42,8 +42,7 @@ namespace Ailurus
 	std::function<void(bool)> Application::_onWindowCursorVisibleChanged = nullptr;
 
 	std::unique_ptr<InputManager> Application::_pInputManager = nullptr;
-	std::unique_ptr<RenderManager> Application::_pRenderManager = nullptr;
-	std::unique_ptr<ShaderManager> Application::_pShaderManager = nullptr;
+	std::unique_ptr<Render> Application::_pRender = nullptr;
 	std::unique_ptr<SceneManager> Application::_pSceneManager = nullptr;
 
 	bool Application::Create(int width, int height, const std::string& title, Style style)
@@ -71,8 +70,7 @@ namespace Ailurus
 			return false;
 
 		_pInputManager.reset(new InputManager());
-		_pRenderManager.reset(new RenderManager());
-		_pShaderManager.reset(new ShaderManager());
+		_pRender.reset(new Render());
 		_pSceneManager.reset(new SceneManager());
 
 		if (_onWindowCreated != nullptr)
@@ -89,8 +87,7 @@ namespace Ailurus
 				_onWindowPreDestroyed();
 
 			_pSceneManager = nullptr;
-			_pShaderManager = nullptr;
-			_pRenderManager = nullptr;
+			_pRender = nullptr;
 			_pInputManager = nullptr;
 
 			RhiContext::Destroy(VulkanContextDestroySurface);
@@ -121,10 +118,10 @@ namespace Ailurus
 			if (loopFunction != nullptr)
 				loopFunction();
 
-			_pRenderManager->RenderScene();
+			_pRender->RenderScene();
 		}
 
-		_pRenderManager->GraphicsWaitIdle();
+		_pRender->GraphicsWaitIdle();
 
 		Destroy();
 	}
@@ -308,11 +305,6 @@ namespace Ailurus
 		return *_pInputManager.get();
 	}
 
-	ShaderManager& Application::GetShaderManager()
-	{
-		return *_pShaderManager.get();
-	}
-
 	SceneManager& Application::GetSceneManager()
 	{
 		return *_pSceneManager.get();
@@ -384,8 +376,8 @@ namespace Ailurus
 			}
 			case SDL_EVENT_WINDOW_RESIZED:
 			{
-				if (_pRenderManager)
-					_pRenderManager->NeedRecreateSwapChain();
+				if (_pRender)
+					_pRender->NeedRecreateSwapChain();
 
 				if (windowId == pSDLEvent->window.windowID && _onWindowResize != nullptr)
 					_onWindowResize(Vector2i(pSDLEvent->window.data1, pSDLEvent->window.data2));

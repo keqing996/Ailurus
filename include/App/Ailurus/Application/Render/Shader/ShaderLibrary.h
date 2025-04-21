@@ -7,10 +7,10 @@
 
 namespace Ailurus
 {
-	class ShaderManager: public NonCopyable
+	class ShaderLibrary: public NonCopyable
 	{
 	public:
-		~ShaderManager() override;
+		~ShaderLibrary() override;
 
 	public:
 		void Clear();
@@ -23,8 +23,8 @@ namespace Ailurus
 		}
 
 	private:
-		friend class Application;
-		ShaderManager() = default;
+		friend class Render;
+		ShaderLibrary() = default;
 
 	private:
 		Shader* LoadShader(ShaderStage stage, const std::string& path);

@@ -5,7 +5,7 @@ namespace Ailurus
 {
     void Material::SetShader(RenderPassType pass, ShaderStage stage, const std::string& shader)
 	{
-    	const Shader* pShader = Application::GetShaderManager().GetShader(stage, shader);
+    	const Shader* pShader = Application::Get().GetShader(stage, shader);
 		_renderPassParaMap[pass].stageShaders[stage] = pShader;
 	}
 
