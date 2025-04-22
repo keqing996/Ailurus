@@ -1,7 +1,7 @@
 
 #include <Ailurus/Application/Application.h>
-#include <Ailurus/Application/Component/CompMeshRender.h>
-#include <Ailurus/Application/Material/Material.h>
+#include <Ailurus/Application/SceneSystem/Component/CompMeshRender.h>
+#include <Ailurus/Application/RenderSystem/Material/Material.h>
 
 using namespace Ailurus;
 
@@ -31,7 +31,7 @@ int Main(int argc, char* argv[])
 		pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Vertex, "./triangle.vert.spv");
 		pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Fragment, "./triangle.frag.spv");
 
-		auto pEntityWeak = Application::GetSceneManager().CreateEntity();
+		auto pEntityWeak = Application::Get<SceneSystem>()->CreateEntity();
 		if (auto pEntity = pEntityWeak.lock())
 		{
 			auto pMeshRender = pEntity->AddComponent<CompMeshRender>(ComponentType::MeshRender);

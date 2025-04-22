@@ -14,10 +14,10 @@ namespace Ailurus
 	class RenderPass;
 	class CompMeshRender;
 
-	class Render : public NonCopyable, public NonMovable
+	class RenderSystem : public NonCopyable, public NonMovable
 	{
 	public:
-		~Render();
+		~RenderSystem();
 
 	public:
 		void NeedRecreateSwapChain();
@@ -35,7 +35,7 @@ namespace Ailurus
 
 	private:
 		friend class Application;
-		Render();
+		RenderSystem();
 
 	private:
 		void ReBuildSwapChain();

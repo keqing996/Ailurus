@@ -2,15 +2,16 @@
 
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
-#include <Ailurus/Application/Render/Shader/Uniform/UniformLayout.h>
+#include <Ailurus/Utility/NonMovable.h>
+#include <Ailurus/Application/RenderSystem/Shader/Uniform/UniformLayout.h>
 
 namespace Ailurus
 {
-	class RhiShaderProgram: public NonCopyable
+	class RhiShaderProgram: public NonCopyable, public NonMovable
 	{
 	public:
 		RhiShaderProgram();
-		~RhiShaderProgram() override;
+		~RhiShaderProgram();
 
 	public:
 		void SetUniformLayout(const std::vector<UniformLayout>& uniformLayoutVec);

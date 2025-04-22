@@ -1,30 +1,31 @@
-#include "Render.h"
+#include "Ailurus/Application/RenderSystem/RenderSystem.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
-#include "Ailurus/Application/Render/Material/Material.h"
-#include "Ailurus/Application/Render/RenderPass/RenderPass.h"
-#include "Ailurus/Application/Component/CompMeshRender.h"
-#include "Context/RhiContext.h"
+#include "Ailurus/Application/RenderSystem/Material/Material.h"
+#include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
+#include "Ailurus/Application/SceneSystem//Component/CompMeshRender.h"
+#include "VulkanSystem/VulkanSystem.h"
 #include "Buffer/VertexBuffer.h"
 #include "Buffer/IndexBuffer.h"
+#include "Pipeline/RHIPipelineConfig.h"
 #include "RenderPass/RhiRenderPass.h"
 
 namespace Ailurus
 {
-	Render::Render()
+	RenderSystem::RenderSystem()
 	{
 		_pShaderLibrary.reset(new ShaderLibrary());
 		BuildRenderPass();
 	}
 
-	Render::~Render() = default;
+	RenderSystem::~RenderSystem() = default;
 
-	void Render::NeedRecreateSwapChain()
+	void RenderSystem::NeedRecreateSwapChain()
 	{
 		_needRebuildSwapChain = true;
 	}
 
-	Material* Render::GetMaterial(const std::string& name) const
+	Material* RenderSystem::GetMaterial(const std::string& name) const
 	{
 		if (const auto itr = _materialMap.find(name); itr != _materialMap.end())
 			return itr->second.get();
@@ -32,27 +33,27 @@ namespace Ailurus
 		return nullptr;
 	}
 
-	Material* Render::AddMaterial(const std::string& name)
+	Material* RenderSystem::AddMaterial(const std::string& name)
 	{
 		_materialMap[name] = std::make_unique<Material>();
 		return GetMaterial(name);
 	}
 
-	ShaderLibrary* Render::GetShaderLibrary() const
+	ShaderLibrary* RenderSystem::GetShaderLibrary() const
 	{
 		return _pShaderLibrary.get();
 	}
 
-	void Render::RenderScene()
+	void RenderSystem::RenderScene()
 	{
 		if (_needRebuildSwapChain)
 			ReBuildSwapChain();
 
-		if (!RhiContext::WaitNextFrame(&_needRebuildSwapChain))
+		if (!Application::Get<VulkanSystem>()->WaitNextFrame(&_needRebuildSwapChain))
 			return;
 
 		// Prepare objects
-		std::vector<Entity*> allEntities = Application::GetSceneManager().GetAllRawEntities();
+		std::vector<Entity*> allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
 		std::vector<CompMeshRender*> allMeshRender;
 		allMeshRender.reserve(allEntities.size());
 		for (auto pEntity : allEntities)
@@ -67,39 +68,39 @@ namespace Ailurus
 		// Begin
 		vk::CommandBufferBeginInfo beginInfo;
 		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		RhiContext::GetCurrentFrameCommandBuffer().begin(beginInfo);
+		Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer().begin(beginInfo);
 
 		// Render pass
 		RenderForwardPass(allMeshRender);
 
 		// End
-		RhiContext::GetCurrentFrameCommandBuffer().end();
+		Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer().end();
 
 		// Fire
-		RhiContext::SubmitThisFrame(&_needRebuildSwapChain);
+		Application::Get<VulkanSystem>()->SubmitThisFrame(&_needRebuildSwapChain);
 	}
 
-	void Render::GraphicsWaitIdle() const
+	void RenderSystem::GraphicsWaitIdle() const
 	{
-		RhiContext::GetDevice().waitIdle();
+		Application::Get<VulkanSystem>()->GetDevice().waitIdle();
 	}
 
-	void Render::ReBuildSwapChain()
+	void RenderSystem::ReBuildSwapChain()
 	{
 		GraphicsWaitIdle();
 
 		_renderPassMap.clear();
-		RhiContext::RebuildDynamicContext();
+		Application::Get<VulkanSystem>()->RebuildDynamicContext();
 		BuildRenderPass();
 		_needRebuildSwapChain = false;
 	}
 
-	void Render::BuildRenderPass()
+	void RenderSystem::BuildRenderPass()
 	{
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
 	}
 
-	void Render::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList)
+	void RenderSystem::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList)
 	{
 		if (_pCurrentRenderPass != nullptr)
 		{
@@ -109,19 +110,19 @@ namespace Ailurus
 
 		_pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
 
-		RhiContext::GetCurrentFrameCommandBuffer().beginRenderPass(
+		Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer().beginRenderPass(
 			_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(),
 			{});
 
 		for (const auto pMeshRender : meshRenderList)
 			RenderMesh(pMeshRender);
 
-		RhiContext::GetCurrentFrameCommandBuffer().endRenderPass();
+		Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer().endRenderPass();
 
 		_pCurrentRenderPass = nullptr;
 	}
 
-	void Render::RenderMesh(const CompMeshRender* pMeshRender) const
+	void RenderSystem::RenderMesh(const CompMeshRender* pMeshRender) const
 	{
 		if (pMeshRender == nullptr)
 			return;
@@ -132,7 +133,7 @@ namespace Ailurus
 			return;
 		}
 
-		const auto commandBuffer = RhiContext::GetCurrentFrameCommandBuffer();
+		const auto commandBuffer = Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer();
 		const auto pMesh = pMeshRender->GetMesh();
 		const auto pMaterial = pMeshRender->GetMaterial();
 
@@ -151,7 +152,7 @@ namespace Ailurus
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 
 		// Set viewport & scissor
-		auto extent = RhiContext::GetSwapChainConfig().extent;
+		auto extent = Application::Get<VulkanSystem>()->GetSwapChainConfig().extent;
 		vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
 		vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
 		commandBuffer.setViewport(0, 1, &viewport);

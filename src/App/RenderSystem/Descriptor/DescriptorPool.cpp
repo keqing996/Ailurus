@@ -1,6 +1,7 @@
 #include <array>
-#include "Render/Context/RhiContext.h"
+#include "VulkanSystem/VulkanSystem.h"
 #include "DescriptorPool.h"
+#include "Ailurus/Application/Application.h"
 
 namespace Ailurus
 {
@@ -26,12 +27,12 @@ namespace Ailurus
 		poolCreateInfo.setPoolSizes(poolSizes)
 			.setMaxSets(capacityConfig.maxSets);
 
-		_descriptorPool = RhiContext::GetDevice().createDescriptorPool(poolCreateInfo);
+		_descriptorPool = Application::Get<VulkanSystem>()->GetDevice().createDescriptorPool(poolCreateInfo);
 	}
 
 	FrameDescriptorPool::~FrameDescriptorPool()
 	{
-		RhiContext::GetDevice().destroyDescriptorPool(_descriptorPool);
+		Application::Get<VulkanSystem>()->GetDevice().destroyDescriptorPool(_descriptorPool);
 	}
 
 	vk::DescriptorSet FrameDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& layout)
@@ -41,6 +42,6 @@ namespace Ailurus
 			.setDescriptorSetCount(1)
 			.setSetLayouts(layout);
 
-		return RhiContext::GetDevice().allocateDescriptorSets(allocateInfo)[0];
+		return Application::Get<VulkanSystem>()->GetDevice().allocateDescriptorSets(allocateInfo)[0];
 	}
 } // namespace Ailurus

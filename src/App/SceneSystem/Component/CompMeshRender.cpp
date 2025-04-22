@@ -1,4 +1,4 @@
-#include "Ailurus/Application/Component/CompMeshRender.h"
+#include "Ailurus/Application/SceneSystem/Component/CompMeshRender.h"
 
 namespace Ailurus
 {

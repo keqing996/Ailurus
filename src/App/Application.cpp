@@ -44,8 +44,8 @@ namespace Ailurus
 
 	std::unique_ptr<InputSystem> Application::_pInputManager = nullptr;
 	std::unique_ptr<VulkanSystem> Application::_pVulkanSystem = nullptr;
-	std::unique_ptr<Render> Application::_pRender = nullptr;
-	std::unique_ptr<SceneManager> Application::_pSceneManager = nullptr;
+	std::unique_ptr<RenderSystem> Application::_pRenderSystem = nullptr;
+	std::unique_ptr<SceneSystem> Application::_pSceneManager = nullptr;
 
 	bool Application::Create(int width, int height, const std::string& title, Style style)
 	{
@@ -77,8 +77,8 @@ namespace Ailurus
 		}
 
 		_pInputManager.reset(new InputSystem());
-		_pRender.reset(new Render());
-		_pSceneManager.reset(new SceneManager());
+		_pRenderSystem.reset(new RenderSystem());
+		_pSceneManager.reset(new SceneSystem());
 
 		if (_onWindowCreated != nullptr)
 			_onWindowCreated();
@@ -94,7 +94,7 @@ namespace Ailurus
 				_onWindowPreDestroyed();
 
 			_pSceneManager = nullptr;
-			_pRender = nullptr;
+			_pRenderSystem = nullptr;
 			_pVulkanSystem = nullptr;
 			_pInputManager = nullptr;
 
@@ -124,10 +124,10 @@ namespace Ailurus
 			if (loopFunction != nullptr)
 				loopFunction();
 
-			_pRender->RenderScene();
+			_pRenderSystem->RenderScene();
 		}
 
-		_pRender->GraphicsWaitIdle();
+		_pRenderSystem->GraphicsWaitIdle();
 
 		Destroy();
 	}
@@ -138,10 +138,10 @@ namespace Ailurus
 		{
 			int w, h;
 			SDL_GetWindowSize(static_cast<SDL_Window*>(_pWindow), &w, &h);
-			return Vector2i(w, h);
+			return {w, h};
 		}
 
-		return Vector2i(0, 0);
+		return {0, 0};
 	}
 
 	void Application::SetSize(int width, int height)
@@ -158,11 +158,11 @@ namespace Ailurus
 	Vector2i Application::GetPosition()
 	{
 		if (_pWindow == nullptr)
-			return Vector2i(0, 0);
+			return {0, 0};
 
 		int x, y;
 		SDL_GetWindowPosition(static_cast<SDL_Window*>(_pWindow), &x, &y);
-		return Vector2i(x, y);
+		return {x, y};
 	}
 
 	void Application::SetPosition(int x, int y)
@@ -313,7 +313,13 @@ namespace Ailurus
 	}
 
 	template <>
-    SceneManager* Application::Get<SceneManager>()
+	RenderSystem* Application::Get<RenderSystem>()
+	{
+		return _pRenderSystem.get();
+	}
+
+	template <>
+    SceneSystem* Application::Get<SceneSystem>()
 	{
 		return _pSceneManager.get();
 	}
@@ -390,8 +396,8 @@ namespace Ailurus
 			}
 			case SDL_EVENT_WINDOW_RESIZED:
 			{
-				if (_pRender)
-					_pRender->NeedRecreateSwapChain();
+				if (_pRenderSystem)
+					_pRenderSystem->NeedRecreateSwapChain();
 
 				if (windowId == pSDLEvent->window.windowID && _onWindowResize != nullptr)
 					_onWindowResize(Vector2i(pSDLEvent->window.data1, pSDLEvent->window.data2));

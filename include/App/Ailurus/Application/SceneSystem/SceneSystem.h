@@ -8,10 +8,10 @@
 
 namespace Ailurus
 {
-    class SceneManager : public NonCopyable, public NonMovable
+    class SceneSystem : public NonCopyable, public NonMovable
 	{
 	public:
-		~SceneManager();
+		~SceneSystem();
 
 	public:
 		std::weak_ptr<Entity> CreateEntity();
@@ -22,7 +22,7 @@ namespace Ailurus
 
 	private:
 		friend class Application;
-		SceneManager();
+		SceneSystem();
 
 	private:
 		uint32_t _entityIdCounter = 0;

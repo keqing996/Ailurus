@@ -1,13 +1,13 @@
-#include "Ailurus/Application/Scene/SceneManager.h"
+#include "Ailurus/Application/SceneSystem/SceneSystem.h"
 
 namespace Ailurus
 {
 
-	SceneManager::~SceneManager()
+	SceneSystem::~SceneSystem()
 	{
 	}
 
-	std::weak_ptr<Entity> SceneManager::CreateEntity()
+	std::weak_ptr<Entity> SceneSystem::CreateEntity()
 	{
 		_entityIdCounter++;
 		auto pEntity = std::make_shared<Entity>(_entityIdCounter);
@@ -15,7 +15,7 @@ namespace Ailurus
 		return pEntity;
 	}
 
-	std::weak_ptr<Entity> SceneManager::GetEntity(uint32_t guid) const
+	std::weak_ptr<Entity> SceneSystem::GetEntity(uint32_t guid) const
 	{
 		if (const auto itr = _entityMap.find(guid); itr != _entityMap.end())
 			return itr->second;
@@ -23,7 +23,7 @@ namespace Ailurus
 		return {};
 	}
 
-	bool SceneManager::DestroyEntity(uint32_t guid)
+	bool SceneSystem::DestroyEntity(uint32_t guid)
 	{
 		if (_entityMap.contains(guid))
 		{
@@ -34,7 +34,7 @@ namespace Ailurus
 		return false;
 	}
 
-	bool SceneManager::DestroyEntity(const std::weak_ptr<Entity>& pEntity)
+	bool SceneSystem::DestroyEntity(const std::weak_ptr<Entity>& pEntity)
 	{
 		if (const auto spEntity = pEntity.lock())
 			return DestroyEntity(spEntity->GetGuid());
@@ -42,7 +42,7 @@ namespace Ailurus
 		return false;
 	}
 
-	std::vector<Entity*> SceneManager::GetAllRawEntities() const
+	std::vector<Entity*> SceneSystem::GetAllRawEntities() const
 	{
 		std::vector<Entity*> result;
 		result.reserve(_entityMap.size());
@@ -52,7 +52,7 @@ namespace Ailurus
 		return result;
 	}
 
-	SceneManager::SceneManager()
+	SceneSystem::SceneSystem()
 	{
 	}
 } // namespace Ailurus

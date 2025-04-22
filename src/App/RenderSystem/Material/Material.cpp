@@ -1,11 +1,16 @@
-#include "Ailurus/Application/Render/Material/Material.h"
+#include "Ailurus/Application/RenderSystem/Material/Material.h"
 #include "Ailurus/Application/Application.h"
+#include "RenderSystem/Descriptor/DescriptorSet.h"
 
 namespace Ailurus
 {
+	Material::Material() = default;
+
+	Material::~Material() = default;
+
     void Material::SetShader(RenderPassType pass, ShaderStage stage, const std::string& shader)
 	{
-    	const Shader* pShader = Application::Get().GetShader(stage, shader);
+    	const Shader* pShader = Application::Get<RenderSystem>()->GetShaderLibrary()->GetShader(stage, shader);
 		_renderPassParaMap[pass].stageShaders[stage] = pShader;
 	}
 

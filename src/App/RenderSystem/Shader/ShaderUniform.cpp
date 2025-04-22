@@ -1,6 +1,6 @@
-#include "Ailurus/Application/Render/Shader/ShaderUniform.h"
+#include "Ailurus/Application/RenderSystem/Shader/ShaderUniform.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Render/DataBuffer/UniformBuffer.h"
+#include "RenderSystem/Buffer/UniformBuffer.h"
 
 namespace Ailurus
 {

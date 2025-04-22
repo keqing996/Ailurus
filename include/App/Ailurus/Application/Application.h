@@ -163,7 +163,7 @@ namespace Ailurus
         // Input
         static std::unique_ptr<InputSystem> _pInputManager;
         static std::unique_ptr<class VulkanSystem> _pVulkanSystem;
-        static std::unique_ptr<Render> _pRender;
-        static std::unique_ptr<SceneManager> _pSceneManager;
+        static std::unique_ptr<RenderSystem> _pRenderSystem;
+        static std::unique_ptr<SceneSystem> _pSceneManager;
     };
 }

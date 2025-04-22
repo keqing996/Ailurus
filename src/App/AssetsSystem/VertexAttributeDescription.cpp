@@ -1,4 +1,4 @@
-#include "Ailurus/Application/Assets/VertexAttributeDescription.h"
+#include "Ailurus/Application/AssetsSystem/VertexAttributeDescription.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus

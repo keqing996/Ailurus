@@ -2,22 +2,26 @@
 
 #include <memory>
 #include <unordered_map>
-#include "Ailurus/Application/Render/RenderPass/RenderPassType.h"
-#include "Ailurus/Application/Render/Shader/ShaderStage.h"
+#include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
+#include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonMovable.h"
 
 namespace Ailurus
 {
 	class Shader;
 	class DescriptorSet;
 
-	class Material : public NonCopyable
+	class Material : public NonCopyable, public NonMovable
 	{
 		struct RenderPassParameters
 		{
 			StageShaderArray stageShaders;
 			// todo uniform
 		};
+	public:
+		Material();
+		~Material();
 
 	public:
 		void SetShader(RenderPassType pass, ShaderStage stage, const std::string& shader);

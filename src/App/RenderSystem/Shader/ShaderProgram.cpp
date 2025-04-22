@@ -1,7 +1,7 @@
-#include "Ailurus/Application/Render/Shader/ShaderProgram.h"
-#include "Ailurus/Application/Render/Shader/Shader.h"
-#include "Ailurus/Application/Render/Shader/ShaderStage.h"
-#include "Render/Shader/RhiShaderProgram.h"
+#include "Ailurus/Application/RenderSystem/Shader/ShaderProgram.h"
+#include "Ailurus/Application/RenderSystem/Shader/Shader.h"
+#include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
+#include "RenderSystem/Shader/RhiShaderProgram.h"
 
 namespace Ailurus
 {

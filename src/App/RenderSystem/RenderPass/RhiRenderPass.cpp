@@ -2,6 +2,10 @@
 
 namespace Ailurus
 {
+	RhiRenderPass::~RhiRenderPass()
+	{
+	}
+
 	const RhiPipeline* RhiRenderPass::GetPipeline(const RhiPipelineConfig& config)
 	{
 		if (const auto itr = _pipelineMap.find(config); itr != _pipelineMap.end())

@@ -1,5 +1,6 @@
 #include "RhiRenderPassForward.h"
-#include "../Context/RhiContext.h"
+#include "Ailurus/Application/Application.h"
+#include "VulkanSystem/VulkanSystem.h"
 
 namespace Ailurus
 {
@@ -12,9 +13,9 @@ namespace Ailurus
 	RhiRenderPassForward::~RhiRenderPassForward()
 	{
 		for (auto frameBuffer : _backBuffers)
-			RhiContext::GetDevice().destroyFramebuffer(frameBuffer);
+			Application::Get<VulkanSystem>()->GetDevice().destroyFramebuffer(frameBuffer);
 
-		VulkanSystem::GetDevice().destroyRenderPass(_vkRenderPass);
+		Application::Get<VulkanSystem>()->GetDevice().destroyRenderPass(_vkRenderPass);
 	}
 
 	RenderPassType RhiRenderPassForward::GetRenderPassType()
@@ -33,10 +34,10 @@ namespace Ailurus
 
 		vk::RenderPassBeginInfo renderPassInfo;
 		renderPassInfo.setRenderPass(_vkRenderPass)
-			.setFramebuffer(_backBuffers[RhiContext::GetCurrentFrameIndex()])
+			.setFramebuffer(_backBuffers[Application::Get<VulkanSystem>()->GetCurrentFrameIndex()])
 			.setRenderArea(vk::Rect2D{
 				vk::Offset2D{ 0, 0 },
-				RhiContext::GetSwapChainConfig().extent })
+				Application::Get<VulkanSystem>()->GetSwapChainConfig().extent })
 			.setClearValues(clearColor);
 
 		return renderPassInfo;
@@ -45,7 +46,7 @@ namespace Ailurus
 	void RhiRenderPassForward::SetupRenderPass()
 	{
 		vk::AttachmentDescription colorAttachment;
-		colorAttachment.setFormat(VulkanSystem::GetSwapChainConfig().surfaceFormat.format)
+		colorAttachment.setFormat(Application::Get<VulkanSystem>()->GetSwapChainConfig().surfaceFormat.format)
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
@@ -75,14 +76,14 @@ namespace Ailurus
 			.setSubpasses(subpass)
 			.setDependencies(dependency);
 
-		_vkRenderPass = VulkanSystem::GetDevice().createRenderPass(renderPassInfo);
+		_vkRenderPass = Application::Get<VulkanSystem>()->GetDevice().createRenderPass(renderPassInfo);
 	}
 
 	void RhiRenderPassForward::SetupBackBuffers()
 	{
-		const auto vkLogicalDevice = VulkanSystem::GetDevice();
-		const auto extent = VulkanSystem::GetSwapChainConfig().extent;
-		auto& swapChainImageViews = RhiContext::GetSwapChainImageViews();
+		const auto vkLogicalDevice = Application::Get<VulkanSystem>()->GetDevice();
+		const auto extent = Application::Get<VulkanSystem>()->GetSwapChainConfig().extent;
+		auto& swapChainImageViews = Application::Get<VulkanSystem>()->GetSwapChainImageViews();
 		for (auto swapChainImageView : swapChainImageViews)
 		{
 			vk::FramebufferCreateInfo framebufferInfo;

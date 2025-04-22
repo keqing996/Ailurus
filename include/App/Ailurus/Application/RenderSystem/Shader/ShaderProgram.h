@@ -1,18 +1,19 @@
 #pragma once
 
-#include "Ailurus/Application/Shader/ShaderStage.h"
+#include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonMovable.h"
 #include "Uniform/UniformLayout.h"
 
 namespace Ailurus
 {
 	class RhiShaderProgram;
 
-    class ShaderProgram : public NonCopyable
+    class ShaderProgram : public NonCopyable, public NonMovable
     {
     public:
         ShaderProgram();
-        ~ShaderProgram() override;
+        ~ShaderProgram();
 
     public:
         void SetShader(const Shader* pShader);

@@ -1,4 +1,4 @@
-#include "Ailurus/Application/Component/CompRender.h"
+#include "Ailurus/Application/SceneSystem/Component/CompRender.h"
 
 namespace Ailurus
 {

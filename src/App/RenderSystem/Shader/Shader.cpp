@@ -1,5 +1,5 @@
-#include "Ailurus/Application/Render/Shader/Shader.h"
-#include "Render/Shader/RhiShader.h"
+#include "Ailurus/Application/RenderSystem/Shader/Shader.h"
+#include "RenderSystem/Shader/RhiShader.h"
 
 namespace Ailurus
 {

@@ -1,6 +1,6 @@
-#include "Ailurus/Application/Component/BaseComponent.h"
+#include "Ailurus/Application/SceneSystem/Component/BaseComponent.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Ailurus/Application/Component/CompMeshRender.h"
+#include "Ailurus/Application/SceneSystem/Component/CompMeshRender.h"
 
 namespace Ailurus
 {

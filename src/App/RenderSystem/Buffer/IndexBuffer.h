@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Ailurus/Application/Assets/VertexAttributeDescription.h"
+#include "Ailurus/Application/AssetsSystem//VertexAttributeDescription.h"
 #include "BufferType.h"
 #include <vulkan/vulkan.hpp>
 

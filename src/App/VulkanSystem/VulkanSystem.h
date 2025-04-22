@@ -27,26 +27,26 @@ namespace Ailurus
 		~VulkanSystem();
 
 	public:
-		static bool enableValidation;
+		inline static bool enableValidation = true;
 		static constexpr uint32_t PARALLEL_FRAME = 2;
 
 	public:
 		bool Initialized() const;
 
 		// Static context
-		vk::Device GetDevice();
-		vk::PhysicalDevice GetPhysicalDevice();
-		vk::SurfaceKHR GetSurface();
-		uint32_t GetPresentQueueIndex();
-		uint32_t GetComputeQueueIndex();
-		uint32_t GetGraphicQueueIndex();
-		vk::Queue GetPresentQueue();
-		vk::Queue GetGraphicQueue();
-		vk::Queue GetComputeQueue();
-		vk::CommandPool GetCommandPool();
+		vk::Device GetDevice() const;
+		vk::PhysicalDevice GetPhysicalDevice() const;
+		vk::SurfaceKHR GetSurface() const;
+		uint32_t GetPresentQueueIndex() const;
+		uint32_t GetComputeQueueIndex() const;
+		uint32_t GetGraphicQueueIndex() const;
+		vk::Queue GetPresentQueue() const;
+		vk::Queue GetGraphicQueue() const;
+		vk::Queue GetComputeQueue() const;
+		vk::CommandPool GetCommandPool() const;
 
 		// Dynamic context
-		uint32_t CurrentParallelFrameIndex();
+		uint32_t CurrentParallelFrameIndex() const;
 		void RebuildDynamicContext();
 
 		void CreateSwapChain();
@@ -56,15 +56,15 @@ namespace Ailurus
 		void CreateSynchronizationObjects();
 		void DestroySynchronizationObjects();
 
-		const SwapChainConfig& GetSwapChainConfig();
-		const vk::SwapchainKHR& GetSwapChain();
+		const SwapChainConfig& GetSwapChainConfig() const;
+		const vk::SwapchainKHR& GetSwapChain() const;
 		const std::vector<vk::ImageView>& GetSwapChainImageViews();
 
-		uint32_t GetCurrentFrameIndex();
-		const vk::CommandBuffer& GetCurrentFrameCommandBuffer();
-		const vk::Semaphore& GetCurrentFrameImageReadySemaphore();
-		const vk::Semaphore& GetCurrentFrameRenderFinishSemaphore();
-		const vk::Fence& GetCurrentFrameFence();
+		uint32_t GetCurrentFrameIndex() const;
+		const vk::CommandBuffer& GetCurrentFrameCommandBuffer() const;
+		const vk::Semaphore& GetCurrentFrameImageReadySemaphore() const;
+		const vk::Semaphore& GetCurrentFrameRenderFinishSemaphore() const;
+		const vk::Fence& GetCurrentFrameFence() const;
 		bool WaitNextFrame(bool* needRebuild);
 		bool SubmitThisFrame(bool* needRebuild);
 

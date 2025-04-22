@@ -1,15 +1,16 @@
 #include "BackBuffer.h"
-#include "Ailurus/Application/Render/RenderPass/RenderPass.h"
-#include "Render/Context/RhiContext.h"
-#include "Render/RenderPass/RHIRenderPass.h"
+#include "Ailurus/Application/Application.h"
+#include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
+#include "VulkanSystem/VulkanSystem.h"
+#include "RenderSystem/RenderPass/RHIRenderPass.h"
 
 namespace Ailurus
 {
     BackBuffer::BackBuffer(const RenderPass* pRenderPass)
     {
-        auto vkLogicalDevice = RhiContext::GetDevice();
-        auto extent = RhiContext::GetSwapChainConfig().extent;
-        auto& swapChainImageViews = RhiContext::GetSwapChainImageViews();
+        auto vkLogicalDevice = Application::Get<VulkanSystem>()->GetDevice();
+        auto extent = Application::Get<VulkanSystem>()->GetSwapChainConfig().extent;
+        auto& swapChainImageViews = Application::Get<VulkanSystem>()->GetSwapChainImageViews();
         for (auto i = 0; i < swapChainImageViews.size(); i++)
         {
             vk::FramebufferCreateInfo framebufferInfo;
@@ -25,8 +26,8 @@ namespace Ailurus
 
     BackBuffer::~BackBuffer()
     {
-        for (auto frameBuffer: _vkFrameBuffer)
-            RhiContext::GetDevice().destroyFramebuffer(frameBuffer);
+        for (const auto frameBuffer: _vkFrameBuffer)
+            Application::Get<VulkanSystem>()->GetDevice().destroyFramebuffer(frameBuffer);
     }
 
     const std::vector<vk::Framebuffer>& BackBuffer::GetBackBuffers()

@@ -1,4 +1,4 @@
-#include "Ailurus/Application/Input/InputManager.h"
+#include "Ailurus/Application/InputSystem/InputSystem.h"
 
 #include <Ailurus/Application/Application.h>
 #include <SDL3/SDL.h>

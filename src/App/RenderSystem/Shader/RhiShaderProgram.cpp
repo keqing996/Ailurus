@@ -1,6 +1,7 @@
 #include "RhiShaderProgram.h"
 #include "Ailurus/Utility/Logger.h"
-#include "../Context/RhiContext.h"
+#include "VulkanSystem/VulkanSystem.h"
+#include "Ailurus/Application/Application.h"
 
 namespace Ailurus
 {
@@ -70,7 +71,7 @@ namespace Ailurus
 		vk::DescriptorSetLayoutCreateInfo layoutCreateInfo;
 		layoutCreateInfo.setBindings(layoutBinds);
 
-		_descriptorSetLayout = VulkanSystem::GetDevice().createDescriptorSetLayout(layoutCreateInfo);
+		_descriptorSetLayout = Application::Get<VulkanSystem>()->GetDevice().createDescriptorSetLayout(layoutCreateInfo);
 	}
 
 	vk::DescriptorSetLayout RhiShaderProgram::GetDescriptorSetLayout() const
@@ -82,7 +83,7 @@ namespace Ailurus
 	{
 		if (_descriptorSetLayout != nullptr)
 		{
-			VulkanSystem::GetDevice().destroyDescriptorSetLayout(_descriptorSetLayout);
+			Application::Get<VulkanSystem>()->GetDevice().destroyDescriptorSetLayout(_descriptorSetLayout);
 			_descriptorSetLayout = nullptr;
 		}
 	}

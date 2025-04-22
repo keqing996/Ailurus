@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Ailurus/Application/Shader/ShaderStage.h"
+#include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "UniformBindingType.h"
 
 namespace Ailurus

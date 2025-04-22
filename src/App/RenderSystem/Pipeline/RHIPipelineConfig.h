@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Ailurus/Application/Render/Shader/ShaderStage.h"
+#include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 
 namespace Ailurus
 {

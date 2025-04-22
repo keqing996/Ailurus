@@ -71,57 +71,57 @@ namespace Ailurus
 		return _initialized;
 	}
 
-	vk::Device VulkanSystem::GetDevice()
+	vk::Device VulkanSystem::GetDevice() const
 	{
 		return _vkDevice;
 	}
 
-	vk::PhysicalDevice VulkanSystem::GetPhysicalDevice()
+	vk::PhysicalDevice VulkanSystem::GetPhysicalDevice() const
 	{
 		return _vkPhysicalDevice;
 	}
 
-	vk::SurfaceKHR VulkanSystem::GetSurface()
+	vk::SurfaceKHR VulkanSystem::GetSurface() const
 	{
 		return _vkSurface;
 	}
 
-	uint32_t VulkanSystem::GetPresentQueueIndex()
+	uint32_t VulkanSystem::GetPresentQueueIndex() const
 	{
 		return _presentQueueIndex;
 	}
 
-	uint32_t VulkanSystem::GetGraphicQueueIndex()
+	uint32_t VulkanSystem::GetGraphicQueueIndex() const
 	{
 		return _graphicQueueIndex;
 	}
 
-	vk::Queue VulkanSystem::GetPresentQueue()
+	vk::Queue VulkanSystem::GetPresentQueue() const
 	{
 		return _vkPresentQueue;
 	}
 
-	vk::Queue VulkanSystem::GetGraphicQueue()
+	vk::Queue VulkanSystem::GetGraphicQueue() const
 	{
 		return _vkGraphicQueue;
 	}
 
-	uint32_t VulkanSystem::GetComputeQueueIndex()
+	uint32_t VulkanSystem::GetComputeQueueIndex() const
 	{
 		return _computeQueueIndex;
 	}
 
-	vk::Queue VulkanSystem::GetComputeQueue()
+	vk::Queue VulkanSystem::GetComputeQueue() const
 	{
 		return _vkComputeQueue;
 	}
 
-	vk::CommandPool VulkanSystem::GetCommandPool()
+	vk::CommandPool VulkanSystem::GetCommandPool() const
 	{
 		return _vkGraphicCommandPool;
 	}
 
-	uint32_t VulkanSystem::CurrentParallelFrameIndex()
+	uint32_t VulkanSystem::CurrentParallelFrameIndex() const
 	{
 		return _currentParallelFrameIndex;
 	}
@@ -284,12 +284,12 @@ namespace Ailurus
 			_vkDevice.destroySemaphore(sem);
 	}
 
-	const SwapChainConfig& VulkanSystem::GetSwapChainConfig()
+	const SwapChainConfig& VulkanSystem::GetSwapChainConfig() const
 	{
 		return _swapChainConfig;
 	}
 
-	const vk::SwapchainKHR& VulkanSystem::GetSwapChain()
+	const vk::SwapchainKHR& VulkanSystem::GetSwapChain() const
 	{
 		return _vkSwapChain;
 	}
@@ -299,27 +299,27 @@ namespace Ailurus
 		return _vkSwapChainImageViews;
 	}
 
-	uint32_t VulkanSystem::GetCurrentFrameIndex()
+	uint32_t VulkanSystem::GetCurrentFrameIndex() const
 	{
 		return _currentParallelFrameIndex;
 	}
 
-	const vk::CommandBuffer& VulkanSystem::GetCurrentFrameCommandBuffer()
+	const vk::CommandBuffer& VulkanSystem::GetCurrentFrameCommandBuffer() const
 	{
 		return _vkCommandBuffers[_currentParallelFrameIndex];
 	}
 
-	const vk::Semaphore& VulkanSystem::GetCurrentFrameImageReadySemaphore()
+	const vk::Semaphore& VulkanSystem::GetCurrentFrameImageReadySemaphore() const
 	{
 		return _vkImageReadySemaphore[_currentParallelFrameIndex];
 	}
 
-	const vk::Semaphore& VulkanSystem::GetCurrentFrameRenderFinishSemaphore()
+	const vk::Semaphore& VulkanSystem::GetCurrentFrameRenderFinishSemaphore() const
 	{
 		return _vkFinishRenderSemaphore[_currentParallelFrameIndex];
 	}
 
-	const vk::Fence& VulkanSystem::GetCurrentFrameFence()
+	const vk::Fence& VulkanSystem::GetCurrentFrameFence() const
 	{
 		return _vkFences[_currentParallelFrameIndex];
 	}

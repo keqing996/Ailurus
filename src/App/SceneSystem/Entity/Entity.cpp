@@ -1,4 +1,4 @@
-#include "Ailurus/Application/Entity/Entity.h"
+#include "Ailurus/Application/SceneSystem/Entity/Entity.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus

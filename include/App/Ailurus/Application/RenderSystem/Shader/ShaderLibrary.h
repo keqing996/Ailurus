@@ -24,7 +24,7 @@ namespace Ailurus
 		}
 
 	private:
-		friend class Render;
+		friend class RenderSystem;
 		ShaderLibrary() = default;
 
 	private:

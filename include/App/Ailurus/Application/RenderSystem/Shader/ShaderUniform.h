@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonMovable.h"
 #include "Ailurus/Utility/EnumReflection.h"
 #include "Ailurus/Math/Matrix4x4.hpp"
 #include "Uniform/UniformDataType.h"
@@ -14,11 +15,11 @@ namespace Ailurus
 {
 	class UniformBuffer;
 
-	class ShaderUniform : public NonCopyable
+	class ShaderUniform : public NonCopyable, public NonMovable
 	{
 	public:
 		ShaderUniform(std::initializer_list<std::pair<std::string, UniformDataType>> initializerList);
-		~ShaderUniform() override;
+		~ShaderUniform();
 
 	public:
 		void SetFloat(const std::string& name, float value);

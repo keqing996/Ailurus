@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Ailurus/Utility/NonCopyable.h>
+#include <Ailurus/Utility/NonMovable.h>
 #include <vulkan/vulkan.hpp>
 
 namespace Ailurus
@@ -12,11 +13,11 @@ namespace Ailurus
 		size_t samplerCapacity;
 	};
 
-	class FrameDescriptorPool : public NonCopyable
+	class FrameDescriptorPool : public NonCopyable, public NonMovable
 	{
 	public:
 		explicit FrameDescriptorPool(const DescriptorPoolCapacityConfig& capacity);
-		~FrameDescriptorPool() override;
+		~FrameDescriptorPool();
 
 	public:
 		vk::DescriptorSet AllocateDescriptorSet(const vk::DescriptorSetLayout& layout);

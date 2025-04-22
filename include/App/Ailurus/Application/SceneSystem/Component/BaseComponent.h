@@ -18,6 +18,7 @@ namespace Ailurus
 		static const std::unordered_map<ComponentType, ComponentType> _hierarchy;
 
 	public:
+		virtual ~Component() = default;
 		virtual ComponentType GetType() const = 0;
 
 	public:
