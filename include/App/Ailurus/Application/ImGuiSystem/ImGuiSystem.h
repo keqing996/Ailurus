@@ -4,7 +4,7 @@
 
 namespace Ailurus
 {
-    class ImGui
+    class ImGuiSystem
     {
     public:
 

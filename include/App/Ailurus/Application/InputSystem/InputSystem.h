@@ -8,10 +8,10 @@
 
 namespace Ailurus
 {
-    class InputManager: public NonCopyable
+    class InputSystem: public NonCopyable
     {
     public:
-        ~InputManager() override;
+        ~InputSystem() override;
 
     public:
         bool IsButtonPressed(ButtonType key) const;
@@ -28,7 +28,7 @@ namespace Ailurus
 
     private:
         friend class Application;
-        InputManager();
+        InputSystem();
 
     private:
         void OnEventButtonPressed(ButtonType button);

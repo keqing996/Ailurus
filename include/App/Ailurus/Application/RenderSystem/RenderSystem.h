@@ -4,8 +4,8 @@
 #include <unordered_map>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
-#include "Ailurus/Application/Render/RenderPass/RenderPassType.h"
-#include "Ailurus/Application/Render/Shader/ShaderLibrary.h"
+#include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
+#include "Ailurus/Application/RenderSystem/Shader/ShaderLibrary.h"
 
 namespace Ailurus
 {

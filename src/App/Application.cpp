@@ -41,7 +41,7 @@ namespace Ailurus
 	std::function<void(bool)> Application::_onWindowCursorEnteredOrLeaved = nullptr;
 	std::function<void(bool)> Application::_onWindowCursorVisibleChanged = nullptr;
 
-	std::unique_ptr<InputManager> Application::_pInputManager = nullptr;
+	std::unique_ptr<InputSystem> Application::_pInputManager = nullptr;
 	std::unique_ptr<Render> Application::_pRender = nullptr;
 	std::unique_ptr<SceneManager> Application::_pSceneManager = nullptr;
 
@@ -69,7 +69,7 @@ namespace Ailurus
 		if (!RhiContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface))
 			return false;
 
-		_pInputManager.reset(new InputManager());
+		_pInputManager.reset(new InputSystem());
 		_pRender.reset(new Render());
 		_pSceneManager.reset(new SceneManager());
 
@@ -300,7 +300,7 @@ namespace Ailurus
 		return _pWindow;
 	}
 
-	InputManager& Application::GetInputManager()
+	InputSystem& Application::GetInputManager()
 	{
 		return *_pInputManager.get();
 	}

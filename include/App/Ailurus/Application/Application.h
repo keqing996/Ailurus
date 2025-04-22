@@ -5,11 +5,9 @@
 #include <string>
 #include <memory>
 
-#include "Input/InputManager.h"
-#include "Render/Render.h"
-#include "Assets/AssetsManager.h"
-#include "Scene/SceneManager.h"
-#include "ImGui/ImGui.h"
+#include "InputSystem/InputSystem.h"
+#include "RenderSystem/RenderSystem.h"
+#include "ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Math/Vector2.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
 
@@ -134,9 +132,9 @@ namespace Ailurus
 
         static void* GetSDLWindowPtr();
 
-        static InputManager& GetInputManager();
+        static InputSystem& GetInputManager();
 
-        static SceneManager& GetSceneManager();
+        static SceneSystem& GetSceneManager();
 
     private:
         static void EventLoop(bool* quitLoop);
@@ -163,7 +161,7 @@ namespace Ailurus
         static std::function<void(bool)> _onWindowCursorVisibleChanged;
 
         // Input
-        static std::unique_ptr<InputManager> _pInputManager;
+        static std::unique_ptr<InputSystem> _pInputManager;
         static std::unique_ptr<Render> _pRender;
         static std::unique_ptr<SceneManager> _pSceneManager;
     };

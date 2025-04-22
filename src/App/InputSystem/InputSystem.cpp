@@ -170,7 +170,7 @@ namespace Ailurus
         }
     }
 
-    InputManager::InputManager()
+    InputSystem::InputSystem()
     {
         float x, y;
         SDL_GetMouseState(&x, &y);
@@ -178,62 +178,62 @@ namespace Ailurus
         _lastMousePos = _mousePos;
     }
 
-    InputManager::~InputManager()
+    InputSystem::~InputSystem()
     {
     }
 
-    bool InputManager::IsButtonPressed(ButtonType key) const
+    bool InputSystem::IsButtonPressed(ButtonType key) const
     {
         return _pressedButton.find(key) != _pressedButton.end();
     }
 
-    Vector2f InputManager::GetMousePosition() const
+    Vector2f InputSystem::GetMousePosition() const
     {
         return _mousePos;
     }
 
-    Vector2f InputManager::GetMouseWheel() const
+    Vector2f InputSystem::GetMouseWheel() const
     {
         return _mouseWheel;
     }
 
-    bool InputManager::GetIsAutoRepeat() const
+    bool InputSystem::GetIsAutoRepeat() const
     {
         return _enableAutoRepeat;
     }
 
-    void InputManager::SetIsAutoRepeat(bool autoRepeat)
+    void InputSystem::SetIsAutoRepeat(bool autoRepeat)
     {
         _enableAutoRepeat = autoRepeat;
     }
 
-    void InputManager::SetCallbackOnMouseMove(const std::function<void(Vector2f, Vector2f)>& callback)
+    void InputSystem::SetCallbackOnMouseMove(const std::function<void(Vector2f, Vector2f)>& callback)
     {
         _onMouseMove = callback;
     }
 
-    void InputManager::SetCallbackOnMouseWheel(const std::function<void(Vector2f)>& callback)
+    void InputSystem::SetCallbackOnMouseWheel(const std::function<void(Vector2f)>& callback)
     {
         _onMouseWheel = callback;
     }
 
-    void InputManager::SetCallbackOnButtonPressed(const std::function<void(ButtonType)>& callback)
+    void InputSystem::SetCallbackOnButtonPressed(const std::function<void(ButtonType)>& callback)
     {
         _onButtonPressed = callback;
     }
 
-    void InputManager::SetCallbackOnButtonReleased(const std::function<void(ButtonType)>& callback)
+    void InputSystem::SetCallbackOnButtonReleased(const std::function<void(ButtonType)>& callback)
     {
         _onButtonReleased = callback;
     }
 
-    void InputManager::BeforeEventLoop()
+    void InputSystem::BeforeEventLoop()
     {
         _lastMousePos = _mousePos;
         _mouseWheel = Vector2f(0, 0);
     }
 
-    void InputManager::HandleEvent(void* sdlWindowPtr, const void* pEvent)
+    void InputSystem::HandleEvent(void* sdlWindowPtr, const void* pEvent)
     {
         const SDL_Event* pSDLEvent = static_cast<const SDL_Event*>(pEvent);
         const SDL_WindowID windowId = SDL_GetWindowID(static_cast<SDL_Window*>(sdlWindowPtr));
@@ -298,7 +298,7 @@ namespace Ailurus
         }
     }
 
-    void InputManager::AfterEventLoop()
+    void InputSystem::AfterEventLoop()
     {
         // Emit callback
         if (_mousePos != _lastMousePos && _onMouseMove != nullptr)
@@ -308,7 +308,7 @@ namespace Ailurus
             _onMouseWheel(_mouseWheel);
     }
 
-    void InputManager::OnEventButtonPressed(ButtonType button)
+    void InputSystem::OnEventButtonPressed(ButtonType button)
     {
         if (_pressedButton.find(button) == _pressedButton.end())
         {
@@ -323,7 +323,7 @@ namespace Ailurus
         }
     }
 
-    void InputManager::OnEventButtonReleased(ButtonType button)
+    void InputSystem::OnEventButtonReleased(ButtonType button)
     {
         if (auto itr = _pressedButton.find(button); itr != _pressedButton.end())
         {
