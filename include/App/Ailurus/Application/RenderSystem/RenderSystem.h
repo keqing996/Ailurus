@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonMovable.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderLibrary.h"
 
@@ -13,10 +14,10 @@ namespace Ailurus
 	class RenderPass;
 	class CompMeshRender;
 
-	class Render : public NonCopyable
+	class Render : public NonCopyable, public NonMovable
 	{
 	public:
-		~Render() override;
+		~Render();
 
 	public:
 		void NeedRecreateSwapChain();

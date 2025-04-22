@@ -2,14 +2,12 @@
 
 namespace Ailurus
 {
-    class NonCopyable
-    {
-    public:
-        NonCopyable() = default;
-        virtual ~NonCopyable() = default;
+	class NonCopyable
+	{
+	public:
+		NonCopyable() = default;
 
-    public:
-        NonCopyable( const NonCopyable& ) = delete;
-        const NonCopyable& operator=( const NonCopyable& ) = delete;
-    };
-}
+		NonCopyable(const NonCopyable&) = delete;
+		const NonCopyable& operator=(const NonCopyable&) = delete;
+	};
+} // namespace Ailurus

@@ -5,13 +5,14 @@
 #include "InputEnum.h"
 #include "Ailurus/Math/Vector2.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonMovable.h"
 
 namespace Ailurus
 {
-    class InputSystem: public NonCopyable
+    class InputSystem: public NonCopyable, public NonMovable
     {
     public:
-        ~InputSystem() override;
+        ~InputSystem();
 
     public:
         bool IsButtonPressed(ButtonType key) const;

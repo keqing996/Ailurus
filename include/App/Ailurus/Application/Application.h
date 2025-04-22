@@ -7,6 +7,7 @@
 
 #include "InputSystem/InputSystem.h"
 #include "RenderSystem/RenderSystem.h"
+#include "SceneSystem/SceneSystem.h"
 #include "ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Math/Vector2.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
@@ -132,9 +133,8 @@ namespace Ailurus
 
         static void* GetSDLWindowPtr();
 
-        static InputSystem& GetInputManager();
-
-        static SceneSystem& GetSceneManager();
+        template <typename System>
+        static System* Get();
 
     private:
         static void EventLoop(bool* quitLoop);
@@ -162,6 +162,7 @@ namespace Ailurus
 
         // Input
         static std::unique_ptr<InputSystem> _pInputManager;
+        static std::unique_ptr<class VulkanSystem> _pVulkanSystem;
         static std::unique_ptr<Render> _pRender;
         static std::unique_ptr<SceneManager> _pSceneManager;
     };

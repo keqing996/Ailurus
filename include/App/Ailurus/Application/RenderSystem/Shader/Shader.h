@@ -13,7 +13,7 @@ namespace Ailurus
 	{
 	public:
 		Shader(ShaderStage stage, const std::string& name);
-		~Shader() override;
+		~Shader();
 
 	public:
 		ShaderStage GetStage() const;

@@ -3,14 +3,15 @@
 #include <memory>
 #include <unordered_map>
 #include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonMovable.h"
 #include "Ailurus/Application/RenderSystem/Shader/Shader.h"
 
 namespace Ailurus
 {
-	class ShaderLibrary: public NonCopyable
+	class ShaderLibrary: public NonCopyable, public NonMovable
 	{
 	public:
-		~ShaderLibrary() override;
+		~ShaderLibrary();
 
 	public:
 		void Clear();

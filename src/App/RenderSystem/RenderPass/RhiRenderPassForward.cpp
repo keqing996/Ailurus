@@ -14,7 +14,7 @@ namespace Ailurus
 		for (auto frameBuffer : _backBuffers)
 			RhiContext::GetDevice().destroyFramebuffer(frameBuffer);
 
-		RhiContext::GetDevice().destroyRenderPass(_vkRenderPass);
+		VulkanSystem::GetDevice().destroyRenderPass(_vkRenderPass);
 	}
 
 	RenderPassType RhiRenderPassForward::GetRenderPassType()
@@ -45,7 +45,7 @@ namespace Ailurus
 	void RhiRenderPassForward::SetupRenderPass()
 	{
 		vk::AttachmentDescription colorAttachment;
-		colorAttachment.setFormat(RhiContext::GetSwapChainConfig().surfaceFormat.format)
+		colorAttachment.setFormat(VulkanSystem::GetSwapChainConfig().surfaceFormat.format)
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
@@ -75,13 +75,13 @@ namespace Ailurus
 			.setSubpasses(subpass)
 			.setDependencies(dependency);
 
-		_vkRenderPass = RhiContext::GetDevice().createRenderPass(renderPassInfo);
+		_vkRenderPass = VulkanSystem::GetDevice().createRenderPass(renderPassInfo);
 	}
 
 	void RhiRenderPassForward::SetupBackBuffers()
 	{
-		const auto vkLogicalDevice = RhiContext::GetDevice();
-		const auto extent = RhiContext::GetSwapChainConfig().extent;
+		const auto vkLogicalDevice = VulkanSystem::GetDevice();
+		const auto extent = VulkanSystem::GetSwapChainConfig().extent;
 		auto& swapChainImageViews = RhiContext::GetSwapChainImageViews();
 		for (auto swapChainImageView : swapChainImageViews)
 		{

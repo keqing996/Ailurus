@@ -3,14 +3,15 @@
 #include <unordered_map>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
-#include "Ailurus/Application/Entity/Entity.h"
+#include "Ailurus/Utility/NonMovable.h"
+#include "Entity/Entity.h"
 
 namespace Ailurus
 {
-    class SceneManager : public NonCopyable
+    class SceneManager : public NonCopyable, public NonMovable
 	{
 	public:
-		~SceneManager() override;
+		~SceneManager();
 
 	public:
 		std::weak_ptr<Entity> CreateEntity();

@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
-#include "Ailurus/Application/Component/BaseComponent.h"
+#include "Ailurus/Application/SceneSystem/Component/BaseComponent.h"
 
 namespace Ailurus
 {

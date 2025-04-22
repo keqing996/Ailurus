@@ -1,7 +1,8 @@
 #include "Ailurus/Application/Application.h"
-#include "Render/Context/RhiContext.h"
+#include "VulkanSystem/VulkanSystem.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+#include <memory>
 
 namespace Ailurus
 {
@@ -42,6 +43,7 @@ namespace Ailurus
 	std::function<void(bool)> Application::_onWindowCursorVisibleChanged = nullptr;
 
 	std::unique_ptr<InputSystem> Application::_pInputManager = nullptr;
+	std::unique_ptr<VulkanSystem> Application::_pVulkanSystem = nullptr;
 	std::unique_ptr<Render> Application::_pRender = nullptr;
 	std::unique_ptr<SceneManager> Application::_pSceneManager = nullptr;
 
@@ -66,8 +68,13 @@ namespace Ailurus
 
 		SetWindowVisible(true);
 
-		if (!RhiContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface))
+		_pVulkanSystem.reset(new VulkanSystem(VulkanContextGetInstanceExtensions, 
+			VulkanContextCreateSurface, VulkanContextDestroySurface));
+		if (!_pVulkanSystem->Initialized())
+		{
+			Destroy();
 			return false;
+		}
 
 		_pInputManager.reset(new InputSystem());
 		_pRender.reset(new Render());
@@ -88,9 +95,8 @@ namespace Ailurus
 
 			_pSceneManager = nullptr;
 			_pRender = nullptr;
+			_pVulkanSystem = nullptr;
 			_pInputManager = nullptr;
-
-			RhiContext::Destroy(VulkanContextDestroySurface);
 
 			SDL_DestroyWindow(static_cast<SDL_Window*>(_pWindow));
 			_pWindow = nullptr;
@@ -300,14 +306,22 @@ namespace Ailurus
 		return _pWindow;
 	}
 
-	InputSystem& Application::GetInputManager()
+	template <>
+    InputSystem* Application::Get<InputSystem>()
 	{
-		return *_pInputManager.get();
+		return _pInputManager.get();
 	}
 
-	SceneManager& Application::GetSceneManager()
+	template <>
+    SceneManager* Application::Get<SceneManager>()
 	{
-		return *_pSceneManager.get();
+		return _pSceneManager.get();
+	}
+
+	template <>
+    VulkanSystem* Application::Get<VulkanSystem>()
+	{
+		return _pVulkanSystem.get();
 	}
 
 	void Application::EventLoop(bool* quitLoop)

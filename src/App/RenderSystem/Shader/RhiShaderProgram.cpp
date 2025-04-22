@@ -70,7 +70,7 @@ namespace Ailurus
 		vk::DescriptorSetLayoutCreateInfo layoutCreateInfo;
 		layoutCreateInfo.setBindings(layoutBinds);
 
-		_descriptorSetLayout = RhiContext::GetDevice().createDescriptorSetLayout(layoutCreateInfo);
+		_descriptorSetLayout = VulkanSystem::GetDevice().createDescriptorSetLayout(layoutCreateInfo);
 	}
 
 	vk::DescriptorSetLayout RhiShaderProgram::GetDescriptorSetLayout() const
@@ -82,7 +82,7 @@ namespace Ailurus
 	{
 		if (_descriptorSetLayout != nullptr)
 		{
-			RhiContext::GetDevice().destroyDescriptorSetLayout(_descriptorSetLayout);
+			VulkanSystem::GetDevice().destroyDescriptorSetLayout(_descriptorSetLayout);
 			_descriptorSetLayout = nullptr;
 		}
 	}
