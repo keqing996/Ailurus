@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BufferType.h"
+#include "../../RenderSystem/Buffer/BufferType.h"
 #include <vulkan/vulkan.hpp>
 
 namespace Ailurus

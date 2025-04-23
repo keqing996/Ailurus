@@ -5,10 +5,10 @@
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "Ailurus/Application/SceneSystem//Component/CompMeshRender.h"
 #include "VulkanSystem/VulkanSystem.h"
-#include "Buffer/VulkanVertexBuffer.h"
-#include "Buffer/VulkanIndexBuffer.h"
-#include "Pipeline/VulkanPipelineConfig.h"
-#include "RenderPass/VulkanRenderPass.h"
+#include "VulkanSystem/Buffer/VulkanVertexBuffer.h"
+#include "VulkanSystem/Buffer/VulkanIndexBuffer.h"
+#include "VulkanSystem/Pipeline/VulkanPipelineConfig.h"
+#include "VulkanSystem/RenderPass/VulkanRenderPass.h"
 
 namespace Ailurus
 {

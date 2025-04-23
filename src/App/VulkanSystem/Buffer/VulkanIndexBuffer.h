@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Ailurus/Application/AssetsSystem//VertexAttributeDescription.h"
-#include "BufferType.h"
+#include "../../RenderSystem/Buffer/BufferType.h"
 #include <vulkan/vulkan.hpp>
 
 namespace Ailurus

@@ -4,8 +4,8 @@
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/AssetsSystem/Mesh.h"
 #include "VulkanSystem/VulkanSystem.h"
-#include "RenderSystem/RenderPass/VulkanRenderPass.h"
-#include "RenderSystem/Shader/VulkanShader.h"
+#include "../RenderPass/VulkanRenderPass.h"
+#include "../Shader/VulkanShader.h"
 
 namespace Ailurus
 {

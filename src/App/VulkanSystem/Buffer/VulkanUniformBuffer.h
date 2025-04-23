@@ -2,7 +2,7 @@
 
 #include <array>
 #include "VulkanSystem/VulkanSystem.h"
-#include "BufferType.h"
+#include "../../RenderSystem/Buffer/BufferType.h"
 #include "Ailurus/Application/Application.h"
 
 namespace Ailurus

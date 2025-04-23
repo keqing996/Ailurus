@@ -6,7 +6,7 @@
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
-#include "RenderSystem/Pipeline/VulkanPipeline.h"
+#include "../Pipeline/VulkanPipeline.h"
 
 namespace Ailurus
 {
