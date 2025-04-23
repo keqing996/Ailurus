@@ -1,5 +1,5 @@
-#include "../../RenderSystem/Buffer/VulkanIndexBuffer.h"
-#include "../../RenderSystem/Buffer/DataBufferUtil.h"
+#include "VulkanIndexBuffer.h"
+#include "DataBufferUtil.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus

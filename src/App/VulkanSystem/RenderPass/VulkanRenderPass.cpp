@@ -1,4 +1,4 @@
-#include "../../RenderSystem/RenderPass/VulkanRenderPass.h"
+#include "VulkanRenderPass.h"
 
 namespace Ailurus
 {

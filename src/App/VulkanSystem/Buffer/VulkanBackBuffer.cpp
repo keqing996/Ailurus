@@ -2,7 +2,7 @@
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "VulkanSystem/VulkanSystem.h"
-#include "../RenderPass/VulkanRenderPass.h"
+#include "VulkanSystem/RenderPass/VulkanRenderPass.h"
 
 namespace Ailurus
 {

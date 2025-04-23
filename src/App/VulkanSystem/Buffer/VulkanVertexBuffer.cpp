@@ -1,5 +1,5 @@
-#include "../../RenderSystem/Buffer/VulkanVertexBuffer.h"
-#include "../../RenderSystem/Buffer/DataBufferUtil.h"
+#include "VulkanVertexBuffer.h"
+#include "DataBufferUtil.h"
 
 namespace Ailurus
 {

@@ -2,7 +2,7 @@
 
 #include <optional>
 #include <vulkan/vulkan.hpp>
-#include "BufferType.h"
+#include "VulkanBuffer.h"
 #include "Ailurus/Utility/EnumReflection.h"
 
 namespace Ailurus
