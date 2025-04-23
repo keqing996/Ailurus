@@ -1,15 +1,15 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "RHIPipelineConfig.h"
+#include "VulkanPipelineConfig.h"
 
 namespace Ailurus
 {
-	class RhiPipeline
+	class VulkanPipeline
 	{
 	public:
-		RhiPipeline(const class RhiRenderPass* pRenderPass, const RhiPipelineConfig& config);
-		~RhiPipeline();
+		VulkanPipeline(const class VulkanRenderPass* pRenderPass, const VulkanPipelineConfig& config);
+		~VulkanPipeline();
 
 	public:
 		vk::Pipeline GetPipeline() const;

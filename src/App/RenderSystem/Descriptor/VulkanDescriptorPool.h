@@ -13,11 +13,11 @@ namespace Ailurus
 		size_t samplerCapacity;
 	};
 
-	class FrameDescriptorPool : public NonCopyable, public NonMovable
+	class VulkanDescriptorPool : public NonCopyable, public NonMovable
 	{
 	public:
-		explicit FrameDescriptorPool(const DescriptorPoolCapacityConfig& capacity);
-		~FrameDescriptorPool();
+		explicit VulkanDescriptorPool(const DescriptorPoolCapacityConfig& capacity);
+		~VulkanDescriptorPool();
 
 	public:
 		vk::DescriptorSet AllocateDescriptorSet(const vk::DescriptorSetLayout& layout);

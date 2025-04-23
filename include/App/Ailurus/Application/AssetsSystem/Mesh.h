@@ -5,8 +5,8 @@
 
 namespace Ailurus
 {
-	class VertexBuffer;
-	class IndexBuffer;
+	class VulkanVertexBuffer;
+	class VulkanIndexBuffer;
 
 	class Mesh
 	{
@@ -17,14 +17,14 @@ namespace Ailurus
 		~Mesh();
 
 	public:
-		const VertexBuffer* GetVertexBuffer() const;
+		const VulkanVertexBuffer* GetVertexBuffer() const;
 		const VertexAttributeDescription& GetInputAttribute() const;
-		const IndexBuffer* GetIndexBuffer() const;
+		const VulkanIndexBuffer* GetIndexBuffer() const;
 		size_t GetVertexCount() const;
 
 	private:
-		std::unique_ptr<VertexBuffer> _pVertexBuffer;
+		std::unique_ptr<VulkanVertexBuffer> _pVertexBuffer;
 		VertexAttributeDescription _vertexAttrDesc;
-		std::unique_ptr<IndexBuffer> _pIndexBuffer;
+		std::unique_ptr<VulkanIndexBuffer> _pIndexBuffer;
 	};
 } // namespace Ailurus

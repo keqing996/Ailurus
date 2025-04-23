@@ -1,12 +1,12 @@
 #include "Ailurus/Application/RenderSystem/Shader/Shader.h"
-#include "RenderSystem/Shader/RhiShader.h"
+#include "RenderSystem/Shader/VulkanShader.h"
 
 namespace Ailurus
 {
 	Shader::Shader(ShaderStage stage, const std::string& name)
 		: _stage(stage)
 		, _name(name)
-		, _pImpl(std::make_unique<RhiShader>(name))
+		, _pImpl(std::make_unique<VulkanShader>(name))
 	{
 	}
 
@@ -24,7 +24,7 @@ namespace Ailurus
 		return _name;
 	}
 
-	const RhiShader* Shader::GetImpl() const
+	const VulkanShader* Shader::GetImpl() const
 	{
 		return _pImpl.get();
 	}

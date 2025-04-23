@@ -1,4 +1,4 @@
-#include "RhiShaderProgram.h"
+#include "VulkanShaderProgram.h"
 #include "Ailurus/Utility/Logger.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "Ailurus/Application/Application.h"
@@ -40,16 +40,16 @@ namespace Ailurus
 		return result;
 	}
 
-	RhiShaderProgram::RhiShaderProgram()
+	VulkanShaderProgram::VulkanShaderProgram()
 	{
 	}
 
-	RhiShaderProgram::~RhiShaderProgram()
+	VulkanShaderProgram::~VulkanShaderProgram()
 	{
 		DestroySetLayout();
 	}
 
-	void RhiShaderProgram::SetUniformLayout(const std::vector<UniformLayout>& uniformLayoutVec)
+	void VulkanShaderProgram::SetUniformLayout(const std::vector<UniformLayout>& uniformLayoutVec)
 	{
 		DestroySetLayout();
 
@@ -74,12 +74,12 @@ namespace Ailurus
 		_descriptorSetLayout = Application::Get<VulkanSystem>()->GetDevice().createDescriptorSetLayout(layoutCreateInfo);
 	}
 
-	vk::DescriptorSetLayout RhiShaderProgram::GetDescriptorSetLayout() const
+	vk::DescriptorSetLayout VulkanShaderProgram::GetDescriptorSetLayout() const
 	{
 		return _descriptorSetLayout;
 	}
 
-	void RhiShaderProgram::DestroySetLayout()
+	void VulkanShaderProgram::DestroySetLayout()
 	{
 		if (_descriptorSetLayout != nullptr)
 		{

@@ -8,11 +8,11 @@ namespace Ailurus
     class RenderPass;
     class SwapChain;
 
-    class BackBuffer
+    class VulkanBackBuffer
     {
     public:
-        explicit BackBuffer(const RenderPass* pRenderPass);
-        ~BackBuffer();
+        explicit VulkanBackBuffer(const RenderPass* pRenderPass);
+        ~VulkanBackBuffer();
 
         const std::vector<vk::Framebuffer>& GetBackBuffers();
 

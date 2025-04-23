@@ -1,17 +1,17 @@
-#include "RhiRenderPass.h"
+#include "VulkanRenderPass.h"
 
 namespace Ailurus
 {
-	RhiRenderPass::~RhiRenderPass()
+	VulkanRenderPass::~VulkanRenderPass()
 	{
 	}
 
-	const RhiPipeline* RhiRenderPass::GetPipeline(const RhiPipelineConfig& config)
+	const VulkanPipeline* VulkanRenderPass::GetPipeline(const VulkanPipelineConfig& config)
 	{
 		if (const auto itr = _pipelineMap.find(config); itr != _pipelineMap.end())
 			return itr->second.get();
 
-		auto pPipeline = std::make_unique<RhiPipeline>(this, config);
+		auto pPipeline = std::make_unique<VulkanPipeline>(this, config);
 		const auto pResult = pPipeline.get();
 		_pipelineMap[config] = std::move(pPipeline);
 		return pResult;

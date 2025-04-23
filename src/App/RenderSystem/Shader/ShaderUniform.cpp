@@ -1,6 +1,6 @@
 #include "Ailurus/Application/RenderSystem/Shader/ShaderUniform.h"
 #include "Ailurus/Utility/Logger.h"
-#include "RenderSystem/Buffer/UniformBuffer.h"
+#include "RenderSystem/Buffer/VulkanUniformBuffer.h"
 
 namespace Ailurus
 {
@@ -19,7 +19,7 @@ namespace Ailurus
 			totalSize += GetDataTypeSize(type);
 		}
 
-		_pUniformBuffer = std::make_unique<UniformBuffer>(totalSize);
+		_pUniformBuffer = std::make_unique<VulkanUniformBuffer>(totalSize);
 	}
 
 	ShaderUniform::~ShaderUniform() = default;

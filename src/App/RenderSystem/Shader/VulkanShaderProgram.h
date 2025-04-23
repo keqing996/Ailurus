@@ -7,11 +7,11 @@
 
 namespace Ailurus
 {
-	class RhiShaderProgram: public NonCopyable, public NonMovable
+	class VulkanShaderProgram: public NonCopyable, public NonMovable
 	{
 	public:
-		RhiShaderProgram();
-		~RhiShaderProgram();
+		VulkanShaderProgram();
+		~VulkanShaderProgram();
 
 	public:
 		void SetUniformLayout(const std::vector<UniformLayout>& uniformLayoutVec);

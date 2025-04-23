@@ -6,11 +6,11 @@
 
 namespace Ailurus
 {
-	class IndexBuffer
+	class VulkanIndexBuffer
 	{
 	public:
-		IndexBuffer(IndexBufferFormat format, const void* indexData, size_t sizeInBytes);
-		~IndexBuffer();
+		VulkanIndexBuffer(IndexBufferFormat format, const void* indexData, size_t sizeInBytes);
+		~VulkanIndexBuffer();
 
 		vk::IndexType GetIndexType() const;
 		vk::Buffer GetBuffer() const;

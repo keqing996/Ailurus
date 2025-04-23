@@ -1,11 +1,11 @@
-#include "RHIPipeline.h"
+#include "VulkanPipeline.h"
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/RenderSystem/Shader/Shader.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/AssetsSystem/Mesh.h"
 #include "VulkanSystem/VulkanSystem.h"
-#include "RenderSystem/RenderPass/RHIRenderPass.h"
-#include "RenderSystem/Shader/RHIShader.h"
+#include "RenderSystem/RenderPass/VulkanRenderPass.h"
+#include "RenderSystem/Shader/VulkanShader.h"
 
 namespace Ailurus
 {
@@ -50,7 +50,7 @@ namespace Ailurus
 		return result;
 	}
 
-	RhiPipeline::RhiPipeline(const RhiRenderPass* pRenderPass, const RhiPipelineConfig& config)
+	VulkanPipeline::VulkanPipeline(const VulkanRenderPass* pRenderPass, const VulkanPipelineConfig& config)
 	{
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setSetLayouts(nullptr);
@@ -160,13 +160,13 @@ namespace Ailurus
 			Logger::LogError("Failed to create graphics pipeline");
 	}
 
-	RhiPipeline::~RhiPipeline()
+	VulkanPipeline::~VulkanPipeline()
 	{
 		Application::Get<VulkanSystem>()->GetDevice().destroyPipelineLayout(_vkPipelineLayout);
 		Application::Get<VulkanSystem>()->GetDevice().destroyPipeline(_vkPipeline);
 	}
 
-	vk::Pipeline RhiPipeline::GetPipeline() const
+	vk::Pipeline VulkanPipeline::GetPipeline() const
 	{
 		return _vkPipeline;
 	}

@@ -13,7 +13,7 @@
 
 namespace Ailurus
 {
-	class UniformBuffer;
+	class VulkanUniformBuffer;
 
 	class ShaderUniform : public NonCopyable, public NonMovable
 	{
@@ -34,6 +34,6 @@ namespace Ailurus
 
 	private:
 		std::unordered_map<std::string, size_t> _nameToOffsetMap;
-		std::unique_ptr<UniformBuffer> _pUniformBuffer;
+		std::unique_ptr<VulkanUniformBuffer> _pUniformBuffer;
 	};
 } // namespace Ailurus

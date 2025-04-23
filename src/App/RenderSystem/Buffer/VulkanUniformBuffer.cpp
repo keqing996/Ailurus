@@ -1,9 +1,9 @@
-#include "UniformBuffer.h"
+#include "VulkanUniformBuffer.h"
 #include "DataBufferUtil.h"
 
 namespace Ailurus
 {
-	UniformBuffer::UniformBuffer(size_t bufferSize)
+	VulkanUniformBuffer::VulkanUniformBuffer(size_t bufferSize)
 		: _bufferSize(bufferSize)
 	{
 		for (auto i = 0; i < Application::Get<VulkanSystem>()->PARALLEL_FRAME; i++)
@@ -22,7 +22,7 @@ namespace Ailurus
 		}
 	}
 
-	UniformBuffer::~UniformBuffer()
+	VulkanUniformBuffer::~VulkanUniformBuffer()
 	{
 		for (auto gpuBuffer : _gpuBuffers)
 			DataBufferUtil::DestroyBuffer(gpuBuffer);
@@ -31,12 +31,12 @@ namespace Ailurus
 			DataBufferUtil::DestroyBuffer(cpuBuffer);
 	}
 
-	uint8_t* UniformBuffer::GetWriteBeginPos() const
+	uint8_t* VulkanUniformBuffer::GetWriteBeginPos() const
 	{
 		return static_cast<uint8_t*>(_cpuBuffers[Application::Get<VulkanSystem>()->GetCurrentFrameIndex()].mappedAddr);
 	}
 
-	void UniformBuffer::TransitionDataToGpu() const
+	void VulkanUniformBuffer::TransitionDataToGpu() const
 	{
 		DataBufferUtil::CopyBuffer(
 			_cpuBuffers[Application::Get<VulkanSystem>()->GetCurrentFrameIndex()].buffer,

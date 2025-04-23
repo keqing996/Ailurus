@@ -1,11 +1,11 @@
 #include <array>
 #include "VulkanSystem/VulkanSystem.h"
-#include "DescriptorPool.h"
+#include "VulkanDescriptorPool.h"
 #include "Ailurus/Application/Application.h"
 
 namespace Ailurus
 {
-	FrameDescriptorPool::FrameDescriptorPool(const DescriptorPoolCapacityConfig& capacityConfig)
+	VulkanDescriptorPool::VulkanDescriptorPool(const DescriptorPoolCapacityConfig& capacityConfig)
 	{
 		// Uniform pool size
 		vk::DescriptorPoolSize uniformPoolSize;
@@ -30,12 +30,12 @@ namespace Ailurus
 		_descriptorPool = Application::Get<VulkanSystem>()->GetDevice().createDescriptorPool(poolCreateInfo);
 	}
 
-	FrameDescriptorPool::~FrameDescriptorPool()
+	VulkanDescriptorPool::~VulkanDescriptorPool()
 	{
 		Application::Get<VulkanSystem>()->GetDevice().destroyDescriptorPool(_descriptorPool);
 	}
 
-	vk::DescriptorSet FrameDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& layout)
+	vk::DescriptorSet VulkanDescriptorPool::AllocateDescriptorSet(const vk::DescriptorSetLayout& layout)
 	{
 		vk::DescriptorSetAllocateInfo allocateInfo;
 		allocateInfo.setDescriptorPool(_descriptorPool)

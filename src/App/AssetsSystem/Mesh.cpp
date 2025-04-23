@@ -1,12 +1,12 @@
 #include "Ailurus/Application/AssetsSystem/Mesh.h"
-#include "RenderSystem/Buffer/IndexBuffer.h"
-#include "RenderSystem/Buffer/VertexBuffer.h"
+#include "RenderSystem/Buffer/VulkanIndexBuffer.h"
+#include "RenderSystem/Buffer/VulkanVertexBuffer.h"
 
 namespace Ailurus
 {
 
 	Mesh::Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute)
-		: _pVertexBuffer(std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes))
+		: _pVertexBuffer(std::make_unique<VulkanVertexBuffer>(vertexData, vertexDataSizeInBytes))
 		, _vertexAttrDesc(vertexDataAttribute)
 		, _pIndexBuffer(nullptr)
 	{
@@ -14,15 +14,15 @@ namespace Ailurus
 
 	Mesh::Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute,
 		IndexBufferFormat format, const void* indexData, size_t indexDtaSizeInBytes)
-		: _pVertexBuffer(std::make_unique<VertexBuffer>(vertexData, vertexDataSizeInBytes))
+		: _pVertexBuffer(std::make_unique<VulkanVertexBuffer>(vertexData, vertexDataSizeInBytes))
 		, _vertexAttrDesc(vertexDataAttribute)
-		, _pIndexBuffer(std::make_unique<IndexBuffer>(format, indexData, indexDtaSizeInBytes))
+		, _pIndexBuffer(std::make_unique<VulkanIndexBuffer>(format, indexData, indexDtaSizeInBytes))
 	{
 	}
 
 	Mesh::~Mesh() = default;
 
-	const VertexBuffer* Mesh::GetVertexBuffer() const
+	const VulkanVertexBuffer* Mesh::GetVertexBuffer() const
 	{
 		return _pVertexBuffer.get();
 	}
@@ -32,7 +32,7 @@ namespace Ailurus
 		return _vertexAttrDesc;
 	}
 
-	const IndexBuffer* Mesh::GetIndexBuffer() const
+	const VulkanIndexBuffer* Mesh::GetIndexBuffer() const
 	{
 		return _pIndexBuffer.get();
 	}

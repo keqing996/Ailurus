@@ -1,5 +1,5 @@
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
-#include "RhiRenderPassForward.h"
+#include "VulkanRenderPassForward.h"
 
 namespace Ailurus
 {
@@ -8,7 +8,7 @@ namespace Ailurus
 		switch (passType)
 		{
 			case RenderPassType::Forward:
-				_pRHI = std::make_unique<RhiRenderPassForward>();
+				_pRHI = std::make_unique<VulkanRenderPassForward>();
 				break;
 		}
 	}
@@ -20,7 +20,7 @@ namespace Ailurus
 		return _pRHI->GetRenderPassType();
 	}
 
-	RhiRenderPass* RenderPass::GetRHIRenderPass() const
+	VulkanRenderPass* RenderPass::GetRHIRenderPass() const
 	{
 		return _pRHI.get();
 	}

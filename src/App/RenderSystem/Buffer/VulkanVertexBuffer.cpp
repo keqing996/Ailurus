@@ -1,9 +1,9 @@
-#include "VertexBuffer.h"
+#include "VulkanVertexBuffer.h"
 #include "DataBufferUtil.h"
 
 namespace Ailurus
 {
-    VertexBuffer::VertexBuffer(const void* vertexData, size_t sizeInBytes)
+    VulkanVertexBuffer::VulkanVertexBuffer(const void* vertexData, size_t sizeInBytes)
         : _sizeInBytes(sizeInBytes)
     {
     	// Create gpu buffer
@@ -30,17 +30,17 @@ namespace Ailurus
     	DataBufferUtil::DestroyBuffer(stageBuffer);
     }
 
-    VertexBuffer::~VertexBuffer()
+    VulkanVertexBuffer::~VulkanVertexBuffer()
     {
     	DataBufferUtil::DestroyBuffer(_buffer);
     }
 
-    vk::Buffer VertexBuffer::GetBuffer() const
+    vk::Buffer VulkanVertexBuffer::GetBuffer() const
     {
         return _buffer.buffer;
     }
 
-    size_t VertexBuffer::GetSize() const
+    size_t VulkanVertexBuffer::GetSize() const
     {
         return _sizeInBytes;
     }

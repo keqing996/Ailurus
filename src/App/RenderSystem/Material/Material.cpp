@@ -1,6 +1,6 @@
 #include "Ailurus/Application/RenderSystem/Material/Material.h"
 #include "Ailurus/Application/Application.h"
-#include "RenderSystem/Descriptor/DescriptorSet.h"
+#include "RenderSystem/Descriptor/VulkanDescriptorSet.h"
 
 namespace Ailurus
 {
@@ -23,7 +23,7 @@ namespace Ailurus
 		return passItr->second.stageShaders;
 	}
 
-	const DescriptorSet* Material::GetDescriptorSet() const
+	const VulkanDescriptorSet* Material::GetDescriptorSet() const
 	{
     	return _pVkDescriptorSet.get();
 	}

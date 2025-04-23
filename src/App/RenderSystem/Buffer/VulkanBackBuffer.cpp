@@ -1,12 +1,12 @@
-#include "BackBuffer.h"
+#include "VulkanBackBuffer.h"
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "VulkanSystem/VulkanSystem.h"
-#include "RenderSystem/RenderPass/RHIRenderPass.h"
+#include "RenderSystem/RenderPass/VulkanRenderPass.h"
 
 namespace Ailurus
 {
-    BackBuffer::BackBuffer(const RenderPass* pRenderPass)
+    VulkanBackBuffer::VulkanBackBuffer(const RenderPass* pRenderPass)
     {
         auto vkLogicalDevice = Application::Get<VulkanSystem>()->GetDevice();
         auto extent = Application::Get<VulkanSystem>()->GetSwapChainConfig().extent;
@@ -24,13 +24,13 @@ namespace Ailurus
         }
     }
 
-    BackBuffer::~BackBuffer()
+    VulkanBackBuffer::~VulkanBackBuffer()
     {
         for (const auto frameBuffer: _vkFrameBuffer)
             Application::Get<VulkanSystem>()->GetDevice().destroyFramebuffer(frameBuffer);
     }
 
-    const std::vector<vk::Framebuffer>& BackBuffer::GetBackBuffers()
+    const std::vector<vk::Framebuffer>& VulkanBackBuffer::GetBackBuffers()
     {
         return _vkFrameBuffer;
     }

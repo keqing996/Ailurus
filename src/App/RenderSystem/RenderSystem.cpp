@@ -5,10 +5,10 @@
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "Ailurus/Application/SceneSystem//Component/CompMeshRender.h"
 #include "VulkanSystem/VulkanSystem.h"
-#include "Buffer/VertexBuffer.h"
-#include "Buffer/IndexBuffer.h"
-#include "Pipeline/RHIPipelineConfig.h"
-#include "RenderPass/RhiRenderPass.h"
+#include "Buffer/VulkanVertexBuffer.h"
+#include "Buffer/VulkanIndexBuffer.h"
+#include "Pipeline/VulkanPipelineConfig.h"
+#include "RenderPass/VulkanRenderPass.h"
 
 namespace Ailurus
 {
@@ -145,7 +145,7 @@ namespace Ailurus
 			return; // This object should not be drawn under this pass;
 
 		// Bind pipeline
-		RhiPipelineConfig pipelineConfig;
+		VulkanPipelineConfig pipelineConfig;
 		pipelineConfig.pMesh = pMesh;
 		pipelineConfig.shaderStages = optStageShaders.value();
 		vk::Pipeline pipeline = _pCurrentRenderPass->GetRHIRenderPass()->GetPipeline(pipelineConfig)->GetPipeline();

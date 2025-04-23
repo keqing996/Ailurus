@@ -10,7 +10,7 @@
 namespace Ailurus
 {
 	class Shader;
-	class DescriptorSet;
+	class VulkanDescriptorSet;
 
 	class Material : public NonCopyable, public NonMovable
 	{
@@ -26,10 +26,10 @@ namespace Ailurus
 	public:
 		void SetShader(RenderPassType pass, ShaderStage stage, const std::string& shader);
 		std::optional<StageShaderArray> GetStageShaderArray(RenderPassType pass) const;
-		const DescriptorSet* GetDescriptorSet() const;
+		const VulkanDescriptorSet* GetDescriptorSet() const;
 
 	private:
-		std::unique_ptr<DescriptorSet> _pVkDescriptorSet;
+		std::unique_ptr<VulkanDescriptorSet> _pVkDescriptorSet;
 		std::unordered_map<RenderPassType, RenderPassParameters> _renderPassParaMap;
 	};
 } // namespace Ailurus

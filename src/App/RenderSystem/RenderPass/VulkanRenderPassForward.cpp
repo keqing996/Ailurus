@@ -1,16 +1,16 @@
-#include "RhiRenderPassForward.h"
+#include "VulkanRenderPassForward.h"
 #include "Ailurus/Application/Application.h"
 #include "VulkanSystem/VulkanSystem.h"
 
 namespace Ailurus
 {
-	RhiRenderPassForward::RhiRenderPassForward()
+	VulkanRenderPassForward::VulkanRenderPassForward()
 	{
 		SetupRenderPass();
 		SetupBackBuffers();
 	}
 
-	RhiRenderPassForward::~RhiRenderPassForward()
+	VulkanRenderPassForward::~VulkanRenderPassForward()
 	{
 		for (auto frameBuffer : _backBuffers)
 			Application::Get<VulkanSystem>()->GetDevice().destroyFramebuffer(frameBuffer);
@@ -18,17 +18,17 @@ namespace Ailurus
 		Application::Get<VulkanSystem>()->GetDevice().destroyRenderPass(_vkRenderPass);
 	}
 
-	RenderPassType RhiRenderPassForward::GetRenderPassType()
+	RenderPassType VulkanRenderPassForward::GetRenderPassType()
 	{
 		return RenderPassType::Forward;
 	}
 
-	vk::RenderPass RhiRenderPassForward::GetRenderPass() const
+	vk::RenderPass VulkanRenderPassForward::GetRenderPass() const
 	{
 		return _vkRenderPass;
 	}
 
-	vk::RenderPassBeginInfo RhiRenderPassForward::GetRenderPassBeginInfo() const
+	vk::RenderPassBeginInfo VulkanRenderPassForward::GetRenderPassBeginInfo() const
 	{
 		static vk::ClearValue clearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
 
@@ -43,7 +43,7 @@ namespace Ailurus
 		return renderPassInfo;
 	}
 
-	void RhiRenderPassForward::SetupRenderPass()
+	void VulkanRenderPassForward::SetupRenderPass()
 	{
 		vk::AttachmentDescription colorAttachment;
 		colorAttachment.setFormat(Application::Get<VulkanSystem>()->GetSwapChainConfig().surfaceFormat.format)
@@ -79,7 +79,7 @@ namespace Ailurus
 		_vkRenderPass = Application::Get<VulkanSystem>()->GetDevice().createRenderPass(renderPassInfo);
 	}
 
-	void RhiRenderPassForward::SetupBackBuffers()
+	void VulkanRenderPassForward::SetupBackBuffers()
 	{
 		const auto vkLogicalDevice = Application::Get<VulkanSystem>()->GetDevice();
 		const auto extent = Application::Get<VulkanSystem>()->GetSwapChainConfig().extent;

@@ -6,10 +6,10 @@
 
 namespace Ailurus
 {
-	class DescriptorSet: public NonCopyable, public NonMovable
+	class VulkanDescriptorSet: public NonCopyable, public NonMovable
 	{
 	public:
-		DescriptorSet()
+		VulkanDescriptorSet()
 		{
 
 		}

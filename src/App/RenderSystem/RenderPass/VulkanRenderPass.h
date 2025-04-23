@@ -6,22 +6,22 @@
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
-#include "RenderSystem/Pipeline/RHIPipeline.h"
+#include "RenderSystem/Pipeline/VulkanPipeline.h"
 
 namespace Ailurus
 {
-	class RhiRenderPass : public NonCopyable, public NonMovable
+	class VulkanRenderPass : public NonCopyable, public NonMovable
 	{
 	public:
-		virtual ~RhiRenderPass();
+		virtual ~VulkanRenderPass();
 
 	public:
 		virtual RenderPassType GetRenderPassType() = 0;
 		virtual vk::RenderPass GetRenderPass() const = 0;
 		virtual vk::RenderPassBeginInfo GetRenderPassBeginInfo() const = 0;
-		const RhiPipeline* GetPipeline(const RhiPipelineConfig& config);
+		const VulkanPipeline* GetPipeline(const VulkanPipelineConfig& config);
 
 	private:
-		std::unordered_map<RhiPipelineConfig, std::unique_ptr<RhiPipeline>, RhiPipelineConfig::Hash> _pipelineMap;
+		std::unordered_map<VulkanPipelineConfig, std::unique_ptr<VulkanPipeline>, VulkanPipelineConfig::Hash> _pipelineMap;
 	};
 } // namespace Ailurus

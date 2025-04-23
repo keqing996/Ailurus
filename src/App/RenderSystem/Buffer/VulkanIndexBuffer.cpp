@@ -1,10 +1,10 @@
-#include "IndexBuffer.h"
+#include "VulkanIndexBuffer.h"
 #include "DataBufferUtil.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
-	IndexBuffer::IndexBuffer(IndexBufferFormat format, const void* indexData, size_t sizeInBytes)
+	VulkanIndexBuffer::VulkanIndexBuffer(IndexBufferFormat format, const void* indexData, size_t sizeInBytes)
 		: _sizeInBytes(sizeInBytes)
 	{
 		switch (format)
@@ -57,22 +57,22 @@ namespace Ailurus
 		DataBufferUtil::DestroyBuffer(stageBuffer);
 	}
 
-	IndexBuffer::~IndexBuffer()
+	VulkanIndexBuffer::~VulkanIndexBuffer()
 	{
 		DataBufferUtil::DestroyBuffer(_buffer);
 	}
 
-	vk::IndexType IndexBuffer::GetIndexType() const
+	vk::IndexType VulkanIndexBuffer::GetIndexType() const
 	{
 		return _indexType;
 	}
 
-	vk::Buffer IndexBuffer::GetBuffer() const
+	vk::Buffer VulkanIndexBuffer::GetBuffer() const
 	{
 		return _buffer.buffer;
 	}
 
-	size_t IndexBuffer::GetIndexCount() const
+	size_t VulkanIndexBuffer::GetIndexCount() const
 	{
 		return _indexCount;
 	}

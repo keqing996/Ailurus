@@ -7,7 +7,7 @@
 
 namespace Ailurus
 {
-	class RhiShaderProgram;
+	class VulkanShaderProgram;
 
     class ShaderProgram : public NonCopyable, public NonMovable
     {
@@ -18,11 +18,11 @@ namespace Ailurus
     public:
         void SetShader(const Shader* pShader);
     	void SetUniformLayout(const UniformLayout& uniformLayout);
-    	const RhiShaderProgram* GetImpl() const;
+    	const VulkanShaderProgram* GetImpl() const;
 
 
     private:
-    	std::unique_ptr<RhiShaderProgram> _pImpl;
+    	std::unique_ptr<VulkanShaderProgram> _pImpl;
         StageShaderArray _shaderStage;
     };
 }

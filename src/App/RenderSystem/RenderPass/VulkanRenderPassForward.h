@@ -1,15 +1,15 @@
 #pragma once
 
 #include <vector>
-#include "RhiRenderPass.h"
+#include "VulkanRenderPass.h"
 
 namespace Ailurus
 {
-	class RhiRenderPassForward : public RhiRenderPass
+	class VulkanRenderPassForward : public VulkanRenderPass
 	{
 	public:
-		RhiRenderPassForward();
-		~RhiRenderPassForward() override;
+		VulkanRenderPassForward();
+		~VulkanRenderPassForward() override;
 
 	public:
 		RenderPassType GetRenderPassType() override;

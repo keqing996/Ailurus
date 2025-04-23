@@ -7,11 +7,11 @@
 
 namespace Ailurus
 {
-	class UniformBuffer
+	class VulkanUniformBuffer
 	{
 	public:
-		explicit UniformBuffer(size_t bufferSize);
-		~UniformBuffer();
+		explicit VulkanUniformBuffer(size_t bufferSize);
+		~VulkanUniformBuffer();
 
 	public:
 		uint8_t* GetWriteBeginPos() const;

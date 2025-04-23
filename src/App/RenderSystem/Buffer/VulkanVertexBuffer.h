@@ -5,11 +5,11 @@
 
 namespace Ailurus
 {
-    class VertexBuffer
+    class VulkanVertexBuffer
     {
     public:
-        VertexBuffer(const void* vertexData, size_t dataSizeInBytes);
-        ~VertexBuffer();
+        VulkanVertexBuffer(const void* vertexData, size_t dataSizeInBytes);
+        ~VulkanVertexBuffer();
 
         vk::Buffer GetBuffer() const;
         size_t GetSize() const;
