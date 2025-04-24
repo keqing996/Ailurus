@@ -2,12 +2,13 @@
 
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonMovable.h"
 
 namespace Ailurus
 {
-	class RhiCommandBuffer;
+	class VulkanCommandBuffer;
 
-	class CommandBuffer: public NonCopyable
+	class CommandBuffer: public NonCopyable, public NonMovable
 	{
 	public:
 		enum class Timing
@@ -17,12 +18,12 @@ namespace Ailurus
 
 	public:
 		CommandBuffer();
-		~CommandBuffer() override;
+		~CommandBuffer();
 
 	public:
-		const RhiCommandBuffer* GetImpl() const;
+		const VulkanCommandBuffer* GetImpl() const;
 
 	private:
-		std::unique_ptr<RhiCommandBuffer> _pImpl;
+		std::unique_ptr<VulkanCommandBuffer> _pImpl;
 	};
 }
