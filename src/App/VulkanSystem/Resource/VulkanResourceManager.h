@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "VulkanBuffer.h"
@@ -10,6 +11,7 @@ namespace Ailurus
 {
 	class VulkanResourceManager : public NonCopyable, public NonMovable
 	{
+		using ResourcePtr = std::unique_ptr<VulkanResource, std::function<void(VulkanResource*)>>;
 	public:
 		VulkanDeviceBuffer* CreateDeviceBuffer(vk::DeviceSize size, GpuBufferUsage usage);
 		VulkanHostBuffer* CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage, bool coherentWithGpu = true);
@@ -18,6 +20,6 @@ namespace Ailurus
 		friend class VulkanSystem;
 
 	private:
-		std::vector<std::unique_ptr<VulkanResource>> _resources;
+		std::vector<ResourcePtr> _resources;
 	};
 } // namespace Ailurus

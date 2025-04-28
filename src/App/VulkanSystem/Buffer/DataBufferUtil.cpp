@@ -8,47 +8,7 @@ namespace Ailurus
 {
 	
 
-	void DataBufferUtil::DestroyBuffer(CpuBuffer& cpuBuffer)
-	{
-		const auto device = Application::Get<VulkanSystem>()->GetDevice();
-
-		if (cpuBuffer.mappedAddr != nullptr)
-		{
-			device.unmapMemory(cpuBuffer.deviceMemory);
-			cpuBuffer.mappedAddr = nullptr;
-		}
-
-		// Destroy buffer first, then device memory.
-		if (cpuBuffer.buffer != nullptr)
-		{
-			device.destroyBuffer(cpuBuffer.buffer);
-			cpuBuffer.buffer = nullptr;
-		}
-
-		if (cpuBuffer.deviceMemory != nullptr)
-		{
-			device.freeMemory(cpuBuffer.deviceMemory);
-			cpuBuffer.deviceMemory = nullptr;
-		}
-	}
-
-	void DataBufferUtil::DestroyBuffer(GpuBuffer& gpuBuffer)
-	{
-		const auto device = Application::Get<VulkanSystem>()->GetDevice();
-
-		// Destroy buffer first, then device memory.
-		if (gpuBuffer.buffer != nullptr)
-		{
-			device.destroyBuffer(gpuBuffer.buffer);
-			gpuBuffer.buffer = nullptr;
-		}
-
-		if (gpuBuffer.deviceMemory != nullptr)
-		{
-			device.freeMemory(gpuBuffer.deviceMemory);
-			gpuBuffer.deviceMemory = nullptr;
-		}
-	}
+	
 
 	void DataBufferUtil::CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
 	{

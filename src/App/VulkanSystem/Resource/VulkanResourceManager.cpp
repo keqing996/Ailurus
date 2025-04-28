@@ -2,6 +2,7 @@
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Utility/ScopeGuard.h"
 #include "Ailurus/Utility/Logger.h"
+#include "VulkanSystem/Resource/VulkanBuffer.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include <memory>
 
@@ -79,6 +80,44 @@ namespace Ailurus
 		return CreatedBuffer{ memoryRequirement->requirements.size, buffer, deviceMem };
 	}
 
+	template <typename T>
+	void DeleteVulkanResource(VulkanResource* pResource);
+
+	template <>
+	void DeleteVulkanResource<VulkanHostBuffer>(VulkanResource* pResource)
+	{
+		auto ptr = static_cast<VulkanHostBuffer*>(pResource);
+		const auto device = Application::Get<VulkanSystem>()->GetDevice();
+
+		if (ptr->mappedAddr != nullptr)
+			device.unmapMemory(ptr->deviceMemory);
+
+		// Destroy buffer first, then device memory.
+		if (ptr->buffer != nullptr)
+			device.destroyBuffer(ptr->buffer);
+
+		if (ptr->deviceMemory != nullptr)
+			device.freeMemory(ptr->deviceMemory);
+
+		delete ptr;
+	}
+
+	template <>
+	void DeleteVulkanResource<VulkanDeviceBuffer>(VulkanResource* pResource)
+	{
+		auto ptr = static_cast<VulkanDeviceBuffer*>(pResource);
+		const auto device = Application::Get<VulkanSystem>()->GetDevice();
+
+		// Destroy buffer first, then device memory.
+		if (ptr->buffer != nullptr)
+			device.destroyBuffer(ptr->buffer);
+
+		if (ptr->deviceMemory != nullptr)
+			device.freeMemory(ptr->deviceMemory);
+
+		delete ptr;
+	}
+
 	VulkanDeviceBuffer* VulkanResourceManager::CreateDeviceBuffer(vk::DeviceSize size, GpuBufferUsage usage)
 	{
 		vk::BufferUsageFlags usageFlag;
@@ -105,7 +144,7 @@ namespace Ailurus
 			return nullptr;
 
 		VulkanDeviceBuffer* pBufferRaw = new VulkanDeviceBuffer(bufferRet->realSize, bufferRet->buffer, bufferRet->deviceMem);
-		_resources.push_back(std::unique_ptr<VulkanResource>(pBufferRaw));
+		_resources.push_back(ResourcePtr(pBufferRaw, &DeleteVulkanResource<VulkanDeviceBuffer>));
 
 		return pBufferRaw;
 	}
@@ -135,7 +174,7 @@ namespace Ailurus
 		void* mappedAddr = Application::Get<VulkanSystem>()->GetDevice().mapMemory(bufferRet->deviceMem, 0, size, {});
 
 		VulkanHostBuffer* pBufferRaw = new VulkanHostBuffer(bufferRet->realSize, bufferRet->buffer, bufferRet->deviceMem, mappedAddr);
-		_resources.push_back(std::unique_ptr<VulkanResource>(pBufferRaw));
+		_resources.push_back(ResourcePtr(pBufferRaw, &DeleteVulkanResource<VulkanHostBuffer>));
 
 		return pBufferRaw;
 	}
