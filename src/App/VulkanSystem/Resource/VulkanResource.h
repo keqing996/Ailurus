@@ -8,6 +8,7 @@ namespace Ailurus
 {
 	class VulkanResource: public NonCopyable, public NonMovable
 	{
+		friend class VulkanResourceManager;
 	public:
 		virtual ~VulkanResource();
 
@@ -18,6 +19,9 @@ namespace Ailurus
 		bool IsValid() const;
 		bool GetRefCount() const;
 		virtual uint32_t GetHash() = 0;
+
+	protected:
+		VulkanResource();
 
 	private:
 		bool _markDeleted = false;

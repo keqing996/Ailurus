@@ -1,30 +1,25 @@
-#include "VulkanBuffer.h"
 #include <vulkan/vulkan_hash.hpp>
+#include "VulkanBuffer.h"
 
 namespace Ailurus
 {
 
-	vk::Buffer VulkanDeviceBuffer::GetBuffer() const
+	VulkanDeviceBuffer::VulkanDeviceBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem)
+		: realSize(size), buffer(buf), deviceMemory(mem)
 	{
-		return buffer;
 	}
 
-	vk::DeviceMemory VulkanDeviceBuffer::GetDeviceMemory() const
+	VulkanHostBuffer::VulkanHostBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem, void* addr)
+		: realSize(size), buffer(buf), deviceMemory(mem), mappedAddr(addr)
 	{
-		return deviceMemory;
-	}
-
-	vk::DeviceSize VulkanDeviceBuffer::GetSize() const
-	{
-		return realSize;
-	}
-
-	uint8_t* VulkanHostBuffer::GetMappedAddr() const
-	{
-		return static_cast<uint8_t*>(mappedAddr);
 	}
 
 	uint32_t VulkanDeviceBuffer::GetHash()
+	{
+		return std::hash<vk::Buffer>()(buffer);
+	}
+
+	uint32_t VulkanHostBuffer::GetHash()
 	{
 		return std::hash<vk::Buffer>()(buffer);
 	}

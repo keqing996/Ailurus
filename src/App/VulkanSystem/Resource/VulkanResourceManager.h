@@ -1,24 +1,23 @@
 #pragma once
 
+#include <vector>
+#include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
-#include "VulkanResource.h"
-#include <concepts>
+#include "VulkanBuffer.h"
 
 namespace Ailurus
 {
 	class VulkanResourceManager : public NonCopyable, public NonMovable
 	{
 	public:
-		template <typename T> requires std::derived_from<T, VulkanResource>
-		T* CreateResource();
-
-		void DestroyResource(VulkanResource* pResource);
-
+		VulkanDeviceBuffer* CreateDeviceBuffer(vk::DeviceSize size, GpuBufferUsage usage);
+		VulkanHostBuffer* CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage, bool coherentWithGpu = true);
 
 	private:
 		friend class VulkanSystem;
 
 	private:
+		std::vector<std::unique_ptr<VulkanResource>> _resources;
 	};
 } // namespace Ailurus

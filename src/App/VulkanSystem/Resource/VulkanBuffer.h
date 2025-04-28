@@ -3,29 +3,44 @@
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include "VulkanResource.h"
+#include "Ailurus/Utility/EnumReflection.h"
 
 namespace Ailurus
 {
+	REFLECTION_ENUM(CpuBufferUsage,
+		TransferSrc)
+
+	REFLECTION_ENUM(GpuBufferUsage,
+		Vertex,
+		Index,
+		Uniform)
+
 	class VulkanDeviceBuffer : public VulkanResource
 	{
-	public:
-		uint32_t GetHash() override;
-		vk::Buffer GetBuffer() const;
-		vk::DeviceMemory GetDeviceMemory() const;
-		vk::DeviceSize GetSize() const;
+		friend class VulkanResourceManager;
 
-	protected:
-		vk::DeviceSize realSize;
-		vk::Buffer buffer;
-		vk::DeviceMemory deviceMemory;
+	public:
+		VulkanDeviceBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem);
+		uint32_t GetHash() override;
+
+	public:
+		const vk::DeviceSize realSize;
+		const vk::Buffer buffer;
+		const vk::DeviceMemory deviceMemory;
 	};
 
-	class VulkanHostBuffer : public VulkanDeviceBuffer
+	class VulkanHostBuffer : public VulkanResource
 	{
-	public:
-		uint8_t* GetMappedAddr() const;
+		friend class VulkanResourceManager;
 
-	private:
-		void* mappedAddr;
+	public:
+		VulkanHostBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem, void* addr);
+		uint32_t GetHash() override;
+
+	public:
+		const vk::DeviceSize realSize;
+		const vk::Buffer buffer;
+		const vk::DeviceMemory deviceMemory;
+		const void* mappedAddr;
 	};
 } // namespace Ailurus

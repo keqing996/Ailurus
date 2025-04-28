@@ -3,6 +3,11 @@
 
 namespace Ailurus
 {
+	VulkanResource::VulkanResource()
+	{
+
+	}
+
     VulkanResource::~VulkanResource()
     {
         if (_refCount > 0)
