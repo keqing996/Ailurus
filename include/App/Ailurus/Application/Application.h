@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 
+#include "TimeSystem/TimeSystem.h"
 #include "InputSystem/InputSystem.h"
 #include "RenderSystem/RenderSystem.h"
 #include "SceneSystem/SceneSystem.h"
@@ -160,7 +161,8 @@ namespace Ailurus
         static std::function<void(bool)> _onWindowCursorEnteredOrLeaved;
         static std::function<void(bool)> _onWindowCursorVisibleChanged;
 
-        // Input
+        // System
+        static std::unique_ptr<TimeSystem> _pTimeSystem;
         static std::unique_ptr<InputSystem> _pInputManager;
         static std::unique_ptr<class VulkanSystem> _pVulkanSystem;
         static std::unique_ptr<RenderSystem> _pRenderSystem;

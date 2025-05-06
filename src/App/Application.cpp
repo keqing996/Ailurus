@@ -76,6 +76,7 @@ namespace Ailurus
 			return false;
 		}
 
+		_pTimeSystem.reset(new TimeSystem());
 		_pInputManager.reset(new InputSystem());
 		_pRenderSystem.reset(new RenderSystem());
 		_pSceneManager.reset(new SceneSystem());
@@ -115,6 +116,8 @@ namespace Ailurus
 	{
 		while (true)
 		{
+			_pTimeSystem->Update();
+			
 			bool shouldBreakLoop = false;
 			EventLoop(&shouldBreakLoop);
 
