@@ -16,6 +16,8 @@ namespace Ailurus
 		VulkanDeviceBuffer* CreateDeviceBuffer(vk::DeviceSize size, GpuBufferUsage usage);
 		VulkanHostBuffer* CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage, bool coherentWithGpu = true);
 
+		void GarbageCollect();
+
 	private:
 		friend class VulkanSystem;
 

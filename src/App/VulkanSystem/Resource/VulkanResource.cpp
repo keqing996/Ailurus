@@ -1,5 +1,6 @@
 #include "VulkanResource.h"
 #include "Ailurus/Utility/Logger.h"
+#include "Ailurus/Application/Application.h"
 
 namespace Ailurus
 {
@@ -10,18 +11,14 @@ namespace Ailurus
 
     VulkanResource::~VulkanResource()
     {
-        if (_refCount > 0)
-            Logger::LogError("VulkanResource has non-zero reference count on destruction: " + std::to_string(_refCount));
+        if (!_referencedFrames.empty())
+            Logger::LogError("VulkanResource has non-zero reference count on destruction: " + std::to_string(_referencedFrames.size()));
     }
 
 	void VulkanResource::AddRef()
 	{
-		_refCount++;
-	}
-
-	void VulkanResource::Release()
-	{
-		_refCount--;
+		auto thisFrame = Application::Get<TimeSystem>()->FrameCount();
+		_referencedFrames.insert(thisFrame);
 	}
 
 	void VulkanResource::MarkDelete()
@@ -32,10 +29,5 @@ namespace Ailurus
 	bool VulkanResource::IsValid() const
 	{
 		return !_markDeleted;
-	}
-
-	bool VulkanResource::GetRefCount() const
-	{
-		return _refCount;
 	}
 } // namespace Ailurus

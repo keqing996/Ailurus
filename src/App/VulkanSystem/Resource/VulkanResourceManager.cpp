@@ -4,6 +4,7 @@
 #include "Ailurus/Utility/Logger.h"
 #include "VulkanSystem/Resource/VulkanBuffer.h"
 #include "VulkanSystem/VulkanSystem.h"
+#include <cstdint>
 #include <memory>
 
 namespace Ailurus
@@ -177,6 +178,28 @@ namespace Ailurus
 		_resources.push_back(ResourcePtr(pBufferRaw, &DeleteVulkanResource<VulkanHostBuffer>));
 
 		return pBufferRaw;
+	}
+
+	void VulkanResourceManager::GarbageCollect()
+	{
+		static std::vector<uint64_t> needDeletedFrames;
+
+		auto thisFrame = Application::Get<TimeSystem>()->FrameCount();
+		for (auto i = 0; i < _resources.size(); i++)
+		{
+			auto& pResource = _resources[i];
+
+			// Clear passed frames
+			needDeletedFrames.clear();
+			for (auto frame : pResource->_referencedFrames)
+			{
+				if (frame < thisFrame)
+					needDeletedFrames.push_back(frame);
+			}
+
+			for (auto frame : needDeletedFrames)
+				pResource->_referencedFrames.erase(frame);
+		}
 	}
 
 } // namespace Ailurus
