@@ -23,7 +23,7 @@ namespace Ailurus
 		vkSystem->GetDevice().freeCommandBuffers(vkSystem->GetCommandPool(), _vkCommandBuffer);
 	}
 
-	vk::CommandBuffer VulkanCommandBuffer::GetBuffer() const
+	const vk::CommandBuffer& VulkanCommandBuffer::GetBuffer() const
 	{
 		return _vkCommandBuffer;
 	}

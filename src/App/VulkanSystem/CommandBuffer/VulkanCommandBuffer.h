@@ -13,7 +13,7 @@ namespace Ailurus
 		~VulkanCommandBuffer();
 
 	public:
-		vk::CommandBuffer GetBuffer() const;
+		const vk::CommandBuffer& GetBuffer() const;
 
 	private:
 		vk::CommandBuffer _vkCommandBuffer;

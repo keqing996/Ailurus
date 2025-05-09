@@ -1,9 +1,11 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <vulkan/vulkan.hpp>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
+#include "VulkanSystem/FrameContext/FrameContext.h"
 
 namespace Ailurus
 {
@@ -51,20 +53,13 @@ namespace Ailurus
 
 		void CreateSwapChain();
 		void DestroySwapChain();
-		void CreateCommandBuffer();
-		void DestroyCommandBuffer();
-		void CreateSynchronizationObjects();
-		void DestroySynchronizationObjects();
 
 		const SwapChainConfig& GetSwapChainConfig() const;
 		const vk::SwapchainKHR& GetSwapChain() const;
 		const std::vector<vk::ImageView>& GetSwapChainImageViews();
 
 		uint32_t GetCurrentFrameIndex() const;
-		const vk::CommandBuffer& GetCurrentFrameCommandBuffer() const;
-		const vk::Semaphore& GetCurrentFrameImageReadySemaphore() const;
-		const vk::Semaphore& GetCurrentFrameRenderFinishSemaphore() const;
-		const vk::Fence& GetCurrentFrameFence() const;
+		const FrameContext* GetFrameContext() const;
 		bool WaitNextFrame(bool* needRebuild);
 		bool SubmitThisFrame(bool* needRebuild);
 
@@ -114,9 +109,6 @@ namespace Ailurus
 		// Dynamic context - flight
 		uint32_t _currentParallelFrameIndex = 0;
 		unsigned _currentSwapChainImageIndex = 0;
-		std::vector<vk::CommandBuffer> _vkCommandBuffers{};
-		std::vector<vk::Semaphore> _vkImageReadySemaphore{};
-		std::vector<vk::Semaphore> _vkFinishRenderSemaphore{};
-		std::vector<vk::Fence> _vkFences{};
+		std::vector<std::unique_ptr<FrameContext>> _frameContexts{};
 	};
 } // namespace Ailurus

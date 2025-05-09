@@ -5,27 +5,27 @@
 namespace Ailurus
 {
 	FrameContext::FrameContext()
-        : commandBuffer()
-        , renderingFrame(0)
+		: commandBuffer()
+		, renderingFrame(0)
 	{
-        auto device = Application::Get<VulkanSystem>()->GetDevice();
+		auto device = Application::Get<VulkanSystem>()->GetDevice();
 
-        vk::SemaphoreCreateInfo semaphoreInfo;
-        imageReadySemaphore = device.createSemaphore(semaphoreInfo);
-        renderFinishSemaphore = device.createSemaphore(semaphoreInfo);
+		vk::SemaphoreCreateInfo semaphoreInfo;
+		imageReadySemaphore = device.createSemaphore(semaphoreInfo);
+		renderFinishSemaphore = device.createSemaphore(semaphoreInfo);
 
-        vk::FenceCreateInfo fenceInfo;
+		vk::FenceCreateInfo fenceInfo;
 		fenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
-        fence = device.createFence(fenceInfo);
+		fence = device.createFence(fenceInfo);
 	}
 
 	FrameContext::~FrameContext()
 	{
-        auto device = Application::Get<VulkanSystem>()->GetDevice();
+		auto device = Application::Get<VulkanSystem>()->GetDevice();
 
-        device.destroyFence(fence);
-        
-        device.destroySemaphore(imageReadySemaphore);
-        device.destroySemaphore(renderFinishSemaphore);
+		device.destroyFence(fence);
+
+		device.destroySemaphore(imageReadySemaphore);
+		device.destroySemaphore(renderFinishSemaphore);
 	}
 } // namespace Ailurus

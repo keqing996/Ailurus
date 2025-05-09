@@ -1,4 +1,5 @@
 #include "VulkanSystem.h"
+#include <memory>
 #include <unordered_set>
 #include <mutex>
 #include <optional>
@@ -6,6 +7,7 @@
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "VulkanHelper.h"
+#include "VulkanSystem/FrameContext/FrameContext.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -242,48 +244,6 @@ namespace Ailurus
 		_vkDevice.destroySwapchainKHR(_vkSwapChain);
 	}
 
-	void VulkanSystem::CreateCommandBuffer()
-	{
-		vk::CommandBufferAllocateInfo allocInfo;
-		allocInfo.setCommandPool(_vkGraphicCommandPool)
-			.setLevel(vk::CommandBufferLevel::ePrimary)
-			.setCommandBufferCount(PARALLEL_FRAME);
-
-		_vkCommandBuffers = _vkDevice.allocateCommandBuffers(allocInfo);
-	}
-
-	void VulkanSystem::DestroyCommandBuffer()
-	{
-		_vkDevice.freeCommandBuffers(VulkanSystem::GetCommandPool(), _vkCommandBuffers);
-	}
-
-	void VulkanSystem::CreateSynchronizationObjects()
-	{
-		vk::SemaphoreCreateInfo semaphoreInfo;
-
-		vk::FenceCreateInfo fenceInfo;
-		fenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
-
-		for (size_t i = 0; i < PARALLEL_FRAME; i++)
-		{
-			_vkImageReadySemaphore.push_back(VulkanSystem::GetDevice().createSemaphore(semaphoreInfo));
-			_vkFinishRenderSemaphore.push_back(VulkanSystem::GetDevice().createSemaphore(semaphoreInfo));
-			_vkFences.push_back(VulkanSystem::GetDevice().createFence(fenceInfo));
-		}
-	}
-
-	void VulkanSystem::DestroySynchronizationObjects()
-	{
-		for (const auto& fence : _vkFences)
-			_vkDevice.destroyFence(fence);
-
-		for (const auto& sem : _vkImageReadySemaphore)
-			_vkDevice.destroySemaphore(sem);
-
-		for (const auto& sem : _vkFinishRenderSemaphore)
-			_vkDevice.destroySemaphore(sem);
-	}
-
 	const SwapChainConfig& VulkanSystem::GetSwapChainConfig() const
 	{
 		return _swapChainConfig;
@@ -304,30 +264,17 @@ namespace Ailurus
 		return _currentParallelFrameIndex;
 	}
 
-	const vk::CommandBuffer& VulkanSystem::GetCurrentFrameCommandBuffer() const
+	const FrameContext* VulkanSystem::GetFrameContext() const
 	{
-		return _vkCommandBuffers[_currentParallelFrameIndex];
-	}
-
-	const vk::Semaphore& VulkanSystem::GetCurrentFrameImageReadySemaphore() const
-	{
-		return _vkImageReadySemaphore[_currentParallelFrameIndex];
-	}
-
-	const vk::Semaphore& VulkanSystem::GetCurrentFrameRenderFinishSemaphore() const
-	{
-		return _vkFinishRenderSemaphore[_currentParallelFrameIndex];
-	}
-
-	const vk::Fence& VulkanSystem::GetCurrentFrameFence() const
-	{
-		return _vkFences[_currentParallelFrameIndex];
+		return _frameContexts[_currentParallelFrameIndex].get();
 	}
 
 	bool VulkanSystem::WaitNextFrame(bool* needRebuild)
 	{
+		const FrameContext* pFrameContext = GetFrameContext();
+
 		// Wait fence
-		auto waitFence = _vkDevice.waitForFences(GetCurrentFrameFence(), true, std::numeric_limits<uint64_t>::max());
+		auto waitFence = _vkDevice.waitForFences(pFrameContext->fence, true, std::numeric_limits<uint64_t>::max());
 		if (waitFence != vk::Result::eSuccess)
 		{
 			Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
@@ -336,7 +283,7 @@ namespace Ailurus
 
 		// Acquire swap chain next image
 		auto acquireImage = _vkDevice.acquireNextImageKHR(_vkSwapChain,
-			std::numeric_limits<uint64_t>::max(), GetCurrentFrameImageReadySemaphore());
+			std::numeric_limits<uint64_t>::max(), pFrameContext->imageReadySemaphore);
 
 		switch (acquireImage.result)
 		{
@@ -355,25 +302,27 @@ namespace Ailurus
 
 		_currentSwapChainImageIndex = acquireImage.value;
 
-		_vkDevice.resetFences(GetCurrentFrameFence());
+		_vkDevice.resetFences(pFrameContext->fence);
 
 		return true;
 	}
 
 	bool VulkanSystem::SubmitThisFrame(bool* needRebuild)
 	{
+		const FrameContext* pFrameContext = GetFrameContext();
+
 		std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
 		vk::SubmitInfo submitInfo;
-		submitInfo.setWaitSemaphores(GetCurrentFrameImageReadySemaphore())
-			.setSignalSemaphores(GetCurrentFrameRenderFinishSemaphore())
+		submitInfo.setWaitSemaphores(pFrameContext->imageReadySemaphore)
+			.setSignalSemaphores(pFrameContext->renderFinishSemaphore)
 			.setWaitDstStageMask(waitStages)
-			.setCommandBuffers(GetCurrentFrameCommandBuffer());
+			.setCommandBuffers(pFrameContext->commandBuffer.GetBuffer());
 
-		_vkGraphicQueue.submit(submitInfo, GetCurrentFrameFence());
+		_vkGraphicQueue.submit(submitInfo, pFrameContext->fence);
 
 		vk::PresentInfoKHR presentInfo;
-		presentInfo.setWaitSemaphores(GetCurrentFrameRenderFinishSemaphore())
+		presentInfo.setWaitSemaphores(pFrameContext->renderFinishSemaphore)
 			.setSwapchains(_vkSwapChain)
 			.setImageIndices(_currentSwapChainImageIndex);
 
@@ -611,14 +560,14 @@ namespace Ailurus
 		_currentParallelFrameIndex = 0;
 		_currentSwapChainImageIndex = 0;
 
-		CreateCommandBuffer();
-		CreateSynchronizationObjects();
+		_frameContexts.clear();
+		for (auto i = 0; i < PARALLEL_FRAME; i++)
+			_frameContexts.push_back(std::make_unique<FrameContext>());
 	}
 
 	void VulkanSystem::DestroyDynamicContext()
 	{
-		DestroySynchronizationObjects();
-		DestroyCommandBuffer();
+		_frameContexts.clear();
 		DestroySwapChain();
 	}
 } // namespace Ailurus
