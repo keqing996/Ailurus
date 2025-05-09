@@ -69,6 +69,7 @@ namespace Ailurus
 			const WindowDestroySurfaceCallback& destroySurface);
 
 	private:
+		FrameContext* GetFrameContext();
 		void PrepareDispatcher();
 		void CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension);
 		void CreatDebugUtilsMessenger();

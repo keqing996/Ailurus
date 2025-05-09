@@ -4,6 +4,7 @@
 #include <mutex>
 #include <optional>
 #include <array>
+#include "Ailurus/Application/TimeSystem/TimeSystem.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "VulkanHelper.h"
@@ -269,9 +270,14 @@ namespace Ailurus
 		return _frameContexts[_currentParallelFrameIndex].get();
 	}
 
+	FrameContext* VulkanSystem::GetFrameContext()
+	{
+		return _frameContexts[_currentParallelFrameIndex].get();
+	}
+
 	bool VulkanSystem::WaitNextFrame(bool* needRebuild)
 	{
-		const FrameContext* pFrameContext = GetFrameContext();
+		FrameContext* pFrameContext = GetFrameContext();
 
 		// Wait fence
 		auto waitFence = _vkDevice.waitForFences(pFrameContext->fence, true, std::numeric_limits<uint64_t>::max());
@@ -280,6 +286,9 @@ namespace Ailurus
 			Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
 			return false;
 		}
+
+		pFrameContext->lastRenderFinishedFrame = pFrameContext->renderingFrame.value_or(0);
+		pFrameContext->renderingFrame = std::nullopt;
 
 		// Acquire swap chain next image
 		auto acquireImage = _vkDevice.acquireNextImageKHR(_vkSwapChain,
@@ -309,7 +318,7 @@ namespace Ailurus
 
 	bool VulkanSystem::SubmitThisFrame(bool* needRebuild)
 	{
-		const FrameContext* pFrameContext = GetFrameContext();
+		FrameContext* pFrameContext = GetFrameContext();
 
 		std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
@@ -341,6 +350,7 @@ namespace Ailurus
 				return false;
 		}
 
+		pFrameContext->renderingFrame = Application::Get<TimeSystem>()->FrameCount();
 		_currentParallelFrameIndex = (_currentParallelFrameIndex + 1) % PARALLEL_FRAME;
 
 		return true;

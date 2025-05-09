@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <vulkan/vulkan.hpp>
 #include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
 
@@ -12,7 +13,8 @@ namespace Ailurus
 		vk::Semaphore imageReadySemaphore;
 		vk::Semaphore renderFinishSemaphore;
 		vk::Fence fence;
-		uint64_t renderingFrame;
+		std::optional<uint64_t> renderingFrame;
+		uint64_t lastRenderFinishedFrame;
 
     public:
 		FrameContext();

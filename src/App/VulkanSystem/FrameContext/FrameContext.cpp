@@ -6,7 +6,8 @@ namespace Ailurus
 {
 	FrameContext::FrameContext()
 		: commandBuffer()
-		, renderingFrame(0)
+		, renderingFrame(std::nullopt)
+		, lastRenderFinishedFrame(0)
 	{
 		auto device = Application::Get<VulkanSystem>()->GetDevice();
 
