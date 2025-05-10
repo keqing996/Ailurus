@@ -6,7 +6,7 @@
 
 namespace Ailurus
 {
-	class VulkanCommandBuffer : public NonCopyable, public NonMovable
+	class VulkanCommandBuffer
 	{
 	public:
 		VulkanCommandBuffer();

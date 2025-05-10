@@ -17,7 +17,7 @@ namespace Ailurus
 	VulkanSystem::VulkanSystem(const GetWindowInstanceExtension& getWindowRequiredExtension,
 		const WindowCreateSurfaceCallback& createSurface,
 		const WindowDestroySurfaceCallback& destroySurface)
-		: _destorySurfaceCallback(destroySurface)
+		: _destroySurfaceCallback(destroySurface)
 	{
 		PrepareDispatcher();
 
@@ -58,7 +58,7 @@ namespace Ailurus
 		}
 
 		if (_vkSurface)
-			_destorySurfaceCallback(_vkInstance, _vkSurface);
+			_destroySurfaceCallback(_vkInstance, _vkSurface);
 
 		if (_vkDebugUtilsMessenger)
 			_vkInstance.destroyDebugUtilsMessengerEXT(_vkDebugUtilsMessenger);

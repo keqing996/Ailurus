@@ -29,4 +29,9 @@ namespace Ailurus
 		device.destroySemaphore(imageReadySemaphore);
 		device.destroySemaphore(renderFinishSemaphore);
 	}
+
+	bool FrameContext::IsRendering() const
+	{
+		return renderingFrame.has_value();
+	}
 } // namespace Ailurus

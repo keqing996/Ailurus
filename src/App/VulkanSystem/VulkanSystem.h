@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <memory>
+#include <queue>
 #include <vulkan/vulkan.hpp>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
@@ -85,7 +86,7 @@ namespace Ailurus
 		bool _initialized = false;
 
 		// Destroy callback
-		WindowDestroySurfaceCallback _destorySurfaceCallback = nullptr;
+		WindowDestroySurfaceCallback _destroySurfaceCallback = nullptr;
 
 		// Static context
 		vk::Instance _vkInstance = nullptr;
@@ -106,6 +107,9 @@ namespace Ailurus
 		vk::SwapchainKHR _vkSwapChain = nullptr;
 		std::vector<vk::Image> _vkSwapChainImages{};
 		std::vector<vk::ImageView> _vkSwapChainImageViews{};
+
+		// Dynamic context - command buffers
+		std::queue<VulkanCommandBuffer> _availableCommandBuffers{};
 
 		// Dynamic context - flight
 		uint32_t _currentParallelFrameIndex = 0;

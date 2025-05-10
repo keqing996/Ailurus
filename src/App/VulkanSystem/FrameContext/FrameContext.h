@@ -9,15 +9,28 @@ namespace Ailurus
 {
 	struct FrameContext
 	{
-		VulkanCommandBuffer commandBuffer;
+		struct RenderingInfo
+		{
+			uint64_t renderingFrameCount;
+			VulkanCommandBuffer renderingCommandBuffer;
+		};
+
 		vk::Semaphore imageReadySemaphore;
 		vk::Semaphore renderFinishSemaphore;
 		vk::Fence fence;
-		std::optional<uint64_t> renderingFrame;
+
+		// always available
+		VulkanCommandBuffer availableCommandBuffer;
+
+		// Is rendering target frame
+		std::optional<RenderingInfo> renderingInfo;
 		uint64_t lastRenderFinishedFrame;
 
     public:
 		FrameContext();
 		~FrameContext();
+
+	public:
+		bool IsRendering() const;
 	};
 } // namespace Ailurus
