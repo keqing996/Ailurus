@@ -5,8 +5,7 @@
 namespace Ailurus
 {
 	FrameContext::FrameContext()
-		: commandBuffer()
-		, renderingFrame(std::nullopt)
+		: renderingInfo(std::nullopt)
 		, lastRenderFinishedFrame(0)
 	{
 		auto device = Application::Get<VulkanSystem>()->GetDevice();
@@ -32,6 +31,16 @@ namespace Ailurus
 
 	bool FrameContext::IsRendering() const
 	{
-		return renderingFrame.has_value();
+		return renderingInfo.has_value();
+	}
+
+	const VulkanCommandBuffer& FrameContext::GetCommandBuffer()
+	{
+		if ()
+	}
+
+	uint64_t FrameContext::LastRenderFinishedFrame() const
+	{
+		return lastRenderFinishedFrame;
 	}
 } // namespace Ailurus

@@ -63,6 +63,8 @@ namespace Ailurus
 		const FrameContext* GetFrameContext() const;
 		bool WaitNextFrame(bool* needRebuild);
 		bool SubmitThisFrame(bool* needRebuild);
+		VulkanCommandBuffer GetAvailableCommandBuffer();
+		void FreeCommandBuffer(const VulkanCommandBuffer& commandBuffer);
 
 	private:
 		VulkanSystem(const GetWindowInstanceExtension& getWindowRequiredExtension,

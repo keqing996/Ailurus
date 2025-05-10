@@ -287,8 +287,13 @@ namespace Ailurus
 			return false;
 		}
 
-		pFrameContext->lastRenderFinishedFrame = pFrameContext->renderingFrame.value_or(0);
-		pFrameContext->renderingFrame = std::nullopt;
+		if (pFrameContext->renderingInfo.has_value())
+		{
+			pFrameContext->lastRenderFinishedFrame = pFrameContext->renderingInfo->renderingFrameCount;
+			FreeCommandBuffer(pFrameContext->renderingInfo->renderingCommandBuffer);
+
+			pFrameContext->renderingInfo = std::nullopt;
+		}
 
 		// Acquire swap chain next image
 		auto acquireImage = _vkDevice.acquireNextImageKHR(_vkSwapChain,
@@ -319,6 +324,7 @@ namespace Ailurus
 	bool VulkanSystem::SubmitThisFrame(bool* needRebuild)
 	{
 		FrameContext* pFrameContext = GetFrameContext();
+		const VulkanCommandBuffer& frameCommandBuffer = GetFrameCommandBuffer();
 
 		std::array<vk::PipelineStageFlags, 1> waitStages = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
@@ -326,7 +332,7 @@ namespace Ailurus
 		submitInfo.setWaitSemaphores(pFrameContext->imageReadySemaphore)
 			.setSignalSemaphores(pFrameContext->renderFinishSemaphore)
 			.setWaitDstStageMask(waitStages)
-			.setCommandBuffers(pFrameContext->commandBuffer.GetBuffer());
+			.setCommandBuffers(frameCommandBuffer.GetBuffer());
 
 		_vkGraphicQueue.submit(submitInfo, pFrameContext->fence);
 
@@ -350,7 +356,13 @@ namespace Ailurus
 				return false;
 		}
 
-		pFrameContext->renderingFrame = Application::Get<TimeSystem>()->FrameCount();
+		pFrameContext->renderingInfo = {
+			Application::Get<TimeSystem>()->FrameCount(),
+			frameCommandBuffer
+		};
+
+		_frameCommandBuffer = std::nullopt;
+
 		_currentParallelFrameIndex = (_currentParallelFrameIndex + 1) % PARALLEL_FRAME;
 
 		return true;
@@ -579,5 +591,21 @@ namespace Ailurus
 	{
 		_frameContexts.clear();
 		DestroySwapChain();
+	}
+
+	VulkanCommandBuffer VulkanSystem::GetAvailableCommandBuffer()
+	{
+		if (_availableCommandBuffers.empty())
+			return {};
+
+		auto ret = _availableCommandBuffers.front();
+		_availableCommandBuffers.pop();
+
+		return ret;
+	}
+
+	void VulkanSystem::FreeCommandBuffer(const VulkanCommandBuffer& commandBuffer)
+	{
+		_availableCommandBuffers.push(commandBuffer);
 	}
 } // namespace Ailurus
