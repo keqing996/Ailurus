@@ -25,9 +25,12 @@ namespace Ailurus
 			return ret;
 		}
 
-		void Free(const T& res)
+		void Free(const T& res, bool destroy = false)
 		{
-			_availableQueue.push(res);
+			if (destroy)
+				Destroy(res);
+			else
+				_availableQueue.push(res);
 		}
 
 		void Clear()

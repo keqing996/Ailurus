@@ -124,7 +124,6 @@ namespace Ailurus
 
 		// Dynamic context - rendering frame
 		uint32_t _currentParallelFrameIndex = 0;
-		unsigned _currentSwapChainImageIndex = 0;
 		std::vector<std::unique_ptr<FrameContext>> _frameContexts{};
 	};
 } // namespace Ailurus
