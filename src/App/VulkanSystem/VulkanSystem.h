@@ -61,6 +61,7 @@ namespace Ailurus
 
 		uint32_t GetCurrentFrameIndex() const;
 		const FrameContext* GetFrameContext() const;
+		void PushCommandBufferToBeSubmitted(vk::CommandBuffer buffer, vk::Semaphore semaphore);
 		bool WaitNextFrame(bool* needRebuild);
 		bool SubmitThisFrame(bool* needRebuild);
 
@@ -71,9 +72,6 @@ namespace Ailurus
 		void FreeSemaphore(vk::Semaphore semaphore);
 		vk::Fence AllocateFence();
 		void FreeFence(vk::Fence fence);
-
-		// Dynamic context - Frame buffer
-		const vk::CommandBuffer& GetFrameCommandBuffer();
 
 	private:
 		VulkanSystem(const GetWindowInstanceExtension& getWindowRequiredExtension,
@@ -124,12 +122,9 @@ namespace Ailurus
 		VulkanPool<vk::Fence> _fencePool{};
 		VulkanPool<vk::Semaphore> _semaphorePool{};
 
-		// Dynamic context - frame resource
-		unsigned _currentSwapChainImageIndex = 0;
-		std::optional<vk::CommandBuffer> _frameCommandBuffer = std::nullopt;
-
 		// Dynamic context - rendering frame
 		uint32_t _currentParallelFrameIndex = 0;
+		unsigned _currentSwapChainImageIndex = 0;
 		std::vector<std::unique_ptr<FrameContext>> _frameContexts{};
 	};
 } // namespace Ailurus

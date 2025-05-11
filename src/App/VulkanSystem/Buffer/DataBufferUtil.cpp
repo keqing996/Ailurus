@@ -6,10 +6,6 @@
 
 namespace Ailurus
 {
-	
-
-	
-
 	void DataBufferUtil::CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
 	{
 		auto device = Application::Get<VulkanSystem>()->GetDevice();

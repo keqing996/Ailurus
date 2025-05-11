@@ -65,16 +65,8 @@ namespace Ailurus
 			}
 		}
 
-		// Begin
-		vk::CommandBufferBeginInfo beginInfo;
-		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer().begin(beginInfo);
-
 		// Render pass
 		RenderForwardPass(allMeshRender);
-
-		// End
-		Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer().end();
 
 		// Fire
 		Application::Get<VulkanSystem>()->SubmitThisFrame(&_needRebuildSwapChain);
@@ -110,14 +102,13 @@ namespace Ailurus
 
 		_pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
 
-		Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer().beginRenderPass(
-			_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(),
-			{});
+		const vk::CommandBuffer cmdBuffer = Application::Get<VulkanSystem>()->GetFrameCommandBuffer();
+		cmdBuffer.beginRenderPass(_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(), {});
 
 		for (const auto pMeshRender : meshRenderList)
 			RenderMesh(pMeshRender);
 
-		Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer().endRenderPass();
+		cmdBuffer.endRenderPass();
 
 		_pCurrentRenderPass = nullptr;
 	}
@@ -133,7 +124,7 @@ namespace Ailurus
 			return;
 		}
 
-		const auto commandBuffer = Application::Get<VulkanSystem>()->GetCurrentFrameCommandBuffer();
+		const auto commandBuffer = Application::Get<VulkanSystem>()->GetFrameCommandBuffer();
 		const auto pMesh = pMeshRender->GetMesh();
 		const auto pMaterial = pMeshRender->GetMaterial();
 

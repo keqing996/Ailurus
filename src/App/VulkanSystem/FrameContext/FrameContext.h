@@ -9,15 +9,15 @@ namespace Ailurus
 	struct RenderingFrameContext
 	{
 		uint64_t renderingFrameCount;
-		vk::CommandBuffer renderingCommandBuffer;
-		std::vector<vk::Semaphore> usingSemaphores;
+		std::vector<std::pair<vk::CommandBuffer, vk::Semaphore>> usingResources;
 		vk::Fence allFinishFence;
 	};
 
 	struct FrameContext
 	{
 		std::optional<RenderingFrameContext> renderingFrameContext;
-		std::vector<vk::Semaphore> beforeRenderSemaphores;
+		std::vector<std::pair<vk::CommandBuffer, vk::Semaphore>> waitingSubmittedCmdBuffers;
+		vk::Semaphore imageReadySemaphore;
 		uint64_t lastRenderFinishedFrame;
 	};
 } // namespace Ailurus
