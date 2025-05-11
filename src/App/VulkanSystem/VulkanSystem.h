@@ -2,11 +2,11 @@
 
 #include <functional>
 #include <memory>
-#include <queue>
 #include <vulkan/vulkan.hpp>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "VulkanSystem/FrameContext/FrameContext.h"
+#include "VulkanSystem/Pool/VulkanPool.hpp"
 
 namespace Ailurus
 {
@@ -63,8 +63,14 @@ namespace Ailurus
 		const FrameContext* GetFrameContext() const;
 		bool WaitNextFrame(bool* needRebuild);
 		bool SubmitThisFrame(bool* needRebuild);
-		VulkanCommandBuffer GetAvailableCommandBuffer();
-		void FreeCommandBuffer(const VulkanCommandBuffer& commandBuffer);
+
+		// Dynamic context - Pool
+		vk::CommandBuffer AllocateCommandBuffer();
+		void FreeCommandBuffer(vk::CommandBuffer commandBuffer);
+		vk::Semaphore AllocateSemaphore();
+		void FreeSemaphore(vk::Semaphore semaphore);
+		vk::Fence AllocateFence();
+		void FreeFence(vk::Fence fence);
 
 	private:
 		VulkanSystem(const GetWindowInstanceExtension& getWindowRequiredExtension,
@@ -110,8 +116,10 @@ namespace Ailurus
 		std::vector<vk::Image> _vkSwapChainImages{};
 		std::vector<vk::ImageView> _vkSwapChainImageViews{};
 
-		// Dynamic context - command buffers
-		std::queue<VulkanCommandBuffer> _availableCommandBuffers{};
+		// Dynamic context - pools
+		VulkanPool<vk::CommandBuffer> _commandBufferPool{};
+		VulkanPool<vk::Fence> _fencePool{};
+		VulkanPool<vk::Semaphore> _semaphorePool{};
 
 		// Dynamic context - flight
 		uint32_t _currentParallelFrameIndex = 0;
