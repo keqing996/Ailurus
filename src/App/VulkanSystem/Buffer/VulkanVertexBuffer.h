@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VulkanBuffer.h"
 #include <vulkan/vulkan.hpp>
 
 namespace Ailurus
@@ -16,6 +15,6 @@ namespace Ailurus
 
     private:
     	size_t _sizeInBytes;
-        GpuBuffer _buffer;
+        class VulkanDeviceBuffer* _buffer;
     };
 }

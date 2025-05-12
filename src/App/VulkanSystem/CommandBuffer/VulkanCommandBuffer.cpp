@@ -1,6 +1,7 @@
 #include "VulkanCommandBuffer.h"
 #include "Ailurus/Application/Application.h"
 #include "VulkanSystem/VulkanSystem.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -12,11 +13,11 @@ namespace Ailurus
 
 	VulkanCommandBuffer::~VulkanCommandBuffer()
 	{
-        // Release resources
-        for (auto& vulkanResource : _referencedResources)
-            vulkanResource->RemoveRef(*this);
+		// Release resources
+		for (auto& vulkanResource : _referencedResources)
+			vulkanResource->RemoveRef(*this);
 
-        // Recycle command buffer
+		// Recycle command buffer
 		Application::Get<VulkanSystem>()->FreeCommandBuffer(_buffer);
 	}
 
@@ -25,22 +26,28 @@ namespace Ailurus
 		return _buffer;
 	}
 
-	void VulkanCommandBuffer::CopyBuffer(VulkanHostBuffer& srcBuffer, VulkanDeviceBuffer& dstBuffer, vk::DeviceSize size)
+	void VulkanCommandBuffer::CopyBuffer(VulkanHostBuffer* pSrcBuffer, VulkanDeviceBuffer* pDstBuffer, vk::DeviceSize size)
 	{
-        // Record resources
-        srcBuffer.AddRef(*this);
-        _referencedResources.insert(&srcBuffer);
+		if (pSrcBuffer == nullptr || pDstBuffer == nullptr)
+		{
+			Logger::LogError("VulkanCommandBuffer::CopyBuffer: Source or destination buffer is nullptr");
+			return;
+		}
 
-        dstBuffer.AddRef(*this);
-        _referencedResources.insert(&dstBuffer);
+		// Record resources
+		pSrcBuffer->AddRef(*this);
+		_referencedResources.insert(pSrcBuffer);
 
-        // Record command
+		pDstBuffer->AddRef(*this);
+		_referencedResources.insert(pDstBuffer);
+
+		// Record command
 		vk::BufferCopy copyRegion;
 		copyRegion.setSize(size)
 			.setSrcOffset(0)
 			.setDstOffset(0);
 
-		_buffer.copyBuffer(srcBuffer.buffer, dstBuffer.buffer, 1, &copyRegion);
+		_buffer.copyBuffer(pSrcBuffer->buffer, pDstBuffer->buffer, 1, &copyRegion);
 	}
 
 	VulkanCommandBufferRecordScope::VulkanCommandBufferRecordScope(const std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer)

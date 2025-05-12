@@ -17,7 +17,7 @@ namespace Ailurus
 	public:
 		const vk::CommandBuffer& GetBuffer() const;
 
-		void CopyBuffer(VulkanHostBuffer& srcBuffer, VulkanDeviceBuffer& dstBuffer, vk::DeviceSize size);
+		void CopyBuffer(VulkanHostBuffer* pSrcBuffer, VulkanDeviceBuffer* pDstBuffer, vk::DeviceSize size);
 
 	private:
 		vk::CommandBuffer _buffer;

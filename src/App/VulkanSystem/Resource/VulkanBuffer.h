@@ -7,10 +7,10 @@
 
 namespace Ailurus
 {
-	REFLECTION_ENUM(CpuBufferUsage,
+	REFLECTION_ENUM(HostBufferUsage,
 		TransferSrc)
 
-	REFLECTION_ENUM(GpuBufferUsage,
+	REFLECTION_ENUM(DeviceBufferUsage,
 		Vertex,
 		Index,
 		Uniform)
@@ -21,7 +21,6 @@ namespace Ailurus
 
 	public:
 		VulkanDeviceBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem);
-		uint32_t GetHash() override;
 
 	public:
 		const vk::DeviceSize realSize;
@@ -35,12 +34,11 @@ namespace Ailurus
 
 	public:
 		VulkanHostBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem, void* addr);
-		uint32_t GetHash() override;
 
 	public:
 		const vk::DeviceSize realSize;
 		const vk::Buffer buffer;
 		const vk::DeviceMemory deviceMemory;
-		const void* mappedAddr;
+		void* mappedAddr;
 	};
 } // namespace Ailurus

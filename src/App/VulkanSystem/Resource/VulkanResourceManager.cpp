@@ -119,23 +119,23 @@ namespace Ailurus
 		delete ptr;
 	}
 
-	VulkanDeviceBuffer* VulkanResourceManager::CreateDeviceBuffer(vk::DeviceSize size, GpuBufferUsage usage)
+	VulkanDeviceBuffer* VulkanResourceManager::CreateDeviceBuffer(vk::DeviceSize size, DeviceBufferUsage usage)
 	{
 		vk::BufferUsageFlags usageFlag;
 		usageFlag |= vk::BufferUsageFlagBits::eTransferDst;
 		switch (usage)
 		{
-			case GpuBufferUsage::Vertex:
+			case DeviceBufferUsage::Vertex:
 				usageFlag |= vk::BufferUsageFlagBits::eVertexBuffer;
 				break;
-			case GpuBufferUsage::Index:
+			case DeviceBufferUsage::Index:
 				usageFlag |= vk::BufferUsageFlagBits::eIndexBuffer;
 				break;
-			case GpuBufferUsage::Uniform:
+			case DeviceBufferUsage::Uniform:
 				usageFlag |= vk::BufferUsageFlagBits::eUniformBuffer;
 				break;
 			default:
-				Logger::LogError("Unknown gpu buffer usage type: {}", EnumReflection<GpuBufferUsage>::ToString(usage));
+				Logger::LogError("Unknown gpu buffer usage type: {}", EnumReflection<DeviceBufferUsage>::ToString(usage));
 				return nullptr;
 		}
 
@@ -150,16 +150,16 @@ namespace Ailurus
 		return pBufferRaw;
 	}
 
-	VulkanHostBuffer* VulkanResourceManager::CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage, bool coherentWithGpu)
+	VulkanHostBuffer* VulkanResourceManager::CreateCpuBuffer(vk::DeviceSize size, HostBufferUsage usage, bool coherentWithGpu)
 	{
 		vk::BufferUsageFlags usageFlag;
 		switch (usage)
 		{
-			case CpuBufferUsage::TransferSrc:
+			case HostBufferUsage::TransferSrc:
 				usageFlag |= vk::BufferUsageFlagBits::eTransferSrc;
 				break;
 			default:
-				Logger::LogError("Unknown cpu buffer usage type: {}", EnumReflection<CpuBufferUsage>::ToString(usage));
+				Logger::LogError("Unknown cpu buffer usage type: {}", EnumReflection<HostBufferUsage>::ToString(usage));
 				return nullptr;
 		}
 
@@ -182,24 +182,29 @@ namespace Ailurus
 
 	void VulkanResourceManager::GarbageCollect()
 	{
-		static std::vector<uint64_t> needDeletedFrames;
-
-		auto thisFrame = Application::Get<TimeSystem>()->FrameCount();
+		// Mark
+		static std::vector<uint64_t> needDeletedResourceIndex;
+		needDeletedResourceIndex.clear();
 		for (auto i = 0; i < _resources.size(); i++)
 		{
-			auto& pResource = _resources[i];
-
-			// Clear passed frames
-			needDeletedFrames.clear();
-			for (auto frame : pResource->_referencedFrames)
-			{
-				if (frame < thisFrame)
-					needDeletedFrames.push_back(frame);
-			}
-
-			for (auto frame : needDeletedFrames)
-				pResource->_referencedFrames.erase(frame);
+			if (_resources[i]->IsMarkDeleted() && _resources[i]->GetRefCount() == 0)
+				needDeletedResourceIndex.push_back(i);
 		}
+
+		// Release
+		for (auto index : needDeletedResourceIndex)
+			_resources[index] = nullptr;
+
+		// Clean up
+		static std::vector<ResourcePtr> resourcesBuffer;
+		resourcesBuffer.clear();
+		for (auto i = 0; i < _resources.size(); i++)
+		{
+			if (_resources[i] != nullptr)
+				resourcesBuffer.push_back(std::move(_resources[i]));
+		}
+
+		std::swap(_resources, resourcesBuffer);
 	}
 
 } // namespace Ailurus

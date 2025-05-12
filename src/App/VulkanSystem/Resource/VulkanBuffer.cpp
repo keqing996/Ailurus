@@ -13,14 +13,4 @@ namespace Ailurus
 		: realSize(size), buffer(buf), deviceMemory(mem), mappedAddr(addr)
 	{
 	}
-
-	uint32_t VulkanDeviceBuffer::GetHash()
-	{
-		return std::hash<vk::Buffer>()(buffer);
-	}
-
-	uint32_t VulkanHostBuffer::GetHash()
-	{
-		return std::hash<vk::Buffer>()(buffer);
-	}
 } // namespace Ailurus

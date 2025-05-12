@@ -1,48 +1,48 @@
 #include "VulkanVertexBuffer.h"
-#include "DataBufferUtil.h"
+#include "Ailurus/Application/Application.h"
+#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanSystem/Resource/VulkanResourceManager.h"
 
 namespace Ailurus
 {
     VulkanVertexBuffer::VulkanVertexBuffer(const void* vertexData, size_t sizeInBytes)
         : _sizeInBytes(sizeInBytes)
     {
-    	// Create gpu buffer
-    	const auto retCreateGpuBuffer = DataBufferUtil::CreateGpuBuffer(sizeInBytes, GpuBufferUsage::Vertex);
-    	if (!retCreateGpuBuffer.has_value())
-    		return;
+		auto pVulkanResManager = Application::Get<VulkanSystem>()->GetResourceManager();
 
-    	_buffer = *retCreateGpuBuffer;
+    	// Create gpu buffer
+		_buffer = pVulkanResManager->CreateDeviceBuffer(sizeInBytes, DeviceBufferUsage::Vertex);
+    	if (_buffer == nullptr)
+    		return;
 
     	// Create cpu stage buffer
-    	const auto retCreateStageBuffer = DataBufferUtil::CreateCpuBuffer(sizeInBytes, CpuBufferUsage::TransferSrc);
-    	if (!retCreateStageBuffer.has_value())
-    		return;
-
-    	CpuBuffer stageBuffer = *retCreateStageBuffer;
+		auto stageBuffer = pVulkanResManager->CreateHostBuffer(sizeInBytes, HostBufferUsage::TransferSrc);
+    	if (stageBuffer == nullptr)
+			return;
 
     	// Cpu -> Cpu buffer
-    	std::memcpy(stageBuffer.mappedAddr, vertexData, sizeInBytes);
+    	std::memcpy(stageBuffer->mappedAddr, vertexData, sizeInBytes);
 
     	// Cpu buffer -> Gpu buffer
     	std::unique_ptr<VulkanCommandBuffer> pCommandBuffer = std::make_unique<VulkanCommandBuffer>();
 		{
 			VulkanCommandBufferRecordScope recordScope(pCommandBuffer);
-			pCommandBuffer->CopyBuffer(srcBuffer, dstBuffer, size);
+			pCommandBuffer->CopyBuffer(stageBuffer, _buffer, sizeInBytes);
 		}
 		Application::Get<VulkanSystem>()->AddCommandBuffer(std::move(pCommandBuffer));
 
     	// Destroy stage cpu buffer
-    	DataBufferUtil::DestroyBuffer(stageBuffer);
+    	stageBuffer->MarkDelete();
     }
 
     VulkanVertexBuffer::~VulkanVertexBuffer()
     {
-    	DataBufferUtil::DestroyBuffer(_buffer);
+    	_buffer->MarkDelete();
     }
 
     vk::Buffer VulkanVertexBuffer::GetBuffer() const
     {
-        return _buffer.buffer;
+        return _buffer->buffer;
     }
 
     size_t VulkanVertexBuffer::GetSize() const

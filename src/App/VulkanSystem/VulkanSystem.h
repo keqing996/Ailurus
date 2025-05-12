@@ -52,6 +52,7 @@ namespace Ailurus
 		auto GetSwapChainImageViews() -> const std::vector<vk::ImageView>&;
 		auto GetCurrentParallelFrameIndex() const -> uint32_t;
 		auto GetFrameContext() const -> const FrameContext*;
+		auto GetResourceManager() const -> class VulkanResourceManager*;
 
 		// Pool
 		auto AllocateCommandBuffer() -> vk::CommandBuffer;
@@ -109,6 +110,9 @@ namespace Ailurus
 		vk::Queue _vkGraphicQueue = nullptr;
 		vk::Queue _vkComputeQueue = nullptr;
 		vk::CommandPool _vkGraphicCommandPool = nullptr;
+
+		// Manager
+		std::unique_ptr<class VulkanResourceManager> _resourceManager;
 
 		// Dynamic context - swap chain
 		SwapChainConfig _swapChainConfig{};

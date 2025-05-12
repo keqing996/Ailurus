@@ -13,8 +13,8 @@ namespace Ailurus
 	{
 		using ResourcePtr = std::unique_ptr<VulkanResource, std::function<void(VulkanResource*)>>;
 	public:
-		VulkanDeviceBuffer* CreateDeviceBuffer(vk::DeviceSize size, GpuBufferUsage usage);
-		VulkanHostBuffer* CreateCpuBuffer(vk::DeviceSize size, CpuBufferUsage usage, bool coherentWithGpu = true);
+		VulkanDeviceBuffer* CreateDeviceBuffer(vk::DeviceSize size, DeviceBufferUsage usage);
+		VulkanHostBuffer* CreateHostBuffer(vk::DeviceSize size, HostBufferUsage usage, bool coherentWithGpu = true);
 
 		void GarbageCollect();
 

@@ -1,5 +1,7 @@
 #include "VulkanIndexBuffer.h"
-#include "DataBufferUtil.h"
+#include "Ailurus/Application/Application.h"
+#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanSystem/Resource/VulkanResourceManager.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
@@ -33,38 +35,36 @@ namespace Ailurus
 			}
 		}
 
-		// Create gpu buffer
-		const auto retCreateGpuBuffer = DataBufferUtil::CreateGpuBuffer(sizeInBytes, GpuBufferUsage::Index);
-		if (!retCreateGpuBuffer.has_value())
-			return;
+		auto pVulkanResManager = Application::Get<VulkanSystem>()->GetResourceManager();
 
-		_buffer = *retCreateGpuBuffer;
+		// Create gpu buffer
+		_buffer = pVulkanResManager->CreateDeviceBuffer(sizeInBytes, DeviceBufferUsage::Index);
+    	if (_buffer == nullptr)
+    		return;
 
 		// Create cpu stage buffer
-		const auto retCreateStageBuffer = DataBufferUtil::CreateCpuBuffer(sizeInBytes, CpuBufferUsage::TransferSrc);
-		if (!retCreateStageBuffer.has_value())
+		auto stageBuffer = pVulkanResManager->CreateHostBuffer(sizeInBytes, HostBufferUsage::TransferSrc);
+    	if (stageBuffer == nullptr)
 			return;
 
-		CpuBuffer stageBuffer = *retCreateStageBuffer;
-
 		// Cpu -> Cpu buffer
-		std::memcpy(stageBuffer.mappedAddr, indexData, sizeInBytes);
+		std::memcpy(stageBuffer->mappedAddr, indexData, sizeInBytes);
 
 		// Cpu buffer -> Gpu buffer
 		std::unique_ptr<VulkanCommandBuffer> pCommandBuffer = std::make_unique<VulkanCommandBuffer>();
 		{
 			VulkanCommandBufferRecordScope recordScope(pCommandBuffer);
-			pCommandBuffer->CopyBuffer(srcBuffer, dstBuffer, size);
+			pCommandBuffer->CopyBuffer(stageBuffer, _buffer, sizeInBytes);
 		}
 		Application::Get<VulkanSystem>()->AddCommandBuffer(std::move(pCommandBuffer));
 
-		// Destroy stage cpu buffer
-		DataBufferUtil::DestroyBuffer(stageBuffer);
+    	// Destroy stage cpu buffer
+    	stageBuffer->MarkDelete();
 	}
 
 	VulkanIndexBuffer::~VulkanIndexBuffer()
 	{
-		DataBufferUtil::DestroyBuffer(_buffer);
+		_buffer->MarkDelete();
 	}
 
 	vk::IndexType VulkanIndexBuffer::GetIndexType() const
@@ -74,7 +74,7 @@ namespace Ailurus
 
 	vk::Buffer VulkanIndexBuffer::GetBuffer() const
 	{
-		return _buffer.buffer;
+		return _buffer->buffer;
 	}
 
 	size_t VulkanIndexBuffer::GetIndexCount() const

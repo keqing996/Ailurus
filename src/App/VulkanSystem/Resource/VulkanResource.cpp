@@ -27,11 +27,17 @@ namespace Ailurus
 
 	void VulkanResource::MarkDelete()
 	{
+
 		_markDeleted = true;
 	}
 
-	bool VulkanResource::IsValid() const
+	bool VulkanResource::IsMarkDeleted() const
 	{
-		return !_markDeleted;
+		return _markDeleted;
+	}
+
+	size_t VulkanResource::GetRefCount() const
+	{
+		return _referencedCommandBuffer.size();
 	}
 } // namespace Ailurus

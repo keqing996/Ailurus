@@ -1,46 +1,54 @@
 #include "VulkanUniformBuffer.h"
-#include "DataBufferUtil.h"
+#include "Ailurus/Application/Application.h"
+#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanSystem/Resource/VulkanResourceManager.h"
 
 namespace Ailurus
 {
 	VulkanUniformBuffer::VulkanUniformBuffer(size_t bufferSize)
 		: _bufferSize(bufferSize)
 	{
+		auto pVulkanResManager = Application::Get<VulkanSystem>()->GetResourceManager();
+
 		for (auto i = 0; i < Application::Get<VulkanSystem>()->PARALLEL_FRAME; i++)
 		{
-			const auto retCpuBuffer = DataBufferUtil::CreateCpuBuffer(bufferSize, CpuBufferUsage::TransferSrc, false);
-			if (!retCpuBuffer.has_value())
+			auto cpuBuffer = pVulkanResManager->CreateHostBuffer(bufferSize, HostBufferUsage::TransferSrc);
+			if (cpuBuffer == nullptr)
 				return;
 
-			_cpuBuffers[i] = *retCpuBuffer;
+			_cpuBuffers[i] = cpuBuffer;
 
-			const auto retGpuBuffer = DataBufferUtil::CreateGpuBuffer(bufferSize, GpuBufferUsage::Uniform);
-			if (!retGpuBuffer.has_value())
+			auto gpuBuffer = pVulkanResManager->CreateDeviceBuffer(bufferSize, DeviceBufferUsage::Uniform);
+			if (gpuBuffer == nullptr)
 				return;
 
-			_gpuBuffers[i] = *retGpuBuffer;
+			_gpuBuffers[i] = gpuBuffer;
 		}
 	}
 
 	VulkanUniformBuffer::~VulkanUniformBuffer()
 	{
 		for (auto gpuBuffer : _gpuBuffers)
-			DataBufferUtil::DestroyBuffer(gpuBuffer);
+			gpuBuffer->MarkDelete();
 
 		for (auto cpuBuffer : _cpuBuffers)
-			DataBufferUtil::DestroyBuffer(cpuBuffer);
+			cpuBuffer->MarkDelete();
 	}
 
 	uint8_t* VulkanUniformBuffer::GetWriteBeginPos() const
 	{
-		return static_cast<uint8_t*>(_cpuBuffers[Application::Get<VulkanSystem>()->GetCurrentFrameIndex()].mappedAddr);
+		auto index = Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex();
+		return static_cast<uint8_t*>(_cpuBuffers[index]->mappedAddr);
 	}
 
 	void VulkanUniformBuffer::TransitionDataToGpu() const
 	{
-		DataBufferUtil::CopyBuffer(
-			_cpuBuffers[Application::Get<VulkanSystem>()->GetCurrentFrameIndex()].buffer,
-			_gpuBuffers[Application::Get<VulkanSystem>()->GetCurrentFrameIndex()].buffer,
-			_bufferSize);
+		auto index = Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex();
+		std::unique_ptr<VulkanCommandBuffer> pCommandBuffer = std::make_unique<VulkanCommandBuffer>();
+		{
+			VulkanCommandBufferRecordScope recordScope(pCommandBuffer);
+			pCommandBuffer->CopyBuffer(_cpuBuffers[index], _gpuBuffers[index], _bufferSize);
+		}
+		Application::Get<VulkanSystem>()->AddCommandBuffer(std::move(pCommandBuffer));
 	}
 } // namespace Ailurus

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Ailurus/Application/AssetsSystem/VertexAttributeDescription.h"
-#include "VulkanBuffer.h"
 #include <vulkan/vulkan.hpp>
 
 namespace Ailurus
@@ -20,6 +19,6 @@ namespace Ailurus
 		vk::IndexType _indexType;
 		size_t _indexCount;
 		size_t _sizeInBytes;
-		GpuBuffer _buffer;
+		class VulkanDeviceBuffer* _buffer;
 	};
 } // namespace Ailurus

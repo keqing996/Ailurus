@@ -2,8 +2,6 @@
 
 #include <array>
 #include "VulkanSystem/VulkanSystem.h"
-#include "VulkanBuffer.h"
-#include "Ailurus/Application/Application.h"
 
 namespace Ailurus
 {
@@ -19,8 +17,8 @@ namespace Ailurus
 
 	private:
 		size_t _bufferSize;
-		std::array<CpuBuffer, VulkanSystem::PARALLEL_FRAME> _cpuBuffers;
-		std::array<GpuBuffer, VulkanSystem::PARALLEL_FRAME> _gpuBuffers;
+		std::array<class VulkanHostBuffer*, VulkanSystem::PARALLEL_FRAME> _cpuBuffers;
+		std::array<class VulkanDeviceBuffer*, VulkanSystem::PARALLEL_FRAME> _gpuBuffers;
 	};
 
 }

@@ -17,9 +17,9 @@ namespace Ailurus
 	public:
 		void AddRef(const class VulkanCommandBuffer& pCommandBuffer);
 		void RemoveRef(const class VulkanCommandBuffer& pCommandBuffer);
+		size_t GetRefCount() const;
 		void MarkDelete();
-		bool IsValid() const;
-		virtual uint32_t GetHash() = 0;
+		bool IsMarkDeleted() const;
 
 	protected:
 		VulkanResource();
