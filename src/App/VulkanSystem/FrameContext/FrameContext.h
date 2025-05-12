@@ -4,6 +4,7 @@
 #include <optional>
 #include <unordered_set>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_handles.hpp>
 
 namespace Ailurus
 {
@@ -35,6 +36,9 @@ namespace Ailurus
 
 	public:
 		bool WaitFinish();
-		void AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore = nullptr, std::vector<vk::PipelineStageFlags> waitStages = {});
+		void AddCommandBuffer(vk::CommandBuffer buffer);
+		void AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore);
+		void AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages);
+		vk::Semaphore SubmitCommandBuffer(vk::Semaphore imageReadySemaphore);
 	};
 } // namespace Ailurus

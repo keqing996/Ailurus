@@ -62,8 +62,7 @@ namespace Ailurus
 		uint32_t GetCurrentFrameIndex() const;
 		const FrameContext* GetFrameContext() const;
 		void PushCommandBufferToBeSubmitted(vk::CommandBuffer buffer, vk::Semaphore semaphore);
-		bool WaitNextFrame(bool* needRebuild);
-		bool SubmitThisFrame(bool* needRebuild);
+		bool RenderFrame(bool* needRebuild);
 
 		// Dynamic context - Pool
 		vk::CommandBuffer AllocateCommandBuffer();

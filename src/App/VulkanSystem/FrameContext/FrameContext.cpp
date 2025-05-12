@@ -40,13 +40,95 @@ namespace Ailurus
 		return true;
 	}
 
+	void FrameContext::AddCommandBuffer(vk::CommandBuffer buffer)
+	{
+		waitingSubmittedCmdBuffers.emplace_back(RecordedCommandBufferInfo{
+			std::nullopt,
+			buffer,
+			Application::Get<VulkanSystem>()->AllocateSemaphore(),
+			{} });
+	}
+
+	void FrameContext::AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore)
+	{
+		waitingSubmittedCmdBuffers.emplace_back(RecordedCommandBufferInfo{
+			waitSemaphore,
+			buffer,
+			Application::Get<VulkanSystem>()->AllocateSemaphore(),
+			{} });
+	}
+
 	void FrameContext::AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages)
 	{
 		waitingSubmittedCmdBuffers.emplace_back(RecordedCommandBufferInfo{
-			waitSemaphore == nullptr ? std::nullopt : waitSemaphore,
+			waitSemaphore,
 			buffer,
 			Application::Get<VulkanSystem>()->AllocateSemaphore(),
-			waitStages
-		});
+			waitStages });
+	}
+
+	vk::Semaphore FrameContext::SubmitCommandBuffer(vk::Semaphore imageReadySemaphore)
+	{
+		const vk::Fence renderFinishFence = Application::Get<VulkanSystem>()->AllocateFence();
+
+		// Do submit
+		vk::Semaphore waitSemaphore = imageReadySemaphore;
+		for (auto i = 0; i < waitingSubmittedCmdBuffers.size(); i++)
+		{
+			const auto& cmdBufferInfo = waitingSubmittedCmdBuffers[i];
+			vk::SubmitInfo submitInfo;
+
+			// Target buffer
+			submitInfo.setCommandBuffers(cmdBufferInfo.buffer);
+
+			// Signal semaphore
+			submitInfo.setSignalSemaphores(cmdBufferInfo.signalSemaphore);
+
+			// Wait stages
+			submitInfo.setWaitDstStageMask(cmdBufferInfo.waitStages);
+
+			// Wait semaphore
+			std::vector<vk::Semaphore> waitSemaphores;
+			if (waitSemaphore != nullptr)
+				waitSemaphores.push_back(waitSemaphore);
+			if (cmdBufferInfo.waitSemaphore.has_value())
+				waitSemaphores.push_back(*cmdBufferInfo.waitSemaphore);
+
+			submitInfo.setWaitSemaphores(waitSemaphores);
+
+			// If last command buffer, set the finish fence
+			if (i == waitingSubmittedCmdBuffers.size() - 1)
+				Application::Get<VulkanSystem>()->GetGraphicQueue().submit(submitInfo, renderFinishFence);
+			else
+				Application::Get<VulkanSystem>()->GetGraphicQueue().submit(submitInfo);
+
+			// Update last signaled semaphore to next wait semaphore
+			waitSemaphore = cmdBufferInfo.signalSemaphore;
+		}
+
+		// Collect resources
+		renderingFrameContext = RenderingFrameContext{};
+		{
+			// Record rendering frame count
+			renderingFrameContext->renderingFrameCount = Application::Get<TimeSystem>()->FrameCount();
+
+			// Record render finish fence
+			renderingFrameContext->allFinishFence = renderFinishFence;
+
+			// Record all used semaphores & buffers
+			renderingFrameContext->usingSemaphores.insert(imageReadySemaphore);
+			for (auto cmdBufferInfo : waitingSubmittedCmdBuffers)
+			{
+				renderingFrameContext->renderingBuffers.push_back(cmdBufferInfo.buffer);
+				renderingFrameContext->usingSemaphores.insert(cmdBufferInfo.signalSemaphore);
+				if (cmdBufferInfo.waitSemaphore.has_value())
+					renderingFrameContext->usingSemaphores.insert(*cmdBufferInfo.waitSemaphore);
+			}
+		}
+
+		// Clean up
+		waitingSubmittedCmdBuffers.clear();
+
+		return waitSemaphore;
 	}
 } // namespace Ailurus
