@@ -34,7 +34,7 @@ namespace Ailurus
 
 		vk::RenderPassBeginInfo renderPassInfo;
 		renderPassInfo.setRenderPass(_vkRenderPass)
-			.setFramebuffer(_backBuffers[Application::Get<VulkanSystem>()->GetCurrentFrameIndex()])
+			.setFramebuffer(_backBuffers[Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex()])
 			.setRenderArea(vk::Rect2D{
 				vk::Offset2D{ 0, 0 },
 				Application::Get<VulkanSystem>()->GetSwapChainConfig().extent })

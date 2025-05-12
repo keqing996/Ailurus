@@ -40,8 +40,8 @@ namespace Ailurus
 	private:
 		void ReBuildSwapChain();
 		void BuildRenderPass();
-		void RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList);
-		void RenderMesh(const CompMeshRender* pMeshRender) const;
+		void RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList, std::unique_ptr<class VulkanCommandBuffer>& pCommandBuffer);
+		void RenderMesh(const CompMeshRender* pMeshRender, std::unique_ptr<class VulkanCommandBuffer>& pCommandBuffer) const;
 
 	private:
 		bool _needRebuildSwapChain = false;

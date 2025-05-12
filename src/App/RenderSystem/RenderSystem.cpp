@@ -49,9 +49,6 @@ namespace Ailurus
 		if (_needRebuildSwapChain)
 			ReBuildSwapChain();
 
-		if (!Application::Get<VulkanSystem>()->WaitNextFrame(&_needRebuildSwapChain))
-			return;
-
 		// Prepare objects
 		std::vector<Entity*> allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
 		std::vector<CompMeshRender*> allMeshRender;
@@ -65,11 +62,17 @@ namespace Ailurus
 			}
 		}
 
-		// Render pass
-		RenderForwardPass(allMeshRender);
+		std::unique_ptr<VulkanCommandBuffer> pCommandBuffer = std::make_unique<VulkanCommandBuffer>();
+		{
+			VulkanCommandBufferRecordScope globalScope(pCommandBuffer);
+
+			// Render pass
+			RenderForwardPass(allMeshRender, pCommandBuffer);
+		}
+		Application::Get<VulkanSystem>()->AddCommandBuffer(std::move(pCommandBuffer));
 
 		// Fire
-		Application::Get<VulkanSystem>()->SubmitThisFrame(&_needRebuildSwapChain);
+		Application::Get<VulkanSystem>()->RenderFrame(&_needRebuildSwapChain);
 	}
 
 	void RenderSystem::GraphicsWaitIdle() const
@@ -92,7 +95,7 @@ namespace Ailurus
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
 	}
 
-	void RenderSystem::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList)
+	void RenderSystem::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList, std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer)
 	{
 		if (_pCurrentRenderPass != nullptr)
 		{
@@ -102,18 +105,17 @@ namespace Ailurus
 
 		_pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
 
-		const vk::CommandBuffer cmdBuffer = Application::Get<VulkanSystem>()->GetFrameCommandBuffer();
-		cmdBuffer.beginRenderPass(_pCurrentRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(), {});
+		{
+			VulkanCommandBufferRenderPassRecordScope renderPassRecordScope(pCommandBuffer, _pCurrentRenderPass);
 
-		for (const auto pMeshRender : meshRenderList)
-			RenderMesh(pMeshRender);
-
-		cmdBuffer.endRenderPass();
+			for (const auto pMeshRender : meshRenderList)
+				RenderMesh(pMeshRender, pCommandBuffer);
+		}
 
 		_pCurrentRenderPass = nullptr;
 	}
 
-	void RenderSystem::RenderMesh(const CompMeshRender* pMeshRender) const
+	void RenderSystem::RenderMesh(const CompMeshRender* pMeshRender, std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer) const
 	{
 		if (pMeshRender == nullptr)
 			return;
@@ -124,7 +126,7 @@ namespace Ailurus
 			return;
 		}
 
-		const auto commandBuffer = Application::Get<VulkanSystem>()->GetFrameCommandBuffer();
+		const auto commandBuffer = pCommandBuffer->GetBuffer();
 		const auto pMesh = pMeshRender->GetMesh();
 		const auto pMaterial = pMeshRender->GetMaterial();
 

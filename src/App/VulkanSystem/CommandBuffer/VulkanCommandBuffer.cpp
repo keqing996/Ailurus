@@ -2,6 +2,8 @@
 #include "Ailurus/Application/Application.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "Ailurus/Utility/Logger.h"
+#include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
+#include "VulkanSystem/RenderPass/VulkanRenderPass.h"
 
 namespace Ailurus
 {
@@ -61,5 +63,16 @@ namespace Ailurus
 	VulkanCommandBufferRecordScope::~VulkanCommandBufferRecordScope()
 	{
 		_buffer.end();
+	}
+
+	VulkanCommandBufferRenderPassRecordScope::VulkanCommandBufferRenderPassRecordScope(const std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer, const RenderPass* pRenderPass)
+		: _buffer(pCommandBuffer->GetBuffer())
+	{
+		_buffer.beginRenderPass(pRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(), {});
+	}
+
+	VulkanCommandBufferRenderPassRecordScope::~VulkanCommandBufferRenderPassRecordScope()
+	{
+		_buffer.endRenderPass();
 	}
 } // namespace Ailurus

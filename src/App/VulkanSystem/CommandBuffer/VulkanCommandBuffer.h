@@ -26,8 +26,17 @@ namespace Ailurus
 
 	struct VulkanCommandBufferRecordScope
 	{
-		VulkanCommandBufferRecordScope(const std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer);
+		explicit VulkanCommandBufferRecordScope(const std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer);
 		~VulkanCommandBufferRecordScope();
+
+	private:
+		const vk::CommandBuffer _buffer;
+	};
+
+	struct VulkanCommandBufferRenderPassRecordScope
+	{
+		VulkanCommandBufferRenderPassRecordScope(const std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer, const class RenderPass* pRenderPass);
+		~VulkanCommandBufferRenderPassRecordScope();
 
 	private:
 		const vk::CommandBuffer _buffer;

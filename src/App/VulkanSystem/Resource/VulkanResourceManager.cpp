@@ -150,7 +150,7 @@ namespace Ailurus
 		return pBufferRaw;
 	}
 
-	VulkanHostBuffer* VulkanResourceManager::CreateCpuBuffer(vk::DeviceSize size, HostBufferUsage usage, bool coherentWithGpu)
+	VulkanHostBuffer* VulkanResourceManager::CreateHostBuffer(vk::DeviceSize size, HostBufferUsage usage, bool coherentWithGpu)
 	{
 		vk::BufferUsageFlags usageFlag;
 		switch (usage)
