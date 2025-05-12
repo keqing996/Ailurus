@@ -1,17 +1,18 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <unordered_set>
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_handles.hpp>
+#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
 
 namespace Ailurus
 {
 	struct RecordedCommandBufferInfo
 	{
 		std::optional<vk::Semaphore> waitSemaphore;
-		vk::CommandBuffer buffer;
+		std::unique_ptr<VulkanCommandBuffer> pCommandBuffer;
 		vk::Semaphore signalSemaphore;
 		std::vector<vk::PipelineStageFlags> waitStages;
 	};
@@ -19,7 +20,7 @@ namespace Ailurus
 	struct RenderingFrameContext
 	{
 		uint64_t renderingFrameCount;
-		std::vector<vk::CommandBuffer> renderingBuffers;
+		std::vector<std::unique_ptr<VulkanCommandBuffer>> renderingBuffers;
 		std::unordered_set<vk::Semaphore> usingSemaphores;
 		vk::Fence allFinishFence;
 	};
@@ -36,9 +37,9 @@ namespace Ailurus
 
 	public:
 		bool WaitFinish();
-		void AddCommandBuffer(vk::CommandBuffer buffer);
-		void AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore);
-		void AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages);
+		void AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer);
+		void AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore);
+		void AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages);
 		vk::Semaphore SubmitCommandBuffer(vk::Semaphore imageReadySemaphore);
 	};
 } // namespace Ailurus

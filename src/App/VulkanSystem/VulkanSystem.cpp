@@ -1,13 +1,10 @@
 #include "VulkanSystem.h"
 #include <memory>
-#include <unordered_set>
-#include <mutex>
 #include <optional>
 #include <array>
-#include "Ailurus/Application/TimeSystem/TimeSystem.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
-#include "VulkanHelper.h"
+#include "VulkanSystem/Helper/VulkanHelper.h"
 #include "VulkanSystem/FrameContext/FrameContext.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -540,19 +537,19 @@ namespace Ailurus
 		DestroySwapChain();
 	}
 
-	void VulkanSystem::AddCommandBuffer(vk::CommandBuffer buffer)
+	void VulkanSystem::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer)
 	{
-		GetFrameContext()->AddCommandBuffer(buffer);
+		GetFrameContext()->AddCommandBuffer(std::move(pBuffer));
 	}
 
-	void VulkanSystem::AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore)
+	void VulkanSystem::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore)
 	{
-		GetFrameContext()->AddCommandBuffer(buffer, waitSemaphore);
+		GetFrameContext()->AddCommandBuffer(std::move(pBuffer), waitSemaphore);
 	}
 
-	void VulkanSystem::AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages)
+	void VulkanSystem::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages)
 	{
-		GetFrameContext()->AddCommandBuffer(buffer, waitSemaphore, waitStages);
+		GetFrameContext()->AddCommandBuffer(std::move(pBuffer), waitSemaphore, waitStages);
 	}
 
 	bool VulkanSystem::RenderFrame(bool* needRebuild)

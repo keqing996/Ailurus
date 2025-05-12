@@ -2,6 +2,7 @@
 #include "Ailurus/Application/Application.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "Ailurus/Utility/Logger.h"
+#include <optional>
 
 namespace Ailurus
 {
@@ -23,8 +24,7 @@ namespace Ailurus
 		lastRenderFinishedFrame = renderingFrameContext->renderingFrameCount;
 
 		// Free finished command buffer
-		for (const auto cmdBuf : renderingFrameContext->renderingBuffers)
-			Application::Get<VulkanSystem>()->FreeCommandBuffer(cmdBuf);
+		renderingFrameContext->renderingBuffers.clear();
 
 		// Free used semaphores
 		for (const auto semaphore : renderingFrameContext->usingSemaphores)
@@ -40,29 +40,29 @@ namespace Ailurus
 		return true;
 	}
 
-	void FrameContext::AddCommandBuffer(vk::CommandBuffer buffer)
+	void FrameContext::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer)
 	{
 		waitingSubmittedCmdBuffers.emplace_back(RecordedCommandBufferInfo{
 			std::nullopt,
-			buffer,
+			std::move(pBuffer),
 			Application::Get<VulkanSystem>()->AllocateSemaphore(),
 			{} });
 	}
 
-	void FrameContext::AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore)
+	void FrameContext::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore)
 	{
 		waitingSubmittedCmdBuffers.emplace_back(RecordedCommandBufferInfo{
 			waitSemaphore,
-			buffer,
+			std::move(pBuffer),
 			Application::Get<VulkanSystem>()->AllocateSemaphore(),
 			{} });
 	}
 
-	void FrameContext::AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages)
+	void FrameContext::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages)
 	{
 		waitingSubmittedCmdBuffers.emplace_back(RecordedCommandBufferInfo{
 			waitSemaphore,
-			buffer,
+			std::move(pBuffer),
 			Application::Get<VulkanSystem>()->AllocateSemaphore(),
 			waitStages });
 	}
@@ -79,7 +79,7 @@ namespace Ailurus
 			vk::SubmitInfo submitInfo;
 
 			// Target buffer
-			submitInfo.setCommandBuffers(cmdBufferInfo.buffer);
+			submitInfo.setCommandBuffers(cmdBufferInfo.pCommandBuffer->GetBuffer());
 
 			// Signal semaphore
 			submitInfo.setSignalSemaphores(cmdBufferInfo.signalSemaphore);
@@ -117,9 +117,9 @@ namespace Ailurus
 
 			// Record all used semaphores & buffers
 			renderingFrameContext->usingSemaphores.insert(imageReadySemaphore);
-			for (auto cmdBufferInfo : waitingSubmittedCmdBuffers)
+			for (auto& cmdBufferInfo : waitingSubmittedCmdBuffers)
 			{
-				renderingFrameContext->renderingBuffers.push_back(cmdBufferInfo.buffer);
+				renderingFrameContext->renderingBuffers.push_back(std::move(cmdBufferInfo.pCommandBuffer));
 				renderingFrameContext->usingSemaphores.insert(cmdBufferInfo.signalSemaphore);
 				if (cmdBufferInfo.waitSemaphore.has_value())
 					renderingFrameContext->usingSemaphores.insert(*cmdBufferInfo.waitSemaphore);

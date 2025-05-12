@@ -67,9 +67,9 @@ namespace Ailurus
 		void DestroySwapChain();
 
 		// Render
-		void AddCommandBuffer(vk::CommandBuffer buffer);
-		void AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore);
-		void AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages);
+		void AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer);
+		void AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore);
+		void AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages);
 		bool RenderFrame(bool* needRebuild);
 
 	private:

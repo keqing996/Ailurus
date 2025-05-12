@@ -51,7 +51,12 @@ namespace Ailurus
 		std::memcpy(stageBuffer.mappedAddr, indexData, sizeInBytes);
 
 		// Cpu buffer -> Gpu buffer
-		DataBufferUtil::CopyBuffer(stageBuffer.buffer, _buffer.buffer, sizeInBytes);
+		std::unique_ptr<VulkanCommandBuffer> pCommandBuffer = std::make_unique<VulkanCommandBuffer>();
+		{
+			VulkanCommandBufferRecordScope recordScope(pCommandBuffer);
+			pCommandBuffer->CopyBuffer(srcBuffer, dstBuffer, size);
+		}
+		Application::Get<VulkanSystem>()->AddCommandBuffer(std::move(pCommandBuffer));
 
 		// Destroy stage cpu buffer
 		DataBufferUtil::DestroyBuffer(stageBuffer);

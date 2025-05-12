@@ -1,24 +1,28 @@
+#include <vulkan/vulkan_hash.hpp>
 #include "VulkanResource.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Ailurus/Application/Application.h"
+#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
 
 namespace Ailurus
 {
 	VulkanResource::VulkanResource()
 	{
-
 	}
 
     VulkanResource::~VulkanResource()
     {
-        if (!_referencedFrames.empty())
-            Logger::LogError("VulkanResource has non-zero reference count on destruction: " + std::to_string(_referencedFrames.size()));
+        if (!_referencedCommandBuffer.empty())
+            Logger::LogError("VulkanResource has non-zero reference count on destruction: " + std::to_string(_referencedCommandBuffer.size()));
     }
 
-	void VulkanResource::AddRef()
+	void VulkanResource::AddRef(const VulkanCommandBuffer& pCommandBuffer)
 	{
-		auto thisFrame = Application::Get<TimeSystem>()->FrameCount();
-		_referencedFrames.insert(thisFrame);
+		_referencedCommandBuffer.insert(pCommandBuffer.GetBuffer());
+	}
+
+	void VulkanResource::RemoveRef(const VulkanCommandBuffer& pCommandBuffer)
+	{
+		_referencedCommandBuffer.erase(pCommandBuffer.GetBuffer());
 	}
 
 	void VulkanResource::MarkDelete()
