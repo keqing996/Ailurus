@@ -124,20 +124,9 @@ namespace Ailurus
 		return _vkGraphicCommandPool;
 	}
 
-	uint32_t VulkanSystem::CurrentParallelFrameIndex() const
+	uint32_t VulkanSystem::GetCurrentParallelFrameIndex() const
 	{
 		return _currentParallelFrameIndex;
-	}
-
-	void VulkanSystem::RebuildDynamicContext()
-	{
-		if (!_initialized)
-			return;
-
-		_vkDevice.waitIdle();
-
-		DestroyDynamicContext();
-		CreateDynamicContext();
 	}
 
 	void VulkanSystem::CreateSwapChain()
@@ -260,20 +249,9 @@ namespace Ailurus
 		return _vkSwapChainImageViews;
 	}
 
-	uint32_t VulkanSystem::GetCurrentFrameIndex() const
-	{
-		return _currentParallelFrameIndex;
-	}
-
 	const FrameContext* VulkanSystem::GetFrameContext() const
 	{
 		return _frameContexts[_currentParallelFrameIndex].get();
-	}
-
-	void VulkanSystem::PushCommandBufferToBeSubmitted(vk::CommandBuffer buffer, vk::Semaphore semaphore)
-	{
-		FrameContext* pFrameContext = GetFrameContext();
-		pFrameContext->waitingSubmittedCmdBuffers.emplace_back(buffer, semaphore);
 	}
 
 	FrameContext* VulkanSystem::GetFrameContext()
@@ -518,13 +496,31 @@ namespace Ailurus
 		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
 	}
 
+	void VulkanSystem::RebuildDynamicContext()
+	{
+		if (!_initialized)
+			return;
+
+		// Fence all flighing frame -> Make sure tash all command buffers, semaphores 
+		// and fences are recyceled.
+		for (auto& pFrameContext : _frameContexts)
+			pFrameContext->WaitFinish();
+
+		// Wait gpu end
+		_vkDevice.waitIdle();
+
+		DestroyDynamicContext();
+		CreateDynamicContext();
+	}
+
 	void VulkanSystem::CreateDynamicContext()
 	{
+		_currentParallelFrameIndex = 0;
+
+		// Create swap chain
 		CreateSwapChain();
 
-		_currentParallelFrameIndex = 0;
-		_currentSwapChainImageIndex = 0;
-
+		// Create frame context
 		_frameContexts.clear();
 		for (auto i = 0; i < PARALLEL_FRAME; i++)
 			_frameContexts.push_back(std::make_unique<FrameContext>());
@@ -532,8 +528,31 @@ namespace Ailurus
 
 	void VulkanSystem::DestroyDynamicContext()
 	{
+		// Destroy frame context
 		_frameContexts.clear();
+
+		// Clear pool
+		_commandBufferPool.Clear();
+		_fencePool.Clear();
+		_semaphorePool.Clear();
+
+		// Destroy swap chain
 		DestroySwapChain();
+	}
+
+	void VulkanSystem::AddCommandBuffer(vk::CommandBuffer buffer)
+	{
+		GetFrameContext()->AddCommandBuffer(buffer);
+	}
+
+	void VulkanSystem::AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore)
+	{
+		GetFrameContext()->AddCommandBuffer(buffer, waitSemaphore);
+	}
+
+	void VulkanSystem::AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages)
+	{
+		GetFrameContext()->AddCommandBuffer(buffer, waitSemaphore, waitStages);
 	}
 
 	bool VulkanSystem::RenderFrame(bool* needRebuild)

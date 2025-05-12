@@ -36,41 +36,41 @@ namespace Ailurus
 	public:
 		bool Initialized() const;
 
-		// Static context
-		vk::Device GetDevice() const;
-		vk::PhysicalDevice GetPhysicalDevice() const;
-		vk::SurfaceKHR GetSurface() const;
-		uint32_t GetPresentQueueIndex() const;
-		uint32_t GetComputeQueueIndex() const;
-		uint32_t GetGraphicQueueIndex() const;
-		vk::Queue GetPresentQueue() const;
-		vk::Queue GetGraphicQueue() const;
-		vk::Queue GetComputeQueue() const;
-		vk::CommandPool GetCommandPool() const;
+		// Getters
+		auto GetDevice() const -> vk::Device;
+		auto GetPhysicalDevice() const -> vk::PhysicalDevice;
+		auto GetSurface() const -> vk::SurfaceKHR;
+		auto GetPresentQueueIndex() const -> uint32_t;
+		auto GetComputeQueueIndex() const -> uint32_t;
+		auto GetGraphicQueueIndex() const -> uint32_t;
+		auto GetPresentQueue() const -> vk::Queue;
+		auto GetGraphicQueue() const -> vk::Queue;
+		auto GetComputeQueue() const -> vk::Queue;
+		auto GetCommandPool() const -> vk::CommandPool;
+		auto GetSwapChainConfig() const -> const SwapChainConfig&;
+		auto GetSwapChain() const -> const vk::SwapchainKHR&;
+		auto GetSwapChainImageViews() -> const std::vector<vk::ImageView>&;
+		auto GetCurrentParallelFrameIndex() const -> uint32_t;
+		auto GetFrameContext() const -> const FrameContext*;
+
+		// Pool
+		auto AllocateCommandBuffer() -> vk::CommandBuffer;
+		auto AllocateSemaphore() -> vk::Semaphore;
+		auto AllocateFence() -> vk::Fence;
+		auto FreeCommandBuffer(vk::CommandBuffer commandBuffer) -> void;
+		auto FreeSemaphore(vk::Semaphore semaphore) -> void;
+		auto FreeFence(vk::Fence fence) -> void;
 
 		// Dynamic context
-		uint32_t CurrentParallelFrameIndex() const;
 		void RebuildDynamicContext();
-
 		void CreateSwapChain();
 		void DestroySwapChain();
 
-		const SwapChainConfig& GetSwapChainConfig() const;
-		const vk::SwapchainKHR& GetSwapChain() const;
-		const std::vector<vk::ImageView>& GetSwapChainImageViews();
-
-		uint32_t GetCurrentFrameIndex() const;
-		const FrameContext* GetFrameContext() const;
-		void PushCommandBufferToBeSubmitted(vk::CommandBuffer buffer, vk::Semaphore semaphore);
+		// Render
+		void AddCommandBuffer(vk::CommandBuffer buffer);
+		void AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore);
+		void AddCommandBuffer(vk::CommandBuffer buffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages);
 		bool RenderFrame(bool* needRebuild);
-
-		// Dynamic context - Pool
-		vk::CommandBuffer AllocateCommandBuffer();
-		void FreeCommandBuffer(vk::CommandBuffer commandBuffer);
-		vk::Semaphore AllocateSemaphore();
-		void FreeSemaphore(vk::Semaphore semaphore);
-		vk::Fence AllocateFence();
-		void FreeFence(vk::Fence fence);
 
 	private:
 		VulkanSystem(const GetWindowInstanceExtension& getWindowRequiredExtension,
