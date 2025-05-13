@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.hpp>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
+#include "VulkanSystem/Helper/HashHelper.hpp"
 
 namespace Ailurus
 {
@@ -26,6 +27,6 @@ namespace Ailurus
 
 	private:
 		bool _markDeleted = false;
-		std::unordered_set<vk::CommandBuffer> _referencedCommandBuffer;
+		VkObjectSet<vk::CommandBuffer> _referencedCommandBuffer;
 	};
 } // namespace Ailurus

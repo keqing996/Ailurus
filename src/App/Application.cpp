@@ -42,6 +42,7 @@ namespace Ailurus
 	std::function<void(bool)> Application::_onWindowCursorEnteredOrLeaved = nullptr;
 	std::function<void(bool)> Application::_onWindowCursorVisibleChanged = nullptr;
 
+	std::unique_ptr<TimeSystem> Application::_pTimeSystem = nullptr;
 	std::unique_ptr<InputSystem> Application::_pInputManager = nullptr;
 	std::unique_ptr<VulkanSystem> Application::_pVulkanSystem = nullptr;
 	std::unique_ptr<RenderSystem> Application::_pRenderSystem = nullptr;
@@ -331,6 +332,12 @@ namespace Ailurus
     VulkanSystem* Application::Get<VulkanSystem>()
 	{
 		return _pVulkanSystem.get();
+	}
+
+	template <>
+	TimeSystem* Application::Get<TimeSystem>()
+	{
+		return _pTimeSystem.get();
 	}
 
 	void Application::EventLoop(bool* quitLoop)

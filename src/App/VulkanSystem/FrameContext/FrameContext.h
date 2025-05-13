@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <vulkan/vulkan.hpp>
 #include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanSystem/Helper/HashHelper.hpp"
 
 namespace Ailurus
 {
@@ -21,7 +22,7 @@ namespace Ailurus
 	{
 		uint64_t renderingFrameCount;
 		std::vector<std::unique_ptr<VulkanCommandBuffer>> renderingBuffers;
-		std::unordered_set<vk::Semaphore> usingSemaphores;
+		VkObjectSet<vk::Semaphore> usingSemaphores;
 		vk::Fence allFinishFence;
 	};
 
