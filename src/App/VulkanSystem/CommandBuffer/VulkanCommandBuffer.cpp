@@ -28,7 +28,19 @@ namespace Ailurus
 		return _buffer;
 	}
 
-	void VulkanCommandBuffer::CopyBuffer(VulkanHostBuffer* pSrcBuffer, VulkanDeviceBuffer* pDstBuffer, vk::DeviceSize size)
+	void VulkanCommandBuffer::Begin()
+	{
+		vk::CommandBufferBeginInfo beginInfo;
+		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		_buffer.begin(beginInfo);
+	}
+
+	void VulkanCommandBuffer::End()
+	{
+		_buffer.end();
+	}
+
+	void VulkanCommandBuffer::CopyBuffer(VulkanDataBuffer* pSrcBuffer, VulkanDataBuffer* pDstBuffer, vk::DeviceSize size)
 	{
 		if (pSrcBuffer == nullptr || pDstBuffer == nullptr)
 		{
@@ -52,20 +64,28 @@ namespace Ailurus
 		_buffer.copyBuffer(pSrcBuffer->buffer, pDstBuffer->buffer, 1, &copyRegion);
 	}
 
-	VulkanCommandBufferRecordScope::VulkanCommandBufferRecordScope(const std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer)
-		: _buffer(pCommandBuffer->GetBuffer())
+	void VulkanCommandBuffer::BufferMemoryBarrier(VulkanDataBuffer* pBuffer, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask)
 	{
-		vk::CommandBufferBeginInfo beginInfo;
-		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		_buffer.begin(beginInfo);
+		if (pBuffer == nullptr)
+			return;
+
+		// Record resources
+		pBuffer->AddRef(*this);
+		_referencedResources.insert(pBuffer);
+
+		// Record command
+		vk::BufferMemoryBarrier barrier;
+		barrier.setBuffer(pBuffer->buffer)
+			.setSrcAccessMask(srcAccessMask)
+			.setDstAccessMask(dstAccessMask)
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setSize(VK_WHOLE_SIZE);
+
+		_buffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, barrier, nullptr);
 	}
 
-	VulkanCommandBufferRecordScope::~VulkanCommandBufferRecordScope()
-	{
-		_buffer.end();
-	}
-
-	VulkanCommandBufferRenderPassRecordScope::VulkanCommandBufferRenderPassRecordScope(const std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer, const RenderPass* pRenderPass)
+	VulkanCommandBufferRenderPassRecordScope::VulkanCommandBufferRenderPassRecordScope(const VulkanCommandBuffer* pCommandBuffer, const RenderPass* pRenderPass)
 		: _buffer(pCommandBuffer->GetBuffer())
 	{
 		_buffer.beginRenderPass(pRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(), {});

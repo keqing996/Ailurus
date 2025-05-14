@@ -531,7 +531,10 @@ namespace Ailurus
 		// Create frame context
 		_frameContexts.clear();
 		for (auto i = 0; i < PARALLEL_FRAME; i++)
+		{
 			_frameContexts.push_back(std::make_unique<FrameContext>());
+			_frameContexts[i]->EnsureCommandBufferExist();
+		}
 	}
 
 	void VulkanSystem::DestroyDynamicContext()
@@ -544,23 +547,8 @@ namespace Ailurus
 		_fencePool.Clear();
 		_semaphorePool.Clear();
 
-		// Destroy swap chain
+		// Destroy the swap chain
 		DestroySwapChain();
-	}
-
-	void VulkanSystem::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer)
-	{
-		GetFrameContext()->AddCommandBuffer(std::move(pBuffer));
-	}
-
-	void VulkanSystem::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore)
-	{
-		GetFrameContext()->AddCommandBuffer(std::move(pBuffer), waitSemaphore);
-	}
-
-	void VulkanSystem::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages)
-	{
-		GetFrameContext()->AddCommandBuffer(std::move(pBuffer), waitSemaphore, waitStages);
 	}
 
 	bool VulkanSystem::RenderFrame(bool* needRebuild)

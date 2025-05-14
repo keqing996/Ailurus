@@ -52,6 +52,7 @@ namespace Ailurus
 		auto GetSwapChainImageViews() -> const std::vector<vk::ImageView>&;
 		auto GetCurrentParallelFrameIndex() const -> uint32_t;
 		auto GetFrameContext() const -> const FrameContext*;
+		auto GetFrameContext() -> FrameContext*;
 		auto GetResourceManager() const -> class VulkanResourceManager*;
 
 		// Pool
@@ -68,9 +69,6 @@ namespace Ailurus
 		void DestroySwapChain();
 
 		// Render
-		void AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer);
-		void AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore);
-		void AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages);
 		bool RenderFrame(bool* needRebuild);
 
 	private:
@@ -79,7 +77,6 @@ namespace Ailurus
 			const WindowDestroySurfaceCallback& destroySurface);
 
 	private:
-		FrameContext* GetFrameContext();
 		void PrepareDispatcher();
 		void CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension);
 		void CreatDebugUtilsMessenger();

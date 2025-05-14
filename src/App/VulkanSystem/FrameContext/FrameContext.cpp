@@ -6,13 +6,22 @@
 
 namespace Ailurus
 {
+	void FrameContext::EnsureCommandBufferExist()
+	{
+		if (_pRecordingCommandBuffer == nullptr)
+		{
+			_pRecordingCommandBuffer = std::make_unique<VulkanCommandBuffer>();
+			_pRecordingCommandBuffer->Begin();
+		}
+	}
+
 	bool FrameContext::WaitFinish()
 	{
-		if (!renderingFrameContext.has_value())
+		if (!_renderingFrameContext.has_value())
 			return true;
 
 		const auto device = Application::Get<VulkanSystem>()->GetDevice();
-		const auto waitFence = device.waitForFences(renderingFrameContext->allFinishFence,
+		const auto waitFence = device.waitForFences(_renderingFrameContext->allFinishFence,
 			true, std::numeric_limits<uint64_t>::max());
 		if (waitFence != vk::Result::eSuccess)
 		{
@@ -20,115 +29,63 @@ namespace Ailurus
 			return false;
 		}
 
-		// Set the finished frame count
-		lastRenderFinishedFrame = renderingFrameContext->renderingFrameCount;
-
 		// Free finished command buffer
-		renderingFrameContext->renderingBuffers.clear();
+		_renderingFrameContext->pRenderingCommandBuffer.reset();
 
 		// Free used semaphores
-		for (const auto semaphore : renderingFrameContext->usingSemaphores)
-			Application::Get<VulkanSystem>()->FreeSemaphore(semaphore);
+		Application::Get<VulkanSystem>()->FreeSemaphore(_renderingFrameContext->waitSemaphore);
+		Application::Get<VulkanSystem>()->FreeSemaphore(_renderingFrameContext->signalSemaphore);
 
 		// Reset fence and free
-		device.resetFences(renderingFrameContext->allFinishFence);
-		Application::Get<VulkanSystem>()->FreeFence(renderingFrameContext->allFinishFence);
+		device.resetFences(_renderingFrameContext->allFinishFence);
+		Application::Get<VulkanSystem>()->FreeFence(_renderingFrameContext->allFinishFence);
 
 		// Clear render context
-		renderingFrameContext = std::nullopt;
+		_renderingFrameContext = std::nullopt;
 
 		return true;
 	}
 
-	void FrameContext::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer)
+	VulkanCommandBuffer* FrameContext::GetRecordingCommandBuffer() const
 	{
-		waitingSubmittedCmdBuffers.emplace_back(RecordedCommandBufferInfo{
-			std::nullopt,
-			std::move(pBuffer),
-			Application::Get<VulkanSystem>()->AllocateSemaphore(),
-			{} });
-	}
-
-	void FrameContext::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore)
-	{
-		waitingSubmittedCmdBuffers.emplace_back(RecordedCommandBufferInfo{
-			waitSemaphore,
-			std::move(pBuffer),
-			Application::Get<VulkanSystem>()->AllocateSemaphore(),
-			{} });
-	}
-
-	void FrameContext::AddCommandBuffer(std::unique_ptr<VulkanCommandBuffer>&& pBuffer, vk::Semaphore waitSemaphore, std::vector<vk::PipelineStageFlags> waitStages)
-	{
-		waitingSubmittedCmdBuffers.emplace_back(RecordedCommandBufferInfo{
-			waitSemaphore,
-			std::move(pBuffer),
-			Application::Get<VulkanSystem>()->AllocateSemaphore(),
-			waitStages });
+		return _pRecordingCommandBuffer.get();
 	}
 
 	vk::Semaphore FrameContext::SubmitCommandBuffer(vk::Semaphore imageReadySemaphore)
 	{
+		// Record end
+		_pRecordingCommandBuffer->End();
+
+		// Create a fence and semaphore
 		const vk::Fence renderFinishFence = Application::Get<VulkanSystem>()->AllocateFence();
+		const vk::Semaphore signalSemaphore = Application::Get<VulkanSystem>()->AllocateSemaphore();
 
 		// Do submit
-		vk::Semaphore waitSemaphore = imageReadySemaphore;
-		for (auto i = 0; i < waitingSubmittedCmdBuffers.size(); i++)
-		{
-			const auto& cmdBufferInfo = waitingSubmittedCmdBuffers[i];
-			vk::SubmitInfo submitInfo;
+		vk::SubmitInfo submitInfo;
+		submitInfo.setCommandBuffers(_pRecordingCommandBuffer->GetBuffer())
+			.setSignalSemaphores(signalSemaphore)
+			.setWaitSemaphores(imageReadySemaphore);
 
-			// Target buffer
-			submitInfo.setCommandBuffers(cmdBufferInfo.pCommandBuffer->GetBuffer());
+		// Wait stages
+		std::vector<vk::PipelineStageFlags> waitStages { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+		submitInfo.setWaitDstStageMask(waitStages);
 
-			// Signal semaphore
-			submitInfo.setSignalSemaphores(cmdBufferInfo.signalSemaphore);
-
-			// Wait stages
-			submitInfo.setWaitDstStageMask(cmdBufferInfo.waitStages);
-
-			// Wait semaphore
-			std::vector<vk::Semaphore> waitSemaphores;
-			if (waitSemaphore != nullptr)
-				waitSemaphores.push_back(waitSemaphore);
-			if (cmdBufferInfo.waitSemaphore.has_value())
-				waitSemaphores.push_back(*cmdBufferInfo.waitSemaphore);
-
-			submitInfo.setWaitSemaphores(waitSemaphores);
-
-			// If last command buffer, set the finish fence
-			if (i == waitingSubmittedCmdBuffers.size() - 1)
-				Application::Get<VulkanSystem>()->GetGraphicQueue().submit(submitInfo, renderFinishFence);
-			else
-				Application::Get<VulkanSystem>()->GetGraphicQueue().submit(submitInfo);
-
-			// Update last signaled semaphore to next wait semaphore
-			waitSemaphore = cmdBufferInfo.signalSemaphore;
-		}
+		// Submit
+		Application::Get<VulkanSystem>()->GetGraphicQueue().submit(submitInfo, renderFinishFence);
 
 		// Collect resources
-		renderingFrameContext = RenderingFrameContext{};
+		_renderingFrameContext = RenderingFrameContext{};
 		{
-			// Record rendering frame count
-			renderingFrameContext->renderingFrameCount = Application::Get<TimeSystem>()->FrameCount();
-
-			// Record render finish fence
-			renderingFrameContext->allFinishFence = renderFinishFence;
-
-			// Record all used semaphores & buffers
-			renderingFrameContext->usingSemaphores.insert(imageReadySemaphore);
-			for (auto& cmdBufferInfo : waitingSubmittedCmdBuffers)
-			{
-				renderingFrameContext->renderingBuffers.push_back(std::move(cmdBufferInfo.pCommandBuffer));
-				renderingFrameContext->usingSemaphores.insert(cmdBufferInfo.signalSemaphore);
-				if (cmdBufferInfo.waitSemaphore.has_value())
-					renderingFrameContext->usingSemaphores.insert(*cmdBufferInfo.waitSemaphore);
-			}
+			_renderingFrameContext->renderingFrameCount = Application::Get<TimeSystem>()->FrameCount();
+			_renderingFrameContext->pRenderingCommandBuffer = std::move(_pRecordingCommandBuffer);
+			_renderingFrameContext->waitSemaphore = imageReadySemaphore;
+			_renderingFrameContext->signalSemaphore = signalSemaphore;
+			_renderingFrameContext->allFinishFence = renderFinishFence;
 		}
 
-		// Clean up
-		waitingSubmittedCmdBuffers.clear();
+		// New resource
+		EnsureCommandBufferExist();
 
-		return waitSemaphore;
+		return signalSemaphore;
 	}
 } // namespace Ailurus

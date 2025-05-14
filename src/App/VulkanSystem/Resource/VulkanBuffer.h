@@ -15,12 +15,10 @@ namespace Ailurus
 		Index,
 		Uniform)
 
-	class VulkanDeviceBuffer : public VulkanResource
+	class VulkanDataBuffer : public VulkanResource
 	{
-		friend class VulkanResourceManager;
-
 	public:
-		VulkanDeviceBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem);
+		VulkanDataBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem);
 
 	public:
 		const vk::DeviceSize realSize;
@@ -28,7 +26,15 @@ namespace Ailurus
 		const vk::DeviceMemory deviceMemory;
 	};
 
-	class VulkanHostBuffer : public VulkanResource
+	class VulkanDeviceBuffer : public VulkanDataBuffer
+	{
+		friend class VulkanResourceManager;
+
+	public:
+		VulkanDeviceBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem);
+	};
+
+	class VulkanHostBuffer : public VulkanDataBuffer
 	{
 		friend class VulkanResourceManager;
 
@@ -36,9 +42,6 @@ namespace Ailurus
 		VulkanHostBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem, void* addr);
 
 	public:
-		const vk::DeviceSize realSize;
-		const vk::Buffer buffer;
-		const vk::DeviceMemory deviceMemory;
 		void* mappedAddr;
 	};
 } // namespace Ailurus

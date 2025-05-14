@@ -17,25 +17,19 @@ namespace Ailurus
 	public:
 		const vk::CommandBuffer& GetBuffer() const;
 
-		void CopyBuffer(VulkanHostBuffer* pSrcBuffer, VulkanDeviceBuffer* pDstBuffer, vk::DeviceSize size);
+		void Begin();
+		void End();
+		void CopyBuffer(VulkanDataBuffer* pSrcBuffer, VulkanDataBuffer* pDstBuffer, vk::DeviceSize size);
+		void BufferMemoryBarrier(VulkanDataBuffer* pBuffer, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask);
 
 	private:
 		vk::CommandBuffer _buffer;
 		std::unordered_set<VulkanResource*> _referencedResources;
 	};
 
-	struct VulkanCommandBufferRecordScope
-	{
-		explicit VulkanCommandBufferRecordScope(const std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer);
-		~VulkanCommandBufferRecordScope();
-
-	private:
-		const vk::CommandBuffer _buffer;
-	};
-
 	struct VulkanCommandBufferRenderPassRecordScope
 	{
-		VulkanCommandBufferRenderPassRecordScope(const std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer, const class RenderPass* pRenderPass);
+		VulkanCommandBufferRenderPassRecordScope(const VulkanCommandBuffer* pCommandBuffer, const class RenderPass* pRenderPass);
 		~VulkanCommandBufferRenderPassRecordScope();
 
 	private:

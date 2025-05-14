@@ -44,11 +44,10 @@ namespace Ailurus
 	void VulkanUniformBuffer::TransitionDataToGpu() const
 	{
 		auto index = Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex();
-		std::unique_ptr<VulkanCommandBuffer> pCommandBuffer = std::make_unique<VulkanCommandBuffer>();
-		{
-			VulkanCommandBufferRecordScope recordScope(pCommandBuffer);
-			pCommandBuffer->CopyBuffer(_cpuBuffers[index], _gpuBuffers[index], _bufferSize);
-		}
-		Application::Get<VulkanSystem>()->AddCommandBuffer(std::move(pCommandBuffer));
+
+		VulkanCommandBuffer* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
+		pCommandBuffer->CopyBuffer(_cpuBuffers[index], _gpuBuffers[index], _bufferSize);
+		pCommandBuffer->BufferMemoryBarrier(_gpuBuffers[index], vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eUniformRead, 
+			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexShader);
 	}
 } // namespace Ailurus

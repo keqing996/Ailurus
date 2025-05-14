@@ -62,16 +62,9 @@ namespace Ailurus
 			}
 		}
 
-		std::unique_ptr<VulkanCommandBuffer> pCommandBuffer = std::make_unique<VulkanCommandBuffer>();
-		{
-			VulkanCommandBufferRecordScope globalScope(pCommandBuffer);
+		// Record
+		RenderForwardPass(allMeshRender);
 
-			// Render pass
-			RenderForwardPass(allMeshRender, pCommandBuffer);
-		}
-		Application::Get<VulkanSystem>()->AddCommandBuffer(std::move(pCommandBuffer));
-
-		// Fire
 		Application::Get<VulkanSystem>()->RenderFrame(&_needRebuildSwapChain);
 	}
 
@@ -95,7 +88,7 @@ namespace Ailurus
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
 	}
 
-	void RenderSystem::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList, std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer)
+	void RenderSystem::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList)
 	{
 		if (_pCurrentRenderPass != nullptr)
 		{
@@ -106,6 +99,7 @@ namespace Ailurus
 		_pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
 
 		{
+			VulkanCommandBuffer* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
 			VulkanCommandBufferRenderPassRecordScope renderPassRecordScope(pCommandBuffer, _pCurrentRenderPass);
 
 			for (const auto pMeshRender : meshRenderList)
@@ -115,7 +109,7 @@ namespace Ailurus
 		_pCurrentRenderPass = nullptr;
 	}
 
-	void RenderSystem::RenderMesh(const CompMeshRender* pMeshRender, std::unique_ptr<VulkanCommandBuffer>& pCommandBuffer) const
+	void RenderSystem::RenderMesh(const CompMeshRender* pMeshRender, VulkanCommandBuffer* pCommandBuffer) const
 	{
 		if (pMeshRender == nullptr)
 			return;
