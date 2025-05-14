@@ -41,8 +41,6 @@ namespace Ailurus
 		_resourceManager = std::make_unique<VulkanResourceManager>();
 
 		_initialized = true;
-
-		CreateDynamicContext();
 	}
 
 	VulkanSystem::~VulkanSystem()
@@ -234,7 +232,8 @@ namespace Ailurus
 		for (const auto& view : _vkSwapChainImageViews)
 			_vkDevice.destroyImageView(view);
 
-		_vkDevice.destroySwapchainKHR(_vkSwapChain);
+		if (_vkSwapChain != nullptr)
+			_vkDevice.destroySwapchainKHR(_vkSwapChain);
 	}
 
 	const SwapChainConfig& VulkanSystem::GetSwapChainConfig() const

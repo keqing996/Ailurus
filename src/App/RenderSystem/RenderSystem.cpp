@@ -14,7 +14,10 @@ namespace Ailurus
 {
 	RenderSystem::RenderSystem()
 	{
+		Application::Get<VulkanSystem>()->RebuildDynamicContext();
+
 		_pShaderLibrary.reset(new ShaderLibrary());
+
 		BuildRenderPass();
 	}
 

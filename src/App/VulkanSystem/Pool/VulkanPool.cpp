@@ -29,12 +29,8 @@ namespace Ailurus
 	template <>
 	vk::Fence VulkanPool<vk::Fence>::Create()
 	{
-		auto device = Application::Get<VulkanSystem>()->GetDevice();
-
 		vk::FenceCreateInfo fenceInfo;
-		fenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
-
-		return device.createFence(fenceInfo);
+		return Application::Get<VulkanSystem>()->GetDevice().createFence(fenceInfo);
 	}
 
 	template <>

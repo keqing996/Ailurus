@@ -84,7 +84,8 @@ namespace Ailurus
 		}
 
 		// New resource
-		EnsureCommandBufferExist();
+		_pRecordingCommandBuffer = std::make_unique<VulkanCommandBuffer>();
+		_pRecordingCommandBuffer->Begin();
 
 		return signalSemaphore;
 	}
