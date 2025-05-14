@@ -64,9 +64,8 @@ namespace Ailurus
 		auto FreeFence(vk::Fence fence) -> void;
 
 		// Dynamic context
-		void RebuildDynamicContext();
-		void CreateSwapChain();
-		void DestroySwapChain();
+		void CreateDynamicContext();
+		void DestroyDynamicContext();
 
 		// Render
 		bool RenderFrame(bool* needRebuild);
@@ -84,8 +83,8 @@ namespace Ailurus
 		void ChoosePhysicsDevice();
 		bool CreateLogicalDevice();
 		void CreateCommandPool();
-		void CreateDynamicContext();
-		void DestroyDynamicContext();
+		void CreateSwapChain();
+		void DestroySwapChain();
 
 	private:
 		// Init

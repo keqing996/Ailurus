@@ -232,8 +232,13 @@ namespace Ailurus
 		for (const auto& view : _vkSwapChainImageViews)
 			_vkDevice.destroyImageView(view);
 
+		_vkSwapChainImageViews.clear();
+
 		if (_vkSwapChain != nullptr)
+		{
 			_vkDevice.destroySwapchainKHR(_vkSwapChain);
+			_vkSwapChain = nullptr;
+		}
 	}
 
 	const SwapChainConfig& VulkanSystem::GetSwapChainConfig() const
@@ -503,23 +508,6 @@ namespace Ailurus
 		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
 	}
 
-	void VulkanSystem::RebuildDynamicContext()
-	{
-		if (!_initialized)
-			return;
-
-		// Fence all flighing frame -> Make sure tash all command buffers, semaphores 
-		// and fences are recyceled.
-		for (auto& pFrameContext : _frameContexts)
-			pFrameContext->WaitFinish();
-
-		// Wait gpu end
-		_vkDevice.waitIdle();
-
-		DestroyDynamicContext();
-		CreateDynamicContext();
-	}
-
 	void VulkanSystem::CreateDynamicContext()
 	{
 		_currentParallelFrameIndex = 0;
@@ -538,6 +526,17 @@ namespace Ailurus
 
 	void VulkanSystem::DestroyDynamicContext()
 	{
+		if (!_initialized)
+			return;
+
+		// Fence all flighing frame -> Make sure tash all command buffers, semaphores
+		// and fences are recyceled.
+		for (auto& pFrameContext : _frameContexts)
+			pFrameContext->WaitFinish();
+
+		// Wait gpu end
+		_vkDevice.waitIdle();
+
 		// Destroy frame context
 		_frameContexts.clear();
 

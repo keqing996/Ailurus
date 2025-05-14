@@ -14,14 +14,17 @@ namespace Ailurus
 {
 	RenderSystem::RenderSystem()
 	{
-		Application::Get<VulkanSystem>()->RebuildDynamicContext();
+		Application::Get<VulkanSystem>()->CreateDynamicContext();
 
 		_pShaderLibrary.reset(new ShaderLibrary());
 
 		BuildRenderPass();
 	}
 
-	RenderSystem::~RenderSystem() = default;
+	RenderSystem::~RenderSystem()
+	{
+		Application::Get<VulkanSystem>()->DestroyDynamicContext();
+	}
 
 	void RenderSystem::NeedRecreateSwapChain()
 	{
@@ -81,8 +84,12 @@ namespace Ailurus
 		GraphicsWaitIdle();
 
 		_renderPassMap.clear();
-		Application::Get<VulkanSystem>()->RebuildDynamicContext();
+
+		Application::Get<VulkanSystem>()->DestroyDynamicContext();
+		Application::Get<VulkanSystem>()->CreateDynamicContext();
+
 		BuildRenderPass();
+
 		_needRebuildSwapChain = false;
 	}
 
