@@ -1,25 +1,57 @@
-import os.path
-from tools.shader_compile import glslc
+import os
+import sys
+import subprocess
 from tools.miscs import path_miscs
+from tools.miscs import log
 
+def compile_to_spv(src_path: str, dst_path: str):
+    for root, dirs, files in os.walk(src_path):
+        for file in files:
+            if file.endswith(".vert") or file.endswith(".frag"):
+                src_file = os.path.join(root, file)
+                relative_path = os.path.relpath(root, src_path)
+                dst_dir = os.path.join(dst_path, relative_path)
+                os.makedirs(dst_dir, exist_ok=True)
+                dst_file = os.path.join(dst_dir, file + ".spv")
 
-def main() -> None:
-    src_dir: str = '../Assets/Shader/'
+                try:
+                    subprocess.run(
+                        ["glslc", src_file, "-o", dst_file],
+                        check=True
+                    )
+                    log.green(f"Compiled: {src_file} -> {dst_file}")
+                except subprocess.CalledProcessError as e:
+                    log.red(f"Error compiling {src_file}: {e}")
+                except FileNotFoundError:
+                    log.red("Error: glslc not found. Make sure it is installed and added to PATH.")
+                    sys.exit(1)
 
-    path_miscs.clear_dir('../Assets/ShaderBin/')
+def main():
+    if len(sys.argv) != 3:
+        log.red("Usage: python script.py <src_directory> <dst_directory>")
+        sys.exit(1)
 
-    for root, dir_list, file_list in os.walk(src_dir):
-        for file_name in file_list:
-            file_full_path: str = root + '/' + file_name
-            file_suffix: str = file_name.split('.')[-1]
+    src_path = sys.argv[1]
+    dst_path = sys.argv[2]
 
-            # compile glsl
-            if file_suffix == 'vert' or file_suffix == 'frag':
-                glslc.compile_glsl(file_full_path)
+    # Check valid
+    if not os.path.isdir(src_path):
+        log.red(f"Error: Source directory '{src_path}' does not exist.")
+        sys.exit(1)
 
-    pass
+    if not os.path.isdir(dst_path):
+        try:
+            os.makedirs(dst_path, exist_ok=True)
+        except Exception as e:
+            log.red(f"Error: Unable to create destination directory '{dst_path}': {e}")
+            sys.exit(1)
 
+    # Clear dst directory
+    path_miscs.clear_dir(dst_path)
 
-if __name__ == '__main__':
+    # Compile
+    log.white(f"Shader compile: {src_path}")
+    compile_to_spv(src_path, dst_path)
+
+if __name__ == "__main__":
     main()
-    pass

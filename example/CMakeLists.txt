@@ -37,12 +37,8 @@ add_executable          (ailurus_example_window_triangle Window/ExampleWindowVul
 target_link_libraries   (ailurus_example_window_triangle PUBLIC ailurus-app)
 add_custom_command(
         TARGET ailurus_example_window_triangle POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${CMAKE_CURRENT_SOURCE_DIR}/Window/Shader/triangle.vert.spv"
-            "$<TARGET_FILE_DIR:ailurus_example_window_triangle>"
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${CMAKE_CURRENT_SOURCE_DIR}/Window/Shader/triangle.frag.spv"
-            "$<TARGET_FILE_DIR:ailurus_example_window_triangle>"
+        COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/shader_gen.py" "${CMAKE_CURRENT_SOURCE_DIR}/Window/Assets/Shader" "${CMAKE_CURRENT_SOURCE_DIR}/Window/Assets/ShaderBin"
+        COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/assets_copy.py" "${CMAKE_CURRENT_SOURCE_DIR}/Window/Assets" "$<TARGET_FILE_DIR:ailurus_example_window_triangle>/Assets"
 )
 
 add_executable          (ailurus_example_imgui Window/ExampleWindowImGui.cpp ../submodule/imgui/imgui_demo.cpp)
