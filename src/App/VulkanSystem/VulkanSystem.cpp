@@ -529,13 +529,7 @@ namespace Ailurus
 		if (!_initialized)
 			return;
 
-		// Fence all flighing frame -> Make sure tash all command buffers, semaphores
-		// and fences are recyceled.
-		for (auto& pFrameContext : _frameContexts)
-			pFrameContext->WaitFinish();
-
-		// Wait gpu end
-		_vkDevice.waitIdle();
+		WaitDeviceIdle();
 
 		// Destroy frame context
 		_frameContexts.clear();
@@ -547,6 +541,17 @@ namespace Ailurus
 
 		// Destroy the swap chain
 		DestroySwapChain();
+	}
+
+	void VulkanSystem::WaitDeviceIdle() const
+	{
+		// Fence all flinging frame -> Make sure tash all command buffers, semaphores
+		// and fences are recycled.
+		for (auto& pFrameContext : _frameContexts)
+			pFrameContext->WaitFinish();
+
+		// Wait gpu end
+		_vkDevice.waitIdle();
 	}
 
 	bool VulkanSystem::RenderFrame(bool* needRebuild)

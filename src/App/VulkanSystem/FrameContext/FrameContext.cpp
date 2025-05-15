@@ -2,6 +2,8 @@
 #include "Ailurus/Application/Application.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "Ailurus/Utility/Logger.h"
+#include "VulkanSystem/Resource/VulkanResourceManager.h"
+
 #include <optional>
 
 namespace Ailurus
@@ -42,6 +44,9 @@ namespace Ailurus
 
 		// Clear render context
 		_renderingFrameContext = std::nullopt;
+
+		// Trigger resource collect
+		Application::Get<VulkanSystem>()->GetResourceManager()->GarbageCollect();
 
 		return true;
 	}

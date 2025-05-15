@@ -68,6 +68,7 @@ namespace Ailurus
 		void DestroyDynamicContext();
 
 		// Render
+		void WaitDeviceIdle() const;
 		bool RenderFrame(bool* needRebuild);
 
 	private:
