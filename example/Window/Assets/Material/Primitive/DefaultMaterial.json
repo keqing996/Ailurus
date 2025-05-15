@@ -1,0 +1,33 @@
+{
+	"Forward": {
+		"Vertex":
+		{
+			"Path": "Assets/Shader/ForwardUnlit/ForwardUnlit.vert"
+		},
+		"Pixel":
+		{
+			"Path": "Assets/Shader/ForwardUnlit/ForwardUnlit.frag"
+		},
+		"UniformBlock": [
+			{
+				"BlockName": "MaterialProperty",
+				"Values": [
+					{
+						"Name": "u_SelfColor",
+						"Type": "Float3",
+						"X": 0.9,
+						"Y": 0.9,
+						"Z": 0.9
+					}
+				]
+			}
+		],
+		"Textures": [
+			{
+				"UniformVarName": "u_mainTexture",
+				"Slot": 0,
+				"Path": "Assets/Texture/wall.jpg"
+			}
+		]
+	}
+}

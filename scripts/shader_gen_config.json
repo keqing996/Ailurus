@@ -1,0 +1,10 @@
+{
+	"ShaderCodeGenPath": [
+		{
+			"HlslSourceDir": "../CppProject/Assets/Shader/",
+			"DxBinTargetDir": "../CppProject/Assets/ShaderDxBin/",
+			"SpirvBinTargetDir": "../CppProject/Assets/ShaderSpirvBin/",
+			"GlslTargetDir": "../CppProject/Assets/ShaderGlslGen/"
+		}
+	]
+}
