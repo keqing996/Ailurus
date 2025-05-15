@@ -5,12 +5,11 @@
 #include <string>
 #include <memory>
 
-#include "Input/InputManager.h"
-#include "Shader/ShaderManager.h"
-#include "Render/RenderManager.h"
-#include "Assets/AssetsManager.h"
-#include "Scene/SceneManager.h"
-#include "ImGui/ImGui.h"
+#include "TimeSystem/TimeSystem.h"
+#include "InputSystem/InputSystem.h"
+#include "RenderSystem/RenderSystem.h"
+#include "SceneSystem/SceneSystem.h"
+#include "ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Math/Vector2.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
 
@@ -135,11 +134,8 @@ namespace Ailurus
 
         static void* GetSDLWindowPtr();
 
-        static InputManager& GetInputManager();
-
-        static ShaderManager& GetShaderManager();
-
-        static SceneManager& GetSceneManager();
+        template <typename System>
+        static System* Get();
 
     private:
         static void EventLoop(bool* quitLoop);
@@ -165,10 +161,11 @@ namespace Ailurus
         static std::function<void(bool)> _onWindowCursorEnteredOrLeaved;
         static std::function<void(bool)> _onWindowCursorVisibleChanged;
 
-        // Input
-        static std::unique_ptr<InputManager> _pInputManager;
-        static std::unique_ptr<RenderManager> _pRenderManager;
-        static std::unique_ptr<ShaderManager> _pShaderManager;
-        static std::unique_ptr<SceneManager> _pSceneManager;
+        // System
+        static std::unique_ptr<TimeSystem> _pTimeSystem;
+        static std::unique_ptr<InputSystem> _pInputManager;
+        static std::unique_ptr<class VulkanSystem> _pVulkanSystem;
+        static std::unique_ptr<RenderSystem> _pRenderSystem;
+        static std::unique_ptr<SceneSystem> _pSceneManager;
     };
 }

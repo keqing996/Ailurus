@@ -1,7 +1,8 @@
 #include "Ailurus/Application/Application.h"
-#include "Vulkan/Context/VulkanContext.h"
+#include "VulkanSystem/VulkanSystem.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+#include <memory>
 
 namespace Ailurus
 {
@@ -41,10 +42,11 @@ namespace Ailurus
 	std::function<void(bool)> Application::_onWindowCursorEnteredOrLeaved = nullptr;
 	std::function<void(bool)> Application::_onWindowCursorVisibleChanged = nullptr;
 
-	std::unique_ptr<InputManager> Application::_pInputManager = nullptr;
-	std::unique_ptr<RenderManager> Application::_pRenderManager = nullptr;
-	std::unique_ptr<ShaderManager> Application::_pShaderManager = nullptr;
-	std::unique_ptr<SceneManager> Application::_pSceneManager = nullptr;
+	std::unique_ptr<TimeSystem> Application::_pTimeSystem = nullptr;
+	std::unique_ptr<InputSystem> Application::_pInputManager = nullptr;
+	std::unique_ptr<VulkanSystem> Application::_pVulkanSystem = nullptr;
+	std::unique_ptr<RenderSystem> Application::_pRenderSystem = nullptr;
+	std::unique_ptr<SceneSystem> Application::_pSceneManager = nullptr;
 
 	bool Application::Create(int width, int height, const std::string& title, Style style)
 	{
@@ -67,13 +69,18 @@ namespace Ailurus
 
 		SetWindowVisible(true);
 
-		if (!VulkanContext::Init(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface))
+		_pVulkanSystem.reset(new VulkanSystem(VulkanContextGetInstanceExtensions, 
+			VulkanContextCreateSurface, VulkanContextDestroySurface));
+		if (!_pVulkanSystem->Initialized())
+		{
+			Destroy();
 			return false;
+		}
 
-		_pInputManager.reset(new InputManager());
-		_pRenderManager.reset(new RenderManager());
-		_pShaderManager.reset(new ShaderManager());
-		_pSceneManager.reset(new SceneManager());
+		_pTimeSystem.reset(new TimeSystem());
+		_pInputManager.reset(new InputSystem());
+		_pRenderSystem.reset(new RenderSystem());
+		_pSceneManager.reset(new SceneSystem());
 
 		if (_onWindowCreated != nullptr)
 			_onWindowCreated();
@@ -89,11 +96,9 @@ namespace Ailurus
 				_onWindowPreDestroyed();
 
 			_pSceneManager = nullptr;
-			_pShaderManager = nullptr;
-			_pRenderManager = nullptr;
+			_pRenderSystem = nullptr;
+			_pVulkanSystem = nullptr;
 			_pInputManager = nullptr;
-
-			VulkanContext::Destroy(VulkanContextDestroySurface);
 
 			SDL_DestroyWindow(static_cast<SDL_Window*>(_pWindow));
 			_pWindow = nullptr;
@@ -112,6 +117,8 @@ namespace Ailurus
 	{
 		while (true)
 		{
+			_pTimeSystem->Update();
+			
 			bool shouldBreakLoop = false;
 			EventLoop(&shouldBreakLoop);
 
@@ -121,8 +128,10 @@ namespace Ailurus
 			if (loopFunction != nullptr)
 				loopFunction();
 
-			_pRenderManager->RenderScene();
+			_pRenderSystem->RenderScene();
 		}
+
+		_pRenderSystem->GraphicsWaitIdle();
 
 		Destroy();
 	}
@@ -133,10 +142,10 @@ namespace Ailurus
 		{
 			int w, h;
 			SDL_GetWindowSize(static_cast<SDL_Window*>(_pWindow), &w, &h);
-			return Vector2i(w, h);
+			return {w, h};
 		}
 
-		return Vector2i(0, 0);
+		return {0, 0};
 	}
 
 	void Application::SetSize(int width, int height)
@@ -153,11 +162,11 @@ namespace Ailurus
 	Vector2i Application::GetPosition()
 	{
 		if (_pWindow == nullptr)
-			return Vector2i(0, 0);
+			return {0, 0};
 
 		int x, y;
 		SDL_GetWindowPosition(static_cast<SDL_Window*>(_pWindow), &x, &y);
-		return Vector2i(x, y);
+		return {x, y};
 	}
 
 	void Application::SetPosition(int x, int y)
@@ -301,19 +310,34 @@ namespace Ailurus
 		return _pWindow;
 	}
 
-	InputManager& Application::GetInputManager()
+	template <>
+    InputSystem* Application::Get<InputSystem>()
 	{
-		return *_pInputManager.get();
+		return _pInputManager.get();
 	}
 
-	ShaderManager& Application::GetShaderManager()
+	template <>
+	RenderSystem* Application::Get<RenderSystem>()
 	{
-		return *_pShaderManager.get();
+		return _pRenderSystem.get();
 	}
 
-	SceneManager& Application::GetSceneManager()
+	template <>
+    SceneSystem* Application::Get<SceneSystem>()
 	{
-		return *_pSceneManager.get();
+		return _pSceneManager.get();
+	}
+
+	template <>
+    VulkanSystem* Application::Get<VulkanSystem>()
+	{
+		return _pVulkanSystem.get();
+	}
+
+	template <>
+	TimeSystem* Application::Get<TimeSystem>()
+	{
+		return _pTimeSystem.get();
 	}
 
 	void Application::EventLoop(bool* quitLoop)
@@ -382,8 +406,8 @@ namespace Ailurus
 			}
 			case SDL_EVENT_WINDOW_RESIZED:
 			{
-				if (_pRenderManager)
-					_pRenderManager->NeedRecreateSwapChain();
+				if (_pRenderSystem)
+					_pRenderSystem->NeedRecreateSwapChain();
 
 				if (windowId == pSDLEvent->window.windowID && _onWindowResize != nullptr)
 					_onWindowResize(Vector2i(pSDLEvent->window.data1, pSDLEvent->window.data2));
