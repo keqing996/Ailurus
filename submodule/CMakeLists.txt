@@ -6,6 +6,9 @@ add_subdirectory(spdlog)
 add_subdirectory(glm)
 target_compile_definitions(glm PUBLIC GLM_FORCE_LEFT_HANDED)
 
+# nlohmann json
+add_subdirectory(nlohmann)
+
 # sdl
 set (SDL_STATIC ON) # static link sdl
 set (SDL_SHARED OFF)
