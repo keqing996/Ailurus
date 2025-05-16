@@ -223,24 +223,17 @@ namespace Ailurus::Math
 	}
 
 	template <typename T>
-	Matrix4x4<T> MakeOrthoProjectionMatrix(float nearPlaneHalfY, float nearPlaneHalfZ, float nearPlaneX, float farPlaneX)
+	Matrix4x4<T> MakeOrthoProjectionMatrix(float l, float r, float t, float b, float n, float f)
 	{
-		const float vLeft = -nearPlaneHalfY;
-		const float vRight = nearPlaneHalfY;
-		const float vTop = nearPlaneHalfZ;
-		const float vBottom = -nearPlaneHalfZ;
-		const float vNear = nearPlaneX;
-		const float vFar = farPlaneX;
-
 		Matrix4x4<T> translationMatrix = TranslateMatrix(Vector3<T>{
-			-(vRight + vLeft) / 2,
-			-(vTop + vBottom) / 2,
-			-(vNear + vFar) / 2 });
+			-(r + l) / 2,
+			-(t + b) / 2,
+			-(n + f) / 2 });
 
 		Matrix4x4<T> scaleMatrix = ScaleMatrix(Vector3<T>{
-			2 / (vRight - vLeft),
-			2 / (vTop - vBottom),
-			2 / (vFar - vNear) });
+			2 / (r - l),
+			2 / (t - b),
+			2 / (f - n) });
 
 		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
 
@@ -248,31 +241,14 @@ namespace Ailurus::Math
 	}
 
 	template <typename T>
-	Matrix4x4<T> MakePerspectiveProjectionMatrix(float nearPlaneHalfY, float nearPlaneHalfZ, float nearPlaneX, float farPlaneX)
+	Matrix4x4<T> MakePerspectiveProjectionMatrix(float l, float r, float t, float b, float n, float f)
 	{
-		const float vLeft = -nearPlaneHalfY;
-		const float vRight = nearPlaneHalfY;
-		const float vTop = nearPlaneHalfZ;
-		const float vBottom = -nearPlaneHalfZ;
-		const float vNear = nearPlaneX;
-		const float vFar = farPlaneX;
-
-		Matrix4x4<T> translationMatrix = TranslateMatrix(Vector3<T>{
-			-(vRight + vLeft) / 2,
-			-(vTop + vBottom) / 2,
-			-(vNear + vFar) / 2 });
-
-		Matrix4x4<T> scaleMatrix = ScaleMatrix(Vector3<T>{
-			2 / (vRight - vLeft),
-			2 / (vTop - vBottom),
-			2 / (vFar - vNear) });
-
-		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
+		Matrix4x4<T> standardOrthoProj = MakeOrthoProjectionMatrix<T>(l, r, t, b, n, f);
 
 		Matrix4x4<T> compressMatrix = {
-			{ vNear, 0, 0, 0 },
-			{ 0, vNear, 0, 0 },
-			{ 0, 0, vNear + vFar, -vFar * vNear },
+			{ n, 0, 0, 0 },
+			{ 0, n, 0, 0 },
+			{ 0, 0, n + f, -f * n },
 			{ 0, 0, 1, 0 }
 		};
 

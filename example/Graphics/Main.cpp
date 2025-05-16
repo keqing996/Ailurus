@@ -28,8 +28,8 @@ int Main(int argc, char* argv[])
 		indices.data(), indices.size() * sizeof(uint16_t));
 
 		auto pMaterial = std::make_shared<Material>();
-		pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Vertex, "./triangle.vert.spv");
-		pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Fragment, "./triangle.frag.spv");
+		pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Vertex, "./Assets/ShaderBin/triangle.vert.spv");
+		pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Fragment, "./Assets/ShaderBin/triangle.frag.spv");
 
 		auto pEntityWeak = Application::Get<SceneSystem>()->CreateEntity();
 		if (auto pEntity = pEntityWeak.lock())

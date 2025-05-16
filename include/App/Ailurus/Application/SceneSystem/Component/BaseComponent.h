@@ -11,7 +11,8 @@ namespace Ailurus
 		Transform,
 		Render,
 		MeshRender,
-		Light)
+		Light,
+		Camera)
 
 	class Component : public NonCopyable
 	{

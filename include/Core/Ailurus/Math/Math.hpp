@@ -6,6 +6,10 @@
 #include "Quaternion.hpp"
 #include "EulerAngle.hpp"
 
+/*
+ * Left-hand coordinate, forward = +x, up = +y, right = +z.
+ */
+
 namespace Ailurus::Math
 {
 #pragma region[Basic Math Functions]
@@ -166,13 +170,15 @@ namespace Ailurus::Math
 	 * @remark The matrix will eventually restrict all points within the range to be between -1 and 1
 	 * on all three coordinate axes.
 	 *
-	 * @param nearPlaneHalfY Near plane half-width.
-	 * @param nearPlaneHalfZ Near plane half-height.
-	 * @param nearPlaneX Near plane x value.
-	 * @param farPlaneX Far plane x value.
+	 * @param l Left boundary of viewing frustum at near plane
+	 * @param r Right boundary of viewing frustum at near plane
+	 * @param t Top boundary of viewing frustum at near plane
+	 * @param b Bottom boundary of viewing frustum at near plane
+	 * @param n Distance to near clipping plane
+	 * @param f Distance to far clipping plane
 	 */
 	template <typename T>
-	Matrix4x4<T> MakeOrthoProjectionMatrix(float nearPlaneHalfY, float nearPlaneHalfZ, float nearPlaneX, float farPlaneX);
+	Matrix4x4<T> MakeOrthoProjectionMatrix(float l, float r, float t, float b, float n, float f);
 
 	/**
 	 * @brief Projection matrix of perspective camera, camera is looking at +x, frustum is symmetry by y-axis
@@ -181,13 +187,15 @@ namespace Ailurus::Math
 	 * @remark The matrix will eventually restrict all points within the range to be between -1 and 1
 	 * on all three coordinate axes.
 	 *
-	 * @param nearPlaneHalfY Near plane half-width.
-	 * @param nearPlaneHalfZ Near plane half-height.
-	 * @param nearPlaneX Near plane x value.
-	 * @param farPlaneX Far plane x value.
+	 * @param l Left boundary of viewing frustum at near plane
+	 * @param r Right boundary of viewing frustum at near plane
+	 * @param t Top boundary of viewing frustum at near plane
+	 * @param b Bottom boundary of viewing frustum at near plane
+	 * @param n Distance to near clipping plane
+	 * @param f Distance to far clipping plane
 	 */
 	template <typename T>
-	Matrix4x4<T> MakePerspectiveProjectionMatrix(float nearPlaneHalfY, float nearPlaneHalfZ, float nearPlaneX, float farPlaneX);
+	Matrix4x4<T> MakePerspectiveProjectionMatrix(float l, float r, float t, float b, float n, float f);
 
 	/**
 	 * @brief Get matrix that turns clips space to NDC space.

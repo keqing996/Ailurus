@@ -2,7 +2,7 @@
 
 #include <memory>
 #include "CompRender.h"
-#include "Ailurus/Application/AssetsSystem//Mesh.h"
+#include "Ailurus/Application/AssetsSystem/Mesh.h"
 
 namespace Ailurus
 {
