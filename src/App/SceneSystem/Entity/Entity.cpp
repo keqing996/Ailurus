@@ -43,37 +43,47 @@ namespace Ailurus
 	{
 		for (const auto& pComp : _components)
 		{
-			const auto compType = pComp->GetType();
-			if (compType == type || Component::IsDerivedFrom(compType, type))
+			if (pComp->Is(type))
 				return pComp.get();
 		}
 
 		return nullptr;
 	}
 
-	Component* Entity::AddComponent(ComponentType type)
+	auto Entity::RemoveComponent(ComponentType compType) -> bool
 	{
-		for (const auto& pExistComp : _components)
-		{
-			if (pExistComp->GetType() == type)
-			{
-				Logger::LogError("Entity {} already have {}.", _guid,
-					EnumReflection<ComponentType>::ToString(type));
-				return nullptr;
-			}
-		}
+    	bool hasRemoved = false;
 
-		std::unique_ptr<Component> pComp = Component::CreateComponent(type);
-		if (pComp == nullptr)
-			return nullptr;
+    	size_t componentNum = _components.size();
+    	for (auto i = 0; i < _components.size(); ++i)
+    	{
+    		if (_components[i]->Is(compType))
+    		{
+    			hasRemoved = true;
+    			_components[i] = nullptr;
+    			componentNum--;
+    		}
+    	}
 
-		_components.push_back(std::move(pComp));
-		return _components.back().get();
+    	if (hasRemoved)
+    	{
+    		std::vector<std::unique_ptr<Component>> temp;
+    		temp.reserve(componentNum);
+    		for (auto i = 0; i < _components.size(); ++i)
+    		{
+    			if (_components[i] != nullptr)
+    				temp.push_back(std::move(_components[i]));
+    		}
+
+    		std::swap(_components, temp);
+    	}
+
+    	return hasRemoved;
 	}
 
 	Matrix4x4f Entity::GetModelMatrix() const
 	{
-    	return Math::MakeModelMatrix(GetPosition(), GetRotation(), GetScale());
+		return Math::MakeModelMatrix(GetPosition(), GetRotation(), GetScale());
 	}
 
 	Entity::Entity(uint32_t guid)

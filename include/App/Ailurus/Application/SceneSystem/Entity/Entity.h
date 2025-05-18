@@ -39,19 +39,23 @@ namespace Ailurus
 		/// Set the scale of the entity in 3D space
 		auto SetScale(const Vector3f& scale) -> void;
 
-		/// Get a component of a specified type attached to the entity
-		auto GetComponent(ComponentType type) const -> Component*;
-
-		/// Add a new component of a specified type to the entity
-		auto AddComponent(ComponentType type) -> Component*;
-
 		/// Add a new component of a specified type and cast it to type T
-		template <typename T>
-		auto AddComponent(ComponentType type) -> T*;
+		template <typename T, typename... Types>
+		auto AddComponent(Types&&... Args) -> T*;
 
 		/// Get a component of a specified type and cast it to type T
 		template <typename T>
-		auto GetComponent(ComponentType type) const -> T*;
+		auto GetComponent() const -> T*;
+
+		/// Get a component of a specified type
+		auto GetComponent(ComponentType type) const -> Component*;
+
+		/// Remove the component of specified type
+		auto RemoveComponent(ComponentType compType) -> bool;
+
+		/// Remove the component of specified typee
+		template <typename T>
+		auto RemoveComponent() -> bool;
 
 		/// Get the model matrix of the entity
 		auto GetModelMatrix() const -> Matrix4x4f;
@@ -69,15 +73,26 @@ namespace Ailurus
 		std::vector<std::unique_ptr<Component>> _components;
 	};
 
-	template <typename T>
-	T* Entity::AddComponent(ComponentType type)
+	template <typename T, typename... Types>
+	T* Entity::AddComponent(Types&&... Args)
 	{
-		return reinterpret_cast<T*>(AddComponent(type));
+		RemoveComponent<T>();
+
+		std::unique_ptr<T> pComp = std::make_unique<T>(std::forward<Types>(Args)...);
+
+		_components.push_back(std::move(pComp));
+		return _components.back().get();
 	}
 
 	template <typename T>
-	T* Entity::GetComponent(ComponentType type) const
+	T* Entity::GetComponent() const
 	{
-		return reinterpret_cast<T*>(GetComponent(type));
+		return reinterpret_cast<T*>(GetComponent(T::STATIC_TYPE));
+	}
+
+	template <typename T>
+	bool Entity::RemoveComponent()
+	{
+		return RemoveComponent(T::STATIC_TYPE);
 	}
 } // namespace Ailurus

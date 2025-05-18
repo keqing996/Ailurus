@@ -6,7 +6,7 @@
 
 namespace Ailurus
 {
-	class CompCamera : public Component
+	class CompCamera : public TComponent<CompCamera, ComponentType::Render, Component>
 	{
 	public:
 		CompCamera(float l, float r, float t, float b, float n, float f, bool isPerspective = true);

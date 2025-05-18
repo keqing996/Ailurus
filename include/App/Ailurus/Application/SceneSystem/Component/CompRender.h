@@ -5,9 +5,7 @@
 
 namespace Ailurus
 {
-	class CompRender : public Component
+	class CompRender : public TComponent<CompRender, ComponentType::Camera, Component>
 	{
-	public:
-		ComponentType GetType() const override;
 	};
 } // namespace Ailurus
