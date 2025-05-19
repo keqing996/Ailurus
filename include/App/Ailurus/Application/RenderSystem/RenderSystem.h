@@ -7,6 +7,7 @@
 #include "Ailurus/Utility/NonMovable.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderLibrary.h"
+#include "Ailurus/Application/SceneSystem/Component/CompCamera.h"
 
 namespace Ailurus
 {
@@ -29,6 +30,10 @@ namespace Ailurus
 		// Shader library
 		ShaderLibrary* GetShaderLibrary() const;
 
+		// Camera
+		void SetMainCamera(CompCamera* pCamera);
+		CompCamera* GetMainCamera() const;
+
 		// Draw
 		void RenderScene();
 		void GraphicsWaitIdle() const;
@@ -48,6 +53,9 @@ namespace Ailurus
 		std::unordered_map<std::string, std::unique_ptr<Material>> _materialMap;
 		std::unordered_map<RenderPassType, std::unique_ptr<RenderPass>> _renderPassMap;
 		const RenderPass* _pCurrentRenderPass = nullptr;
+
+		// Current main camera
+		CompCamera* _pMainCamera = nullptr;
 
 		// Shader library
 		std::unique_ptr<ShaderLibrary> _pShaderLibrary;

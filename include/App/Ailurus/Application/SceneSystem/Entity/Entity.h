@@ -84,6 +84,7 @@ namespace Ailurus
 			RemoveComponent<T>();
 
 		std::unique_ptr<T> pComp = std::make_unique<T>(std::forward<Types>(Args)...);
+		pComp->_parentEntity = this;
 
 		_components.push_back(std::move(pComp));
 		return reinterpret_cast<T*>(_components.back().get());
@@ -96,6 +97,7 @@ namespace Ailurus
 			RemoveComponent<T>();
 
 		std::unique_ptr<T> pComp = std::make_unique<T>();
+		pComp->_parentEntity = this;
 
 		_components.push_back(std::move(pComp));
 		return reinterpret_cast<T*>(_components.back().get());

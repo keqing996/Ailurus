@@ -50,22 +50,37 @@ namespace Ailurus
 		return _pShaderLibrary.get();
 	}
 
+	void RenderSystem::SetMainCamera(CompCamera* pCamera)
+	{
+		if (pCamera == nullptr)
+			return;
+
+		_pMainCamera = pCamera;
+	}
+
+	CompCamera* RenderSystem::GetMainCamera() const
+	{
+		return _pMainCamera;
+	}
+
 	void RenderSystem::RenderScene()
 	{
 		if (_needRebuildSwapChain)
 			ReBuildSwapChain();
 
+		// Camera
+		const auto projMatrix = _pMainCamera->GetProjectionMatrix();
+		const auto viewMatric = _pMainCamera->GetEntity()->GetModelMatrix();
+
 		// Prepare objects
 		std::vector<Entity*> allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
 		std::vector<CompMeshRender*> allMeshRender;
 		allMeshRender.reserve(allEntities.size());
-		for (auto pEntity : allEntities)
+		for (const auto pEntity : allEntities)
 		{
-			if (auto pMeshRender = pEntity->GetComponent<CompMeshRender>();
-				pMeshRender != nullptr)
-			{
+			auto pMeshRender = pEntity->GetComponent<CompMeshRender>();
+			if (pMeshRender != nullptr)
 				allMeshRender.push_back(pMeshRender);
-			}
 		}
 
 		// Record

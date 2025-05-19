@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "Asset.h"
 #include "VertexAttributeDescription.h"
 
 namespace Ailurus
@@ -8,13 +9,13 @@ namespace Ailurus
 	class VulkanVertexBuffer;
 	class VulkanIndexBuffer;
 
-	class Mesh
+	class Mesh: public Asset
 	{
 	public:
 		Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute);
 		Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute,
 			IndexBufferFormat format, const void* indexData, size_t indexDtaSizeInBytes);
-		~Mesh();
+		~Mesh() override;
 
 	public:
 		const VulkanVertexBuffer* GetVertexBuffer() const;

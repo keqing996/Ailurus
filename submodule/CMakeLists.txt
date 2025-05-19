@@ -14,6 +14,10 @@ set (SDL_STATIC ON) # static link sdl
 set (SDL_SHARED OFF)
 add_subdirectory(sdl)
 
+# assimp
+set (BUILD_SHARED_LIBS OFF)
+add_subdirectory(assimp)
+
 # imgui
 find_package(Vulkan REQUIRED)
 

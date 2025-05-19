@@ -14,11 +14,20 @@ namespace Ailurus
 			return ComponentType::Component;
 		}
 
+		class Entity* GetEntity() const
+		{
+			return _parentEntity;
+		}
+
 		static constexpr ComponentType StaticType = ComponentType::Component;
+
+	protected:
+		friend class Entity;
+		Entity* _parentEntity = nullptr;
 	};
 
-	template <ComponentType Type, typename BaseComponent, bool AllowMultipleInstance = false>
-	class TComponent : public BaseComponent
+	template <ComponentType Type, typename BaseType, bool AllowMultipleInstance = false>
+	class TComponent : public BaseType
 	{
 	public:
 		static const ComponentType StaticType = Type;
@@ -33,7 +42,7 @@ namespace Ailurus
 		{
 			Registrar()
 			{
-				ComponentMeta::Register<Type, BaseComponent::StaticType, AllowMultipleInstance>();
+				ComponentMeta::Register<Type, BaseType::StaticType, AllowMultipleInstance>();
 			}
 		};
 
