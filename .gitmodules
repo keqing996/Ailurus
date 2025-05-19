@@ -13,3 +13,6 @@
 [submodule "submodule/nlohmann"]
 	path = submodule/nlohmann
 	url = https://github.com/nlohmann/json.git
+[submodule "submodule/assimp"]
+	path = submodule/assimp
+	url = https://github.com/assimp/assimp.git
