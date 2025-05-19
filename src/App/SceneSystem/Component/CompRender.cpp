@@ -3,8 +3,5 @@
 namespace Ailurus
 {
 
-	ComponentType CompRender::GetType() const
-	{
-		return ComponentType::Render;
-	}
+
 } // namespace Ailurus

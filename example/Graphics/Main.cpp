@@ -34,7 +34,7 @@ int Main(int argc, char* argv[])
 		auto pEntityWeak = Application::Get<SceneSystem>()->CreateEntity();
 		if (auto pEntity = pEntityWeak.lock())
 		{
-			auto pMeshRender = pEntity->AddComponent<CompMeshRender>(ComponentType::MeshRender);
+			auto pMeshRender = pEntity->AddComponent<CompMeshRender>();
 			if (pMeshRender != nullptr)
 			{
 				pMeshRender->SetMesh(pMesh);

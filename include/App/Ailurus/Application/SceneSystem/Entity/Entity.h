@@ -43,6 +43,10 @@ namespace Ailurus
 		template <typename T, typename... Types>
 		auto AddComponent(Types&&... Args) -> T*;
 
+		/// Add a new component of a specified type and cast it to type T
+		template <typename T>
+		auto AddComponent() -> T*;
+
 		/// Get a component of a specified type and cast it to type T
 		template <typename T>
 		auto GetComponent() const -> T*;
@@ -50,7 +54,7 @@ namespace Ailurus
 		/// Get a component of a specified type
 		auto GetComponent(ComponentType type) const -> Component*;
 
-		/// Remove the component of specified type
+		/// Remove the component of a specified type
 		auto RemoveComponent(ComponentType compType) -> bool;
 
 		/// Remove the component of specified typee
@@ -81,18 +85,29 @@ namespace Ailurus
 		std::unique_ptr<T> pComp = std::make_unique<T>(std::forward<Types>(Args)...);
 
 		_components.push_back(std::move(pComp));
-		return _components.back().get();
+		return reinterpret_cast<T*>(_components.back().get());
+	}
+
+	template <typename T>
+	T* Entity::AddComponent()
+	{
+		RemoveComponent<T>();
+
+		std::unique_ptr<T> pComp = std::make_unique<T>();
+
+		_components.push_back(std::move(pComp));
+		return reinterpret_cast<T*>(_components.back().get());
 	}
 
 	template <typename T>
 	T* Entity::GetComponent() const
 	{
-		return reinterpret_cast<T*>(GetComponent(T::STATIC_TYPE));
+		return reinterpret_cast<T*>(GetComponent(T::StaticType));
 	}
 
 	template <typename T>
 	bool Entity::RemoveComponent()
 	{
-		return RemoveComponent(T::STATIC_TYPE);
+		return RemoveComponent(T::StaticType);
 	}
 } // namespace Ailurus

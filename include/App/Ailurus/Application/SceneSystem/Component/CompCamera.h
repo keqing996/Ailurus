@@ -13,9 +13,6 @@ namespace Ailurus
 		CompCamera(float fovHorizontal, float aspect, float n, float f, bool isPerspective = true);
 
 	public:
-		ComponentType GetType() const override;
-
-	public:
 		float GetLeft() const;
 		float GetRight() const;
 		float GetTop() const;

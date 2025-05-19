@@ -15,7 +15,6 @@ namespace Ailurus
 		~CompMeshRender() override;
 
 	public:
-		ComponentType GetType() const override;
 		Mesh* GetMesh() const;
 		Material* GetMaterial() const;
 		void SetMaterial(const std::shared_ptr<Material>& pMat);

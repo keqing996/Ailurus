@@ -8,11 +8,6 @@ namespace Ailurus
 		Set(l, r, t, b, n, f);
 	}
 
-	ComponentType CompCamera::GetType() const
-	{
-		return ComponentType::Camera;
-	}
-
 	CompCamera::CompCamera(float fovHorizontal, float aspect, float n, float f, bool isPerspective)
 		: _isPerspective(isPerspective)
 	{

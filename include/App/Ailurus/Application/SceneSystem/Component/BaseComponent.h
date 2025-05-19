@@ -38,7 +38,13 @@ namespace Ailurus
 	{
 	public:
 		virtual ~Component() = default;
-		virtual ComponentType GetType() const = 0;
+
+		static constexpr ComponentType StaticType = ComponentType::Component;
+
+		virtual ComponentType GetType() const
+		{
+			return ComponentType::Component;
+		}
 
 		template <typename T>
 		bool Is() const
@@ -76,7 +82,6 @@ namespace Ailurus
 		}
 
 	protected:
-		// 自动注册类型关系
 		struct Registrar
 		{
 			Registrar()

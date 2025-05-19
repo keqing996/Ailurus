@@ -61,7 +61,7 @@ namespace Ailurus
 		allMeshRender.reserve(allEntities.size());
 		for (auto pEntity : allEntities)
 		{
-			if (auto pMeshRender = pEntity->GetComponent<CompMeshRender>(ComponentType::MeshRender);
+			if (auto pMeshRender = pEntity->GetComponent<CompMeshRender>();
 				pMeshRender != nullptr)
 			{
 				allMeshRender.push_back(pMeshRender);
