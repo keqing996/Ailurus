@@ -3,6 +3,7 @@
 .cache/
 .vscode/
 *.pdb
+__pycache__/
 
 # CMake generated files
 CMakeFiles/
