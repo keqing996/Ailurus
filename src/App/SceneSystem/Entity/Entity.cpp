@@ -43,7 +43,7 @@ namespace Ailurus
 	{
 		for (const auto& pComp : _components)
 		{
-			if (pComp->Is(type))
+			if (ComponentMeta::Is(pComp->GetType(), type))
 				return pComp.get();
 		}
 
@@ -57,7 +57,7 @@ namespace Ailurus
     	size_t componentNum = _components.size();
     	for (auto i = 0; i < _components.size(); ++i)
     	{
-    		if (_components[i]->Is(compType))
+    		if (ComponentMeta::Is(_components[i]->GetType(), compType))
     		{
     			hasRemoved = true;
     			_components[i] = nullptr;

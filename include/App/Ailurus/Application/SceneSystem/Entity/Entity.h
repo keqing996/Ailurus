@@ -6,7 +6,7 @@
 #include "Ailurus/Math/Vector3.hpp"
 #include "Ailurus/Math/Quaternion.hpp"
 #include "Ailurus/Math/Matrix4x4.hpp"
-#include "Ailurus/Application/SceneSystem/Component/BaseComponent.h"
+#include "Ailurus/Application/SceneSystem/Component/Base/Component.h"
 
 namespace Ailurus
 {
@@ -80,7 +80,8 @@ namespace Ailurus
 	template <typename T, typename... Types>
 	T* Entity::AddComponent(Types&&... Args)
 	{
-		RemoveComponent<T>();
+		if (!ComponentMeta::AllowMultipleInstance<T>())
+			RemoveComponent<T>();
 
 		std::unique_ptr<T> pComp = std::make_unique<T>(std::forward<Types>(Args)...);
 
@@ -91,7 +92,8 @@ namespace Ailurus
 	template <typename T>
 	T* Entity::AddComponent()
 	{
-		RemoveComponent<T>();
+		if (!ComponentMeta::AllowMultipleInstance<T>())
+			RemoveComponent<T>();
 
 		std::unique_ptr<T> pComp = std::make_unique<T>();
 

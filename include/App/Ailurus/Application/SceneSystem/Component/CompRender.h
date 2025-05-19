@@ -1,11 +1,11 @@
 #pragma once
 
 #include <memory>
-#include "BaseComponent.h"
+#include "Base/Component.h"
 
 namespace Ailurus
 {
-	class CompRender : public TComponent<CompRender, ComponentType::Camera, Component>
+	class CompRender : public TComponent<ComponentType::Render, Component>
 	{
 	};
 } // namespace Ailurus

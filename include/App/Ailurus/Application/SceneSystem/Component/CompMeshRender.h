@@ -8,7 +8,7 @@ namespace Ailurus
 {
 	class Material;
 
-	class CompMeshRender : public TComponent<CompMeshRender, ComponentType::MeshRender, CompRender>
+	class CompMeshRender : public TComponent<ComponentType::MeshRender, CompRender>
 	{
 	public:
 		CompMeshRender();

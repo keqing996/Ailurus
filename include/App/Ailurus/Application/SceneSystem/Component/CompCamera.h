@@ -1,12 +1,11 @@
 #pragma once
 
-#include <memory>
-#include "BaseComponent.h"
+#include "Base/Component.h"
 #include <Ailurus/Math/Math.hpp>
 
 namespace Ailurus
 {
-	class CompCamera : public TComponent<CompCamera, ComponentType::Render, Component>
+	class CompCamera : public TComponent<ComponentType::Camera, Component>
 	{
 	public:
 		CompCamera(float l, float r, float t, float b, float n, float f, bool isPerspective = true);
