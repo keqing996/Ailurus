@@ -2,11 +2,11 @@
 	"Forward": {
 		"Vertex":
 		{
-			"Path": "Assets/Shader/ForwardUnlit/ForwardUnlit.vert"
+			"Path": "Assets/Shader/triangle.vert"
 		},
 		"Pixel":
 		{
-			"Path": "Assets/Shader/ForwardUnlit/ForwardUnlit.frag"
+			"Path": "Assets/Shader/triangle.frag"
 		},
 		"UniformBlock": [
 			{

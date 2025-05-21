@@ -38,7 +38,7 @@ namespace Ailurus
 		std::vector<uint8_t> meshVertexData;
 		meshVertexData.resize(layout.GetStride());
 
-		float* pFloatArray = reinterpret_cast<float*>(meshVertexData.data());
+		auto pFloatArray = reinterpret_cast<float*>(meshVertexData.data());
 		size_t writeIndex = 0;
 
 		auto WriteData = [&pFloatArray, &writeIndex](float value) {
@@ -114,13 +114,13 @@ namespace Ailurus
 			{
 				case IndexBufferFormat::UInt16:
 				{
-					uint16_t* pIndexData = reinterpret_cast<uint16_t*>(pData);
+					auto pIndexData = reinterpret_cast<uint16_t*>(pData);
 					pIndexData[writeIndex] = value;
 					break;
 				}
 				case IndexBufferFormat::UInt32:
 				{
-					uint32_t* pIndexData = reinterpret_cast<uint32_t*>(pData);
+					auto pIndexData = reinterpret_cast<uint32_t*>(pData);
 					pIndexData[writeIndex] = value;
 					break;
 				}
@@ -131,9 +131,18 @@ namespace Ailurus
 		for (auto i = 0; i < pAssimpMesh->mNumFaces; i++)
 		{
 			const aiFace& face = pAssimpMesh->mFaces[i];
+
+			if (face.mNumIndices != 3)
+			{
+				Logger::LogError("Only support triangle mesh, mesh index count = {}", face.mNumIndices);
+				continue;
+			}
+
 			for (auto j = 0; j < face.mNumIndices; j++)
 				WriteData(face.mIndices[j]);
 		}
+
+		return meshIndexData;
 	}
 
 	static std::unique_ptr<Mesh> GenerateMesh(const aiMesh* pAssimpMesh)
@@ -147,7 +156,7 @@ namespace Ailurus
 			indexFormat, indexData.data(), indexData.size());
 	}
 
-	static void AssimpProcessNode(aiNode* pAssimpNode, const aiScene* pAssimpScene,
+	static void AssimpProcessNode(const aiNode* pAssimpNode, const aiScene* pAssimpScene,
 		std::vector<std::unique_ptr<Mesh>>& resultMeshVec)
 	{
 		resultMeshVec.clear();
