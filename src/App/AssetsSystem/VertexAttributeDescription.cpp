@@ -1,4 +1,4 @@
-#include "Ailurus/Application/AssetsSystem/VertexAttributeDescription.h"
+#include "Ailurus/Application/AssetsSystem/Mesh/VertexAttributeDescription.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
@@ -30,16 +30,37 @@ namespace Ailurus
 	{
 		switch (type)
 		{
-			case AttributeType::Vector2:
-				return sizeof(float) * 2;
-			case AttributeType::Vector3:
+			case AttributeType::Position:
 				return sizeof(float) * 3;
-			case AttributeType::Vector4:
+			case AttributeType::Normal:
+				return sizeof(float) * 3;
+			case AttributeType::TexCoord:
+				return sizeof(float) * 2;
+			case AttributeType::Tangent:
+				return sizeof(float) * 3;
+			case AttributeType::Bitangent:
+				return sizeof(float) * 3;
+			case AttributeType::Color:
 				return sizeof(float) * 4;
 		}
 
 		Logger::LogError("Fail to get attribute size, attribute type = {}",
 			EnumReflection<AttributeType>::ToString(type));
+		return 0;
+	}
+
+	uint32_t VertexAttributeDescription::SizeOf(IndexBufferFormat type)
+	{
+		switch (type)
+		{
+			case IndexBufferFormat::UInt16:
+				return sizeof(uint16_t);
+			case IndexBufferFormat::UInt32:
+				return sizeof(uint32_t);
+		}
+
+		Logger::LogError("Fail to get index format size, index format type = {}",
+			EnumReflection<IndexBufferFormat>::ToString(type));
 		return 0;
 	}
 } // namespace Ailurus

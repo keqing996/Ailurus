@@ -7,9 +7,12 @@
 namespace Ailurus
 {
 	REFLECTION_ENUM(AttributeType,
-		Vector2,
-		Vector3,
-		Vector4);
+		Position,
+		Normal,
+		TexCoord,
+		Tangent,
+		Bitangent,
+		Color);
 
 	REFLECTION_ENUM(IndexBufferFormat,
 		UInt16,
@@ -26,6 +29,7 @@ namespace Ailurus
 		const std::vector<AttributeType>& GetAttributes() const;
 
 		static uint32_t SizeOf(AttributeType type);
+		static uint32_t SizeOf(IndexBufferFormat type);
 
 	private:
 		std::vector<AttributeType> _attribute;

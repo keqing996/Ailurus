@@ -12,30 +12,26 @@ namespace Ailurus
 		switch (format)
 		{
 			case IndexBufferFormat::UInt16:
-			{
 				_indexType = vk::IndexType::eUint16;
-				_indexCount = sizeInBytes / sizeof(uint16_t);
-				if (sizeInBytes % sizeof(uint16_t) != 0)
-					Logger::LogError("Index buffer data size is not a multiple of uint16_t");
 				break;
-			}
 			case IndexBufferFormat::UInt32:
-			{
 				_indexType = vk::IndexType::eUint32;
-				_indexCount = sizeInBytes / sizeof(uint32_t);
-				if (sizeInBytes % sizeof(uint32_t) != 0)
-					Logger::LogError("Index buffer data size is not a multiple of uint32_t");
 				break;
-			}
 			default:
-			{
 				Logger::LogError("Index buffer type {} does not have related vulkan type",
-					EnumReflection<IndexBufferFormat>::ToString(format));
+						EnumReflection<IndexBufferFormat>::ToString(format));
 				return;
-			}
 		}
 
-		auto pVulkanResManager = Application::Get<VulkanSystem>()->GetResourceManager();
+		const auto indexSize = VertexAttributeDescription::SizeOf(format);
+		_indexCount = sizeInBytes / indexSize;
+		if (sizeInBytes % indexSize != 0)
+		{
+			Logger::LogError("Index buffer data size is not a multiple of {}",
+				EnumReflection<IndexBufferFormat>::ToString(format));
+		}
+
+		const auto pVulkanResManager = Application::Get<VulkanSystem>()->GetResourceManager();
 
 		// Create gpu buffer
 		_buffer = pVulkanResManager->CreateDeviceBuffer(sizeInBytes, DeviceBufferUsage::Index);

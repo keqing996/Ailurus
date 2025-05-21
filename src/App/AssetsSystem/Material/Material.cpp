@@ -1,4 +1,4 @@
-#include "Ailurus/Application/RenderSystem/Material/Material.h"
+#include "Ailurus/Application/AssetsSystem/Material/Material.h"
 #include "Ailurus/Application/Application.h"
 #include "VulkanSystem/Descriptor/VulkanDescriptorSet.h"
 

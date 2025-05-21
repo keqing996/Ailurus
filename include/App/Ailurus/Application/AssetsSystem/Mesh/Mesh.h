@@ -1,21 +1,22 @@
 #pragma once
 
 #include <memory>
-#include "Asset.h"
 #include "VertexAttributeDescription.h"
+#include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonMovable.h"
 
 namespace Ailurus
 {
 	class VulkanVertexBuffer;
 	class VulkanIndexBuffer;
 
-	class Mesh: public Asset
+	class Mesh: public NonCopyable, public NonMovable
 	{
 	public:
 		Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute);
 		Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute,
 			IndexBufferFormat format, const void* indexData, size_t indexDtaSizeInBytes);
-		~Mesh() override;
+		~Mesh();
 
 	public:
 		const VulkanVertexBuffer* GetVertexBuffer() const;

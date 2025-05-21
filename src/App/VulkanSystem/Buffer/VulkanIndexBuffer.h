@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Ailurus/Application/AssetsSystem/VertexAttributeDescription.h"
+#include "Ailurus/Application/AssetsSystem/Mesh/VertexAttributeDescription.h"
 #include <vulkan/vulkan.hpp>
 
 namespace Ailurus

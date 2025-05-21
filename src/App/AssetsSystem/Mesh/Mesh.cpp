@@ -1,4 +1,4 @@
-#include "Ailurus/Application/AssetsSystem/Mesh.h"
+#include "Ailurus/Application/AssetsSystem/Mesh/Mesh.h"
 #include "VulkanSystem/Buffer/VulkanIndexBuffer.h"
 #include "VulkanSystem/Buffer/VulkanVertexBuffer.h"
 

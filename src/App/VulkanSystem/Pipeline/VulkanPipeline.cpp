@@ -2,10 +2,10 @@
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/RenderSystem/Shader/Shader.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Ailurus/Application/AssetsSystem/Mesh.h"
+#include "Ailurus/Application/AssetsSystem/Mesh/Mesh.h"
 #include "VulkanSystem/VulkanSystem.h"
-#include "../RenderPass/VulkanRenderPass.h"
-#include "../Shader/VulkanShader.h"
+#include "VulkanSystem/RenderPass/VulkanRenderPass.h"
+#include "VulkanSystem/Shader/VulkanShader.h"
 
 namespace Ailurus
 {
