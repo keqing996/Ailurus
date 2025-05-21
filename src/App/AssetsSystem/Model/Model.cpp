@@ -5,9 +5,18 @@
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Math/Vector2.hpp>
 #include <Ailurus/Math/Vector3.hpp>
+#include <Ailurus/Assert.h>
 
 namespace Ailurus
 {
+	template <typename T>
+	static void WriteBuffer(std::vector<uint8_t>& buffer, size_t* offset, const T& value)
+	{
+		ASSERT_MSG(offset + sizeof(T) <= buffer.size(), "Write buffer oversize");
+		std::memcpy(buffer.data() + *offset, &value, sizeof(T));
+		*offset += sizeof(T);
+	}
+
 	static VertexAttributeDescription ReadLayout(const aiMesh* pAssimpMesh)
 	{
 		std::vector<AttributeType> vertexAttrVec;
@@ -35,17 +44,14 @@ namespace Ailurus
 
 	static std::vector<uint8_t> ReadVertex(const aiMesh* pAssimpMesh, const VertexAttributeDescription& layout)
 	{
-		std::vector<uint8_t> meshVertexData;
-		meshVertexData.resize(layout.GetStride());
+		const auto vertexSize = layout.GetStride();
+		const auto vertexNum = pAssimpMesh->mNumVertices;
+		const auto dataBufferSizeInBytes = vertexSize * vertexNum;
 
-		auto pFloatArray = reinterpret_cast<float*>(meshVertexData.data());
-		size_t writeIndex = 0;
+		std::vector<uint8_t> data;
+		data.resize(dataBufferSizeInBytes);
 
-		auto WriteData = [&pFloatArray, &writeIndex](float value) {
-			pFloatArray[writeIndex] = value;
-			writeIndex++;
-		};
-
+		size_t offset = 0;
 		for (auto i = 0; i < pAssimpMesh->mNumVertices; i++)
 		{
 			size_t texCoordIndex = 0;
@@ -55,42 +61,42 @@ namespace Ailurus
 				switch (attr)
 				{
 					case AttributeType::Position:
-						WriteData(pAssimpMesh->mVertices[i].x);
-						WriteData(pAssimpMesh->mVertices[i].y);
-						WriteData(pAssimpMesh->mVertices[i].z);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mVertices[i].x);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mVertices[i].y);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mVertices[i].z);
 						break;
 					case AttributeType::Color:
-						WriteData(pAssimpMesh->mColors[vertexColorIndex][i].r);
-						WriteData(pAssimpMesh->mColors[vertexColorIndex][i].g);
-						WriteData(pAssimpMesh->mColors[vertexColorIndex][i].b);
-						WriteData(pAssimpMesh->mColors[vertexColorIndex][i].a);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mColors[vertexColorIndex][i].r);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mColors[vertexColorIndex][i].g);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mColors[vertexColorIndex][i].b);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mColors[vertexColorIndex][i].a);
 						vertexColorIndex++;
 						break;
 					case AttributeType::Normal:
-						WriteData(pAssimpMesh->mNormals[i].x);
-						WriteData(pAssimpMesh->mNormals[i].y);
-						WriteData(pAssimpMesh->mNormals[i].z);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mNormals[i].x);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mNormals[i].y);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mNormals[i].z);
 						break;
 					case AttributeType::TexCoord:
-						WriteData(pAssimpMesh->mTextureCoords[texCoordIndex][i].x);
-						WriteData(pAssimpMesh->mTextureCoords[texCoordIndex][i].y);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mTextureCoords[texCoordIndex][i].x);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mTextureCoords[texCoordIndex][i].y);
 						texCoordIndex++;
 						break;
 					case AttributeType::Tangent:
-						WriteData(pAssimpMesh->mTangents[i].x);
-						WriteData(pAssimpMesh->mTangents[i].y);
-						WriteData(pAssimpMesh->mTangents[i].z);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mTangents[i].x);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mTangents[i].y);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mTangents[i].z);
 						break;
 					case AttributeType::Bitangent:
-						WriteData(pAssimpMesh->mBitangents[i].x);
-						WriteData(pAssimpMesh->mBitangents[i].y);
-						WriteData(pAssimpMesh->mBitangents[i].z);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mBitangents[i].x);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mBitangents[i].y);
+						WriteBuffer<float>(data, &offset, pAssimpMesh->mBitangents[i].z);
 						break;
 				}
 			}
 		}
 
-		return meshVertexData;
+		return data;
 	}
 
 	static IndexBufferFormat ReadIndexFormat(const aiMesh* pAssimpMesh)
@@ -103,31 +109,14 @@ namespace Ailurus
 	static std::vector<uint8_t> ReadIndex(const aiMesh* pAssimpMesh, IndexBufferFormat indexFormat)
 	{
 		const auto indexSizeInByte = VertexAttributeDescription::SizeOf(indexFormat);
+		const auto faceNum = pAssimpMesh->mNumFaces;
+		constexpr auto faceVertexNum = 3;
+		const auto dataBufferSizeInBytes = faceVertexNum * faceNum * indexSizeInByte;
 
 		std::vector<uint8_t> meshIndexData;
-		meshIndexData.resize(pAssimpMesh->mNumFaces * 3 * indexSizeInByte);
-		size_t writeIndex = 0;
+		meshIndexData.resize(dataBufferSizeInBytes);
 
-		auto WriteData = [&meshIndexData, &writeIndex, &indexFormat](uint64_t value) {
-			uint8_t* pData = meshIndexData.data();
-			switch (indexFormat)
-			{
-				case IndexBufferFormat::UInt16:
-				{
-					auto pIndexData = reinterpret_cast<uint16_t*>(pData);
-					pIndexData[writeIndex] = value;
-					break;
-				}
-				case IndexBufferFormat::UInt32:
-				{
-					auto pIndexData = reinterpret_cast<uint32_t*>(pData);
-					pIndexData[writeIndex] = value;
-					break;
-				}
-			}
-			writeIndex++;
-		};
-
+		size_t writeOffset = 0;
 		for (auto i = 0; i < pAssimpMesh->mNumFaces; i++)
 		{
 			const aiFace& face = pAssimpMesh->mFaces[i];
@@ -138,8 +127,16 @@ namespace Ailurus
 				continue;
 			}
 
-			for (auto j = 0; j < face.mNumIndices; j++)
-				WriteData(face.mIndices[j]);
+			if (indexFormat == IndexBufferFormat::UInt16)
+			{
+				for (auto j = 0; j < face.mNumIndices; j++)
+					WriteBuffer<uint16_t>(meshIndexData, &writeOffset, face.mIndices[j]);
+			}
+			else if (indexFormat == IndexBufferFormat::UInt32)
+			{
+				for (auto j = 0; j < face.mNumIndices; j++)
+					WriteBuffer<uint32_t>(meshIndexData, &writeOffset, face.mIndices[j]);
+			}
 		}
 
 		return meshIndexData;
@@ -157,10 +154,8 @@ namespace Ailurus
 			return std::make_unique<Mesh>(vertexData.data(), vertexData.size(), layout,
 				indexFormat, indexData.data(), indexData.size());
 		}
-		else
-		{
-			return std::make_unique<Mesh>(vertexData.data(), vertexData.size(), layout);
-		}
+
+		return std::make_unique<Mesh>(vertexData.data(), vertexData.size(), layout);
 	}
 
 	static void AssimpProcessNode(const aiNode* pAssimpNode, const aiScene* pAssimpScene,
@@ -182,7 +177,13 @@ namespace Ailurus
 	{
 		Assimp::Importer importer;
 
-		const aiScene* pAssimpScene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		constexpr auto importFlags =
+			aiProcess_Triangulate
+			| aiProcess_FlipUVs
+			// | aiProcess_CalcTangentSpace // Auto generated tangent & bitangent
+			| aiProcess_SortByPType;
+
+		const aiScene* pAssimpScene = importer.ReadFile(path, importFlags);
 		if (!pAssimpScene || pAssimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pAssimpScene->mRootNode)
 		{
 			Logger::LogError("Failed to load mesh from path: {}\n\t Error: {}", path, importer.GetErrorString());
