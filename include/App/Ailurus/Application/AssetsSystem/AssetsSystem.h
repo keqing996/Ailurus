@@ -11,10 +11,10 @@ namespace Ailurus
 {
 	class Mesh;
 
-	class AssetsManager: public NonCopyable, public NonMovable
+	class AssetsSystem: public NonCopyable, public NonMovable
 	{
 	public:
-		~AssetsManager();
+		~AssetsSystem();
 
 	public:
 		template <typename T> requires std::derived_from<T, Asset>
@@ -22,9 +22,9 @@ namespace Ailurus
 
 	private:
 		friend class Application;
-		AssetsManager();
+		AssetsSystem();
 
 	private:
-		std::unordered_map<std::string, std::unique_ptr<Asset>> _meshMap;
+		std::unordered_map<std::string, std::unique_ptr<Asset>> _assetsMap;
 	};
 } // namespace Ailurus

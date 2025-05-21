@@ -10,6 +10,7 @@
 #include "RenderSystem/RenderSystem.h"
 #include "SceneSystem/SceneSystem.h"
 #include "ImGuiSystem/ImGuiSystem.h"
+#include "AssetsSystem/AssetsSystem.h"
 #include "Ailurus/Math/Vector2.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
 
@@ -166,6 +167,7 @@ namespace Ailurus
         static std::unique_ptr<InputSystem> _pInputManager;
         static std::unique_ptr<class VulkanSystem> _pVulkanSystem;
         static std::unique_ptr<RenderSystem> _pRenderSystem;
+    	static std::unique_ptr<AssetsSystem> _pAssetsSystem;
         static std::unique_ptr<SceneSystem> _pSceneManager;
     };
 }

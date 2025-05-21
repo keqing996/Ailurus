@@ -46,6 +46,7 @@ namespace Ailurus
 	std::unique_ptr<InputSystem> Application::_pInputManager = nullptr;
 	std::unique_ptr<VulkanSystem> Application::_pVulkanSystem = nullptr;
 	std::unique_ptr<RenderSystem> Application::_pRenderSystem = nullptr;
+	std::unique_ptr<AssetsSystem> Application::_pAssetsSystem = nullptr;
 	std::unique_ptr<SceneSystem> Application::_pSceneManager = nullptr;
 
 	bool Application::Create(int width, int height, const std::string& title, Style style)
@@ -80,6 +81,7 @@ namespace Ailurus
 		_pTimeSystem.reset(new TimeSystem());
 		_pInputManager.reset(new InputSystem());
 		_pRenderSystem.reset(new RenderSystem());
+		_pAssetsSystem.reset(new AssetsSystem());
 		_pSceneManager.reset(new SceneSystem());
 
 		if (_onWindowCreated != nullptr)
@@ -96,6 +98,7 @@ namespace Ailurus
 				_onWindowPreDestroyed();
 
 			_pSceneManager = nullptr;
+			_pAssetsSystem = nullptr;
 			_pRenderSystem = nullptr;
 			_pVulkanSystem = nullptr;
 			_pInputManager = nullptr;
@@ -338,6 +341,12 @@ namespace Ailurus
 	TimeSystem* Application::Get<TimeSystem>()
 	{
 		return _pTimeSystem.get();
+	}
+
+	template <>
+	AssetsSystem* Application::Get<AssetsSystem>()
+	{
+		return _pAssetsSystem.get();
 	}
 
 	void Application::EventLoop(bool* quitLoop)

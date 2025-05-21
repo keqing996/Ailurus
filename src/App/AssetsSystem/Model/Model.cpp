@@ -149,11 +149,18 @@ namespace Ailurus
 	{
 		VertexAttributeDescription layout = ReadLayout(pAssimpMesh);
 		std::vector<uint8_t> vertexData = ReadVertex(pAssimpMesh, layout);
-		IndexBufferFormat indexFormat = ReadIndexFormat(pAssimpMesh);
-		std::vector<uint8_t> indexData = ReadIndex(pAssimpMesh, indexFormat);
 
-		return std::make_unique<Mesh>(vertexData.data(), vertexData.size(), layout,
-			indexFormat, indexData.data(), indexData.size());
+		if (pAssimpMesh->HasFaces())
+		{
+			IndexBufferFormat indexFormat = ReadIndexFormat(pAssimpMesh);
+			std::vector<uint8_t> indexData = ReadIndex(pAssimpMesh, indexFormat);
+			return std::make_unique<Mesh>(vertexData.data(), vertexData.size(), layout,
+				indexFormat, indexData.data(), indexData.size());
+		}
+		else
+		{
+			return std::make_unique<Mesh>(vertexData.data(), vertexData.size(), layout);
+		}
 	}
 
 	static void AssimpProcessNode(const aiNode* pAssimpNode, const aiScene* pAssimpScene,

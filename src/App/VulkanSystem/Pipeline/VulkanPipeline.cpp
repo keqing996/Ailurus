@@ -11,19 +11,20 @@ namespace Ailurus
 {
 	static vk::Format ConvertToVkFormat(AttributeType type)
 	{
-		switch (type)
+		const auto bytes = VertexAttributeDescription::SizeOf(type);
+		switch (bytes)
 		{
-			case AttributeType::Vector2:
+			case sizeof(float) * 2:
 				return vk::Format::eR32G32Sfloat;
-			case AttributeType::Vector3:
+			case sizeof(float) * 3:
 				return vk::Format::eR32G32B32Sfloat;
-			case AttributeType::Vector4:
+			case sizeof(float) * 4:
 				return vk::Format::eR32G32B32A32Sfloat;
+			default:
+				Logger::LogError("Fail to convert attribute type to vk format, attribute type = {}",
+					EnumReflection<AttributeType>::ToString(type));
+				return vk::Format::eUndefined;
 		}
-
-		Logger::LogError("Fail to convert attribute type to vk format, attribute type = {}",
-			EnumReflection<AttributeType>::ToString(type));
-		return vk::Format::eUndefined;
 	}
 
 	static std::vector<vk::VertexInputAttributeDescription> GetMeshVulkanAttributeDescription(const Mesh* pMesh)
