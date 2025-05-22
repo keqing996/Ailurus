@@ -3,7 +3,7 @@
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/AssetsSystem/Material/Material.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
-#include "Ailurus/Application/SceneSystem/Component/CompMeshRender.h"
+#include "Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "VulkanSystem/Buffer/VulkanVertexBuffer.h"
 #include "VulkanSystem/Buffer/VulkanIndexBuffer.h"
@@ -74,11 +74,11 @@ namespace Ailurus
 
 		// Prepare objects
 		std::vector<Entity*> allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
-		std::vector<CompMeshRender*> allMeshRender;
+		std::vector<CompStaticMeshRender*> allMeshRender;
 		allMeshRender.reserve(allEntities.size());
 		for (const auto pEntity : allEntities)
 		{
-			auto pMeshRender = pEntity->GetComponent<CompMeshRender>();
+			auto pMeshRender = pEntity->GetComponent<CompStaticMeshRender>();
 			if (pMeshRender != nullptr)
 				allMeshRender.push_back(pMeshRender);
 		}
@@ -113,7 +113,7 @@ namespace Ailurus
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
 	}
 
-	void RenderSystem::RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList)
+	void RenderSystem::RenderForwardPass(std::vector<CompStaticMeshRender*>& meshRenderList)
 	{
 		if (_pCurrentRenderPass != nullptr)
 		{
@@ -134,7 +134,7 @@ namespace Ailurus
 		_pCurrentRenderPass = nullptr;
 	}
 
-	void RenderSystem::RenderMesh(const CompMeshRender* pMeshRender, VulkanCommandBuffer* pCommandBuffer) const
+	void RenderSystem::RenderMesh(const CompStaticMeshRender* pMeshRender, VulkanCommandBuffer* pCommandBuffer) const
 	{
 		if (pMeshRender == nullptr)
 			return;

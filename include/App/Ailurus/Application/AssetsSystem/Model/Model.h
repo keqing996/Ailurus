@@ -11,9 +11,8 @@ namespace Ailurus
 	class Model : public Asset
 	{
 	public:
-
-	public:
 		bool LoadFromFile(const std::string& path);
+		const std::vector<std::unique_ptr<Mesh>>& GetMeshes() const;
 
 	private:
 		std::vector<std::unique_ptr<Mesh>> _meshes;

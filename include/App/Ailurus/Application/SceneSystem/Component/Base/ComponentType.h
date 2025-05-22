@@ -7,7 +7,7 @@ namespace Ailurus
 	REFLECTION_ENUM(ComponentType,
 		Component,
 		Render,
-		MeshRender,
+		StaticMeshRender,
 		Light,
 		Camera)
 }

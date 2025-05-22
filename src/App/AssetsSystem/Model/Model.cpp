@@ -194,4 +194,9 @@ namespace Ailurus
 
 		return true;
 	}
+
+	const std::vector<std::unique_ptr<Mesh>>& Model::GetMeshes() const
+	{
+		return _meshes;
+	}
 } // namespace Ailurus

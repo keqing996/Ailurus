@@ -13,7 +13,7 @@ namespace Ailurus
 {
 	class Material;
 	class RenderPass;
-	class CompMeshRender;
+	class CompStaticMeshRender;
 
 	class RenderSystem : public NonCopyable, public NonMovable
 	{
@@ -45,8 +45,8 @@ namespace Ailurus
 	private:
 		void ReBuildSwapChain();
 		void BuildRenderPass();
-		void RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList);
-		void RenderMesh(const CompMeshRender* pMeshRender, class VulkanCommandBuffer* pCommandBuffer) const;
+		void RenderForwardPass(std::vector<CompStaticMeshRender*>& meshRenderList);
+		void RenderMesh(const CompStaticMeshRender* pMeshRender, class VulkanCommandBuffer* pCommandBuffer) const;
 
 	private:
 		bool _needRebuildSwapChain = false;
