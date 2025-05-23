@@ -7,10 +7,10 @@
 namespace Ailurus
 {
 	template <typename T>
-	class VulkanPool : public NonCopyable, public NonMovable
+	class VulkanObjectPool : public NonCopyable, public NonMovable
 	{
 	public:
-		~VulkanPool()
+		~VulkanObjectPool()
 		{
 			Clear();
 		}

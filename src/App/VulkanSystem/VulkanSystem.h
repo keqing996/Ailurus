@@ -6,7 +6,7 @@
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "VulkanSystem/FrameContext/FrameContext.h"
-#include "VulkanSystem/Pool/VulkanPool.hpp"
+#include "VulkanSystem/Pool/VulkanObjectPool.hpp"
 
 namespace Ailurus
 {
@@ -118,9 +118,9 @@ namespace Ailurus
 		std::vector<vk::ImageView> _vkSwapChainImageViews{};
 
 		// Dynamic context - pools
-		VulkanPool<vk::CommandBuffer> _commandBufferPool{};
-		VulkanPool<vk::Fence> _fencePool{};
-		VulkanPool<vk::Semaphore> _semaphorePool{};
+		VulkanObjectPool<vk::CommandBuffer> _commandBufferPool{};
+		VulkanObjectPool<vk::Fence> _fencePool{};
+		VulkanObjectPool<vk::Semaphore> _semaphorePool{};
 
 		// Dynamic context - rendering frame
 		uint32_t _currentParallelFrameIndex = 0;

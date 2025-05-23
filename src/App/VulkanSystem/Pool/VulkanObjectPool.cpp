@@ -1,12 +1,12 @@
 #include <vulkan/vulkan.hpp>
-#include "VulkanPool.hpp"
+#include "VulkanObjectPool.hpp"
 #include "Ailurus/Application/Application.h"
 #include "VulkanSystem/VulkanSystem.h"
 
 namespace Ailurus
 {
 	template <>
-	vk::CommandBuffer VulkanPool<vk::CommandBuffer>::Create()
+	vk::CommandBuffer VulkanObjectPool<vk::CommandBuffer>::Create()
 	{
 		auto* vkSystem = Application::Get<VulkanSystem>();
 
@@ -20,27 +20,27 @@ namespace Ailurus
 	}
 
 	template <>
-	void VulkanPool<vk::CommandBuffer>::Destroy(vk::CommandBuffer res)
+	void VulkanObjectPool<vk::CommandBuffer>::Destroy(vk::CommandBuffer res)
 	{
 		auto* vkSystem = Application::Get<VulkanSystem>();
 		vkSystem->GetDevice().freeCommandBuffers(vkSystem->GetCommandPool(), res);
 	}
 
 	template <>
-	vk::Fence VulkanPool<vk::Fence>::Create()
+	vk::Fence VulkanObjectPool<vk::Fence>::Create()
 	{
 		vk::FenceCreateInfo fenceInfo;
 		return Application::Get<VulkanSystem>()->GetDevice().createFence(fenceInfo);
 	}
 
 	template <>
-	void VulkanPool<vk::Fence>::Destroy(vk::Fence res)
+	void VulkanObjectPool<vk::Fence>::Destroy(vk::Fence res)
 	{
 		Application::Get<VulkanSystem>()->GetDevice().destroyFence(res);
 	}
 
 	template <>
-	vk::Semaphore VulkanPool<vk::Semaphore>::Create()
+	vk::Semaphore VulkanObjectPool<vk::Semaphore>::Create()
 	{
 		auto device = Application::Get<VulkanSystem>()->GetDevice();
 
@@ -49,7 +49,7 @@ namespace Ailurus
 	}
 
 	template <>
-	void VulkanPool<vk::Semaphore>::Destroy(vk::Semaphore res)
+	void VulkanObjectPool<vk::Semaphore>::Destroy(vk::Semaphore res)
 	{
 		Application::Get<VulkanSystem>()->GetDevice().destroySemaphore(res);
 	}

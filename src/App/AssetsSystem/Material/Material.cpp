@@ -1,8 +1,10 @@
+#include <fstream>
 #include <nlohmann/json.hpp>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include <Ailurus/Application/AssetsSystem/Material/UniformVariable/MaterialUniformVariableNumeric.h>
 #include <Ailurus/Application/Application.h>
-#include <VulkanSystem/Descriptor/VulkanDescriptorSet.h>
+#include <Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h>
+#include <Ailurus/Utility/Logger.h>
 
 namespace Ailurus
 {
@@ -55,27 +57,76 @@ namespace Ailurus
 		}
 	};
 
-	Material::Material() = default;
-
-	Material::~Material() = default;
-
-	void Material::SetShader(RenderPassType pass, ShaderStage stage, const std::string& shader)
+	bool Material::LoadFromFile(const std::string& path)
 	{
-		const Shader* pShader = Application::Get<RenderSystem>()->GetShaderLibrary()->GetShader(stage, shader);
-		_renderPassParaMap[pass].stageShaders[stage] = pShader;
+		std::ifstream fileStream(path);
+		if (!fileStream.is_open())
+		{
+			Logger::LogError("Get material fail: {}", path);
+			return false;
+		}
+
+		nlohmann::json json;
+		fileStream >> json;
+		fileStream.close();
+
+		for (const auto& [passName, passShaderConfig] : json.items())
+		{
+			RenderPassType pass;
+			if (!EnumReflection<RenderPassType>::TryFromString(passName, &pass))
+			{
+				Logger::LogError("Material render pass error, {}, {}", path, passName);
+				continue;
+			}
+
+			if (passShaderConfig.contains("Shader"))
+			{
+				for (const auto& [shaderStageName, shaderPath] : passShaderConfig["Shader"].items())
+				{
+					ShaderStage stage;
+					if (!EnumReflection<ShaderStage>::TryFromString(shaderStageName, &stage))
+					{
+						Logger::LogError("Material shader stage error, {}, {}", path, shaderStageName);
+						continue;
+					}
+
+					const std::string& shaderFilePath = shaderPath.get<std::string>();
+					const Shader* pShader = Application::Get<RenderSystem>()->GetShaderLibrary()->GetShader(stage, shaderFilePath);
+					if (pShader == nullptr)
+					{
+						Logger::LogError("Material shader load error, {}, {}", path, shaderPath);
+						continue;
+					}
+
+					_renderPassParaMap[pass].stageShaders[stage] = pShader;
+				}
+			}
+
+			if (passShaderConfig.contains("UniformBlock"))
+			{
+				for (auto uniformBlockNode : passShaderConfig["UniformBlock"])
+				{
+					const std::string& blockName = uniformBlockNode["BlockName"];
+					for (auto uniformValueNode : uniformBlockNode["Values"])
+					{
+						const std::string& varName = uniformValueNode["Name"];
+						auto pUniVar = MaterialJsonHelper::CreateUniformVar(blockName, varName, uniformValueNode);
+						if (pUniVar != nullptr)
+							_renderPassParaMap[pass].uniformVariables.push_back(std::move(pUniVar));
+					}
+				}
+			}
+		}
+
+		return true;
 	}
 
-	std::optional<StageShaderArray> Material::GetStageShaderArray(RenderPassType pass) const
+	const Material::RenderPassParameters* Material::GetRenderPassParameters(RenderPassType pass) const
 	{
 		auto const passItr = _renderPassParaMap.find(pass);
 		if (passItr == _renderPassParaMap.end())
-			return std::nullopt;
+			return nullptr;
 
-		return passItr->second.stageShaders;
-	}
-
-	const VulkanDescriptorSet* Material::GetDescriptorSet() const
-	{
-		return _pVkDescriptorSet.get();
+		return &passItr->second;
 	}
 } // namespace Ailurus

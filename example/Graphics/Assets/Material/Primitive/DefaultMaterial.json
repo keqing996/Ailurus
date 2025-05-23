@@ -1,12 +1,8 @@
 {
 	"Forward": {
-		"Vertex":
-		{
-			"Path": "Assets/Shader/triangle.vert"
-		},
-		"Pixel":
-		{
-			"Path": "Assets/Shader/triangle.frag"
+		"Shader": {
+			"Vertex": "Assets/Shader/triangle.vert",
+			"Pixel": "Assets/Shader/triangle.frag"
 		},
 		"UniformBlock": [
 			{

@@ -6,15 +6,38 @@
 
 namespace Ailurus
 {
-	struct DescriptorPoolCapacityConfig
-	{
-		size_t maxSets;
-		size_t uniformCapacity;
-		size_t samplerCapacity;
-	};
-
 	class VulkanDescriptorPool : public NonCopyable, public NonMovable
 	{
+		struct DescriptorCapacity
+		{
+			size_t uniformNum;
+			size_t samplerNum;
+
+			bool IsEnoughFor(const DescriptorCapacity& requirement) const;
+			void Allocate(const DescriptorCapacity& requirement);
+		};
+
+		struct PoolCapacity
+		{
+			size_t setsNum;
+			DescriptorCapacity descriptorCapacity;
+
+			bool IsEnoughFor(const DescriptorCapacity& requirement) const;
+			void Allocate(const DescriptorCapacity& requirement);
+		};
+
+		struct Entry
+		{
+			vk::DescriptorPool pool;
+			PoolCapacity originalCapacity;
+			PoolCapacity currentCapacity;
+
+			explicit Entry(PoolCapacity capacity);
+			~Entry();
+			bool IsEnoughFor(const DescriptorCapacity& requirement) const;
+			vk::DescriptorSet Allocate(const DescriptorCapacity& requirement, const vk::DescriptorSetLayout& layout);
+		};
+
 	public:
 		explicit VulkanDescriptorPool(const DescriptorPoolCapacityConfig& capacity);
 		~VulkanDescriptorPool();
@@ -24,6 +47,6 @@ namespace Ailurus
 
 	private:
 		uint32_t _capacity;
-		vk::DescriptorPool _descriptorPool;
 	};
+
 } // namespace Ailurus
