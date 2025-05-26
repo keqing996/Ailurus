@@ -2,11 +2,16 @@
 	"Forward": {
 		"Shader": {
 			"Vertex": "Assets/Shader/triangle.vert",
-			"Pixel": "Assets/Shader/triangle.frag"
+			"Fragment": "Assets/Shader/triangle.frag"
 		},
-		"UniformBlock": [
+		"Uniform": [
 			{
 				"BlockName": "MaterialProperty",
+				"Set": 0,
+				"Binding": 0,
+				"ShaderStage": [
+					"Fragment"
+				],
 				"Values": [
 					{
 						"Name": "u_SelfColor",

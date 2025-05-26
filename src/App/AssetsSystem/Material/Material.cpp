@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
@@ -102,11 +103,14 @@ namespace Ailurus
 				}
 			}
 
-			if (passShaderConfig.contains("UniformBlock"))
+			if (passShaderConfig.contains("Uniform"))
 			{
-				for (auto uniformBlockNode : passShaderConfig["UniformBlock"])
+				for (auto uniformBlockNode : passShaderConfig["Uniform"])
 				{
 					const std::string& blockName = uniformBlockNode["BlockName"];
+					uint32_t setId = uniformBlockNode["Set"];
+					uint32_t bindingId = uniformBlockNode["Binding"];
+					
 					for (auto uniformValueNode : uniformBlockNode["Values"])
 					{
 						const std::string& varName = uniformValueNode["Name"];

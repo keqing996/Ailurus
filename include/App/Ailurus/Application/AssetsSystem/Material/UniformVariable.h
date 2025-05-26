@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Ailurus/Utility/EnumReflection.h"
+#include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 
 namespace Ailurus
 {
@@ -28,6 +29,7 @@ namespace Ailurus
 		auto GetUniformValueName() const -> const std::string&;
 
 	protected:
+		std::vector<ShaderStage> _usedStages;
 		std::string _uniformBlockName;
 		std::string _uniformValueName;
 	};
