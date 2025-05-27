@@ -7,7 +7,7 @@
 #include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
-#include "UniformVariable.h"
+#include "UniformSet.h"
 
 namespace Ailurus
 {
@@ -15,12 +15,10 @@ namespace Ailurus
 
 	class Material : public NonCopyable, public NonMovable
 	{
-		using UniformBindingPointMap = std::unordered_map<uint32_t, std::unique_ptr<MaterialUniformVariable>>;
-
 		struct RenderPassParameters
 		{
 			StageShaderArray stageShaders;
-			std::unordered_map<uint32_t, UniformBindingPointMap> uniformSetsMap;
+			std::unordered_map<uint32_t, UniformSet> uniformSetMap;
 		};
 
 	public:
