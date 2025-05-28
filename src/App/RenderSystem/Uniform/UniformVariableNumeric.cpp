@@ -1,4 +1,4 @@
-#include <Ailurus/Application/AssetsSystem/Material/UniformVariableNumeric.h>
+#include <../../../../include/App/Ailurus/Application/RenderSystem/Uniform/UniformVariableNumeric.h>
 
 namespace Ailurus
 {

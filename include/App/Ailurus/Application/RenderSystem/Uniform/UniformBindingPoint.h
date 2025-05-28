@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <memory>
-#include "UniformVariable.h"
+#include "../../AssetsSystem/Material/UniformVariable.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"

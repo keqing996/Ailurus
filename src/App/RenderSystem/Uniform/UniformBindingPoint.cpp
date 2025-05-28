@@ -1,4 +1,4 @@
-#include <Ailurus/Application/AssetsSystem/Material/UniformBindingPoint.h>
+#include <../../../../include/App/Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 
 namespace Ailurus
 {

@@ -2,10 +2,15 @@
 
 #include <cstdint>
 #include <unordered_map>
-#include "UniformBindingPoint.h"
+#include "Ailurus/Utility/EnumReflection.h"
+#include "../../AssetsSystem/Material/UniformBindingPoint.h"
 
 namespace Ailurus
 {
+	REFLECTION_ENUM(UniformSetUsage,
+		General,
+		MaterialCustom);
+
 	class UniformSet
 	{
 	public:
