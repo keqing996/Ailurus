@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include "Ailurus/Utility/EnumReflection.h"
-#include "../../AssetsSystem/Material/UniformBindingPoint.h"
+#include "UniformBindingPoint.h"
 
 namespace Ailurus
 {

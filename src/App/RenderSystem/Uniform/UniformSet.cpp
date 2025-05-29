@@ -1,4 +1,4 @@
-#include <../../../../include/App/Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 #include <Ailurus/Utility/Logger.h>
 
 namespace Ailurus

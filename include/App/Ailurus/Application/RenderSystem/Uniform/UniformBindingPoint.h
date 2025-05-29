@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <memory>
-#include "../../AssetsSystem/Material/UniformVariable.h"
+#include "UniformVariable.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
@@ -25,6 +25,6 @@ namespace Ailurus
 	private:
 		uint32_t _bindingPoint = 0;
 		std::vector<ShaderStage> _usingStages;
-		std::unique_ptr<MaterialUniformVariable> _uniform;
+		UniformVariable _uniform;
 	};
 } // namespace Ailurus

@@ -1,11 +1,16 @@
 #pragma once
 
+#include <variant>
+#include <cstdint>
 #include "Ailurus/Utility/EnumReflection.h"
-#include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
+#include "Ailurus/Math/Vector2.hpp"
+#include "Ailurus/Math/Vector3.hpp"
+#include "Ailurus/Math/Vector4.hpp"
+#include "Ailurus/Math/Matrix4x4.hpp"
 
 namespace Ailurus
 {
-	REFLECTION_ENUM(MaterialUniformVariableType,
+	REFLECTION_ENUM(UniformVariableType,
 		Int,
 		Uint,
 		Float,
@@ -15,23 +20,23 @@ namespace Ailurus
 		Mat3,
 		Mat4)
 
-	class MaterialUniformVariable
+	using UniformValue = std::variant<int32_t, float, Vector2f, Vector3f, Vector4f, Matrix4x4f>;
+
+	struct UniformVariableNumeric;
+	struct UniformVariableStructure;
+
+	using UniformVariable = std::variant<UniformVariableNumeric, UniformVariableStructure>;
+
+	struct UniformVariableNumeric
 	{
-	public:
-		virtual ~MaterialUniformVariable() = default;
-		MaterialUniformVariable(const std::string& uniformBlockName, const std::string& uniformValueName);
+		std::string name;
+		UniformValue value;
+	};
 
-	public:
-		virtual auto GetType() const -> MaterialUniformVariableType = 0;
-		virtual auto GetData() const -> const std::byte* = 0;
-
-		auto GetUniformBlockName() const -> const std::string&;
-		auto GetUniformValueName() const -> const std::string&;
-
-	protected:
-		std::vector<ShaderStage> _usedStages;
-		std::string _uniformBlockName;
-		std::string _uniformValueName;
+	struct UniformVariableStructure
+	{
+		std::string name;
+		std::vector<UniformVariable> members;
 	};
 
 } // namespace Ailurus

@@ -7,7 +7,6 @@
 		"Uniform": [
 			{
 				"BlockName": "MaterialProperty",
-				"Set": 0,
 				"Binding": 0,
 				"ShaderStage": [
 					"Fragment"
