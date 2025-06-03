@@ -16,7 +16,7 @@ namespace Ailurus
 
 	class Material : public NonCopyable, public NonMovable
 	{
-		struct RenderPassParameters
+		struct MaterialSinglePass
 		{
 			StageShaderArray stageShaders;
 			std::unique_ptr<UniformSet> pUniformSet;

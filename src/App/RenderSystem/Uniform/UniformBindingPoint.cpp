@@ -2,11 +2,10 @@
 
 namespace Ailurus
 {
-	UniformBindingPoint::UniformBindingPoint(uint32_t bindingPoint, std::unique_ptr<MaterialUniformVariable>&& pUniform)
+	UniformBindingPoint::UniformBindingPoint(uint32_t bindingPoint, std::unique_ptr<UniformVariable>&& pUniform)
 		: _bindingPoint(bindingPoint)
-		, _uniform(std::move(pUniform))
+		, _pUniformVariable(std::move(pUniform))
 	{
-		std::fill(_usingStages.begin(), _usingStages.end(), false);
 	}
 
 	UniformBindingPoint::~UniformBindingPoint() = default;
@@ -26,14 +25,14 @@ namespace Ailurus
 		return _bindingPoint;
 	}
 
-	const MaterialUniformVariable* UniformBindingPoint::GetUniform() const
+	const UniformVariable* UniformBindingPoint::GetUniform() const
 	{
-		return _uniform.get();
+		return _pUniformVariable.get();
 	}
 
-	MaterialUniformVariable* UniformBindingPoint::GetUniform()
+	UniformVariable* UniformBindingPoint::GetUniform()
 	{
-		return _uniform.get();
+		return _pUniformVariable.get();
 	}
 
 } // namespace Ailurus

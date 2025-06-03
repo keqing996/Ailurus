@@ -11,10 +11,11 @@ namespace Ailurus
 	class Model : public Asset
 	{
 	public:
-		bool LoadFromFile(const std::string& path);
+		Model(std::vector<std::unique_ptr<Mesh>>&& meshes);
 		const std::vector<std::unique_ptr<Mesh>>& GetMeshes() const;
 
 	private:
+		friend class AssetsSystem;
 		std::vector<std::unique_ptr<Mesh>> _meshes;
 	};
 }
