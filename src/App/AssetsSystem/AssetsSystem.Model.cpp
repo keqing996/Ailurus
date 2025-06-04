@@ -172,8 +172,7 @@ namespace Ailurus
 			AssimpProcessNode(pAssimpNode->mChildren[i], pAssimpScene, resultMeshVec);
 	}
 
-	template <>
-	AssetReference<Model> AssetsSystem::LoadAsset<Model>(const std::string& path)
+	AssetReference<Model> AssetsSystem::LoadModel(const std::string& path)
 	{
 		auto itr = _assetsMap.find(path);
 		if (itr != _assetsMap.end())

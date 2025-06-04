@@ -6,6 +6,8 @@
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "AssetReference.h"
+#include "Model/Model.h"
+#include "Material/MaterialInstance.h"
 
 namespace Ailurus
 {
@@ -17,8 +19,8 @@ namespace Ailurus
 		~AssetsSystem();
 
 	public:
-		template <typename T> requires std::derived_from<T, Asset>
-		AssetReference<T> LoadAsset(const std::string& path);
+		AssetReference<Model> LoadModel(const std::string& path);
+		AssetReference<MaterialInstance> LoadMaterial(const std::string& path);
 
 	private:
 		friend class Application;

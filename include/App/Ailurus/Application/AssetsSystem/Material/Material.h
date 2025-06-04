@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include "Ailurus/Application/AssetsSystem/Asset.h"
+#include "Ailurus/Application/AssetsSystem/AssetReference.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
@@ -14,20 +16,24 @@ namespace Ailurus
 	class Shader;
 	class VulkanUniformBuffer;
 
-	class Material : public NonCopyable, public NonMovable
+	class Material : public Asset
 	{
+		
+
+
 		struct MaterialSinglePass
 		{
 			StageShaderArray stageShaders;
-			std::unique_ptr<UniformSet> pUniformSet;
+			std::unordered_map<uint32_t, std::unique_ptr<UniformSet>> pUniformSet;
 			std::unique_ptr<VulkanUniformBuffer> pUniformBuffer;
 		};
 
 	public:
-		bool LoadFromFile(const std::string& path);
-		const RenderPassParameters* GetRenderPassParameters(RenderPassType pass) const;
+		const MaterialSinglePass* GetRenderPassParameters(RenderPassType pass) const;
+		
 
 	private:
-		std::unordered_map<RenderPassType, RenderPassParameters> _renderPassParaMap;
+		friend class AssetsSystem;
+		std::unordered_map<RenderPassType, MaterialSinglePass> _renderPassParaMap;
 	};
 } // namespace Ailurus
