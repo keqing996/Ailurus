@@ -20,7 +20,8 @@ namespace Ailurus
 
 	public:
 		AssetReference<Model> LoadModel(const std::string& path);
-		AssetReference<MaterialInstance> LoadMaterial(const std::string& path);
+		AssetReference<ReadOnlyMaterialInstance> LoadMaterial(const std::string& path);
+		AssetReference<ReadWriteMaterialInstance> CopyMaterialInstance(const AssetReference<ReadOnlyMaterialInstance>& materialInstance);
 
 	private:
 		friend class Application;

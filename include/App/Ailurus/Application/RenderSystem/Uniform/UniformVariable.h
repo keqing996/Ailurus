@@ -27,6 +27,10 @@ namespace Ailurus
 		std::string _name;
 	};
 
+	class UniformVariableNumeric;
+	class UniformVariableStructure;
+	class UniformVariableArray;
+
 	class UniformVariableNumeric : public UniformVariable
 	{
 	public:
@@ -51,6 +55,7 @@ namespace Ailurus
 
 		UniformVariableNumeric* AddNumericMember(const std::string& name, UniformValueType type);
 		UniformVariableStructure* AddStructureMember(const std::string& name);
+		UniformVariableArray* AddArrayMember(const std::string& name);
 		UniformVariable* operator[](const std::string& name);
 		const UniformVariable* operator[](const std::string& name) const;
 		uint32_t GetSize() const override;
@@ -64,7 +69,7 @@ namespace Ailurus
 	class UniformVariableArray : public UniformVariable
 	{
 	public:
-		UniformVariableArray(const std::string& name, uint32_t size);
+		UniformVariableArray(const std::string& name);
 
 		UniformVariableNumeric* AddNumericMember(UniformValueType type);
 		UniformVariableStructure* AddStructureMember();

@@ -106,9 +106,9 @@ namespace Ailurus
 		}
 	}
 
-	bool UniformVariableNumeric::IsStructure() const
+	UniformVaribleType UniformVariableNumeric::VaribleType() const
 	{
-		return false;
+		return UniformVaribleType::Numeric;
 	}
 
 	UniformVariableStructure::UniformVariableStructure(const std::string& name)
@@ -128,6 +128,14 @@ namespace Ailurus
 	{
 		auto member = std::make_unique<UniformVariableStructure>(name);
 		UniformVariableStructure* memberPtr = member.get();
+		_pMembers.push_back(std::move(member));
+		return memberPtr;
+	}
+
+	UniformVariableArray* UniformVariableStructure::AddArrayMember(const std::string& name)
+	{
+		auto member = std::make_unique<UniformVariableArray>(name);
+		UniformVariableArray* memberPtr = member.get();
 		_pMembers.push_back(std::move(member));
 		return memberPtr;
 	}
@@ -180,12 +188,78 @@ namespace Ailurus
 		return size;
 	}
 
-	bool UniformVariableStructure::IsStructure() const
+	UniformVaribleType UniformVariableStructure::VaribleType() const
 	{
-		return true;
+		return UniformVaribleType::Structure;
 	}
 
 	uint32_t UniformVariableStructure::GetAlignment() const
+	{
+		uint32_t maxAlignment = 0;
+
+		for (const auto& member : _pMembers)
+		{
+			uint32_t alignment = member->GetAlignment();
+			if (alignment > maxAlignment)
+				maxAlignment = alignment;
+		}
+
+		return maxAlignment;
+	}
+
+	UniformVariableArray::UniformVariableArray(const std::string& name)
+		: UniformVariable(name)
+	{
+	}
+
+	UniformVariableNumeric* UniformVariableArray::AddNumericMember(UniformValueType type)
+	{
+		auto member = std::make_unique<UniformVariableNumeric>(std::to_string(_pMembers.size()), type);
+		UniformVariableNumeric* memberPtr = member.get();
+		_pMembers.push_back(std::move(member));
+		return memberPtr;
+	}
+
+	UniformVariableStructure* UniformVariableArray::AddStructureMember()
+	{
+		auto member = std::make_unique<UniformVariableStructure>(std::to_string(_pMembers.size()));
+		UniformVariableStructure* memberPtr = member.get();
+		_pMembers.push_back(std::move(member));
+		return memberPtr;
+	}
+
+	uint32_t UniformVariableArray::GetSize() const
+	{
+		uint32_t size = 0;
+		uint32_t maxAlignment = 0;
+
+		for (const auto& member : _pMembers)
+		{
+			uint32_t memberSize = member->GetSize();
+			uint32_t alignment = member->GetAlignment();
+
+			// Align current offset
+			size = (size + alignment - 1) & ~(alignment - 1);
+
+			// Add member size
+			size += memberSize;
+
+			if (alignment > maxAlignment)
+				maxAlignment = alignment;
+		}
+
+		// The array's size must be aligned to its largest member's alignment (std140)
+		size = (size + maxAlignment - 1) & ~(maxAlignment - 1);
+
+		return size;
+	}
+
+	UniformVaribleType UniformVariableArray::VaribleType() const
+	{
+		return UniformVaribleType::Array;
+	}
+
+	uint32_t UniformVariableArray::GetAlignment() const
 	{
 		uint32_t maxAlignment = 0;
 

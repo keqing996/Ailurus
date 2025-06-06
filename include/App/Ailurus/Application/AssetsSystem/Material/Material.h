@@ -18,13 +18,10 @@ namespace Ailurus
 
 	class Material : public Asset
 	{
-		
-
-
 		struct MaterialSinglePass
 		{
 			StageShaderArray stageShaders;
-			std::unordered_map<uint32_t, std::unique_ptr<UniformSet>> pUniformSet;
+			UniformSet uniformSet;;
 			std::unique_ptr<VulkanUniformBuffer> pUniformBuffer;
 		};
 

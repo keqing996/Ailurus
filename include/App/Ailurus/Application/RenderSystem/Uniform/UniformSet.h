@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include "Ailurus/Utility/EnumReflection.h"
 #include "UniformBindingPoint.h"
+#include "Ailurus/Utility/NonCopyable.h"
+#include "Ailurus/Utility/NonMovable.h"
 
 namespace Ailurus
 {
@@ -11,7 +13,7 @@ namespace Ailurus
 		General,
 		MaterialCustom);
 
-	class UniformSet
+	class UniformSet: public NonCopyable, public NonMovable
 	{
 	public:
 		explicit UniformSet(uint32_t setId);

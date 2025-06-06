@@ -1,7 +1,9 @@
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
+#include "Ailurus/Application/AssetsSystem/Material/MaterialInstance.h"
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Assert.h>
+#include <memory>
 
 namespace Ailurus
 {
@@ -50,19 +52,22 @@ namespace Ailurus
 		return pUniVar;
 	}
 
-    bool Material::LoadFromFile(const std::string& path)
+
+	AssetReference<ReadOnlyMaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
 	{
 		std::ifstream fileStream(path);
 		if (!fileStream.is_open())
 		{
 			Logger::LogError("Get material fail: {}", path);
-			return false;
+			return AssetReference<ReadOnlyMaterialInstance>(nullptr);
 		}
 
 		nlohmann::json json;
 		fileStream >> json;
 		fileStream.close();
 
+		std::unique_ptr<Material> pMaterial = std::make_unique<Material>();
+		std::unique_ptr<ReadOnlyMaterialInstance> pMaterianInstance = std::make_unique<ReadOnlyMaterialInstance>();
 		for (const auto& [passName, passShaderConfig] : json.items())
 		{
 			RenderPassType pass;
@@ -114,34 +119,7 @@ namespace Ailurus
 			}
 		}
 
-		return true;
-	}
-
-    template <>
-	AssetReference<Material> AssetsSystem::LoadAsset<Model>(const std::string& path)
-	{
-		auto itr = _assetsMap.find(path);
-		if (itr != _assetsMap.end())
-			return AssetReference(reinterpret_cast<Model*>(itr->second.get()));
-
-		Assimp::Importer importer;
-		constexpr auto importFlags =
-			aiProcess_Triangulate
-			| aiProcess_FlipUVs
-			// | aiProcess_CalcTangentSpace // Auto generated tangent & bitangent
-			| aiProcess_SortByPType;
-
-		const aiScene* pAssimpScene = importer.ReadFile(path, importFlags);
-		if (!pAssimpScene || pAssimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pAssimpScene->mRootNode)
-		{
-			Logger::LogError("Failed to load mesh from path: {}\n\t Error: {}", path, importer.GetErrorString());
-			return AssetReference<Model>(nullptr);
-		}
-
-		std::vector<std::unique_ptr<Mesh>> meshes;
-		AssimpProcessNode(pAssimpScene->mRootNode, pAssimpScene, meshes);
-
-		std::unique_ptr<Model> pModel = std::make_unique<Model>(std::move(meshes));
+		
 		AssetReference ret(pModel.get());
 		_assetsMap[path] = std::move(pModel);
 		return ret;
