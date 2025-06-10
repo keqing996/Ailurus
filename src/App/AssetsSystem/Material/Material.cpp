@@ -17,12 +17,16 @@ namespace Ailurus
 		return &passItr->second;
 	}
 
-	void Material::InitUniformBuffer()
+	void Material::SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value)
 	{
-		for (auto& [pass, passParams] : _renderPassParaMap)
+		auto* passParams = GetRenderPassParameters(pass);
+		if (passParams == nullptr)
 		{
-			const size_t bufferSize = passParams.uniformSet.GetBufferSize();
-			passParams.pUniformBuffer = std::make_unique<VulkanUniformBuffer>(passParams.uniformSet);
+			Logger::LogError("Material render pass not found: {}", EnumReflection<RenderPassType>::ToString(pass));
+			return;
 		}
+
+		passParams->uniformSet.SetUniformValue(bindingId, access, value);
 	}
+
 } // namespace Ailurus

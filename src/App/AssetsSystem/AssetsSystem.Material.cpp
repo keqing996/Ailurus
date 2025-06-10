@@ -124,4 +124,9 @@ namespace Ailurus
 		_assetsMap[path] = std::move(pModel);
 		return ret;
 	}
+
+	AssetReference<ReadWriteMaterialInstance> AssetsSystem::CopyMaterialInstance(const AssetReference<ReadOnlyMaterialInstance>& materialInstance)
+	{
+
+	}
 } // namespace Ailurus

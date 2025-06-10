@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include "UniformVariable.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Utility/NonCopyable.h"
@@ -22,6 +23,7 @@ namespace Ailurus
 		const UniformVariable* GetUniform() const;
 		UniformVariable* GetUniform();
 		uint32_t GetTotalSize() const;
+		std::optional<uint32_t> GetAccessOffset(const std::string& accessName) const;
 
 	private:
 		uint32_t _bindingPoint = 0;

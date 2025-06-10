@@ -161,4 +161,14 @@ namespace Ailurus
 	{
 		return _totalSize;
 	}
+
+	std::optional<uint32_t> UniformBindingPoint::GetAccessOffset(const std::string& accessName) const
+	{
+		auto it = _accessNameToBufferOffsetMap.find(accessName);
+		if (it != _accessNameToBufferOffsetMap.end())
+			return it->second;
+
+		Logger::LogError("Access name '{}' not found in binding point {}.", accessName, _bindingPoint);
+		return std::nullopt;
+	}
 } // namespace Ailurus

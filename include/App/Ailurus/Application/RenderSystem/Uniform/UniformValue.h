@@ -1,6 +1,6 @@
 #pragma once
 
-#include <variant>
+#include <cstdint>
 #include "Ailurus/Utility/EnumReflection.h"
 #include "Ailurus/Math/Vector2.hpp"
 #include "Ailurus/Math/Vector3.hpp"

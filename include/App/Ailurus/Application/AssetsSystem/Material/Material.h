@@ -4,13 +4,10 @@
 #include <memory>
 #include <unordered_map>
 #include "Ailurus/Application/AssetsSystem/Asset.h"
-#include "Ailurus/Application/AssetsSystem/AssetReference.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformValue.h"
-#include "Ailurus/Utility/NonCopyable.h"
-#include "Ailurus/Utility/NonMovable.h"
 
 namespace Ailurus
 {
@@ -27,7 +24,6 @@ namespace Ailurus
 		
 	private:
 		PerPass* GetRenderPassParameters(RenderPassType pass);
-		void InitUniformBuffer();
 
 	private:
 		friend class AssetsSystem;
