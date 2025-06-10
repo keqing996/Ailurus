@@ -19,8 +19,6 @@ namespace Ailurus
 		UniformVariable(const std::string& name);
 
 		const std::string& GetName() const;
-		virtual uint32_t GetSize() const = 0;
-		virtual uint32_t GetAlignment() const = 0;
 		virtual UniformVaribleType VaribleType() const = 0;
 
 	protected:
@@ -36,12 +34,10 @@ namespace Ailurus
 	public:
 		UniformVariableNumeric(const std::string& name, UniformValueType type);
 
-		const UniformValueType& GetType() const;
-		const UniformValue& GetValue() const;
-		void SetValue(UniformValue newValue);
-		uint32_t GetSize() const override;
-		uint32_t GetAlignment() const override;
-		UniformVaribleType VaribleType() const override;
+		auto ValueType() const -> const UniformValueType&;
+		auto GetValue() const -> const UniformValue&;
+		auto SetValue(UniformValue newValue) -> void;
+		auto VaribleType() const -> UniformVaribleType override;
 
 	private:
 		UniformValueType _type;
@@ -53,17 +49,14 @@ namespace Ailurus
 	public:
 		explicit UniformVariableStructure(const std::string& name);
 
-		UniformVariableNumeric* AddNumericMember(const std::string& name, UniformValueType type);
-		UniformVariableStructure* AddStructureMember(const std::string& name);
-		UniformVariableArray* AddArrayMember(const std::string& name);
-		UniformVariable* operator[](const std::string& name);
-		const UniformVariable* operator[](const std::string& name) const;
-		uint32_t GetSize() const override;
-		uint32_t GetAlignment() const override;
-		UniformVaribleType VaribleType() const override;
+		auto AddNumericMember(const std::string& name, UniformValueType type) -> UniformVariableNumeric*;
+		auto AddStructureMember(const std::string& name) -> UniformVariableStructure*;
+		auto AddArrayMember(const std::string& name) -> UniformVariableArray*;
+		auto GetMembers() const -> const std::vector<std::unique_ptr<UniformVariable>>&;
+		auto VaribleType() const -> UniformVaribleType override;
 
 	private:
-		std::vector<std::unique_ptr<UniformVariable>> _pMembers;
+		std::vector<std::unique_ptr<UniformVariable>> _members;
 	};
 
 	class UniformVariableArray : public UniformVariable
@@ -71,14 +64,13 @@ namespace Ailurus
 	public:
 		UniformVariableArray(const std::string& name);
 
-		UniformVariableNumeric* AddNumericMember(UniformValueType type);
-		UniformVariableStructure* AddStructureMember();
-		uint32_t GetSize() const override;
-		uint32_t GetAlignment() const override;
-		UniformVaribleType VaribleType() const override;
+		auto AddNumericMember(UniformValueType type) -> UniformVariableNumeric*;
+		auto AddStructureMember() -> UniformVariableStructure*;
+		auto GetMembers() const -> const std::vector<std::unique_ptr<UniformVariable>>&;
+		auto VaribleType() const -> UniformVaribleType override;
 
 	private:
-		std::vector<std::unique_ptr<UniformVariable>> _pMembers;
+		std::vector<std::unique_ptr<UniformVariable>> _members;
 	};
 
 } // namespace Ailurus

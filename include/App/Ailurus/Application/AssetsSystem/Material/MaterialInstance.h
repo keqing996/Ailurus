@@ -23,25 +23,17 @@ namespace Ailurus
 
 		struct EntryHash
 		{
-			std::size_t operator()(const Entry& entry) const
-			{
-				return std::hash<uint32_t>()(static_cast<uint32_t>(entry.pass))
-					^ std::hash<uint32_t>()(entry.setId)
-					^ std::hash<uint32_t>()(entry.bindingId)
-					^ std::hash<std::string>()(entry.access);
-			}
+			std::size_t operator()(const Entry& entry) const;
 		};
 
 		struct EntryEqual
 		{
-			bool operator()(const Entry& lhs, const Entry& rhs) const
-			{
-				return lhs.pass == rhs.pass && lhs.setId == rhs.setId
-					&& lhs.bindingId == rhs.bindingId && lhs.access == rhs.access;
-			}
+			bool operator()(const Entry& lhs, const Entry& rhs) const;
 		};
 
 	public:
+		Material* GetTargetMaterial() const;
+		void UpdateMaterialUniformData();
 		
 
 	protected:

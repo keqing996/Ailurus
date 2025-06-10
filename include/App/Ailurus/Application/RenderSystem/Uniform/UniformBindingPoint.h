@@ -21,10 +21,14 @@ namespace Ailurus
 		uint32_t GetBindingPoint() const;
 		const UniformVariable* GetUniform() const;
 		UniformVariable* GetUniform();
+		uint32_t GetTotalSize() const;
 
 	private:
 		uint32_t _bindingPoint = 0;
 		std::vector<ShaderStage> _usingStages;
 		std::unique_ptr<UniformVariable> _pUniformVariable;
+
+		uint32_t _totalSize = 0;
+		std::unordered_map<std::string, uint32_t> _accessNameToBufferOffsetMap;
 	};
 } // namespace Ailurus

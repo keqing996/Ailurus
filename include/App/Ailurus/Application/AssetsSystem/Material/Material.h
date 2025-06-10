@@ -8,29 +8,30 @@
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
+#include "Ailurus/Application/RenderSystem/Uniform/UniformValue.h"
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 
 namespace Ailurus
 {
-	class Shader;
-	class VulkanUniformBuffer;
-
 	class Material : public Asset
 	{
-		struct MaterialSinglePass
+		struct PerPass 
 		{
 			StageShaderArray stageShaders;
-			UniformSet uniformSet;;
-			std::unique_ptr<VulkanUniformBuffer> pUniformBuffer;
+			UniformSet uniformSet;
 		};
 
 	public:
-		const MaterialSinglePass* GetRenderPassParameters(RenderPassType pass) const;
+		void SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value);
 		
+	private:
+		PerPass* GetRenderPassParameters(RenderPassType pass);
+		void InitUniformBuffer();
 
 	private:
 		friend class AssetsSystem;
-		std::unordered_map<RenderPassType, MaterialSinglePass> _renderPassParaMap;
+
+		std::unordered_map<RenderPassType, PerPass> _renderPassParaMap;
 	};
 } // namespace Ailurus
