@@ -1,6 +1,5 @@
 
 #include "Ailurus/Application/AssetsSystem/AssetsSystem.h"
-#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -11,5 +10,10 @@ namespace Ailurus
 
 	AssetsSystem::AssetsSystem()
 	{
+	}
+
+	uint64_t AssetsSystem::NextAssetId()
+	{
+		return _globalAssetIdCounter.fetch_add(1, std::memory_order_seq_cst);
 	}
 } // namespace Ailurus

@@ -5,8 +5,9 @@
 
 namespace Ailurus
 {
-	Model::Model(std::vector<std::unique_ptr<Mesh>>&& meshes)
-		: _meshes(std::move(meshes))
+	Model::Model(uint64_t assetId, std::vector<std::unique_ptr<Mesh>>&& meshes)
+		: Asset(assetId)
+		, _meshes(std::move(meshes))
 	{
 	}
 

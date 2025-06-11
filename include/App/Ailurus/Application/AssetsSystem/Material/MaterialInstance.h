@@ -36,6 +36,10 @@ namespace Ailurus
 		void UpdateMaterialUniformData();
 
 	protected:
+		friend class AssetsSystem;
+		ReadOnlyMaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial);
+
+	protected:
 		AssetReference<Material> targetMaterial;
 		std::unordered_map<Entry, UniformValue, EntryHash, EntryEqual> uniformValueMap;
 	};
@@ -44,6 +48,10 @@ namespace Ailurus
 	{
 	public:
 		void SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value);
+	
+	private:
+		friend class AssetsSystem;
+		ReadWriteMaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial);
 	};
 
 } // namespace Ailurus

@@ -9,9 +9,19 @@ namespace Ailurus
 	class Asset: public NonCopyable, public NonMovable
 	{
 	public:
+		Asset(uint64_t assetId)
+			: _assetId(assetId)
+		{
+		}
+
 		virtual ~Asset() = default;
 
 	public:
+		uint64_t GetAssetId() const
+		{
+			return _assetId;
+		}
+
 		int32_t GetRefCount() const
 		{
 			return _refCount;
@@ -29,6 +39,7 @@ namespace Ailurus
 
 	protected:
 		int32_t _refCount = 0;
+		uint64_t _assetId;
 	};
 
 } // namespace Ailurus

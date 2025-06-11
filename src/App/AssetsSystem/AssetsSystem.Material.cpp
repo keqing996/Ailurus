@@ -3,10 +3,12 @@
 #include "Ailurus/Application/AssetsSystem/Material/MaterialInstance.h"
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Assert.h>
-#include <memory>
+#include <nlohmann/json.hpp>
+#include <fstream>
 
 namespace Ailurus
 {
+	/*
 	static std::unique_ptr<MaterialUniformVariable> CreateUniformVar(const std::string& uniformBlockName, const std::string& uniformValueName, const nlohmann::basic_json<>& uniformVarConfig)
 	{
 		std::unique_ptr<MaterialUniformVariable> pUniVar = nullptr;
@@ -51,23 +53,13 @@ namespace Ailurus
 
 		return pUniVar;
 	}
-
-
-	AssetReference<ReadOnlyMaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
+*/
+	static void LoadMaterialAndDeafultInstanceFromFile(
+		const std::string& path,
+		const nlohmann::json& json, 
+		Material* pMaterial, 
+		ReadOnlyMaterialInstance* pMaterialInstance)
 	{
-		std::ifstream fileStream(path);
-		if (!fileStream.is_open())
-		{
-			Logger::LogError("Get material fail: {}", path);
-			return AssetReference<ReadOnlyMaterialInstance>(nullptr);
-		}
-
-		nlohmann::json json;
-		fileStream >> json;
-		fileStream.close();
-
-		std::unique_ptr<Material> pMaterial = std::make_unique<Material>();
-		std::unique_ptr<ReadOnlyMaterialInstance> pMaterianInstance = std::make_unique<ReadOnlyMaterialInstance>();
 		for (const auto& [passName, passShaderConfig] : json.items())
 		{
 			RenderPassType pass;
@@ -118,11 +110,37 @@ namespace Ailurus
 				}
 			}
 		}
+	}
 
-		
-		AssetReference ret(pModel.get());
-		_assetsMap[path] = std::move(pModel);
-		return ret;
+	AssetReference<ReadOnlyMaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
+	{
+		std::ifstream fileStream(path);
+		if (!fileStream.is_open())
+		{
+			Logger::LogError("Get material fail: {}", path);
+			return AssetReference<ReadOnlyMaterialInstance>(nullptr);
+		}
+
+		nlohmann::json json;
+		fileStream >> json;
+		fileStream.close();
+
+		// Create material
+		auto pMaterialRaw = new Material(NextAssetId());
+		_fileAssetToIdMap[path] = pMaterialRaw->GetAssetId();
+		_assetsMap[pMaterialRaw->GetAssetId()] = std::unique_ptr<Material>(pMaterialRaw);
+
+		// Create material asset reference
+		AssetReference<Material> materialRef(pMaterialRaw);
+
+		// Create material instance
+		auto pMaterialInstanceRaw = new ReadOnlyMaterialInstance(NextAssetId(), materialRef);
+		_assetsMap[pMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<ReadOnlyMaterialInstance>(pMaterialInstanceRaw);
+
+		// Load
+		LoadMaterialAndDeafultInstanceFromFile(path, json, pMaterialRaw, pMaterialInstanceRaw);
+
+		return AssetReference<ReadOnlyMaterialInstance>(pMaterialInstanceRaw);
 	}
 
 	AssetReference<ReadWriteMaterialInstance> AssetsSystem::CopyMaterialInstance(const AssetReference<ReadOnlyMaterialInstance>& materialInstance)

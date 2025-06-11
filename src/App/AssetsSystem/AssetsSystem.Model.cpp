@@ -174,10 +174,15 @@ namespace Ailurus
 
 	AssetReference<Model> AssetsSystem::LoadModel(const std::string& path)
 	{
-		auto itr = _assetsMap.find(path);
-		if (itr != _assetsMap.end())
-			return AssetReference(reinterpret_cast<Model*>(itr->second.get()));
-
+		auto assidItr = _fileAssetToIdMap.find(path);
+		if (assidItr != _fileAssetToIdMap.end())
+		{
+			auto assetId = assidItr->second;
+			auto assetItr = _assetsMap.find(assetId);
+			if (assetItr != _assetsMap.end())
+				return AssetReference<Model>(reinterpret_cast<Model*>(assetItr->second.get()));
+		}
+		
 		Assimp::Importer importer;
 		constexpr auto importFlags =
 			aiProcess_Triangulate
@@ -192,12 +197,18 @@ namespace Ailurus
 			return AssetReference<Model>(nullptr);
 		}
 
+		// Load mesh from file
 		std::vector<std::unique_ptr<Mesh>> meshes;
 		AssimpProcessNode(pAssimpScene->mRootNode, pAssimpScene, meshes);
 
-		std::unique_ptr<Model> pModel = std::make_unique<Model>(std::move(meshes));
-		AssetReference ret(pModel.get());
-		_assetsMap[path] = std::move(pModel);
-		return ret;
+		// Create asset
+		auto assetId = NextAssetId();
+		auto pModelRaw = new Model(assetId, std::move(meshes));
+
+		// Add asset to system
+		_fileAssetToIdMap[path] = assetId;
+		_assetsMap[assetId] = std::unique_ptr<Model>(pModelRaw);
+		
+		return AssetReference<Model>(pModelRaw);
 	}
 } // namespace Ailurus

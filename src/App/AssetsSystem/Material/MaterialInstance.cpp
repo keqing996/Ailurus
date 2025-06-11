@@ -3,6 +3,12 @@
 
 namespace Ailurus
 {
+    ReadOnlyMaterialInstance::ReadOnlyMaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial)
+        : Asset(assetId)
+        , targetMaterial(targetMaterial)
+    {
+    }
+
     Material* ReadOnlyMaterialInstance::GetTargetMaterial() const
     {
         return targetMaterial.Get();
@@ -35,6 +41,11 @@ namespace Ailurus
                 entry.access, uniformValue);
         }
 	}
+
+    ReadWriteMaterialInstance::ReadWriteMaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial)
+        : ReadOnlyMaterialInstance(assetId, targetMaterial)
+    {
+    }
 
 	void ReadWriteMaterialInstance::SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value)
 	{

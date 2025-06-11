@@ -8,6 +8,11 @@
 
 namespace Ailurus
 {
+	Material::Material(uint64_t assetId)
+		: Asset(assetId)
+	{
+	}
+
 	Material::PerPass* Material::GetRenderPassParameters(RenderPassType pass) 
 	{
 		auto const passItr = _renderPassParaMap.find(pass);

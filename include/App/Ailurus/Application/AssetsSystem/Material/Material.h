@@ -27,7 +27,9 @@ namespace Ailurus
 
 	private:
 		friend class AssetsSystem;
+		explicit Material(uint64_t assetId);
 
+	private:
 		std::unordered_map<RenderPassType, PerPass> _renderPassParaMap;
 	};
 } // namespace Ailurus
