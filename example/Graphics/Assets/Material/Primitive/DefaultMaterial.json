@@ -14,12 +14,12 @@
 		"uniforms": [
 			{
 				"binding": 0,
-				"name": "u_SelfColor",
 				"shaderStage": [
 					"Fragment"
 				],
 				"variable": {
 					"type": "Numeric",
+					"name": "u_SelfColor",
 					"value": {
 						"type": "Float3",
 						"x": 0.9,

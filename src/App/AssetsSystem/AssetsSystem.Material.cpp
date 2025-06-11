@@ -58,7 +58,22 @@ namespace Ailurus
 		return pUniVar;
 	}
 */
-	static std::optional<RenderPassType> JsonReadRenderPass(const std::string& path, 
+	struct UnifromAccessValue
+	{
+		RenderPassType pass;
+		uint32_t bindingId;
+		std::string access;
+		UniformValue value;
+	};
+
+	struct UniformVariableAndDeafaultValue
+	{
+		std::unique_ptr<UniformVariable> pVariable;
+		std::vector<UniformValue> defaultValue;
+	};
+
+	static std::optional<RenderPassType>
+	JsonReadRenderPass(const std::string& path,
 		const nlohmann::basic_json<>& renderPassConfig)
 	{
 		if (!renderPassConfig.contains("pass"))
@@ -130,7 +145,77 @@ namespace Ailurus
 		}
 	}
 
-	static std::unique_ptr<UniformSet> JsonReadUniformSet(const std::string& path, 
+	static std::optional<uint32_t> JsonReadUniformBindingId(const std::string& path,
+		const nlohmann::basic_json<>& uniformConfig)
+	{
+		if (!uniformConfig.contains("binding"))
+		{
+			Logger::LogError("Material render pass uniform config missing binding, {}, {}", path, uniformConfig.dump());
+			return std::nullopt;
+		}
+
+		uint32_t bindingId = uniformConfig["binding"].get<uint32_t>();
+		return bindingId;
+	}
+
+	static std::vector<ShaderStage> JsonReadUniformShaderStages(const std::string& path,
+		const nlohmann::basic_json<>& uniformConfig)
+	{
+		if (!uniformConfig.contains("shaderStage"))
+		{
+			Logger::LogError("Material render pass uniform config missing shaderStage, {}, {}", path, uniformConfig.dump());
+			return {};
+		}
+
+		const auto& shaderStageNode = uniformConfig["shaderStage"];
+		if (!shaderStageNode.is_array())
+		{
+			Logger::LogError("Material render pass uniform config shaderStage not array, {}, {}", path, uniformConfig.dump());
+			return {};
+		}
+
+		if (shaderStageNode.empty())
+		{
+			Logger::LogError("Material render pass uniform config shaderStage empty, {}, {}", path, uniformConfig.dump());
+			return {};
+		}
+
+		std::vector<ShaderStage> targetShaderStages;
+		for (const auto& stageNameNode : shaderStageNode)
+		{
+			if (!stageNameNode.is_string())
+			{
+				Logger::LogError("Material render pass uniform config shaderStage not string, {}, {}", path, uniformConfig.dump());
+				continue;
+			}
+
+			ShaderStage stage;
+			const std::string& stageName = stageNameNode.get<std::string>();
+			if (!EnumReflection<ShaderStage>::TryFromString(stageName, &stage))
+			{
+				Logger::LogError("Material render pass uniform config shaderStage error, {}, {}", path, stageName);
+				continue;
+			}
+
+			targetShaderStages.push_back(stage);
+		}
+
+		return targetShaderStages;
+	}
+
+	static UniformVariableAndDeafaultValue JsonReadUniformVariable(const std::string& path,
+		const nlohmann::basic_json<>& uniformConfig)
+	{
+		if (!uniformConfig.contains("variable"))
+		{
+			Logger::LogError("Material render pass uniform config missing variable, {}, {}", path, uniformConfig.dump());
+			return { nullptr, {} };
+		}
+
+		
+	}
+
+	static std::unique_ptr<UniformSet> JsonReadUniformSet(const std::string& path,
 		const nlohmann::basic_json<>& renderPassConfig)
 	{
 		if (!renderPassConfig.contains("uniforms"))
@@ -150,11 +235,23 @@ namespace Ailurus
 		}
 
 		auto pUniformSet = std::make_unique<UniformSet>(UniformSetUsage::MaterialCustom);
-		for (const auto& uniformVariableConfig : uniformSetConfig)
+		for (const auto& uniformConfig : uniformSetConfig)
 		{
-			
+			// Binding id
+			auto bindingIdOpt = JsonReadUniformBindingId(path, uniformConfig);
+			if (!bindingIdOpt.has_value())
+				continue;
+
+			uint32_t bindingId = bindingIdOpt.value();
+
+			// Shader stage
+			auto targetShaderStages = JsonReadUniformShaderStages(path, uniformConfig);
+			if (targetShaderStages.empty())
+				continue;
+
+			// Variable
 		}
-		
+
 		return pUniformSet;
 	}
 
@@ -192,23 +289,11 @@ namespace Ailurus
 				continue;
 
 			RenderPassType pass = passOpt.value();
-			
+
 			// Read shader config
 			JsonReadShader(path, pass, pMaterialRaw, renderPassConfig);
 
 			// Read uniform set
-
-
-
-
-
-
-
-
-
-
-
-			
 
 			if (passShaderConfig.contains("Uniform"))
 			{
