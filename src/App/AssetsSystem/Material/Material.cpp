@@ -1,9 +1,8 @@
 #include <cstdint>
-#include <fstream>
-#include <nlohmann/json.hpp>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 #include <Ailurus/Utility/Logger.h>
 
 namespace Ailurus
@@ -13,25 +12,32 @@ namespace Ailurus
 	{
 	}
 
-	Material::PerPass* Material::GetRenderPassParameters(RenderPassType pass) 
+	void Material::SetPassShader(RenderPassType pass, const Shader* pShader)
 	{
-		auto const passItr = _renderPassParaMap.find(pass);
-		if (passItr == _renderPassParaMap.end())
-			return nullptr;
+		if (pShader == nullptr)
+			return;
 
-		return &passItr->second;
+		_renderPassShaderMap[pass][pShader->GetStage()] = pShader;
 	}
 
 	void Material::SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value)
 	{
-		auto* passParams = GetRenderPassParameters(pass);
-		if (passParams == nullptr)
+		auto itr = _renderPassUniformMap.find(pass);
+		if (itr == _renderPassUniformMap.end())
 		{
 			Logger::LogError("Material render pass not found: {}", EnumReflection<RenderPassType>::ToString(pass));
 			return;
 		}
 
-		passParams->uniformSet.SetUniformValue(bindingId, access, value);
+		auto& pUniform = itr->second;
+		pUniform->SetUniformValue(bindingId, access, value);
 	}
 
+	void Material::SetUniformSet(RenderPassType pass, std::unique_ptr<UniformSet>&& pUniformSet)
+	{
+		if (pUniformSet == nullptr)
+			return;
+
+		_renderPassUniformMap[pass] = std::move(pUniformSet);
+	}
 } // namespace Ailurus

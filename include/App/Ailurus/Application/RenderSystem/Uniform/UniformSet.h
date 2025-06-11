@@ -20,6 +20,7 @@ namespace Ailurus
 	{
 	public:
 		explicit UniformSet(uint32_t setId);
+		explicit UniformSet(UniformSetUsage usage);
 		~UniformSet();
 
 	public:

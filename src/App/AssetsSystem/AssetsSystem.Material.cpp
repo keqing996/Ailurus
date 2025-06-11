@@ -1,10 +1,14 @@
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
+#include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
-#include "Ailurus/Application/AssetsSystem/Material/MaterialInstance.h"
+#include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Assert.h>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <fstream>
+#include <optional>
 
 namespace Ailurus
 {
@@ -54,62 +58,104 @@ namespace Ailurus
 		return pUniVar;
 	}
 */
-	static void LoadMaterialAndDeafultInstanceFromFile(
-		const std::string& path,
-		const nlohmann::json& json, 
-		Material* pMaterial, 
-		ReadOnlyMaterialInstance* pMaterialInstance)
+	static std::optional<RenderPassType> JsonReadRenderPass(const std::string& path, 
+		const nlohmann::basic_json<>& renderPassConfig)
 	{
-		for (const auto& [passName, passShaderConfig] : json.items())
+		if (!renderPassConfig.contains("pass"))
 		{
-			RenderPassType pass;
-			if (!EnumReflection<RenderPassType>::TryFromString(passName, &pass))
+			Logger::LogError("Material render pass missing, {}", path);
+			return std::nullopt;
+		}
+
+		const auto& passNameNode = renderPassConfig["pass"];
+		if (!passNameNode.is_string())
+		{
+			Logger::LogError("Material render pass name error, {}, {}", path, passNameNode.dump());
+			return std::nullopt;
+		}
+
+		RenderPassType pass;
+		const std::string& passName = passNameNode.get<std::string>();
+		if (!EnumReflection<RenderPassType>::TryFromString(passName, &pass))
+		{
+			Logger::LogError("Material render pass error, {}, {}", path, passName);
+			return std::nullopt;
+		}
+
+		return pass;
+	}
+
+	static void JsonReadShader(const std::string& path, RenderPassType pass, Material* pMaterial,
+		const nlohmann::basic_json<>& renderPassConfig)
+	{
+		if (!renderPassConfig.contains("shader"))
+		{
+			Logger::LogError("Material render pass shader missing, {}, {}", path, EnumReflection<RenderPassType>::ToString(pass));
+			return;
+		}
+
+		const auto& passShaderConfig = renderPassConfig["shader"];
+		if (!passShaderConfig.is_array())
+		{
+			Logger::LogError("Material render pass shader config error, {}, {}", path, passShaderConfig.dump());
+			return;
+		}
+
+		for (const auto& shaderConfig : passShaderConfig)
+		{
+			if (!shaderConfig.contains("stage") || !shaderConfig.contains("path"))
 			{
-				Logger::LogError("Material render pass error, {}, {}", path, passName);
+				Logger::LogError("Material render pass shader config missing stage or path, {}, {}", path, shaderConfig.dump());
 				continue;
 			}
 
-			if (passShaderConfig.contains("Shader"))
+			ShaderStage stage;
+			const std::string& shaderStageName = shaderConfig["stage"].get<std::string>();
+			if (!EnumReflection<ShaderStage>::TryFromString(shaderStageName, &stage))
 			{
-				for (const auto& [shaderStageName, shaderPath] : passShaderConfig["Shader"].items())
-				{
-					ShaderStage stage;
-					if (!EnumReflection<ShaderStage>::TryFromString(shaderStageName, &stage))
-					{
-						Logger::LogError("Material shader stage error, {}, {}", path, shaderStageName);
-						continue;
-					}
-
-					const std::string& shaderFilePath = shaderPath.get<std::string>();
-					const Shader* pShader = Application::Get<RenderSystem>()->GetShaderLibrary()->GetShader(stage, shaderFilePath);
-					if (pShader == nullptr)
-					{
-						Logger::LogError("Material shader load error, {}, {}", path, shaderPath);
-						continue;
-					}
-
-					_renderPassParaMap[pass].stageShaders[stage] = pShader;
-				}
+				Logger::LogError("Material shader stage error, {}, {}", path, shaderStageName);
+				continue;
 			}
 
-			if (passShaderConfig.contains("Uniform"))
+			const std::string& shaderFilePath = shaderConfig["path"].get<std::string>();
+			const Shader* pShader = Application::Get<RenderSystem>()->GetShaderLibrary()->GetShader(stage, shaderFilePath);
+			if (pShader == nullptr)
 			{
-				for (auto uniformBlockNode : passShaderConfig["Uniform"])
-				{
-					const std::string& blockName = uniformBlockNode["BlockName"];
-					uint32_t setId = uniformBlockNode["Set"];
-					uint32_t bindingId = uniformBlockNode["Binding"];
-					
-					for (auto uniformValueNode : uniformBlockNode["Values"])
-					{
-						const std::string& varName = uniformValueNode["Name"];
-						auto pUniVar = MaterialJsonHelper::CreateUniformVar(blockName, varName, uniformValueNode);
-						if (pUniVar != nullptr)
-							_renderPassParaMap[pass].uniformVariables.push_back(std::move(pUniVar));
-					}
-				}
+				Logger::LogError("Material shader load error, {}, {}", path, shaderFilePath);
+				continue;
 			}
+
+			// Add shader to material
+			pMaterial->SetPassShader(pass, pShader);
 		}
+	}
+
+	static std::unique_ptr<UniformSet> JsonReadUniformSet(const std::string& path, 
+		const nlohmann::basic_json<>& renderPassConfig)
+	{
+		if (!renderPassConfig.contains("uniforms"))
+			return nullptr;
+
+		const auto& uniformSetConfig = renderPassConfig["uniforms"];
+		if (!uniformSetConfig.is_array())
+		{
+			Logger::LogError("Material render pass uniform set config error, {}, {}", path, uniformSetConfig.dump());
+			return nullptr;
+		}
+
+		if (uniformSetConfig.empty())
+		{
+			Logger::LogError("Material render pass uniform set config empty, {}", path);
+			return nullptr;
+		}
+
+		auto pUniformSet = std::make_unique<UniformSet>(UniformSetUsage::MaterialCustom);
+		for (const auto& uniformVariableConfig : uniformSetConfig)
+		{
+			
+		}
+		
+		return pUniformSet;
 	}
 
 	AssetReference<ReadOnlyMaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
@@ -138,13 +184,55 @@ namespace Ailurus
 		_assetsMap[pMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<ReadOnlyMaterialInstance>(pMaterialInstanceRaw);
 
 		// Load
-		LoadMaterialAndDeafultInstanceFromFile(path, json, pMaterialRaw, pMaterialInstanceRaw);
+		for (const auto& renderPassConfig : json.array())
+		{
+			// Read render pass
+			auto passOpt = JsonReadRenderPass(path, renderPassConfig);
+			if (!passOpt.has_value())
+				continue;
+
+			RenderPassType pass = passOpt.value();
+			
+			// Read shader config
+			JsonReadShader(path, pass, pMaterialRaw, renderPassConfig);
+
+			// Read uniform set
+
+
+
+
+
+
+
+
+
+
+
+			
+
+			if (passShaderConfig.contains("Uniform"))
+			{
+				for (auto uniformBlockNode : passShaderConfig["Uniform"])
+				{
+					const std::string& blockName = uniformBlockNode["BlockName"];
+					uint32_t setId = uniformBlockNode["Set"];
+					uint32_t bindingId = uniformBlockNode["Binding"];
+
+					for (auto uniformValueNode : uniformBlockNode["Values"])
+					{
+						const std::string& varName = uniformValueNode["Name"];
+						auto pUniVar = MaterialJsonHelper::CreateUniformVar(blockName, varName, uniformValueNode);
+						if (pUniVar != nullptr)
+							_renderPassParaMap[pass].uniformVariables.push_back(std::move(pUniVar));
+					}
+				}
+			}
+		}
 
 		return AssetReference<ReadOnlyMaterialInstance>(pMaterialInstanceRaw);
 	}
 
 	AssetReference<ReadWriteMaterialInstance> AssetsSystem::CopyMaterialInstance(const AssetReference<ReadOnlyMaterialInstance>& materialInstance)
 	{
-
 	}
 } // namespace Ailurus

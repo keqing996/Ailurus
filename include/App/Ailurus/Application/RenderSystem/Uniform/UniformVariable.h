@@ -3,15 +3,14 @@
 #include <cstdint>
 #include <memory>
 #include "UniformValue.h"
+#include "Ailurus/Utility/EnumReflection.h"
 
 namespace Ailurus
 {
-	enum class UniformVaribleType
-	{
+	REFLECTION_ENUM(UniformVaribleType,
 		Numeric,
 		Structure,
-		Array
-	};
+		Array);
 
 	class UniformVariable
 	{

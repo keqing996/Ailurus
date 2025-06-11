@@ -9,6 +9,11 @@ namespace Ailurus
 	{
 	}
 
+	UniformSet::UniformSet(UniformSetUsage usage)
+		: _setId(static_cast<uint32_t>(usage))
+	{
+	}
+
 	UniformSet::~UniformSet() = default;
 
 	void UniformSet::AddBindingPoint(std::unique_ptr<UniformBindingPoint>&& pBindingPoint)
