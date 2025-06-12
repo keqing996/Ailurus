@@ -16,7 +16,7 @@ namespace Ailurus
 	public:
 		void SetPassShader(RenderPassType pass, const Shader* pShader);
 		void SetUniformSet(RenderPassType pass, std::unique_ptr<UniformSet>&& pUniformSet);
-		void SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value);
+		void UpdateUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value);
 
 	private:
 		friend class AssetsSystem;

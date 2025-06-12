@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
 #include "UniformValue.h"
 #include "Ailurus/Utility/EnumReflection.h"
 
@@ -15,13 +16,7 @@ namespace Ailurus
 	class UniformVariable
 	{
 	public:
-		UniformVariable(const std::string& name);
-
-		const std::string& GetName() const;
 		virtual UniformVaribleType VaribleType() const = 0;
-
-	protected:
-		std::string _name;
 	};
 
 	class UniformVariableNumeric;
@@ -31,7 +26,7 @@ namespace Ailurus
 	class UniformVariableNumeric : public UniformVariable
 	{
 	public:
-		UniformVariableNumeric(const std::string& name, UniformValueType type);
+		UniformVariableNumeric(UniformValueType type);
 
 		auto ValueType() const -> const UniformValueType&;
 		auto GetValue() const -> const UniformValue&;
@@ -46,25 +41,18 @@ namespace Ailurus
 	class UniformVariableStructure : public UniformVariable
 	{
 	public:
-		explicit UniformVariableStructure(const std::string& name);
-
-		auto AddNumericMember(const std::string& name, UniformValueType type) -> UniformVariableNumeric*;
-		auto AddStructureMember(const std::string& name) -> UniformVariableStructure*;
-		auto AddArrayMember(const std::string& name) -> UniformVariableArray*;
-		auto GetMembers() const -> const std::vector<std::unique_ptr<UniformVariable>>&;
+		auto AddMember(const std::string& name, std::unique_ptr<UniformVariable>&& pUniformVar) -> void;
+		auto GetMembers() const -> const std::unordered_map<std::string, std::unique_ptr<UniformVariable>>&;
 		auto VaribleType() const -> UniformVaribleType override;
 
 	private:
-		std::vector<std::unique_ptr<UniformVariable>> _members;
+		std::unordered_map<std::string, std::unique_ptr<UniformVariable>> _members;
 	};
 
 	class UniformVariableArray : public UniformVariable
 	{
 	public:
-		UniformVariableArray(const std::string& name);
-
-		auto AddNumericMember(UniformValueType type) -> UniformVariableNumeric*;
-		auto AddStructureMember() -> UniformVariableStructure*;
+		auto AddMember(std::unique_ptr<UniformVariable>&& pUniformVar) -> void;
 		auto GetMembers() const -> const std::vector<std::unique_ptr<UniformVariable>>&;
 		auto VaribleType() const -> UniformVaribleType override;
 

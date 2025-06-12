@@ -20,7 +20,7 @@ namespace Ailurus
 		_renderPassShaderMap[pass][pShader->GetStage()] = pShader;
 	}
 
-	void Material::SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value)
+	void Material::UpdateUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value)
 	{
 		auto itr = _renderPassUniformMap.find(pass);
 		if (itr == _renderPassUniformMap.end())
@@ -30,7 +30,7 @@ namespace Ailurus
 		}
 
 		auto& pUniform = itr->second;
-		pUniform->SetUniformValue(bindingId, access, value);
+		pUniform->UpdateUniformValue(bindingId, access, value);
 	}
 
 	void Material::SetUniformSet(RenderPassType pass, std::unique_ptr<UniformSet>&& pUniformSet)

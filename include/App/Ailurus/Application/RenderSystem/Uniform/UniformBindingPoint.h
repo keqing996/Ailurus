@@ -13,11 +13,11 @@ namespace Ailurus
 	class UniformBindingPoint: public NonCopyable, public NonMovable
 	{
 	public:
-		UniformBindingPoint(uint32_t bindingPoint, std::unique_ptr<UniformVariable>&& pUniform);
+		UniformBindingPoint(uint32_t bindingPoint, const std::vector<ShaderStage>& shaderStage, 
+			const std::string name, std::unique_ptr<UniformVariable>&& pUniform);
 		~UniformBindingPoint();
 
 	public:
-		void AddUsingStage(ShaderStage stage);
 		const std::vector<ShaderStage>& GetUsingStages() const;
 		uint32_t GetBindingPoint() const;
 		const UniformVariable* GetUniform() const;
@@ -28,6 +28,7 @@ namespace Ailurus
 	private:
 		uint32_t _bindingPoint = 0;
 		std::vector<ShaderStage> _usingStages;
+		std::string _bindingPointName;
 		std::unique_ptr<UniformVariable> _pUniformVariable;
 
 		uint32_t _totalSize = 0;

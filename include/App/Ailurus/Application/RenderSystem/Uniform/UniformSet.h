@@ -30,7 +30,7 @@ namespace Ailurus
 		const UniformBindingPoint* GetBindingPoint(uint32_t bindingPoint) const;
 		uint32_t GetSetId() const;
 
-		void SetUniformValue(uint32_t bindingId, const std::string& access, const UniformValue& value);
+		void UpdateUniformValue(uint32_t bindingId, const std::string& access, const UniformValue& value);
 
 	private:
 		UniformBindingPoint* GetBindingPoint(uint32_t bindingPoint);

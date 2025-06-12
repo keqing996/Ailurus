@@ -3,19 +3,8 @@
 
 namespace Ailurus
 {
-	UniformVariable::UniformVariable(const std::string& name)
-		: _name(name)
-	{
-	}
-
-	const std::string& UniformVariable::GetName() const
-	{
-		return _name;
-	}
-
-	UniformVariableNumeric::UniformVariableNumeric(const std::string& name, UniformValueType type)
-		: UniformVariable(name)
-		, _type(type)
+	UniformVariableNumeric::UniformVariableNumeric(UniformValueType type)
+		: _type(type)
 	{
 		switch (type)
 		{
@@ -66,36 +55,12 @@ namespace Ailurus
 		return UniformVaribleType::Numeric;
 	}
 
-	UniformVariableStructure::UniformVariableStructure(const std::string& name)
-		: UniformVariable(name)
+	void UniformVariableStructure::AddMember(const std::string& name, std::unique_ptr<UniformVariable>&& pUniformVar)
 	{
+		_members[name] = std::move(pUniformVar);
 	}
 
-	UniformVariableNumeric* UniformVariableStructure::AddNumericMember(const std::string& name, UniformValueType type)
-	{
-		auto member = std::make_unique<UniformVariableNumeric>(name, type);
-		UniformVariableNumeric* memberPtr = member.get();
-		_members.push_back(std::move(member));
-		return memberPtr;
-	}
-
-	UniformVariableStructure* UniformVariableStructure::AddStructureMember(const std::string& name)
-	{
-		auto member = std::make_unique<UniformVariableStructure>(name);
-		UniformVariableStructure* memberPtr = member.get();
-		_members.push_back(std::move(member));
-		return memberPtr;
-	}
-
-	UniformVariableArray* UniformVariableStructure::AddArrayMember(const std::string& name)
-	{
-		auto member = std::make_unique<UniformVariableArray>(name);
-		UniformVariableArray* memberPtr = member.get();
-		_members.push_back(std::move(member));
-		return memberPtr;
-	}
-
-	const std::vector<std::unique_ptr<UniformVariable>>& UniformVariableStructure::GetMembers() const
+	const std::unordered_map<std::string, std::unique_ptr<UniformVariable>>& UniformVariableStructure::GetMembers() const
 	{
 		return _members;
 	}
@@ -105,25 +70,9 @@ namespace Ailurus
 		return UniformVaribleType::Structure;
 	}
 
-	UniformVariableArray::UniformVariableArray(const std::string& name)
-		: UniformVariable(name)
+	void UniformVariableArray::AddMember(std::unique_ptr<UniformVariable>&& pUniformVar)
 	{
-	}
-
-	UniformVariableNumeric* UniformVariableArray::AddNumericMember(UniformValueType type)
-	{
-		auto member = std::make_unique<UniformVariableNumeric>(std::to_string(_members.size()), type);
-		UniformVariableNumeric* memberPtr = member.get();
-		_members.push_back(std::move(member));
-		return memberPtr;
-	}
-
-	UniformVariableStructure* UniformVariableArray::AddStructureMember()
-	{
-		auto member = std::make_unique<UniformVariableStructure>(std::to_string(_members.size()));
-		UniformVariableStructure* memberPtr = member.get();
-		_members.push_back(std::move(member));
-		return memberPtr;
+		_members.push_back(std::move(pUniformVar));
 	}
 
 	const std::vector<std::unique_ptr<UniformVariable>>& UniformVariableArray::GetMembers() const

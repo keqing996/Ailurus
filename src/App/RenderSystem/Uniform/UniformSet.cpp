@@ -71,7 +71,7 @@ namespace Ailurus
 		return _setId;
 	}
 
-	void UniformSet::SetUniformValue(uint32_t bindingId, const std::string& access, const UniformValue& value)
+	void UniformSet::UpdateUniformValue(uint32_t bindingId, const std::string& access, const UniformValue& value)
 	{
 		if (_pUniformBuffer == nullptr)
 		{

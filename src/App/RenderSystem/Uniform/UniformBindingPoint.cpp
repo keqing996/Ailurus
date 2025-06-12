@@ -62,7 +62,7 @@ namespace Ailurus
 			{
 				uint32_t maxAlignment = 0;
 				const auto pStructureUniform = static_cast<const UniformVariableStructure*>(pUniform);
-				for (const auto& member : pStructureUniform->GetMembers())
+				for (const auto& [_, member] : pStructureUniform->GetMembers())
 					maxAlignment = std::max(maxAlignment, GetStd140BaseAlignment(member.get()));
 				return AlignOffset(maxAlignment, 16);
 			}
@@ -79,16 +79,12 @@ namespace Ailurus
 	static void PopulateUniformOffsets(UniformVariable* pUniform, const std::string& prefix,
 		uint32_t& currentOffset, std::unordered_map<std::string, uint32_t>& offsetMap)
 	{
-		uint32_t baseAlignment = GetStd140BaseAlignment(pUniform);
-		currentOffset = AlignOffset(currentOffset, baseAlignment);
-
-		if (!prefix.empty())
-			offsetMap[prefix] = currentOffset;
-
 		switch (pUniform->VaribleType())
 		{
 			case UniformVaribleType::Numeric:
 			{
+				offsetMap[prefix] = currentOffset;
+
 				const auto pNumericUniform = static_cast<const UniformVariableNumeric*>(pUniform);
 				currentOffset += GetUniformVariableGetSize(pNumericUniform->ValueType());
 				break;
@@ -96,10 +92,10 @@ namespace Ailurus
 			case UniformVaribleType::Structure:
 			{
 				const auto pStructureUniform = static_cast<const UniformVariableStructure*>(pUniform);
-				for (const auto& member : pStructureUniform->GetMembers())
+				for (const auto& [name, pChildUniform] : pStructureUniform->GetMembers())
 				{
-					std::string memberName = prefix.empty() ? member->GetName() : prefix + "." + member->GetName();
-					PopulateUniformOffsets(member.get(), memberName, currentOffset, offsetMap);
+					std::string memberName = prefix + "." + name;
+					PopulateUniformOffsets(pChildUniform.get(), memberName, currentOffset, offsetMap);
 				}
 				break;
 			}
@@ -107,35 +103,36 @@ namespace Ailurus
 			{
 				const auto pArrayUniform = static_cast<const UniformVariableArray*>(pUniform);
 				const auto& members = pArrayUniform->GetMembers();
-				uint32_t elementAlignment = GetStd140BaseAlignment(members.front().get());
 				for (auto i = 0; i < members.size(); ++i)
 				{
 					std::string elementName = prefix + "[" + std::to_string(i) + "]";
-					PopulateUniformOffsets(members[i].get(), elementName, currentOffset, offsetMap);
-					currentOffset = AlignOffset(currentOffset, elementAlignment);
+					UniformVariable* pMemberUniform = members[i].get();
+					PopulateUniformOffsets(pMemberUniform, elementName, currentOffset, offsetMap);
+					currentOffset = AlignOffset(currentOffset, GetStd140BaseAlignment(pMemberUniform));
 				}
 				break;
 			}
 			default:
 				Logger::LogError("Unknown variable type encountered during offset population.");
 		}
+
+		uint32_t baseAlignment = GetStd140BaseAlignment(pUniform);
+		currentOffset = AlignOffset(currentOffset, baseAlignment);
 	}
 
-	UniformBindingPoint::UniformBindingPoint(uint32_t bindingPoint, std::unique_ptr<UniformVariable>&& pUniform)
+	UniformBindingPoint::UniformBindingPoint(uint32_t bindingPoint, const std::vector<ShaderStage>& shaderStage, 
+		const std::string name, std::unique_ptr<UniformVariable>&& pUniform)
 		: _bindingPoint(bindingPoint)
+		, _usingStages(shaderStage)
+		, _bindingPointName(name)
 		, _pUniformVariable(std::move(pUniform))
 	{
 		uint32_t offset = 0;
-		PopulateUniformOffsets(_pUniformVariable.get(), "", offset, _accessNameToBufferOffsetMap);
+		PopulateUniformOffsets(_pUniformVariable.get(), _bindingPointName, offset, _accessNameToBufferOffsetMap);
 		_totalSize = offset;
 	}
 
 	UniformBindingPoint::~UniformBindingPoint() = default;
-
-	void UniformBindingPoint::AddUsingStage(ShaderStage stage)
-	{
-		_usingStages.push_back(stage);
-	}
 
 	const std::vector<ShaderStage>& UniformBindingPoint::GetUsingStages() const
 	{

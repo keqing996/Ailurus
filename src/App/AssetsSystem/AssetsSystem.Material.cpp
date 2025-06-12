@@ -1,11 +1,9 @@
-#include "Ailurus/Application/RenderSystem/Uniform/UniformValue.h"
 #include <memory>
 #include <fstream>
 #include <optional>
 #include <nlohmann/json.hpp>
 #include <Ailurus/Assert.h>
 #include <Ailurus/Utility/Logger.h>
-#include <Ailurus/Utility/String.h>
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
@@ -41,20 +39,21 @@ namespace Ailurus
 		return pass;
 	}
 
-	static void JsonReadShader(const std::string& path, RenderPassType pass, Material* pMaterial,
-		const nlohmann::basic_json<>& renderPassConfig)
+	static std::vector<const Shader*> JsonReadShader(const std::string& path, const nlohmann::basic_json<>& renderPassConfig)
 	{
+		std::vector<const Shader*> result;
+
 		if (!renderPassConfig.contains("shader"))
 		{
-			Logger::LogError("Material render pass shader missing, {}, {}", path, EnumReflection<RenderPassType>::ToString(pass));
-			return;
+			Logger::LogError("Material render pass shader missing, {}", path);
+			return result;
 		}
 
 		const auto& passShaderConfig = renderPassConfig["shader"];
 		if (!passShaderConfig.is_array())
 		{
 			Logger::LogError("Material render pass shader config error, {}, {}", path, passShaderConfig.dump());
-			return;
+			return result;
 		}
 
 		for (const auto& shaderConfig : passShaderConfig)
@@ -81,9 +80,10 @@ namespace Ailurus
 				continue;
 			}
 
-			// Add shader to material
-			pMaterial->SetPassShader(pass, pShader);
+			result.push_back(pShader);
 		}
+
+		return result;
 	}
 
 	static std::optional<uint32_t> JsonReadUniformBindingId(const std::string& path,
@@ -201,7 +201,7 @@ namespace Ailurus
 
 	static std::unique_ptr<UniformVariable> JsonReadUniformVariableRecursive(const std::string& path,
 		const nlohmann::basic_json<>& uniformVarConfig,
-		std::vector<std::string>& accessNames,
+		const std::string& prefix,
 		std::vector<std::pair<std::string, UniformValue>>& outAccessValues)
 	{
 		if (!uniformVarConfig.is_object())
@@ -224,31 +224,68 @@ namespace Ailurus
 			return nullptr;
 		}
 
-		const std::string& name = uniformVarConfig["name"].get<std::string>();
-
 		switch (varType)
 		{
 			case UniformVaribleType::Numeric:
 			{
-				accessNames.push_back(name);
-
 				auto [valueType, value] = JsonReadUniformNumericValue(uniformVarConfig["value"]);
-				auto pUniformVar = std::make_unique<UniformVariableNumeric>(name, valueType);
-				outAccessValues.push_back({ String::Join(accessNames, ""),
-					value });
+				auto pUniformVar = std::make_unique<UniformVariableNumeric>(valueType);
 
-				accessNames.pop_back();
+				outAccessValues.push_back({ prefix, value });
 
-				return pUniformVar;
+				return std::move(pUniformVar);
 			}
 			case UniformVaribleType::Structure:
 			{
-				return nullptr;
+				auto pUniformVar = std::make_unique<UniformVariableStructure>();
+				for (const auto& memberConfig : uniformVarConfig["members"])
+				{
+					// Name
+					if (!memberConfig.contains("name"))
+					{
+						Logger::LogError("Material render pass uniform config member missing name, {}, {}", path, memberConfig.dump());
+						continue;
+					}
+
+					const std::string& name = memberConfig["name"].get<std::string>();
+					std::string elementName = prefix + "." + name;
+
+					// Variable
+					if (!memberConfig.contains("variable"))
+					{
+						Logger::LogError("Material render pass uniform config member missing variable, {}, {}", path, memberConfig.dump());
+						continue;
+					}
+
+					const auto& variableConfig = memberConfig["variable"];
+					auto pMemberVar = JsonReadUniformVariableRecursive(path, variableConfig, elementName, outAccessValues);
+					if (pMemberVar == nullptr)
+						continue;
+
+					// Add member variable
+					pUniformVar->AddMember(name, std::move(pMemberVar));
+				}
+
+				return std::move(pUniformVar);
 			}
 			case UniformVaribleType::Array:
 			{
+				auto pUniformVar = std::make_unique<UniformVariableArray>();
+				size_t index = 0;
+				for (const auto& memberConfig : uniformVarConfig["members"])
+				{
+					std::string elementName = prefix + "[" + std::to_string(index) + "]";
 
-				return nullptr;
+					auto pMemberVar = JsonReadUniformVariableRecursive(path, memberConfig, elementName, outAccessValues);
+					if (pMemberVar == nullptr)
+						continue;
+
+					pUniformVar->AddMember(std::move(pMemberVar));
+
+					index++;
+				}
+
+				return std::move(pUniformVar);
 			}
 			default:
 			{
@@ -259,7 +296,7 @@ namespace Ailurus
 	}
 
 	static std::unique_ptr<UniformSet> JsonReadUniformSet(const std::string& path,
-		const nlohmann::basic_json<>& renderPassConfig)
+		const nlohmann::basic_json<>& renderPassConfig, std::vector<std::tuple<uint32_t, std::string, UniformValue>>& outAccessValues)
 	{
 		if (!renderPassConfig.contains("uniforms"))
 			return nullptr;
@@ -285,12 +322,18 @@ namespace Ailurus
 			if (!bindingIdOpt.has_value())
 				continue;
 
-			uint32_t bindingId = bindingIdOpt.value();
-
 			// Shader stage
 			auto targetShaderStages = JsonReadUniformShaderStages(path, uniformConfig);
 			if (targetShaderStages.empty())
 				continue;
+
+			// Name
+			if (!uniformConfig.contains("name"))
+			{
+				Logger::LogError("Material render pass uniform config missing name, {}, {}", path, uniformConfig.dump());
+				continue;
+			}
+			const std::string& name = uniformConfig["name"].get<std::string>();
 
 			// Variable
 			if (!uniformConfig.contains("variable"))
@@ -299,18 +342,27 @@ namespace Ailurus
 				continue;
 			}
 
-			std::vector<std::string> accessNames;
-			std::vector<std::pair<std::string, UniformValue>> outAccessValues;
-			auto pUniformVar = JsonReadUniformVariableRecursive(path, uniformConfig["variable"], 
-				accessNames, outAccessValues);
+			std::vector<std::pair<std::string, UniformValue>> defaultAccessValues;
+			auto pUniformVar = JsonReadUniformVariableRecursive(path, uniformConfig["variable"],
+				name, defaultAccessValues);
 
 			if (pUniformVar == nullptr)
 				continue;
 
+			// Create binding point
+			auto pBindingPoint = std::make_unique<UniformBindingPoint>(*bindingIdOpt, targetShaderStages,
+				name, std::move(pUniformVar));
 
+			// Add binding point to uniform set
+			pUniformSet->AddBindingPoint(std::move(pBindingPoint));
+
+			// Update access values
+			for (const auto& [accessName, value] : defaultAccessValues)
+				outAccessValues.push_back({ *bindingIdOpt, accessName, value });
 		}
 
-		return pUniformSet;
+		pUniformSet->InitUniformBuffer();
+		return std::move(pUniformSet);
 	}
 
 	AssetReference<ReadOnlyMaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
@@ -346,14 +398,23 @@ namespace Ailurus
 			if (!passOpt.has_value())
 				continue;
 
-			RenderPassType pass = passOpt.value();
-
 			// Read shader config
-			JsonReadShader(path, pass, pMaterialRaw, renderPassConfig);
+			auto shaders = JsonReadShader(path, renderPassConfig);
+			for (auto pShader : shaders)
+				pMaterialRaw->SetPassShader(*passOpt, pShader);
 
 			// Read uniform set
+			std::vector<std::tuple<uint32_t, std::string, UniformValue>> accessValues;
+			auto pUniformSet = JsonReadUniformSet(path, renderPassConfig, accessValues);
+			if (pUniformSet == nullptr)
+				continue;
 
-			
+			// Add uniform set to material
+			pMaterialRaw->SetUniformSet(*passOpt, std::move(pUniformSet));
+
+			// Update material instance uniform values
+			for (const auto& [bindingId, accessName, value] : accessValues)
+				pMaterialInstanceRaw->uniformValueMap[{*passOpt, bindingId, accessName}] = value;
 		}
 
 		return AssetReference<ReadOnlyMaterialInstance>(pMaterialInstanceRaw);

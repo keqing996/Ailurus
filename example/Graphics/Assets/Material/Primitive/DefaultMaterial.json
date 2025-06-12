@@ -14,18 +14,78 @@
 		"uniforms": [
 			{
 				"binding": 0,
-				"shaderStage": [
-					"Fragment"
-				],
+				"shaderStage": [ "Fragment" ],
+				"name": "u_SelfColor",
 				"variable": {
 					"type": "Numeric",
-					"name": "u_SelfColor",
 					"value": {
 						"type": "Float3",
 						"x": 0.9,
 						"y": 0.9,
 						"z": 0.9
 					}
+				}
+			},
+			{
+				"binding": 1,
+				"shaderStage": [ "Fragment" ],
+				"name": "test",
+				"variable": {
+					"type": "Array",
+					"members": [
+						{
+							"type": "Float3",
+							"x": 0.1,
+							"y": 0.1,
+							"z": 0.1
+						},
+						{
+							"type": "Float3",
+							"x": 0.2,
+							"y": 0.2,
+							"z": 0.2
+						},
+						{
+							"type": "Float3",
+							"x": 0.3,
+							"y": 0.3,
+							"z": 0.3
+						}
+					]
+				}
+			},
+			{
+				"binding": 2,
+				"shaderStage": [ "Fragment" ],
+				"name": "test2",
+				"variable": {
+					"type": "Structure",
+					"members": [
+						{
+							"name": "child1",
+							"variable": {
+								"type": "Numeric",
+								"value": {
+									"type": "Float3",
+									"x": 0.9,
+									"y": 0.9,
+									"z": 0.9
+								}
+							}
+						},
+						{
+							"name": "child2",
+							"variable": {
+								"type": "Array",
+								"members": {
+									"type": "Int",
+									"values": [
+										1, 2, 3, 4
+									]
+								}
+							}
+						}
+					]
 				}
 			}
 		],

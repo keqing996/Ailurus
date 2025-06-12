@@ -37,7 +37,7 @@ namespace Ailurus
 
         for (const auto& [entry, uniformValue] : uniformValueMap)
         {
-            targetMaterial.Get()->SetUniformValue(entry.pass, entry.bindingId, 
+            targetMaterial.Get()->UpdateUniformValue(entry.pass, entry.bindingId, 
                 entry.access, uniformValue);
         }
 	}
