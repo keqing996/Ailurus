@@ -1,79 +1,20 @@
-#include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
-#include <Ailurus/Application/Application.h>
-#include <Ailurus/Application/AssetsSystem/Material/Material.h>
-#include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
-#include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
-#include <Ailurus/Utility/Logger.h>
-#include <Ailurus/Assert.h>
+#include "Ailurus/Application/RenderSystem/Uniform/UniformValue.h"
 #include <memory>
-#include <nlohmann/json.hpp>
 #include <fstream>
 #include <optional>
+#include <nlohmann/json.hpp>
+#include <Ailurus/Assert.h>
+#include <Ailurus/Utility/Logger.h>
+#include <Ailurus/Utility/String.h>
+#include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
+#include <Ailurus/Application/Application.h>
+#include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
+#include <Ailurus/Application/AssetsSystem/Material/MaterialUniformAccess.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 
 namespace Ailurus
 {
-	/*
-	static std::unique_ptr<MaterialUniformVariable> CreateUniformVar(const std::string& uniformBlockName, const std::string& uniformValueName, const nlohmann::basic_json<>& uniformVarConfig)
-	{
-		std::unique_ptr<MaterialUniformVariable> pUniVar = nullptr;
-
-		const std::string& uniVarType = uniformVarConfig["Type"];
-		if (uniVarType == EnumReflection<MaterialUniformVariableType>::ToString(MaterialUniformVariableType::Int))
-		{
-			int value = uniformVarConfig["Value"];
-			pUniVar = std::make_unique<MaterialUniformVariableNumeric<int>>(uniformBlockName, uniformValueName, value);
-		}
-		else if (uniVarType == EnumReflection<MaterialUniformVariableType>::ToString(MaterialUniformVariableType::Uint))
-		{
-			unsigned int value = uniformVarConfig["Value"];
-			pUniVar = std::make_unique<MaterialUniformVariableNumeric<unsigned int>>(uniformBlockName, uniformValueName, value);
-		}
-		else if (uniVarType == EnumReflection<MaterialUniformVariableType>::ToString(MaterialUniformVariableType::Float))
-		{
-			float value = uniformVarConfig["Value"];
-			pUniVar = std::make_unique<MaterialUniformVariableNumeric<float>>(uniformBlockName, uniformValueName, value);
-		}
-		else if (uniVarType == EnumReflection<MaterialUniformVariableType>::ToString(MaterialUniformVariableType::Float2))
-		{
-			const float x = uniformVarConfig["X"];
-			const float y = uniformVarConfig["Y"];
-			pUniVar = std::make_unique<MaterialUniformVariableNumeric<Vector2f>>(uniformBlockName, uniformValueName, Vector2f{ x, y });
-		}
-		else if (uniVarType == EnumReflection<MaterialUniformVariableType>::ToString(MaterialUniformVariableType::Float3))
-		{
-			const float x = uniformVarConfig["X"];
-			const float y = uniformVarConfig["Y"];
-			const float z = uniformVarConfig["Z"];
-			pUniVar = std::make_unique<MaterialUniformVariableNumeric<Vector3f>>(uniformBlockName, uniformValueName, Vector3f{ x, y, z });
-		}
-		else if (uniVarType == EnumReflection<MaterialUniformVariableType>::ToString(MaterialUniformVariableType::Float4))
-		{
-			const float x = uniformVarConfig["X"];
-			const float y = uniformVarConfig["Y"];
-			const float z = uniformVarConfig["Z"];
-			const float w = uniformVarConfig["W"];
-			pUniVar = std::make_unique<MaterialUniformVariableNumeric<Vector4f>>(uniformBlockName, uniformValueName, Vector4f{ x, y, z, w });
-		}
-
-		return pUniVar;
-	}
-*/
-	struct UnifromAccessValue
-	{
-		RenderPassType pass;
-		uint32_t bindingId;
-		std::string access;
-		UniformValue value;
-	};
-
-	struct UniformVariableAndDeafaultValue
-	{
-		std::unique_ptr<UniformVariable> pVariable;
-		std::vector<UniformValue> defaultValue;
-	};
-
-	static std::optional<RenderPassType>
-	JsonReadRenderPass(const std::string& path,
+	static std::optional<RenderPassType> JsonReadRenderPass(const std::string& path,
 		const nlohmann::basic_json<>& renderPassConfig)
 	{
 		if (!renderPassConfig.contains("pass"))
@@ -203,16 +144,118 @@ namespace Ailurus
 		return targetShaderStages;
 	}
 
-	static UniformVariableAndDeafaultValue JsonReadUniformVariable(const std::string& path,
-		const nlohmann::basic_json<>& uniformConfig)
+	static std::pair<UniformValueType, UniformValue> JsonReadUniformNumericValue(const nlohmann::basic_json<>& uniformVarConfig)
 	{
-		if (!uniformConfig.contains("variable"))
+		UniformValueType valueType;
+		const std::string& uniVarType = uniformVarConfig["type"].get<std::string>();
+		if (!EnumReflection<UniformValueType>::TryFromString(uniVarType, &valueType))
 		{
-			Logger::LogError("Material render pass uniform config missing variable, {}, {}", path, uniformConfig.dump());
-			return { nullptr, {} };
+			Logger::LogError("Material render pass uniform variable type error, {}", uniVarType);
+			return { UniformValueType::Int, UniformValue{ 0 } };
 		}
 
-		
+		switch (valueType)
+		{
+			case UniformValueType::Int:
+				return {
+					UniformValueType::Int,
+					uniformVarConfig["value"].get<int>()
+				};
+			case UniformValueType::Float:
+				return {
+					UniformValueType::Float,
+					uniformVarConfig["value"].get<float>()
+				};
+			case UniformValueType::Vector2f:
+				return {
+					UniformValueType::Vector2f,
+					Vector2f{
+						uniformVarConfig["x"].get<float>(),
+						uniformVarConfig["y"].get<float>() }
+				};
+			case UniformValueType::Vector3f:
+				return {
+					UniformValueType::Vector3f,
+					Vector3f{
+						uniformVarConfig["x"].get<float>(),
+						uniformVarConfig["y"].get<float>(),
+						uniformVarConfig["z"].get<float>() }
+				};
+			case UniformValueType::Vector4f:
+				return {
+					UniformValueType::Vector4f,
+					Vector4f{
+						uniformVarConfig["x"].get<float>(),
+						uniformVarConfig["y"].get<float>(),
+						uniformVarConfig["z"].get<float>(),
+						uniformVarConfig["w"].get<float>() }
+				};
+			default:
+				Logger::LogError("Material render pass uniform variable type not supported, {}", uniVarType);
+				return {
+					UniformValueType::Int,
+					UniformValue{ 0 }
+				};
+		}
+	}
+
+	static std::unique_ptr<UniformVariable> JsonReadUniformVariableRecursive(const std::string& path,
+		const nlohmann::basic_json<>& uniformVarConfig,
+		std::vector<std::string>& accessNames,
+		std::vector<std::pair<std::string, UniformValue>>& outAccessValues)
+	{
+		if (!uniformVarConfig.is_object())
+		{
+			Logger::LogError("Material render pass uniform config access node not object, {}", uniformVarConfig.dump());
+			return nullptr;
+		}
+
+		if (!uniformVarConfig.contains("type") || !uniformVarConfig.contains("name"))
+		{
+			Logger::LogError("Material render pass uniform config access node missing type or name, {}", uniformVarConfig.dump());
+			return nullptr;
+		}
+
+		UniformVaribleType varType;
+		const std::string& accessType = uniformVarConfig["type"].get<std::string>();
+		if (!EnumReflection<UniformVaribleType>::TryFromString(accessType, &varType))
+		{
+			Logger::LogError("Material render pass uniform config access type error, {}, {}", accessType);
+			return nullptr;
+		}
+
+		const std::string& name = uniformVarConfig["name"].get<std::string>();
+
+		switch (varType)
+		{
+			case UniformVaribleType::Numeric:
+			{
+				accessNames.push_back(name);
+
+				auto [valueType, value] = JsonReadUniformNumericValue(uniformVarConfig["value"]);
+				auto pUniformVar = std::make_unique<UniformVariableNumeric>(name, valueType);
+				outAccessValues.push_back({ String::Join(accessNames, ""),
+					value });
+
+				accessNames.pop_back();
+
+				return pUniformVar;
+			}
+			case UniformVaribleType::Structure:
+			{
+				return nullptr;
+			}
+			case UniformVaribleType::Array:
+			{
+
+				return nullptr;
+			}
+			default:
+			{
+				Logger::LogError("Material render pass uniform config access type not supported, {}, {}", accessType);
+				return nullptr;
+			}
+		}
 	}
 
 	static std::unique_ptr<UniformSet> JsonReadUniformSet(const std::string& path,
@@ -250,6 +293,21 @@ namespace Ailurus
 				continue;
 
 			// Variable
+			if (!uniformConfig.contains("variable"))
+			{
+				Logger::LogError("Material render pass uniform config missing variable, {}, {}", path, uniformConfig.dump());
+				continue;
+			}
+
+			std::vector<std::string> accessNames;
+			std::vector<std::pair<std::string, UniformValue>> outAccessValues;
+			auto pUniformVar = JsonReadUniformVariableRecursive(path, uniformConfig["variable"], 
+				accessNames, outAccessValues);
+
+			if (pUniformVar == nullptr)
+				continue;
+
+
 		}
 
 		return pUniformSet;
@@ -295,23 +353,7 @@ namespace Ailurus
 
 			// Read uniform set
 
-			if (passShaderConfig.contains("Uniform"))
-			{
-				for (auto uniformBlockNode : passShaderConfig["Uniform"])
-				{
-					const std::string& blockName = uniformBlockNode["BlockName"];
-					uint32_t setId = uniformBlockNode["Set"];
-					uint32_t bindingId = uniformBlockNode["Binding"];
-
-					for (auto uniformValueNode : uniformBlockNode["Values"])
-					{
-						const std::string& varName = uniformValueNode["Name"];
-						auto pUniVar = MaterialJsonHelper::CreateUniformVar(blockName, varName, uniformValueNode);
-						if (pUniVar != nullptr)
-							_renderPassParaMap[pass].uniformVariables.push_back(std::move(pUniVar));
-					}
-				}
-			}
+			
 		}
 
 		return AssetReference<ReadOnlyMaterialInstance>(pMaterialInstanceRaw);
