@@ -16,6 +16,7 @@ namespace Ailurus
 	public:
 		void SetPassShader(RenderPassType pass, const Shader* pShader);
 		void SetUniformSet(RenderPassType pass, std::unique_ptr<UniformSet>&& pUniformSet);
+		bool HasRenderPass(RenderPassType pass) const;
 		void UpdateUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value);
 
 	private:

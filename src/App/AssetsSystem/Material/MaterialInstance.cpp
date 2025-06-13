@@ -1,33 +1,21 @@
+#include "Ailurus/Application/AssetsSystem/Material/MaterialUniformAccess.h"
 #include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
 #include <Ailurus/Utility/Logger.h>
 
 namespace Ailurus
 {
-    ReadOnlyMaterialInstance::ReadOnlyMaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial)
+    MaterialInstance::MaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial)
         : Asset(assetId)
         , targetMaterial(targetMaterial)
     {
     }
 
-    Material* ReadOnlyMaterialInstance::GetTargetMaterial() const
+    Material* MaterialInstance::GetTargetMaterial() const
     {
         return targetMaterial.Get();
     }
 
-	std::size_t ReadOnlyMaterialInstance::EntryHash::operator()(const Entry& entry) const
-	{
-		return std::hash<uint32_t>()(static_cast<uint32_t>(entry.pass))
-			^ std::hash<uint32_t>()(entry.bindingId)
-			^ std::hash<std::string>()(entry.access);
-	}
-
-	bool ReadOnlyMaterialInstance::EntryEqual::operator()(const Entry& lhs, const Entry& rhs) const
-	{
-		return lhs.pass == rhs.pass && lhs.bindingId == rhs.bindingId 
-            && lhs.access == rhs.access;
-	}
-
-    void ReadOnlyMaterialInstance::UpdateMaterialUniformData()
+    void MaterialInstance::UpdateMaterialUniformData()
     {
         if (targetMaterial == nullptr)
         {
@@ -42,14 +30,14 @@ namespace Ailurus
         }
 	}
 
-    ReadWriteMaterialInstance::ReadWriteMaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial)
-        : ReadOnlyMaterialInstance(assetId, targetMaterial)
-    {
-    }
-
-	void ReadWriteMaterialInstance::SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value)
+	void MaterialInstance::SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value)
 	{
-		Entry entry{ pass, bindingId, access };
+		MaterialUniformAccess entry{ pass, bindingId, access };
+		uniformValueMap[entry] = value;
+	}
+
+	void MaterialInstance::SetUniformValue(const MaterialUniformAccess& entry, const UniformValue& value)
+	{
 		uniformValueMap[entry] = value;
 	}
 } // namespace Ailurus

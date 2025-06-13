@@ -2,27 +2,22 @@
 
 namespace Ailurus
 {
-	CompStaticMeshRender::CompStaticMeshRender() = default;
+
+	CompStaticMeshRender::CompStaticMeshRender(const AssetReference<Model>& model, const AssetReference<MaterialInstance>& material)
+		: _modelAsset(model)
+		, _materialAsset(material)
+	{
+	}
 
 	CompStaticMeshRender::~CompStaticMeshRender() = default;
 
-	Mesh* CompStaticMeshRender::GetMesh() const
+	const AssetReference<Model>& CompStaticMeshRender::GetModelAsset() const
 	{
-		return _pMesh.get();
+		return _modelAsset;
 	}
 
-	Material* CompStaticMeshRender::GetMaterial() const
+	const AssetReference<MaterialInstance>& CompStaticMeshRender::GetMaterialAsset() const
 	{
-		return _pMaterial.get();
-	}
-
-	void CompStaticMeshRender::SetMaterial(const std::shared_ptr<Material>& pMat)
-	{
-		_pMaterial = pMat;
-	}
-
-	void CompStaticMeshRender::SetMesh(const std::shared_ptr<Mesh>& pMesh)
-	{
-		_pMesh = pMesh;
+		return _materialAsset;
 	}
 } // namespace Ailurus

@@ -40,4 +40,9 @@ namespace Ailurus
 
 		_renderPassUniformMap[pass] = std::move(pUniformSet);
 	}
+
+	bool Material::HasRenderPass(RenderPassType pass) const
+	{
+		return _renderPassShaderMap.contains(pass); 
+	}
 } // namespace Ailurus

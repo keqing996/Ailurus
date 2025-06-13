@@ -10,29 +10,21 @@
 
 namespace Ailurus
 {
-	class ReadOnlyMaterialInstance : public Asset
+	class MaterialInstance : public Asset
 	{
 	public:
 		Material* GetTargetMaterial() const;
 		void UpdateMaterialUniformData();
+		void SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value);
+		void SetUniformValue(const MaterialUniformAccess& entry, const UniformValue& value);
 
 	protected:
 		friend class AssetsSystem;
-		ReadOnlyMaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial);
+		MaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial);
 
 	protected:
 		AssetReference<Material> targetMaterial;
 		MaterialUniformValueMap uniformValueMap;
-	};
-
-	class ReadWriteMaterialInstance : public ReadOnlyMaterialInstance
-	{
-	public:
-		void SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value);
-	
-	private:
-		friend class AssetsSystem;
-		ReadWriteMaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial);
 	};
 
 } // namespace Ailurus

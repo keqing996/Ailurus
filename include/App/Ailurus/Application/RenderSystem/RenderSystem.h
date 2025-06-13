@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <unordered_map>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
@@ -11,9 +10,11 @@
 
 namespace Ailurus
 {
-	class Material;
+	class MaterialInstance;
+	class Mesh;
 	class RenderPass;
 	class CompStaticMeshRender;
+	class RenderIntermidiateVariable;
 
 	class RenderSystem : public NonCopyable, public NonMovable
 	{
@@ -22,10 +23,6 @@ namespace Ailurus
 
 	public:
 		void NeedRecreateSwapChain();
-
-		// Material
-		Material* GetMaterial(const std::string& name) const;
-		Material* AddMaterial(const std::string& name);
 
 		// Shader library
 		ShaderLibrary* GetShaderLibrary() const;
@@ -43,14 +40,19 @@ namespace Ailurus
 		RenderSystem();
 
 	private:
+		// Create
+		void CreateIntermidiateVariable();
+
+		// Render
+		void CollectCameraViewProjectionMatrix();
+		void CollectMaterialMeshMap();
 		void ReBuildSwapChain();
 		void BuildRenderPass();
-		void RenderForwardPass(std::vector<CompStaticMeshRender*>& meshRenderList);
+		void RenderForwardPass();
 		void RenderMesh(const CompStaticMeshRender* pMeshRender, class VulkanCommandBuffer* pCommandBuffer) const;
 
 	private:
 		bool _needRebuildSwapChain = false;
-		std::unordered_map<std::string, std::unique_ptr<Material>> _materialMap;
 		std::unordered_map<RenderPassType, std::unique_ptr<RenderPass>> _renderPassMap;
 		const RenderPass* _pCurrentRenderPass = nullptr;
 
@@ -59,5 +61,8 @@ namespace Ailurus
 
 		// Shader library
 		std::unique_ptr<ShaderLibrary> _pShaderLibrary;
+
+		// Intermediate variables for every frame
+		std::unique_ptr<RenderIntermidiateVariable> _pIntermidiateVariable;
 	};
 } // namespace Ailurus

@@ -365,13 +365,13 @@ namespace Ailurus
 		return std::move(pUniformSet);
 	}
 
-	AssetReference<ReadOnlyMaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
+	AssetReference<MaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
 	{
 		std::ifstream fileStream(path);
 		if (!fileStream.is_open())
 		{
 			Logger::LogError("Get material fail: {}", path);
-			return AssetReference<ReadOnlyMaterialInstance>(nullptr);
+			return AssetReference<MaterialInstance>(nullptr);
 		}
 
 		nlohmann::json json;
@@ -387,8 +387,8 @@ namespace Ailurus
 		AssetReference<Material> materialRef(pMaterialRaw);
 
 		// Create material instance
-		auto pMaterialInstanceRaw = new ReadOnlyMaterialInstance(NextAssetId(), materialRef);
-		_assetsMap[pMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<ReadOnlyMaterialInstance>(pMaterialInstanceRaw);
+		auto pMaterialInstanceRaw = new MaterialInstance(NextAssetId(), materialRef);
+		_assetsMap[pMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<MaterialInstance>(pMaterialInstanceRaw);
 
 		// Load
 		for (const auto& renderPassConfig : json.array())
@@ -417,10 +417,18 @@ namespace Ailurus
 				pMaterialInstanceRaw->uniformValueMap[{*passOpt, bindingId, accessName}] = value;
 		}
 
-		return AssetReference<ReadOnlyMaterialInstance>(pMaterialInstanceRaw);
+		return AssetReference<MaterialInstance>(pMaterialInstanceRaw);
 	}
 
-	AssetReference<ReadWriteMaterialInstance> AssetsSystem::CopyMaterialInstance(const AssetReference<ReadOnlyMaterialInstance>& materialInstance)
+	AssetReference<MaterialInstance> AssetsSystem::CopyMaterialInstance(const AssetReference<MaterialInstance>& materialInstance)
 	{
+		auto pTargetMaterialRef = materialInstance.Get()->targetMaterial;
+
+		auto pNewMaterialInstanceRaw = new MaterialInstance(NextAssetId(), pTargetMaterialRef);
+		pNewMaterialInstanceRaw->uniformValueMap = materialInstance.Get()->uniformValueMap;
+
+		_assetsMap[pNewMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<MaterialInstance>(pNewMaterialInstanceRaw);
+
+		return AssetReference<MaterialInstance>(pNewMaterialInstanceRaw);
 	}
 } // namespace Ailurus
