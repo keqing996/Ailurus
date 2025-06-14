@@ -6,7 +6,7 @@
 #include <atomic>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
-#include "AssetReference.h"
+#include "AssetRef.h"
 #include "Model/Model.h"
 #include "Material/MaterialInstance.h"
 
@@ -20,9 +20,9 @@ namespace Ailurus
 		~AssetsSystem();
 
 	public:
-		AssetReference<Model> LoadModel(const std::string& path);
-		AssetReference<MaterialInstance> LoadMaterial(const std::string& path);
-		AssetReference<MaterialInstance> CopyMaterialInstance(const AssetReference<MaterialInstance>& materialInstance);
+		AssetRef<Model> LoadModel(const std::string& path);
+		AssetRef<MaterialInstance> LoadMaterial(const std::string& path);
+		AssetRef<MaterialInstance> CopyMaterialInstance(const AssetRef<MaterialInstance>& materialInstance);
 
 	private:
 		friend class Application;

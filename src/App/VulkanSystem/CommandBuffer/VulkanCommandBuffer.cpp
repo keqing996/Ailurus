@@ -85,14 +85,25 @@ namespace Ailurus
 		_buffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, barrier, nullptr);
 	}
 
-	VulkanCommandBufferRenderPassRecordScope::VulkanCommandBufferRenderPassRecordScope(const VulkanCommandBuffer* pCommandBuffer, const RenderPass* pRenderPass)
-		: _buffer(pCommandBuffer->GetBuffer())
+	void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* pRenderPass)
 	{
-		_buffer.beginRenderPass(pRenderPass->GetRHIRenderPass()->GetRenderPassBeginInfo(), {});
+		if (pRenderPass == nullptr)
+			return;
+
+		_buffer.beginRenderPass(pRenderPass->GetRenderPassBeginInfo(), {});
 	}
 
-	VulkanCommandBufferRenderPassRecordScope::~VulkanCommandBufferRenderPassRecordScope()
+	void VulkanCommandBuffer::EndRenderPass()
 	{
 		_buffer.endRenderPass();
+	}
+
+	void VulkanCommandBuffer::SetViewportAndScissor()
+	{
+		const auto extent = Application::Get<VulkanSystem>()->GetSwapChainConfig().extent;
+		const vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
+		const vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
+		_buffer.setViewport(0, 1, &viewport);
+		_buffer.setScissor(0, 1, &scissor);
 	}
 } // namespace Ailurus

@@ -3,7 +3,7 @@
 namespace Ailurus
 {
 
-	CompStaticMeshRender::CompStaticMeshRender(const AssetReference<Model>& model, const AssetReference<MaterialInstance>& material)
+	CompStaticMeshRender::CompStaticMeshRender(const AssetRef<Model>& model, const AssetRef<MaterialInstance>& material)
 		: _modelAsset(model)
 		, _materialAsset(material)
 	{
@@ -11,12 +11,12 @@ namespace Ailurus
 
 	CompStaticMeshRender::~CompStaticMeshRender() = default;
 
-	const AssetReference<Model>& CompStaticMeshRender::GetModelAsset() const
+	const AssetRef<Model>& CompStaticMeshRender::GetModelAsset() const
 	{
 		return _modelAsset;
 	}
 
-	const AssetReference<MaterialInstance>& CompStaticMeshRender::GetMaterialAsset() const
+	const AssetRef<MaterialInstance>& CompStaticMeshRender::GetMaterialAsset() const
 	{
 		return _materialAsset;
 	}

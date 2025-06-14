@@ -1,3 +1,4 @@
+#include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "Ailurus/Utility/EnumReflection.h"
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
@@ -11,7 +12,7 @@
 
 namespace Ailurus
 {
-    struct RenderIntermidiateVariable
+	struct RenderIntermediateVariable
     {
         using MaterialMeshMap = std::unordered_map<const MaterialInstance*, std::vector<const Mesh*>>;
         using RenderPassObjectMap = std::unordered_map<RenderPassType, MaterialMeshMap>;
@@ -23,17 +24,17 @@ namespace Ailurus
 
     void RenderSystem::CollectCameraViewProjectionMatrix()
     {
-		_pIntermidiateVariable->projMatrix = _pMainCamera->GetProjectionMatrix();
-		_pIntermidiateVariable->viewMatrix = _pMainCamera->GetEntity()->GetModelMatrix();
+		_pIntermediateVariable->projMatrix = _pMainCamera->GetProjectionMatrix();
+		_pIntermediateVariable->viewMatrix = _pMainCamera->GetEntity()->GetModelMatrix();
     }
 
     void RenderSystem::CollectMaterialMeshMap()
     {
-        auto allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
-        auto& renderPassObjMap = _pIntermidiateVariable->renderPassObjectMap;
+		const auto allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
+        auto& renderPassObjMap = _pIntermediateVariable->renderPassObjectMap;
         for (const auto pEntity : allEntities)
         {
-            auto pMeshRender = pEntity->GetComponent<CompStaticMeshRender>();
+			const auto pMeshRender = pEntity->GetComponent<CompStaticMeshRender>();
             if (pMeshRender == nullptr)
                 continue;
 
@@ -43,9 +44,9 @@ namespace Ailurus
 
             const auto& materialRef = pMeshRender->GetMaterialAsset();
             if (!materialRef)
-                continue;
+				continue;
 
-            auto* pMaterial = materialRef.Get()->GetTargetMaterial();
+			const auto* pMaterial = materialRef.Get()->GetTargetMaterial();
             for (auto i = 0; i < EnumReflection<RenderPassType>::Size(); i++)
             {
                 auto passType = static_cast<RenderPassType>(i);
@@ -59,9 +60,9 @@ namespace Ailurus
         }
     }
 
-	void RenderSystem::CreateIntermidiateVariable()
+	void RenderSystem::CreateIntermediateVariable()
     {
-        _pIntermidiateVariable = std::make_unique<RenderIntermidiateVariable>();
+        _pIntermediateVariable = std::make_unique<RenderIntermediateVariable>();
     }
 
 	void RenderSystem::RenderScene()
@@ -72,30 +73,32 @@ namespace Ailurus
         CollectCameraViewProjectionMatrix();
         CollectMaterialMeshMap();
 
-		RenderForwardPass();
+		auto* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
+		RenderForwardPass(pCommandBuffer);
 
 		Application::Get<VulkanSystem>()->RenderFrame(&_needRebuildSwapChain);
 	}
 
-	void RenderSystem::RenderForwardPass()
+	void RenderSystem::RenderForwardPass(VulkanCommandBuffer* pCommandBuffer)
 	{
-        ASSERT_MSG(_pCurrentRenderPass == nullptr, "Render pass already exists, cannot render again");
+    	auto pForwardPass = GetRenderPass(RenderPassType::Forward);
+    	if (pForwardPass == nullptr)
+    		return;
 
-        auto& meshRenderList = _pIntermidiateVariable->renderPassObjectMap[RenderPassType::Forward];
-        if (meshRenderList.empty())
-            return;
+		auto& materialMeshMap = _pIntermediateVariable->renderPassObjectMap[RenderPassType::Forward];
+		if (materialMeshMap.empty())
+			return;
 
-		_pCurrentRenderPass = _renderPassMap[RenderPassType::Forward].get();
+		pCommandBuffer->BeginRenderPass(pForwardPass->GetRHIRenderPass());
 
-		{
-			VulkanCommandBuffer* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
-			VulkanCommandBufferRenderPassRecordScope renderPassRecordScope(pCommandBuffer, _pCurrentRenderPass);
+		for (auto& [pMaterial, pMeshList] : materialMeshMap)
+			RenderMaterialMeshes(pMaterial, pMeshList, pCommandBuffer);
 
-			for (const auto pMeshRender : meshRenderList)
-				RenderMesh(pMeshRender, pCommandBuffer);
-		}
+		pCommandBuffer->EndRenderPass();
+	}
 
-		_pCurrentRenderPass = nullptr;
+	void RenderSystem::RenderMaterialMeshes(const MaterialInstance* pMatInst, const std::vector<const Mesh*>& pMeshList, VulkanCommandBuffer* pCommandBuffer)
+	{
 	}
 
 	void RenderSystem::RenderMesh(const CompStaticMeshRender* pMeshRender, VulkanCommandBuffer* pCommandBuffer) const
@@ -135,11 +138,7 @@ namespace Ailurus
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 
 		// Set viewport & scissor
-		auto extent = Application::Get<VulkanSystem>()->GetSwapChainConfig().extent;
-		vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
-		vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
-		commandBuffer.setViewport(0, 1, &viewport);
-		commandBuffer.setScissor(0, 1, &scissor);
+		pCommandBuffer->SetViewportAndScissor();
 
 		// Bind vertex buffer
 		vk::Buffer vertexBuffers[] = { pMesh->GetVertexBuffer()->GetBuffer() };

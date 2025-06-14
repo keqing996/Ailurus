@@ -6,30 +6,30 @@
 namespace Ailurus
 {
 	template <class T> requires std::derived_from<T, Asset>
-	class AssetReference
+	class AssetRef
 	{
 	public:
-		explicit AssetReference(T* pAssets)
+		explicit AssetRef(T* pAssets)
 			: _pAsset(pAssets)
 		{
 			if (_pAsset != nullptr)
 				_pAsset->AddRef();
 		};
 
-		AssetReference(const AssetReference& other)
+		AssetRef(const AssetRef& other)
 			: _pAsset(other._pAsset)
 		{
 			if (_pAsset != nullptr)
 				_pAsset->AddRef();
 		}
 
-		AssetReference(AssetReference&& other) noexcept
+		AssetRef(AssetRef&& other) noexcept
 			: _pAsset(other._pAsset)
 		{
 			other._pAsset = nullptr;
 		}
 
-		AssetReference& operator=(const AssetReference& other)
+		AssetRef& operator=(const AssetRef& other)
 		{
 			if (this != &other)
 			{
@@ -40,7 +40,7 @@ namespace Ailurus
 			return *this;
 		}
 
-		AssetReference& operator=(AssetReference&& other) noexcept
+		AssetRef& operator=(AssetRef&& other) noexcept
 		{
 			if (this != &other)
 			{
@@ -51,7 +51,7 @@ namespace Ailurus
 			return *this;
 		}
 
-		~AssetReference()
+		~AssetRef()
 		{
 			if (_pAsset != nullptr)
 				_pAsset->RemoveRef();

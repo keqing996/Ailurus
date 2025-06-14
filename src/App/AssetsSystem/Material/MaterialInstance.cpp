@@ -4,7 +4,7 @@
 
 namespace Ailurus
 {
-    MaterialInstance::MaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial)
+    MaterialInstance::MaterialInstance(uint64_t assetId, const AssetRef<Material>& targetMaterial)
         : Asset(assetId)
         , targetMaterial(targetMaterial)
     {

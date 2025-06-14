@@ -172,7 +172,7 @@ namespace Ailurus
 			AssimpProcessNode(pAssimpNode->mChildren[i], pAssimpScene, resultMeshVec);
 	}
 
-	AssetReference<Model> AssetsSystem::LoadModel(const std::string& path)
+	AssetRef<Model> AssetsSystem::LoadModel(const std::string& path)
 	{
 		auto assidItr = _fileAssetToIdMap.find(path);
 		if (assidItr != _fileAssetToIdMap.end())
@@ -180,7 +180,7 @@ namespace Ailurus
 			auto assetId = assidItr->second;
 			auto assetItr = _assetsMap.find(assetId);
 			if (assetItr != _assetsMap.end())
-				return AssetReference<Model>(reinterpret_cast<Model*>(assetItr->second.get()));
+				return AssetRef<Model>(reinterpret_cast<Model*>(assetItr->second.get()));
 		}
 		
 		Assimp::Importer importer;
@@ -194,7 +194,7 @@ namespace Ailurus
 		if (!pAssimpScene || pAssimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pAssimpScene->mRootNode)
 		{
 			Logger::LogError("Failed to load mesh from path: {}\n\t Error: {}", path, importer.GetErrorString());
-			return AssetReference<Model>(nullptr);
+			return AssetRef<Model>(nullptr);
 		}
 
 		// Load mesh from file
@@ -209,6 +209,6 @@ namespace Ailurus
 		_fileAssetToIdMap[path] = assetId;
 		_assetsMap[assetId] = std::unique_ptr<Model>(pModelRaw);
 		
-		return AssetReference<Model>(pModelRaw);
+		return AssetRef<Model>(pModelRaw);
 	}
 } // namespace Ailurus

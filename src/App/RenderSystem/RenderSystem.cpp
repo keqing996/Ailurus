@@ -11,7 +11,7 @@ namespace Ailurus
 
 		_pShaderLibrary.reset(new ShaderLibrary());
 
-		CreateIntermidiateVariable();
+		CreateIntermediateVariable();
 		BuildRenderPass();
 	}
 
@@ -65,6 +65,15 @@ namespace Ailurus
 	void RenderSystem::BuildRenderPass()
 	{
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
+	}
+
+	auto RenderSystem::GetRenderPass(RenderPassType pass) const -> RenderPass*
+	{
+		const auto itr = _renderPassMap.find(pass);
+		if (itr == _renderPassMap.end())
+			return nullptr;
+
+		return itr->second.get();
 	}
 
 } // namespace Ailurus

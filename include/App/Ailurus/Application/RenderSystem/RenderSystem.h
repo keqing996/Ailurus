@@ -14,7 +14,8 @@ namespace Ailurus
 	class Mesh;
 	class RenderPass;
 	class CompStaticMeshRender;
-	class RenderIntermidiateVariable;
+	class VulkanCommandBuffer;
+	struct RenderIntermediateVariable;
 
 	class RenderSystem : public NonCopyable, public NonMovable
 	{
@@ -41,20 +42,21 @@ namespace Ailurus
 
 	private:
 		// Create
-		void CreateIntermidiateVariable();
+		void CreateIntermediateVariable();
+		void BuildRenderPass();
+		auto GetRenderPass(RenderPassType pass) const -> RenderPass*;
 
 		// Render
 		void CollectCameraViewProjectionMatrix();
 		void CollectMaterialMeshMap();
 		void ReBuildSwapChain();
-		void BuildRenderPass();
-		void RenderForwardPass();
-		void RenderMesh(const CompStaticMeshRender* pMeshRender, class VulkanCommandBuffer* pCommandBuffer) const;
+		void RenderForwardPass(VulkanCommandBuffer* pCommandBuffer);
+		void RenderMaterialMeshes(const MaterialInstance* pMatInst, const std::vector<const Mesh*>& pMeshList, VulkanCommandBuffer* pCommandBuffer);
+		void RenderMesh(const CompStaticMeshRender* pMeshRender, VulkanCommandBuffer* pCommandBuffer) const;
 
 	private:
 		bool _needRebuildSwapChain = false;
 		std::unordered_map<RenderPassType, std::unique_ptr<RenderPass>> _renderPassMap;
-		const RenderPass* _pCurrentRenderPass = nullptr;
 
 		// Current main camera
 		CompCamera* _pMainCamera = nullptr;
@@ -63,6 +65,6 @@ namespace Ailurus
 		std::unique_ptr<ShaderLibrary> _pShaderLibrary;
 
 		// Intermediate variables for every frame
-		std::unique_ptr<RenderIntermidiateVariable> _pIntermidiateVariable;
+		std::unique_ptr<RenderIntermediateVariable> _pIntermediateVariable;
 	};
 } // namespace Ailurus

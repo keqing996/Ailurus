@@ -4,7 +4,7 @@
 #include <string>
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformValue.h"
-#include "Ailurus/Application/AssetsSystem/AssetReference.h"
+#include "Ailurus/Application/AssetsSystem/AssetRef.h"
 #include "Material.h"
 #include "MaterialUniformAccess.h"
 
@@ -20,10 +20,10 @@ namespace Ailurus
 
 	protected:
 		friend class AssetsSystem;
-		MaterialInstance(uint64_t assetId, const AssetReference<Material>& targetMaterial);
+		MaterialInstance(uint64_t assetId, const AssetRef<Material>& targetMaterial);
 
 	protected:
-		AssetReference<Material> targetMaterial;
+		AssetRef<Material> targetMaterial;
 		MaterialUniformValueMap uniformValueMap;
 	};
 

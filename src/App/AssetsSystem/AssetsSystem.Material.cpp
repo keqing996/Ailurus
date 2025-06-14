@@ -2,7 +2,6 @@
 #include <fstream>
 #include <optional>
 #include <nlohmann/json.hpp>
-#include <Ailurus/Assert.h>
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/Application.h>
@@ -231,7 +230,7 @@ namespace Ailurus
 				auto [valueType, value] = JsonReadUniformNumericValue(uniformVarConfig["value"]);
 				auto pUniformVar = std::make_unique<UniformVariableNumeric>(valueType);
 
-				outAccessValues.push_back({ prefix, value });
+				outAccessValues.emplace_back( prefix, value );
 
 				return std::move(pUniformVar);
 			}
@@ -353,25 +352,25 @@ namespace Ailurus
 			auto pBindingPoint = std::make_unique<UniformBindingPoint>(*bindingIdOpt, targetShaderStages,
 				name, std::move(pUniformVar));
 
-			// Add binding point to uniform set
+			// Add binding point to a uniform set
 			pUniformSet->AddBindingPoint(std::move(pBindingPoint));
 
 			// Update access values
 			for (const auto& [accessName, value] : defaultAccessValues)
-				outAccessValues.push_back({ *bindingIdOpt, accessName, value });
+				outAccessValues.emplace_back( *bindingIdOpt, accessName, value );
 		}
 
 		pUniformSet->InitUniformBuffer();
 		return std::move(pUniformSet);
 	}
 
-	AssetReference<MaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
+	AssetRef<MaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
 	{
 		std::ifstream fileStream(path);
 		if (!fileStream.is_open())
 		{
 			Logger::LogError("Get material fail: {}", path);
-			return AssetReference<MaterialInstance>(nullptr);
+			return AssetRef<MaterialInstance>(nullptr);
 		}
 
 		nlohmann::json json;
@@ -384,7 +383,7 @@ namespace Ailurus
 		_assetsMap[pMaterialRaw->GetAssetId()] = std::unique_ptr<Material>(pMaterialRaw);
 
 		// Create material asset reference
-		AssetReference<Material> materialRef(pMaterialRaw);
+		const AssetRef<Material> materialRef(pMaterialRaw);
 
 		// Create material instance
 		auto pMaterialInstanceRaw = new MaterialInstance(NextAssetId(), materialRef);
@@ -403,13 +402,13 @@ namespace Ailurus
 			for (auto pShader : shaders)
 				pMaterialRaw->SetPassShader(*passOpt, pShader);
 
-			// Read uniform set
+			// Read the uniform set
 			std::vector<std::tuple<uint32_t, std::string, UniformValue>> accessValues;
 			auto pUniformSet = JsonReadUniformSet(path, renderPassConfig, accessValues);
 			if (pUniformSet == nullptr)
 				continue;
 
-			// Add uniform set to material
+			// Add the uniform set to material
 			pMaterialRaw->SetUniformSet(*passOpt, std::move(pUniformSet));
 
 			// Update material instance uniform values
@@ -417,18 +416,18 @@ namespace Ailurus
 				pMaterialInstanceRaw->uniformValueMap[{*passOpt, bindingId, accessName}] = value;
 		}
 
-		return AssetReference<MaterialInstance>(pMaterialInstanceRaw);
+		return AssetRef<MaterialInstance>(pMaterialInstanceRaw);
 	}
 
-	AssetReference<MaterialInstance> AssetsSystem::CopyMaterialInstance(const AssetReference<MaterialInstance>& materialInstance)
+	AssetRef<MaterialInstance> AssetsSystem::CopyMaterialInstance(const AssetRef<MaterialInstance>& materialInstance)
 	{
-		auto pTargetMaterialRef = materialInstance.Get()->targetMaterial;
+		const auto pTargetMaterialRef = materialInstance.Get()->targetMaterial;
 
-		auto pNewMaterialInstanceRaw = new MaterialInstance(NextAssetId(), pTargetMaterialRef);
+		const auto pNewMaterialInstanceRaw = new MaterialInstance(NextAssetId(), pTargetMaterialRef);
 		pNewMaterialInstanceRaw->uniformValueMap = materialInstance.Get()->uniformValueMap;
 
 		_assetsMap[pNewMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<MaterialInstance>(pNewMaterialInstanceRaw);
 
-		return AssetReference<MaterialInstance>(pNewMaterialInstanceRaw);
+		return AssetRef<MaterialInstance>(pNewMaterialInstanceRaw);
 	}
 } // namespace Ailurus
