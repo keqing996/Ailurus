@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
+#include <Ailurus/Application/RenderSystem/Shader/ShaderStage.h>
 
 namespace Ailurus
 {
@@ -23,5 +24,7 @@ namespace Ailurus
 		static void LogPhysicalCards(vk::Instance vkInstance);
 
 		static void LogChosenPhysicalCard(const vk::PhysicalDevice& vkPhysicalDevice, vk::SurfaceKHR vkSurface);
+
+        static vk::ShaderStageFlagBits GetShaderStage(ShaderStage stage);
 	};
 } // namespace Ailurus

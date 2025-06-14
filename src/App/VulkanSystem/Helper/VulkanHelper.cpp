@@ -75,4 +75,20 @@ namespace Ailurus
             Logger::LogInfo("        {}", ext.extensionName.data());
 #endif
 	}
+
+	vk::ShaderStageFlagBits VulkanHelper::GetShaderStage(ShaderStage stage)
+	{
+		vk::ShaderStageFlagBits vkStage = vk::ShaderStageFlagBits::eAll;
+		switch (stage)
+		{
+			case ShaderStage::Vertex:
+				vkStage = vk::ShaderStageFlagBits::eVertex;
+				break;
+			case ShaderStage::Fragment:
+				vkStage = vk::ShaderStageFlagBits::eFragment;
+				break;
+		}
+
+		return vkStage;
+	}
 } // namespace Ailurus

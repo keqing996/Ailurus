@@ -361,6 +361,8 @@ namespace Ailurus
 		}
 
 		pUniformSet->InitUniformBuffer();
+		pUniformSet->InitDescriptorSetLayout();
+
 		return std::move(pUniformSet);
 	}
 

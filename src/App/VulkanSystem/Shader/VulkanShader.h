@@ -16,9 +16,6 @@ namespace Ailurus
         vk::ShaderModule GetShaderModule() const;
         vk::PipelineShaderStageCreateInfo GeneratePipelineCreateInfo(ShaderStage stage) const;
 
-    public:
-        static vk::ShaderStageFlagBits ToVulkanEnum(ShaderStage stage);
-
     private:
         void CreateShaderModule(const char* binaryData, size_t size);
 

@@ -1,6 +1,7 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
-#include <VulkanSystem/Buffer/VulkanUniformBuffer.h>
 #include <Ailurus/Utility/Logger.h>
+#include <VulkanSystem/Buffer/VulkanUniformBuffer.h>
+#include <VulkanSystem/Descriptor/VulkanDescriptorSetLayout.h>
 
 namespace Ailurus
 {
@@ -52,9 +53,23 @@ namespace Ailurus
 		_pUniformBuffer = std::make_unique<VulkanUniformBuffer>(offset);
 	}
 
+	void UniformSet::InitDescriptorSetLayout()
+	{
+		_pDescriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(this);
+	}
+
+	const UniformSet::BindingPointMap& UniformSet::GetAllBindingPoints() const
+	{
+		return _bindingPoints;
+	}
+
 	const UniformBindingPoint* UniformSet::GetBindingPoint(uint32_t bindingPoint) const
 	{
-		return GetBindingPoint(bindingPoint);
+		const auto itr = _bindingPoints.find(bindingPoint);
+		if (itr == _bindingPoints.end())
+			return nullptr;
+
+		return itr->second.get();
 	}
 
 	UniformBindingPoint* UniformSet::GetBindingPoint(uint32_t bindingPoint)
@@ -104,10 +119,10 @@ namespace Ailurus
 		uint32_t offset = bindingPointOffset + *accessOffset;
 		auto pBeginPos = _pUniformBuffer->GetWriteBeginPos();
 
-		auto visitor = [pBeginPos](auto&& arg) 
+		auto visitor = [pBeginPos]<typename T>(T&& arg)
 		{
-			using T = std::decay_t<decltype(arg)>;
-			std::memcpy((void*)pBeginPos, &arg, sizeof(T));
+			using T = std::decay_t<T>;
+			std::memcpy(static_cast<void*>(pBeginPos), &arg, sizeof(T));
 		};
 		
 		std::visit(visitor, value);

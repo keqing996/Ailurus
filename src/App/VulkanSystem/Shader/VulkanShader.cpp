@@ -1,7 +1,8 @@
 #include "VulkanShader.h"
 #include "Ailurus/Utility/File.h"
-#include "VulkanSystem/VulkanSystem.h"
 #include "Ailurus/Application/Application.h"
+#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanSystem/Helper/VulkanHelper.h"
 
 namespace Ailurus
 {
@@ -31,26 +32,10 @@ namespace Ailurus
     {
         vk::PipelineShaderStageCreateInfo createInfo;
         createInfo.setModule(_vkShaderModule)
-                .setStage(ToVulkanEnum(stage))
+                .setStage(VulkanHelper::GetShaderStage(stage))
                 .setPName("main");
 
         return createInfo;
-    }
-
-    vk::ShaderStageFlagBits VulkanShader::ToVulkanEnum(ShaderStage stage)
-    {
-        vk::ShaderStageFlagBits vkStage = vk::ShaderStageFlagBits::eAll;
-        switch (stage)
-        {
-            case ShaderStage::Vertex:
-                vkStage = vk::ShaderStageFlagBits::eVertex;
-            break;
-            case ShaderStage::Fragment:
-                vkStage = vk::ShaderStageFlagBits::eFragment;
-            break;
-        }
-
-        return vkStage;
     }
 
     void VulkanShader::CreateShaderModule(const char* binaryData, size_t size)

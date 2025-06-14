@@ -22,6 +22,7 @@ namespace Ailurus
 		const VulkanPipeline* GetPipeline(const VulkanPipelineConfig& config);
 
 	private:
+
 		std::unordered_map<VulkanPipelineConfig, std::unique_ptr<VulkanPipeline>, VulkanPipelineConfig::Hash> _pipelineMap;
 	};
 } // namespace Ailurus
