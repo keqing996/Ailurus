@@ -7,8 +7,8 @@ namespace Ailurus
 	class VulkanPipeline
 	{
 	public:
-		VulkanPipeline(const class RenderPass* pRenderPass, const class Material* pMaterial, 
-			const class VulkanVertexLayout* pVertexLayout);
+		VulkanPipeline(const class VulkanRenderPass* pRenderPass, const class StageShaderArray& shaderArray, 
+			const class VulkanVertexLayout* pVertexLayout, const std::vector<const class UniformSet*>& uniformSets);
 		~VulkanPipeline();
 
 	public:

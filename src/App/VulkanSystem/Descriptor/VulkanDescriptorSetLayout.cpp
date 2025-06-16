@@ -38,4 +38,9 @@ namespace Ailurus
 	{
 		Application::Get<VulkanSystem>()->GetDevice().destroyDescriptorSetLayout(_descriptorSetLayout);
 	}
+
+	vk::DescriptorSetLayout VulkanDescriptorSetLayout::GetDescriptorSetLayout() const
+	{
+		return _descriptorSetLayout;
+	}
 } // namespace Ailurus

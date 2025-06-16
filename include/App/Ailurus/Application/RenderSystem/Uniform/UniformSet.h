@@ -32,15 +32,16 @@ namespace Ailurus
 		void InitDescriptorSetLayout();
 
 		// Getter
-		const BindingPointMap& GetAllBindingPoints() const;
-		const UniformBindingPoint* GetBindingPoint(uint32_t bindingPoint) const;
-		uint32_t GetSetId() const;
+		auto GetAllBindingPoints() const -> const BindingPointMap&;
+		auto GetBindingPoint(uint32_t bindingPoint) const -> const UniformBindingPoint*;
+		auto GetSetId() const -> uint32_t;
+		auto GetDescriptorSetLayout() const -> VulkanDescriptorSetLayout*;
 
 		// Setter
 		void UpdateUniformValue(uint32_t bindingId, const std::string& access, const UniformValue& value);
 
 	private:
-		UniformBindingPoint* GetBindingPoint(uint32_t bindingPoint);
+		auto GetBindingPoint(uint32_t bindingPoint) -> UniformBindingPoint*;
 
 	private:
 		// Set id in shader

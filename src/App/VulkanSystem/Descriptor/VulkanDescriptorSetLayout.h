@@ -12,6 +12,9 @@ namespace Ailurus
 		explicit VulkanDescriptorSetLayout(class UniformSet* pUniformSet);
 		~VulkanDescriptorSetLayout();
 
+	public:
+		vk::DescriptorSetLayout GetDescriptorSetLayout() const;
+
 	private:
 		vk::DescriptorSetLayout _descriptorSetLayout;
 	};

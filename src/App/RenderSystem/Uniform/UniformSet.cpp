@@ -127,4 +127,9 @@ namespace Ailurus
 		
 		std::visit(visitor, value);
 	}
+
+	VulkanDescriptorSetLayout* UniformSet::GetDescriptorSetLayout() const
+	{
+		return _pDescriptorSetLayout.get();
+	}
 } // namespace Ailurus

@@ -3,33 +3,23 @@
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "Ailurus/Application/RenderSystem/Shader/Shader.h"
-#include "Ailurus/Application/AssetsSystem/Material/Material.h"
+#include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "VulkanSystem/RenderPass/VulkanRenderPass.h"
 #include "VulkanSystem/Shader/VulkanShader.h"
 #include "VulkanSystem/Vertex/VulkanVertexLayout.h"
+#include "VulkanSystem/Descriptor/VulkanDescriptorSetLayout.h"
 
 namespace Ailurus
 {
-	VulkanPipeline::VulkanPipeline(const RenderPass* pRenderPass, const Material* pMaterial, 
-			const VulkanVertexLayout* pVertexLayout)
+	VulkanPipeline::VulkanPipeline(const VulkanRenderPass* pRenderPass, const StageShaderArray& shaderArray, 
+		const VulkanVertexLayout* pVertexLayout, const std::vector<const UniformSet*>& uniformSets)
 	{
-		// Prepare & Check
-		auto renderPass = pRenderPass->GetRenderPassType();
-		auto pShaderArray = pMaterial->GetPassShaderArray(renderPass);
-		if (pShaderArray == nullptr)
-
-		// Create pipeline layout
-		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-		pipelineLayoutInfo.setSetLayouts(nullptr);
-
-		_vkPipelineLayout = Application::Get<VulkanSystem>()->GetDevice().createPipelineLayout(pipelineLayoutInfo);
-
 		// Shader stages
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
 		for (auto i = 0; i < StageShaderArray::Size(); i++)
 		{
-			const Shader* pShader = config.shaderStages[i];
+			const Shader* pShader = shaderArray[i];
 			if (pShader == nullptr)
 				continue;
 
@@ -40,20 +30,25 @@ namespace Ailurus
 			shaderStages.push_back(pRHIShader->GeneratePipelineCreateInfo(pShader->GetStage()));
 		}
 
+		// Pipeline layout
+		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+		for (const auto* pUniformSet: uniformSets)
+			descriptorSetLayouts.push_back(pUniformSet->GetDescriptorSetLayout()->GetDescriptorSetLayout());
+
+		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+		pipelineLayoutInfo.setSetLayouts(descriptorSetLayouts);
+		_vkPipelineLayout = Application::Get<VulkanSystem>()->GetDevice().createPipelineLayout(pipelineLayoutInfo);
+
 		// Vertex input description
 		vk::VertexInputBindingDescription vertexInputDesc;
 		vertexInputDesc.setBinding(0)
-			.setStride(config.pMesh->GetInputAttribute().GetStride())
+			.setStride(pVertexLayout->GetStride())
 			.setInputRate(vk::VertexInputRate::eVertex);
-
-		// Vertex input attribute description
-		std::vector<vk::VertexInputAttributeDescription> vertexAttrDesc =
-			GetMeshVulkanAttributeDescription(config.pMesh);
 
 		// Vertex input
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
 		vertexInputInfo.setVertexBindingDescriptions(vertexInputDesc)
-			.setVertexAttributeDescriptions(vertexAttrDesc);
+			.setVertexAttributeDescriptions(pVertexLayout->GetVulkanAttributeDescription());
 
 		// Input assemble
 		vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
@@ -130,8 +125,8 @@ namespace Ailurus
 
 	VulkanPipeline::~VulkanPipeline()
 	{
-		Application::Get<VulkanSystem>()->GetDevice().destroyPipelineLayout(_vkPipelineLayout);
 		Application::Get<VulkanSystem>()->GetDevice().destroyPipeline(_vkPipeline);
+		Application::Get<VulkanSystem>()->GetDevice().destroyPipelineLayout(_vkPipelineLayout);
 	}
 
 	vk::Pipeline VulkanPipeline::GetPipeline() const
