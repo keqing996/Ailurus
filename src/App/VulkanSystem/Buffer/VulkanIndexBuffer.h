@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Ailurus/Application/AssetsSystem/Mesh/VertexAttributeDescription.h"
 #include <vulkan/vulkan.hpp>
+#include <Ailurus/Application/RenderSystem/Vertex/IndexBufferFormat.h>
 
 namespace Ailurus
 {

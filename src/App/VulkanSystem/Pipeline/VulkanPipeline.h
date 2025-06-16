@@ -1,14 +1,14 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "VulkanPipelineConfig.h"
 
 namespace Ailurus
 {
 	class VulkanPipeline
 	{
 	public:
-		VulkanPipeline(const class VulkanRenderPass* pRenderPass, const VulkanPipelineConfig& config);
+		VulkanPipeline(const class RenderPass* pRenderPass, const class Material* pMaterial, 
+			const class VulkanVertexLayout* pVertexLayout);
 		~VulkanPipeline();
 
 	public:

@@ -17,6 +17,7 @@ namespace Ailurus
 		void SetPassShader(RenderPassType pass, const Shader* pShader);
 		void SetUniformSet(RenderPassType pass, std::unique_ptr<UniformSet>&& pUniformSet);
 		bool HasRenderPass(RenderPassType pass) const;
+		auto GetPassShaderArray(RenderPassType pass) const -> const StageShaderArray*;
 		void UpdateUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value);
 
 	private:

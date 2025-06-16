@@ -1,19 +1,25 @@
 #include "VulkanPipeline.h"
-#include "Ailurus/Application/Application.h"
-#include "Ailurus/Application/RenderSystem/Shader/Shader.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Ailurus/Application/AssetsSystem/Mesh/Mesh.h"
+#include "Ailurus/Application/Application.h"
+#include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
+#include "Ailurus/Application/RenderSystem/Shader/Shader.h"
+#include "Ailurus/Application/AssetsSystem/Material/Material.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "VulkanSystem/RenderPass/VulkanRenderPass.h"
 #include "VulkanSystem/Shader/VulkanShader.h"
+#include "VulkanSystem/Vertex/VulkanVertexLayout.h"
 
 namespace Ailurus
 {
-	
-
-
-	VulkanPipeline::VulkanPipeline(const VulkanRenderPass* pRenderPass, const VulkanPipelineConfig& config)
+	VulkanPipeline::VulkanPipeline(const RenderPass* pRenderPass, const Material* pMaterial, 
+			const VulkanVertexLayout* pVertexLayout)
 	{
+		// Prepare & Check
+		auto renderPass = pRenderPass->GetRenderPassType();
+		auto pShaderArray = pMaterial->GetPassShaderArray(renderPass);
+		if (pShaderArray == nullptr)
+
+		// Create pipeline layout
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setSetLayouts(nullptr);
 

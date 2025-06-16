@@ -2,8 +2,8 @@
 
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Application/RenderSystem/Shader/ShaderStage.h>
-#include <VulkanSystem/Vertex/VertexAttributeType.h>
-#include <VulkanSystem/Vertex/IndexBufferFormat.h>
+#include <Ailurus/Application/RenderSystem/Vertex/VertexAttributeType.h>
+#include <Ailurus/Application/RenderSystem/Vertex/IndexBufferFormat.h>
 
 namespace Ailurus
 {

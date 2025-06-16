@@ -1,5 +1,6 @@
 #include "VulkanIndexBuffer.h"
 #include "Ailurus/Application/Application.h"
+#include "VulkanSystem/Helper/VulkanHelper.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "VulkanSystem/Resource/VulkanResourceManager.h"
 #include "Ailurus/Utility/Logger.h"
@@ -23,7 +24,7 @@ namespace Ailurus
 				return;
 		}
 
-		const auto indexSize = VertexAttributeDescription::SizeOf(format);
+		const auto indexSize = VulkanHelper::SizeOf(format);
 		_indexCount = sizeInBytes / indexSize;
 		if (sizeInBytes % indexSize != 0)
 		{

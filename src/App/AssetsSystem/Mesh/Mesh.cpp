@@ -4,18 +4,17 @@
 
 namespace Ailurus
 {
-
-	Mesh::Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute)
+	Mesh::Mesh(const void* vertexData, size_t vertexDataSizeInBytes, uint64_t vertexLayoutId)
 		: _pVertexBuffer(std::make_unique<VulkanVertexBuffer>(vertexData, vertexDataSizeInBytes))
-		, _vertexAttrDesc(vertexDataAttribute)
+		, _layoutId(vertexLayoutId)
 		, _pIndexBuffer(nullptr)
 	{
 	}
 
-	Mesh::Mesh(const void* vertexData, size_t vertexDataSizeInBytes, const VertexAttributeDescription& vertexDataAttribute,
+	Mesh::Mesh(const void* vertexData, size_t vertexDataSizeInBytes, uint64_t vertexLayoutId,
 		IndexBufferFormat format, const void* indexData, size_t indexDtaSizeInBytes)
 		: _pVertexBuffer(std::make_unique<VulkanVertexBuffer>(vertexData, vertexDataSizeInBytes))
-		, _vertexAttrDesc(vertexDataAttribute)
+		, _layoutId(vertexLayoutId)
 		, _pIndexBuffer(std::make_unique<VulkanIndexBuffer>(format, indexData, indexDtaSizeInBytes))
 	{
 	}
@@ -27,20 +26,13 @@ namespace Ailurus
 		return _pVertexBuffer.get();
 	}
 
-	const VertexAttributeDescription& Mesh::GetInputAttribute() const
+	uint64_t Mesh::GetVertexLayoutId() const
 	{
-		return _vertexAttrDesc;
+		return _layoutId;
 	}
 
 	const VulkanIndexBuffer* Mesh::GetIndexBuffer() const
 	{
 		return _pIndexBuffer.get();
-	}
-
-	size_t Mesh::GetVertexCount() const
-	{
-		auto vertexSizeBytes = _pVertexBuffer->GetSize();
-		auto stride = _vertexAttrDesc.GetStride();
-		return vertexSizeBytes / stride;
 	}
 } // namespace Ailurus

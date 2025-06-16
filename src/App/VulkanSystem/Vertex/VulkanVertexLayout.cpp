@@ -1,21 +1,21 @@
-#include "VertexLayout.h"
+#include "VulkanVertexLayout.h"
 #include "VulkanSystem/Helper/VulkanHelper.h"
 
 namespace Ailurus
 {
-	VertexLayout::VertexLayout(const std::initializer_list<AttributeType>& attributes)
+	VulkanVertexLayout::VulkanVertexLayout(const std::initializer_list<AttributeType>& attributes)
 	{
 		_attribute.insert(_attribute.end(), attributes.begin(), attributes.end());
 		GetMeshVulkanAttributeDescription();
 	}
 
-	VertexLayout::VertexLayout(const std::vector<AttributeType>& attributes)
+	VulkanVertexLayout::VulkanVertexLayout(const std::vector<AttributeType>& attributes)
 		: _attribute(attributes)
 	{
 		GetMeshVulkanAttributeDescription();
 	}
 
-	uint32_t VertexLayout::GetStride() const
+	uint32_t VulkanVertexLayout::GetStride() const
 	{
 		uint32_t stride = 0;
 		for (auto i = 0; i < _attribute.size(); i++)
@@ -23,12 +23,12 @@ namespace Ailurus
 		return stride;
 	}
 
-	const std::vector<AttributeType>& VertexLayout::GetAttributes() const
+	const std::vector<AttributeType>& VulkanVertexLayout::GetAttributes() const
 	{
 		return _attribute;
 	}
 
-	void VertexLayout::GetMeshVulkanAttributeDescription()
+	void VulkanVertexLayout::GetMeshVulkanAttributeDescription()
 	{
 		_vkAttributeDescriptions.clear();
 
@@ -49,7 +49,7 @@ namespace Ailurus
 		}
 	}
 
-	const std::vector<vk::VertexInputAttributeDescription>& VertexLayout::GetVulkanAttributeDescription() const
+	const std::vector<vk::VertexInputAttributeDescription>& VulkanVertexLayout::GetVulkanAttributeDescription() const
 	{
 		return _vkAttributeDescriptions;
 	}

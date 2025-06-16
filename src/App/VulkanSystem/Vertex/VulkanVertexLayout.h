@@ -3,20 +3,21 @@
 #include <vector>
 #include <initializer_list>
 #include <vulkan/vulkan.hpp>
-#include "VertexAttributeType.h"
+#include <Ailurus/Application/RenderSystem/Vertex/VertexAttributeType.h>
 
 namespace Ailurus
 {
-	class VertexLayout
+	class VulkanVertexLayout
 	{
-	public:
-		explicit VertexLayout(const std::initializer_list<AttributeType>& attributes);
-		explicit VertexLayout(const std::vector<AttributeType>& attributes);
-
 	public:
 		auto GetStride() const -> uint32_t;
 		auto GetAttributes() const -> const std::vector<AttributeType>&;
 		auto GetVulkanAttributeDescription() const -> const std::vector<vk::VertexInputAttributeDescription>&;
+
+	private:
+		friend class VertexLayoutManager;
+		explicit VulkanVertexLayout(const std::initializer_list<AttributeType>& attributes);
+		explicit VulkanVertexLayout(const std::vector<AttributeType>& attributes);
 
 	private:
 		void GetMeshVulkanAttributeDescription();

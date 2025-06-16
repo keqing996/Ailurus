@@ -43,6 +43,14 @@ namespace Ailurus
 
 	bool Material::HasRenderPass(RenderPassType pass) const
 	{
-		return _renderPassShaderMap.contains(pass); 
+		return _renderPassShaderMap.contains(pass);
+	}
+
+	const StageShaderArray* Material::GetPassShaderArray(RenderPassType pass) const
+	{
+		const auto itr = _renderPassShaderMap.find(pass);
+		if (itr != _renderPassShaderMap.end())
+			return &itr->second;
+		return nullptr;
 	}
 } // namespace Ailurus
