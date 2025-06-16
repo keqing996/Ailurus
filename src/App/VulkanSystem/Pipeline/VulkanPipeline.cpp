@@ -9,47 +9,8 @@
 
 namespace Ailurus
 {
-	static vk::Format ConvertToVkFormat(AttributeType type)
-	{
-		const auto bytes = VertexAttributeDescription::SizeOf(type);
-		switch (bytes)
-		{
-			case sizeof(float) * 2:
-				return vk::Format::eR32G32Sfloat;
-			case sizeof(float) * 3:
-				return vk::Format::eR32G32B32Sfloat;
-			case sizeof(float) * 4:
-				return vk::Format::eR32G32B32A32Sfloat;
-			default:
-				Logger::LogError("Fail to convert attribute type to vk format, attribute type = {}",
-					EnumReflection<AttributeType>::ToString(type));
-				return vk::Format::eUndefined;
-		}
-	}
+	
 
-	static std::vector<vk::VertexInputAttributeDescription> GetMeshVulkanAttributeDescription(const Mesh* pMesh)
-	{
-		std::vector<vk::VertexInputAttributeDescription> result;
-
-		uint32_t offset = 0;
-		auto attributes = pMesh->GetInputAttribute().GetAttributes();
-		for (auto i = 0; i < attributes.size(); i++)
-		{
-			AttributeType attr = attributes[i];
-
-			vk::VertexInputAttributeDescription attributeDescriptions;
-			attributeDescriptions.setBinding(0)
-				.setLocation(i)
-				.setFormat(ConvertToVkFormat(attr))
-				.setOffset(offset);
-
-			result.push_back(attributeDescriptions);
-
-			offset += VertexAttributeDescription::SizeOf(attr);
-		}
-
-		return result;
-	}
 
 	VulkanPipeline::VulkanPipeline(const VulkanRenderPass* pRenderPass, const VulkanPipelineConfig& config)
 	{

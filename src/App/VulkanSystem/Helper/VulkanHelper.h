@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Application/RenderSystem/Shader/ShaderStage.h>
+#include <VulkanSystem/Vertex/VertexAttributeType.h>
+#include <VulkanSystem/Vertex/IndexBufferFormat.h>
 
 namespace Ailurus
 {
@@ -26,5 +28,11 @@ namespace Ailurus
 		static void LogChosenPhysicalCard(const vk::PhysicalDevice& vkPhysicalDevice, vk::SurfaceKHR vkSurface);
 
         static vk::ShaderStageFlagBits GetShaderStage(ShaderStage stage);
+
+		static uint32_t SizeOf(AttributeType type);
+
+		static uint32_t SizeOf(IndexBufferFormat type);
+
+		static vk::Format GetFormat(AttributeType type);
 	};
 } // namespace Ailurus

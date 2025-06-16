@@ -91,4 +91,60 @@ namespace Ailurus
 
 		return vkStage;
 	}
+
+	uint32_t VulkanHelper::SizeOf(AttributeType type)
+	{
+		switch (type)
+		{
+			case AttributeType::Position:
+				return sizeof(float) * 3;
+			case AttributeType::Normal:
+				return sizeof(float) * 3;
+			case AttributeType::TexCoord:
+				return sizeof(float) * 2;
+			case AttributeType::Tangent:
+				return sizeof(float) * 3;
+			case AttributeType::Bitangent:
+				return sizeof(float) * 3;
+			case AttributeType::Color:
+				return sizeof(float) * 4;
+		}
+
+		Logger::LogError("Fail to get attribute size, attribute type = {}",
+			EnumReflection<AttributeType>::ToString(type));
+		return 0;
+	}
+
+	vk::Format VulkanHelper::GetFormat(AttributeType type)
+	{
+		const auto bytes = SizeOf(type);
+		switch (bytes)
+		{
+			case sizeof(float) * 2:
+				return vk::Format::eR32G32Sfloat;
+			case sizeof(float) * 3:
+				return vk::Format::eR32G32B32Sfloat;
+			case sizeof(float) * 4:
+				return vk::Format::eR32G32B32A32Sfloat;
+			default:
+				Logger::LogError("Fail to convert attribute type to vk format, attribute type = {}",
+					EnumReflection<AttributeType>::ToString(type));
+				return vk::Format::eUndefined;
+		}
+	}
+
+	uint32_t VulkanHelper::SizeOf(IndexBufferFormat type)
+	{
+		switch (type)
+		{
+			case IndexBufferFormat::UInt16:
+				return sizeof(uint16_t);
+			case IndexBufferFormat::UInt32:
+				return sizeof(uint32_t);
+		}
+
+		Logger::LogError("Fail to get index format size, index format type = {}",
+			EnumReflection<IndexBufferFormat>::ToString(type));
+		return 0;
+	}
 } // namespace Ailurus
