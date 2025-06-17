@@ -13,19 +13,24 @@ namespace Ailurus
 {
 	class Material : public Asset
 	{
+		struct MaterialRenderPassInfo
+		{
+			StageShaderArray shaders;
+			std::unique_ptr<UniformSet> pUniformSet;
+		};
+
 	public:
-		void SetPassShader(RenderPassType pass, const Shader* pShader);
-		void SetUniformSet(RenderPassType pass, std::unique_ptr<UniformSet>&& pUniformSet);
 		bool HasRenderPass(RenderPassType pass) const;
 		auto GetPassShaderArray(RenderPassType pass) const -> const StageShaderArray*;
-		void UpdateUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value);
+		auto GetUniformSet(RenderPassType pass) const -> const UniformSet*;
 
 	private:
 		friend class AssetsSystem;
 		explicit Material(uint64_t assetId);
+		void SetPassShaderAndUniform(RenderPassType pass, const std::vector<const Shader*>& shaders,
+			std::unique_ptr<UniformSet>&& pUniformSet);
 
 	private:
-		std::unordered_map<RenderPassType, StageShaderArray> _renderPassShaderMap;
-		std::unordered_map<RenderPassType, std::unique_ptr<UniformSet>> _renderPassUniformMap;
+		std::unordered_map<RenderPassType, MaterialRenderPassInfo> _renderPassInfoMap;
 	};
 } // namespace Ailurus

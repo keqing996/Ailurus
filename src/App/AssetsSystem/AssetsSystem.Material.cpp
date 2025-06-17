@@ -360,7 +360,7 @@ namespace Ailurus
 				outAccessValues.emplace_back( *bindingIdOpt, accessName, value );
 		}
 
-		pUniformSet->InitUniformBuffer();
+		pUniformSet->InitUniformBufferInfo();
 		pUniformSet->InitDescriptorSetLayout();
 
 		return std::move(pUniformSet);
@@ -401,8 +401,6 @@ namespace Ailurus
 
 			// Read shader config
 			auto shaders = JsonReadShader(path, renderPassConfig);
-			for (auto pShader : shaders)
-				pMaterialRaw->SetPassShader(*passOpt, pShader);
 
 			// Read the uniform set
 			std::vector<std::tuple<uint32_t, std::string, UniformValue>> accessValues;
@@ -410,12 +408,12 @@ namespace Ailurus
 			if (pUniformSet == nullptr)
 				continue;
 
-			// Add the uniform set to material
-			pMaterialRaw->SetUniformSet(*passOpt, std::move(pUniformSet));
+			// Set shader and uniform
+			pMaterialRaw->SetPassShaderAndUniform(*passOpt, shaders, std::move(pUniformSet));
 
 			// Update material instance uniform values
 			for (const auto& [bindingId, accessName, value] : accessValues)
-				pMaterialInstanceRaw->uniformValueMap[{*passOpt, bindingId, accessName}] = value;
+				pMaterialInstanceRaw->_uniformValueMap[{*passOpt, bindingId, accessName}] = value;
 		}
 
 		return AssetRef<MaterialInstance>(pMaterialInstanceRaw);
@@ -423,10 +421,10 @@ namespace Ailurus
 
 	AssetRef<MaterialInstance> AssetsSystem::CopyMaterialInstance(const AssetRef<MaterialInstance>& materialInstance)
 	{
-		const auto pTargetMaterialRef = materialInstance.Get()->targetMaterial;
+		const auto pTargetMaterialRef = materialInstance.Get()->_targetMaterial;
 
 		const auto pNewMaterialInstanceRaw = new MaterialInstance(NextAssetId(), pTargetMaterialRef);
-		pNewMaterialInstanceRaw->uniformValueMap = materialInstance.Get()->uniformValueMap;
+		pNewMaterialInstanceRaw->_uniformValueMap = materialInstance.Get()->_uniformValueMap;
 
 		_assetsMap[pNewMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<MaterialInstance>(pNewMaterialInstanceRaw);
 

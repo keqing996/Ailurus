@@ -28,17 +28,16 @@ namespace Ailurus
 	public:
 		// When reading from json
 		void AddBindingPoint(std::unique_ptr<UniformBindingPoint>&& pBindingPoint);
-		void InitUniformBuffer();
+		void InitUniformBufferInfo();
 		void InitDescriptorSetLayout();
 
 		// Getter
 		auto GetAllBindingPoints() const -> const BindingPointMap&;
 		auto GetBindingPoint(uint32_t bindingPoint) const -> const UniformBindingPoint*;
+		auto GetBindingPointOffsetInUniformBuffer(uint32_t bindingPoint) const -> uint32_t;
 		auto GetSetId() const -> uint32_t;
+		auto GetUniformBufferSize() const -> uint32_t;
 		auto GetDescriptorSetLayout() const -> VulkanDescriptorSetLayout*;
-
-		// Setter
-		void UpdateUniformValue(uint32_t bindingId, const std::string& access, const UniformValue& value);
 
 	private:
 		auto GetBindingPoint(uint32_t bindingPoint) -> UniformBindingPoint*;
@@ -50,8 +49,8 @@ namespace Ailurus
 		// Binding point
 		BindingPointMap _bindingPoints;
 
-		// Uniform buffer
-		std::unique_ptr<VulkanUniformBuffer> _pUniformBuffer;
+		// Uniform buffer offset map
+		uint32_t _uniformBufferSize = 0;
 		std::unordered_map<uint32_t, uint32_t> _bindingPointOffsetInUniformBufferMap;
 
 		// Descriptor set layout

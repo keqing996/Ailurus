@@ -19,12 +19,6 @@ namespace Ailurus
 
 	void UniformSet::AddBindingPoint(std::unique_ptr<UniformBindingPoint>&& pBindingPoint)
 	{
-		if (_pUniformBuffer != nullptr)
-		{
-			Logger::LogError("UniformSet already has a uniform buffer, cannot add more binding points.");
-			return;
-		}
-
 		const auto id = pBindingPoint->GetBindingPoint();
 		if (_bindingPoints.contains(id))
 		{
@@ -35,14 +29,8 @@ namespace Ailurus
 		_bindingPoints[id] = std::move(pBindingPoint);
 	}
 
-	void UniformSet::InitUniformBuffer()
+	void UniformSet::InitUniformBufferInfo()
 	{
-		if (_pUniformBuffer != nullptr)
-		{
-			Logger::LogError("UniformSet already has a uniform buffer initialized.");
-			return;
-		}
-
 		uint32_t offset = 0;
 		for (const auto& [bindingId, pBindingPoint] : _bindingPoints)
 		{
@@ -50,7 +38,7 @@ namespace Ailurus
 			offset += pBindingPoint->GetTotalSize();
 		}
 
-		_pUniformBuffer = std::make_unique<VulkanUniformBuffer>(offset);
+		_uniformBufferSize = offset;
 	}
 
 	void UniformSet::InitDescriptorSetLayout()
@@ -86,50 +74,21 @@ namespace Ailurus
 		return _setId;
 	}
 
-	void UniformSet::UpdateUniformValue(uint32_t bindingId, const std::string& access, const UniformValue& value)
-	{
-		if (_pUniformBuffer == nullptr)
-		{
-			Logger::LogError("Uniform buffer not initialized for UniformSet with ID: {}", _setId);
-			return;
-		}
-
-		auto* bindingPoint = GetBindingPoint(bindingId);
-		if (bindingPoint == nullptr)
-		{
-			Logger::LogError("Uniform binding point not found for binding ID: {}", bindingId);
-			return;
-		}
-
-		auto accessOffset = bindingPoint->GetAccessOffset(access);
-		if (!accessOffset.has_value())
-		{
-			Logger::LogError("Access '{}' not found in binding point with ID: {}", access, bindingId);
-			return;
-		}
-
-		auto itr = _bindingPointOffsetInUniformBufferMap.find(bindingId);
-		if (itr == _bindingPointOffsetInUniformBufferMap.end())
-		{
-			Logger::LogError("Binding point offset not found for binding ID: {}", bindingId);
-			return;
-		}
-
-		uint32_t bindingPointOffset = itr->second;
-		uint32_t offset = bindingPointOffset + *accessOffset;
-		auto pBeginPos = _pUniformBuffer->GetWriteBeginPos();
-
-		auto visitor = [pBeginPos]<typename T>(T&& arg)
-		{
-			using T = std::decay_t<T>;
-			std::memcpy(static_cast<void*>(pBeginPos), &arg, sizeof(T));
-		};
-		
-		std::visit(visitor, value);
-	}
-
 	VulkanDescriptorSetLayout* UniformSet::GetDescriptorSetLayout() const
 	{
 		return _pDescriptorSetLayout.get();
+	}
+
+	auto UniformSet::GetUniformBufferSize() const -> uint32_t
+	{
+		return _uniformBufferSize;
+	}
+
+	auto UniformSet::GetBindingPointOffsetInUniformBuffer(uint32_t bindingPoint) const -> uint32_t
+	{
+		const auto itr = _bindingPointOffsetInUniformBufferMap.find(bindingPoint);
+		if (itr != _bindingPointOffsetInUniformBufferMap.end())
+			return itr->second;
+		return 0;
 	}
 } // namespace Ailurus

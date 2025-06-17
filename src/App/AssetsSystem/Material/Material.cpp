@@ -12,45 +12,36 @@ namespace Ailurus
 	{
 	}
 
-	void Material::SetPassShader(RenderPassType pass, const Shader* pShader)
-	{
-		if (pShader == nullptr)
-			return;
-
-		_renderPassShaderMap[pass][pShader->GetStage()] = pShader;
-	}
-
-	void Material::UpdateUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value)
-	{
-		auto itr = _renderPassUniformMap.find(pass);
-		if (itr == _renderPassUniformMap.end())
-		{
-			Logger::LogError("Material render pass not found: {}", EnumReflection<RenderPassType>::ToString(pass));
-			return;
-		}
-
-		auto& pUniform = itr->second;
-		pUniform->UpdateUniformValue(bindingId, access, value);
-	}
-
-	void Material::SetUniformSet(RenderPassType pass, std::unique_ptr<UniformSet>&& pUniformSet)
-	{
-		if (pUniformSet == nullptr)
-			return;
-
-		_renderPassUniformMap[pass] = std::move(pUniformSet);
-	}
-
 	bool Material::HasRenderPass(RenderPassType pass) const
 	{
-		return _renderPassShaderMap.contains(pass);
+		return _renderPassInfoMap.contains(pass);
 	}
 
 	const StageShaderArray* Material::GetPassShaderArray(RenderPassType pass) const
 	{
-		const auto itr = _renderPassShaderMap.find(pass);
-		if (itr != _renderPassShaderMap.end())
-			return &itr->second;
+		const auto itr = _renderPassInfoMap.find(pass);
+		if (itr != _renderPassInfoMap.end())
+			return &itr->second.shaders;
 		return nullptr;
+	}
+
+	const UniformSet* Material::GetUniformSet(RenderPassType pass) const
+	{
+		const auto itr = _renderPassInfoMap.find(pass);
+		if (itr != _renderPassInfoMap.end())
+			return itr->second.pUniformSet.get();
+		return nullptr;
+	}
+
+	void Material::SetPassShaderAndUniform(RenderPassType pass, const std::vector<const Shader*>& shaders,
+		std::unique_ptr<UniformSet>&& pUniformSet)
+	{
+		for (const auto* pShader : shaders)
+		{
+			if (pShader != nullptr)
+				_renderPassInfoMap[pass].shaders[pShader->GetStage()] = pShader;
+		}
+
+		_renderPassInfoMap[pass].pUniformSet = std::move(pUniformSet);
 	}
 } // namespace Ailurus
