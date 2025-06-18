@@ -14,6 +14,9 @@ namespace Ailurus
 		const auto& allBindingPoints = pUniformSet->GetAllBindingPoints();
 		for (const auto& [bindingId, pBindingPoint]: allBindingPoints)
 		{
+			// Todo: for now we only support uniform buffers, but in the future we can add support for other types
+			_requirement[vk::DescriptorType::eUniformBuffer]++;
+
 			vk::ShaderStageFlags usedShaderStage;
 			const auto& shaderStages = pBindingPoint->GetUsingStages();
 			for (const auto& shaderStage: shaderStages)
@@ -42,5 +45,10 @@ namespace Ailurus
 	vk::DescriptorSetLayout VulkanDescriptorSetLayout::GetDescriptorSetLayout() const
 	{
 		return _descriptorSetLayout;
+	}
+
+	const std::unordered_map<vk::DescriptorType, uint32_t>& VulkanDescriptorSetLayout::GetRequirement() const
+	{
+		return _requirement;
 	}
 } // namespace Ailurus

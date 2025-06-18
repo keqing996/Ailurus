@@ -1,52 +1,44 @@
 #pragma once
 
+#include <vector>
+#include <unordered_map>
+#include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
-#include <vulkan/vulkan.hpp>
 
 namespace Ailurus
 {
 	class VulkanDescriptorPool : public NonCopyable, public NonMovable
 	{
-		struct DescriptorCapacity
-		{
-			size_t uniformNum;
-			size_t samplerNum;
-
-			bool IsEnoughFor(const DescriptorCapacity& requirement) const;
-			void Allocate(const DescriptorCapacity& requirement);
-		};
-
 		struct PoolCapacity
 		{
 			size_t setsNum;
-			DescriptorCapacity descriptorCapacity;
-
-			bool IsEnoughFor(const DescriptorCapacity& requirement) const;
-			void Allocate(const DescriptorCapacity& requirement);
+			std::unordered_map<vk::DescriptorType, uint32_t> descriptorCount;
 		};
 
-		struct Entry
+		struct PoolItem
 		{
 			vk::DescriptorPool pool;
 			PoolCapacity originalCapacity;
 			PoolCapacity currentCapacity;
-
-			explicit Entry(PoolCapacity capacity);
-			~Entry();
-			bool IsEnoughFor(const DescriptorCapacity& requirement) const;
-			vk::DescriptorSet Allocate(const DescriptorCapacity& requirement, const vk::DescriptorSetLayout& layout);
 		};
 
 	public:
-		explicit VulkanDescriptorPool(const DescriptorPoolCapacityConfig& capacity);
+		VulkanDescriptorPool();
 		~VulkanDescriptorPool();
 
 	public:
-		vk::DescriptorSet AllocateDescriptorSet(const vk::DescriptorSetLayout& layout);
+		auto ResetPool() -> void;
+		auto AllocateDescriptorSet(const class VulkanDescriptorSetLayout* pSetLayout) -> vk::DescriptorSet;
 
 	private:
-		uint32_t _capacity;
+		auto CreatePoolItem() -> PoolItem;
+		auto CanPoolItemAllocateNewSet(const PoolItem& poolItem, const class VulkanDescriptorSetLayout* pSetLayout) -> bool;
+		auto PoolItemAllocateNewSet(PoolItem& poolItem, const class VulkanDescriptorSetLayout* pSetLayout) -> vk::DescriptorSet;
+
+	private:
+		std::vector<PoolItem> _pools;
+		static PoolCapacity _defaultPoolCapacity;
 	};
 
 } // namespace Ailurus

@@ -1,91 +1,97 @@
-#include <array>
-#include "VulkanSystem/VulkanSystem.h"
-#include "VulkanDescriptorPool.h"
 #include "Ailurus/Application/Application.h"
+#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanDescriptorSetLayout.h"
+#include "VulkanDescriptorPool.h"
 
 namespace Ailurus
 {
-	bool VulkanDescriptorPool::DescriptorCapacity::IsEnoughFor(const DescriptorCapacity& requirement) const
+	VulkanDescriptorPool::PoolCapacity VulkanDescriptorPool::_defaultPoolCapacity = {
+		.setsNum = 200,
+		.descriptorCount = {
+			{ vk::DescriptorType::eUniformBuffer, 400 },
+			{ vk::DescriptorType::eSampledImage, 400 }
+		}
+	};
+
+	VulkanDescriptorPool::VulkanDescriptorPool()
 	{
-		return uniformNum >= requirement.uniformNum && samplerNum >= requirement.samplerNum;
-	}
-
-	void VulkanDescriptorPool::DescriptorCapacity::Allocate(const DescriptorCapacity& requirement)
-	{
-		uniformNum -= requirement.uniformNum;
-		samplerNum -= requirement.samplerNum;
-	}
-
-	bool VulkanDescriptorPool::PoolCapacity::IsEnoughFor(const DescriptorCapacity& requirement) const
-	{
-		return setsNum > 0 && descriptorCapacity.IsEnoughFor(requirement);
-	}
-
-	void VulkanDescriptorPool::PoolCapacity::Allocate(const DescriptorCapacity& requirement)
-	{
-		descriptorCapacity.Allocate(requirement);
-		setsNum--;
-	}
-
-	VulkanDescriptorPool::Entry::Entry(PoolCapacity poolConfig)
-		: originalCapacity(poolConfig)
-		, currentCapacity(poolConfig)
-	{
-		// Uniform pool size
-		vk::DescriptorPoolSize uniformPoolSize;
-		uniformPoolSize.setType(vk::DescriptorType::eUniformBuffer)
-			.setDescriptorCount(poolConfig.descriptorCapacity.uniformNum);
-
-		// Sampler pool size
-		vk::DescriptorPoolSize samplerPoolSize;
-		samplerPoolSize.setType(vk::DescriptorType::eSampledImage)
-			.setDescriptorCount(poolConfig.descriptorCapacity.samplerNum);
-
-		// Pool size list
-		std::array poolSizes = {
-			uniformPoolSize, samplerPoolSize
-		};
-
-		// Create pool
-		vk::DescriptorPoolCreateInfo poolCreateInfo;
-		poolCreateInfo.setPoolSizes(poolSizes)
-			.setMaxSets(poolConfig.setsNum);
-
-		pool = Application::Get<VulkanSystem>()->GetDevice().createDescriptorPool(poolCreateInfo);
-	}
-
-	VulkanDescriptorPool::Entry::~Entry()
-	{
-		Application::Get<VulkanSystem>()->GetDevice().destroyDescriptorPool(pool);
-	}
-
-	bool VulkanDescriptorPool::Entry::IsEnoughFor(const DescriptorCapacity& requirement) const
-	{
-		return currentCapacity.IsEnoughFor(requirement);
-	}
-
-	vk::DescriptorSet VulkanDescriptorPool::Entry::Allocate(const vk::DescriptorSetLayout& layout)
-	{
-
-	}
-
-	VulkanDescriptorPool::VulkanDescriptorPool(const DescriptorPoolCapacityConfig& capacityConfig)
-	{
-
+		_pools.push_back(CreatePoolItem());
 	}
 
 	VulkanDescriptorPool::~VulkanDescriptorPool()
 	{
-		Application::Get<VulkanSystem>()->GetDevice().destroyDescriptorPool(_descriptorPool);
+		for (auto& poolItem : _pools)
+			Application::Get<VulkanSystem>()->GetDevice().destroyDescriptorPool(poolItem.pool);
 	}
 
-	vk::DescriptorSet VulkanDescriptorPool::AllocateDescriptorSet()
+	void VulkanDescriptorPool::ResetPool()
 	{
+		for (auto& poolItem : _pools)
+		{
+			Application::Get<VulkanSystem>()->GetDevice().resetDescriptorPool(poolItem.pool);
+			poolItem.currentCapacity = poolItem.originalCapacity;
+		}
+	}
+
+	vk::DescriptorSet VulkanDescriptorPool::AllocateDescriptorSet(const VulkanDescriptorSetLayout* pSetLayout)
+	{
+		for (auto& poolItem : _pools)
+		{
+			if (CanPoolItemAllocateNewSet(poolItem, pSetLayout))
+				return PoolItemAllocateNewSet(poolItem, pSetLayout);
+		}
+
+		_pools.push_back(CreatePoolItem());
+		return PoolItemAllocateNewSet(_pools.back(), pSetLayout);
+	}
+
+	VulkanDescriptorPool::PoolItem VulkanDescriptorPool::CreatePoolItem()
+	{
+		std::vector<vk::DescriptorPoolSize> poolSizes;
+		for (const auto [type, size] : _defaultPoolCapacity.descriptorCount) 
+			poolSizes.push_back(vk::DescriptorPoolSize(type, size));
+
+		vk::DescriptorPoolCreateInfo poolCreateInfo;
+		poolCreateInfo.setPoolSizes(poolSizes)
+			.setMaxSets(_defaultPoolCapacity.setsNum);
+
+		auto pool = Application::Get<VulkanSystem>()->GetDevice().createDescriptorPool(poolCreateInfo);
+
+		return PoolItem{ pool, _defaultPoolCapacity, _defaultPoolCapacity };
+	}
+
+	auto VulkanDescriptorPool::CanPoolItemAllocateNewSet(const PoolItem& poolItem, const class VulkanDescriptorSetLayout* pSetLayout) -> bool
+	{
+		// Check sets enough
+		if (poolItem.currentCapacity.setsNum <= 0)
+			return false;
+
+		// Check descriptor count
+		auto& currentCapacity = poolItem.currentCapacity;
+		for (const auto [type, needCount] : pSetLayout->GetRequirement())
+		{
+			auto it = currentCapacity.descriptorCount.find(type);
+			if (it == poolItem.currentCapacity.descriptorCount.end() || it->second < needCount)
+				return false;
+		}
+
+		return true;
+	}
+
+	vk::DescriptorSet VulkanDescriptorPool::PoolItemAllocateNewSet(PoolItem& poolItem, const class VulkanDescriptorSetLayout* pSetLayout) 
+	{
+		vk::DescriptorSetLayout layout = pSetLayout->GetDescriptorSetLayout();
 		vk::DescriptorSetAllocateInfo allocateInfo;
-		allocateInfo.setDescriptorPool(_descriptorPool)
+		allocateInfo.setDescriptorPool(poolItem.pool)
 			.setDescriptorSetCount(1)
 			.setSetLayouts(layout);
 
-		return Application::Get<VulkanSystem>()->GetDevice().allocateDescriptorSets(allocateInfo)[0];
+		auto descriptorSets = Application::Get<VulkanSystem>()->GetDevice().allocateDescriptorSets(allocateInfo);
+		poolItem.currentCapacity.setsNum--;
+
+		for (const auto& [type, needCount] : pSetLayout->GetRequirement())
+			poolItem.currentCapacity.descriptorCount[type] -= needCount;
+
+		return descriptorSets[0];
 	}
 } // namespace Ailurus
