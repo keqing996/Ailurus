@@ -1,13 +1,19 @@
+#include <optional>
 #include "FrameContext.h"
 #include "Ailurus/Application/Application.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "Ailurus/Utility/Logger.h"
 #include "VulkanSystem/Resource/VulkanResourceManager.h"
-
-#include <optional>
+#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanSystem/Descriptor/VulkanDescriptorPool.h"
 
 namespace Ailurus
 {
+	FrameContext::~FrameContext()
+	{
+		WaitFinish();
+	}
+
 	void FrameContext::EnsureCommandBufferExist()
 	{
 		if (_pRecordingCommandBuffer == nullptr)
@@ -41,6 +47,10 @@ namespace Ailurus
 		// Reset fence and free
 		device.resetFences(_renderingFrameContext->allFinishFence);
 		Application::Get<VulkanSystem>()->FreeFence(_renderingFrameContext->allFinishFence);
+
+		// Reset and free descriptor pool
+		_renderingFrameContext->pFrameDescriptorPool->ResetPool();
+		Application::Get<VulkanSystem>()->FreeDescriptorPool(std::move(_renderingFrameContext->pFrameDescriptorPool));
 
 		// Clear render context
 		_renderingFrameContext = std::nullopt;
@@ -83,14 +93,18 @@ namespace Ailurus
 		{
 			_renderingFrameContext->renderingFrameCount = Application::Get<TimeSystem>()->FrameCount();
 			_renderingFrameContext->pRenderingCommandBuffer = std::move(_pRecordingCommandBuffer);
+			_renderingFrameContext->pFrameDescriptorPool = std::move(_pAllocatingDescriptorPool);
 			_renderingFrameContext->waitSemaphore = imageReadySemaphore;
 			_renderingFrameContext->signalSemaphore = signalSemaphore;
 			_renderingFrameContext->allFinishFence = renderFinishFence;
 		}
 
-		// New resource
+		// New command buffer
 		_pRecordingCommandBuffer = std::make_unique<VulkanCommandBuffer>();
 		_pRecordingCommandBuffer->Begin();
+
+		// New descriptor pool
+		_pAllocatingDescriptorPool = std::move(Application::Get<VulkanSystem>()->AllocateDescriptorPool());
 
 		return signalSemaphore;
 	}

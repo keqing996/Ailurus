@@ -53,4 +53,30 @@ namespace Ailurus
 	{
 		Application::Get<VulkanSystem>()->GetDevice().destroySemaphore(res);
 	}
-}
+
+	VulkanObjectPool<VulkanDescriptorPool>::~VulkanObjectPool()
+	{
+	}
+
+	std::unique_ptr<VulkanDescriptorPool> VulkanObjectPool<VulkanDescriptorPool>::Allocate()
+	{
+		if (_pools.empty())
+		{
+			_pools.push_back(std::make_unique<VulkanDescriptorPool>());
+		}
+		auto pool = std::move(_pools.back());
+		_pools.pop_back();
+		return pool;
+	}
+
+	void VulkanObjectPool<VulkanDescriptorPool>::Free(std::unique_ptr<VulkanDescriptorPool> pool)
+	{
+		pool->ResetPool();
+		_pools.push_back(std::move(pool));
+	}
+
+	void VulkanObjectPool<VulkanDescriptorPool>::Clear()
+	{
+		_pools.clear();
+	}
+} // namespace Ailurus

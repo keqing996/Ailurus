@@ -4,14 +4,17 @@
 #include <memory>
 #include <optional>
 #include <vulkan/vulkan.hpp>
-#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
 
 namespace Ailurus
 {
+	class VulkanCommandBuffer;
+	class VulkanDescriptorPool;
+
 	struct RenderingFrameContext
 	{
 		uint64_t renderingFrameCount;
 		std::unique_ptr<VulkanCommandBuffer> pRenderingCommandBuffer;
+		std::unique_ptr<VulkanDescriptorPool> pFrameDescriptorPool;
 		vk::Semaphore waitSemaphore;
 		vk::Semaphore signalSemaphore;
 		vk::Fence allFinishFence;
@@ -19,6 +22,9 @@ namespace Ailurus
 
 	struct FrameContext
 	{
+	public:
+		~FrameContext();
+
 	public:
 		void EnsureCommandBufferExist();
 		bool WaitFinish();
@@ -31,5 +37,8 @@ namespace Ailurus
 
 		// Recording buffer
 		std::unique_ptr<VulkanCommandBuffer> _pRecordingCommandBuffer;
+
+		// Allocating descriptor pool
+		std::unique_ptr<VulkanDescriptorPool> _pAllocatingDescriptorPool;
 	};
 } // namespace Ailurus

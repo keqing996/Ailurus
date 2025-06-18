@@ -60,9 +60,11 @@ namespace Ailurus
 		auto AllocateCommandBuffer() -> vk::CommandBuffer;
 		auto AllocateSemaphore() -> vk::Semaphore;
 		auto AllocateFence() -> vk::Fence;
+		auto AllocateDescriptorPool() -> std::unique_ptr<VulkanDescriptorPool>;
 		auto FreeCommandBuffer(vk::CommandBuffer commandBuffer) -> void;
 		auto FreeSemaphore(vk::Semaphore semaphore) -> void;
 		auto FreeFence(vk::Fence fence) -> void;
+		auto FreeDescriptorPool(std::unique_ptr<VulkanDescriptorPool>&& pDescriptorPool) -> void;
 
 		// Dynamic context
 		void CreateDynamicContext();
@@ -109,6 +111,12 @@ namespace Ailurus
 		vk::Queue _vkComputeQueue = nullptr;
 		vk::CommandPool _vkGraphicCommandPool = nullptr;
 
+		// Static context - pools
+		VulkanObjectPool<vk::CommandBuffer> _commandBufferPool{};
+		VulkanObjectPool<vk::Fence> _fencePool{};
+		VulkanObjectPool<vk::Semaphore> _semaphorePool{};
+		VulkanObjectPool<VulkanDescriptorPool> _descriptorPool{};
+
 		// Manager
 		std::unique_ptr<class VulkanResourceManager> _resourceManager;
 		std::unique_ptr<class VulkanVertexLayoutManager> _vertexLayoutManager;
@@ -118,11 +126,6 @@ namespace Ailurus
 		vk::SwapchainKHR _vkSwapChain = nullptr;
 		std::vector<vk::Image> _vkSwapChainImages{};
 		std::vector<vk::ImageView> _vkSwapChainImageViews{};
-
-		// Dynamic context - pools
-		VulkanObjectPool<vk::CommandBuffer> _commandBufferPool{};
-		VulkanObjectPool<vk::Fence> _fencePool{};
-		VulkanObjectPool<vk::Semaphore> _semaphorePool{};
 
 		// Dynamic context - rendering frame
 		uint32_t _currentParallelFrameIndex = 0;

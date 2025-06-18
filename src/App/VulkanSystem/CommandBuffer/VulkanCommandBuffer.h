@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <unordered_set>
 #include <vulkan/vulkan.hpp>
 #include "Ailurus/Utility/NonCopyable.h"

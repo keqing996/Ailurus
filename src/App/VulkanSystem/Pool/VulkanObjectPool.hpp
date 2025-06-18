@@ -1,8 +1,10 @@
 #pragma once
 
+#include <memory>
 #include <queue>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
+#include "VulkanSystem/Descriptor/VulkanDescriptorPool.h"
 
 namespace Ailurus
 {
@@ -49,5 +51,20 @@ namespace Ailurus
 
 	private:
 		std::queue<T> _availableQueue;
+	};
+
+	template <>
+	class VulkanObjectPool<VulkanDescriptorPool>
+	{
+	public:
+		~VulkanObjectPool();
+
+	public:
+		std::unique_ptr<VulkanDescriptorPool> Allocate();
+		void Free(std::unique_ptr<VulkanDescriptorPool> pool);
+		void Clear();
+
+	private:
+		std::vector<std::unique_ptr<VulkanDescriptorPool>> _pools;
 	};
 } // namespace Ailurus

@@ -4,6 +4,7 @@
 #include <array>
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
+#include "VulkanSystem/Descriptor/VulkanDescriptorPool.h"
 #include "VulkanSystem/Helper/VulkanHelper.h"
 #include "VulkanSystem/FrameContext/FrameContext.h"
 #include "VulkanSystem/Resource/VulkanResourceManager.h"
@@ -309,6 +310,16 @@ namespace Ailurus
 	{
 		_fencePool.Free(fence);
 	}
+	
+	std::unique_ptr<VulkanDescriptorPool> VulkanSystem::AllocateDescriptorPool()
+	{
+		return _descriptorPool.Allocate();
+	}
+
+	void VulkanSystem::FreeDescriptorPool(std::unique_ptr<VulkanDescriptorPool>&& pDescriptorPool)
+	{
+		_descriptorPool.Free(std::move(pDescriptorPool));
+	}
 
 	void VulkanSystem::PrepareDispatcher()
 	{
@@ -543,11 +554,6 @@ namespace Ailurus
 		// Destroy frame context
 		_frameContexts.clear();
 
-		// Clear pool
-		_commandBufferPool.Clear();
-		_fencePool.Clear();
-		_semaphorePool.Clear();
-
 		// Destroy the swap chain
 		DestroySwapChain();
 	}
@@ -625,4 +631,6 @@ namespace Ailurus
 
 		return true;
 	}
+
+	
 } // namespace Ailurus
