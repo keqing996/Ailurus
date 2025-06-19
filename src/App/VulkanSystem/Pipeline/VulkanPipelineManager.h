@@ -15,8 +15,7 @@ namespace Ailurus
         using PipelineMap = std::unordered_map<VulkanPipelineEntry, std::unique_ptr<VulkanPipeline>, 
             VulkanPipelineEntryHash, VulkanPipelineEntryEqual>;
     public:
-        void CreatePipelineIfNotExist(const class VulkanRenderPass* pRenderPass, const class Material* pMaterial, 
-            uint64_t vertexLayoutId);
+		auto GetPipeline(const VulkanPipelineEntry& entry) -> VulkanPipeline*;
 
     private:
         PipelineMap _pipelinesMap;

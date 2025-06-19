@@ -72,6 +72,11 @@ namespace Ailurus
 			return _pAsset != nullptr;
 		}
 
+		T* operator->() const noexcept
+		{
+			return Get(); 
+		}
+
 	public:
 		T* Get() const
 		{

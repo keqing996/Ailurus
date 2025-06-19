@@ -1,12 +1,65 @@
+#include <Ailurus/Utility/Logger.h>
+#include <Ailurus/Application/Application.h>
+#include <Ailurus/Application/RenderSystem/RenderSystem.h>
+#include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
+#include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
+#include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include "VulkanPipelineManager.h"
-#include "VulkanSystem/RenderPass/VulkanRenderPass.h"
-#include "Ailurus/Application/AssetsSystem/Material/Material.h"
+#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanSystem/Vertex/VulkanVertexLayoutManager.h"
 
 namespace Ailurus
 {
-	void VulkanPipelineManager::CreatePipelineIfNotExist(const VulkanRenderPass* pRenderPass, const Material* pMaterial,
-		uint64_t vertexLayoutId)
+	auto VulkanPipelineManager::GetPipeline(const VulkanPipelineEntry& entry) -> VulkanPipeline*
 	{
-        
+		const auto it = _pipelinesMap.find(entry);
+		if (it != _pipelinesMap.end())
+			return it->second.get();
+
+		// Prepare to create a new pipeline
+		auto pRenderPass = Application::Get<RenderSystem>()->GetRenderPass(entry.renderPass);
+		if (pRenderPass == nullptr)
+		{
+			Logger::LogError("VulkanPipelineManager::GetPipeline: Render pass not found for entry: {}", entry.renderPass);
+			return nullptr;
+		}
+
+		auto refMaterial = Application::Get<AssetsSystem>()->GetAsset<Material>(entry.materialAssetId);
+		if (!refMaterial)
+		{
+			Logger::LogError("VulkanPipelineManager::GetPipeline: Material not found for entry: {}", entry.materialAssetId);
+			return nullptr;
+		}
+
+		auto pShaderArray = refMaterial->GetPassShaderArray(entry.renderPass);
+		if (pShaderArray == nullptr)
+		{
+			Logger::LogError("VulkanPipelineManager::GetPipeline: Shader array not found for material {} in render pass {}", 
+				entry.materialAssetId, entry.renderPass);
+			return nullptr;
+		}
+
+		auto pVertexLayout = Application::Get<VulkanSystem>()->GetVertexLayoutManager()->GetLayout(entry.vertexLayoutId);
+		if (pVertexLayout == nullptr)
+		{
+			Logger::LogError("VulkanPipelineManager::GetPipeline: Vertex layout not found for entry: {}", entry.vertexLayoutId);
+			return nullptr;
+		}
+
+		// Create the pipeline
+		std::vector<const UniformSet*> uniformSets;
+		uniformSets.push_back(refMaterial->GetUniformSet(entry.renderPass));
+
+		auto pPipeline = std::make_unique<VulkanPipeline>(
+			pRenderPass->GetRHIRenderPass(), 
+			*pShaderArray,
+			pVertexLayout, 
+			uniformSets);
+
+		auto pResultRaw = pPipeline.get();
+
+		_pipelinesMap[entry] = std::move(pPipeline);
+
+		return pResultRaw;
 	}
 } // namespace Ailurus

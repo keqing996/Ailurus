@@ -7,7 +7,7 @@
 
 namespace Ailurus
 {
-	class Model : public Asset
+	class Model : public TypedAsset<AssetType::Model> 
 	{
 	public:
 		const std::vector<std::unique_ptr<Mesh>>& GetMeshes() const;

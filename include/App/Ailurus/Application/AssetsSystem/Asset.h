@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
+#include "AssetType.h"
 
 namespace Ailurus
 {
@@ -37,9 +38,26 @@ namespace Ailurus
 			--_refCount;
 		}
 
+		virtual AssetType GetAssetType() const = 0;
+
 	protected:
 		int32_t _refCount = 0;
 		uint64_t _assetId;
+	};
+
+	template <AssetType Type>
+	class TypedAsset : public Asset
+	{
+	public:
+		AssetType GetAssetType() const override
+		{
+			return Type;
+		}
+
+		static AssetType StaticAssetType()
+		{
+			return Type;
+		}
 	};
 
 } // namespace Ailurus

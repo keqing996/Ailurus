@@ -5,7 +5,7 @@
 #include <Ailurus/Application/SceneSystem/SceneSystem.h>
 #include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
 #include <VulkanSystem/VulkanSystem.h>
-#include <VulkanSystem/Pipeline/VulkanPipelineConfig.h>
+#include <VulkanSystem/Pipeline/VulkanPipelineEntry.h>
 #include <VulkanSystem/RenderPass/VulkanRenderPass.h>
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Assert.h>
@@ -14,12 +14,12 @@ namespace Ailurus
 {
 	struct RenderIntermediateVariable
     {
-        using MaterialMeshMap = std::unordered_map<const MaterialInstance*, std::vector<const Mesh*>>;
-        using RenderPassObjectMap = std::unordered_map<RenderPassType, MaterialMeshMap>;
+		using PipelineMap = std::unordered_map<VulkanPipelineEntry, std::vector<const Mesh*>,
+			VulkanPipelineEntryHash, VulkanPipelineEntryEqual>;
 
-        Matrix4x4f projMatrix;
+		Matrix4x4f projMatrix;
         Matrix4x4f viewMatrix;
-        RenderPassObjectMap renderPassObjectMap;
+        PipelineMap pipelineMeshMap;
     };
 
     void RenderSystem::CollectCameraViewProjectionMatrix()
@@ -28,10 +28,10 @@ namespace Ailurus
 		_pIntermediateVariable->viewMatrix = _pMainCamera->GetEntity()->GetModelMatrix();
     }
 
-    void RenderSystem::CollectMaterialMeshMap()
+    void RenderSystem::CollectPipelineMeshMap()
     {
 		const auto allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
-        auto& renderPassObjMap = _pIntermediateVariable->renderPassObjectMap;
+        auto& pipelineMeshMap = _pIntermediateVariable->pipelineMeshMap;
         for (const auto pEntity : allEntities)
         {
 			const auto pMeshRender = pEntity->GetComponent<CompStaticMeshRender>();
@@ -71,7 +71,7 @@ namespace Ailurus
 			ReBuildSwapChain();
 
         CollectCameraViewProjectionMatrix();
-        CollectMaterialMeshMap();
+        CollectPipelineMeshMap();
 
 		auto* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
 		RenderForwardPass(pCommandBuffer);

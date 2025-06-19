@@ -25,6 +25,8 @@ namespace Ailurus
 	public:
 		void NeedRecreateSwapChain();
 
+		auto GetRenderPass(RenderPassType pass) const -> RenderPass*;
+
 		// Shader library
 		ShaderLibrary* GetShaderLibrary() const;
 
@@ -44,11 +46,10 @@ namespace Ailurus
 		// Create
 		void CreateIntermediateVariable();
 		void BuildRenderPass();
-		auto GetRenderPass(RenderPassType pass) const -> RenderPass*;
 
 		// Render
 		void CollectCameraViewProjectionMatrix();
-		void CollectMaterialMeshMap();
+		void CollectPipelineMeshMap();
 		void ReBuildSwapChain();
 		void RenderForwardPass(VulkanCommandBuffer* pCommandBuffer);
 		void RenderMaterialMeshes(const MaterialInstance* pMatInst, const std::vector<const Mesh*>& pMeshList, VulkanCommandBuffer* pCommandBuffer);

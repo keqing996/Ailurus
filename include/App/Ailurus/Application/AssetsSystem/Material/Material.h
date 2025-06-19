@@ -7,11 +7,10 @@
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
-#include "Ailurus/Application/RenderSystem/Uniform/UniformValue.h"
 
 namespace Ailurus
 {
-	class Material : public Asset
+	class Material : public TypedAsset<AssetType::Material> 
 	{
 		struct MaterialRenderPassInfo
 		{

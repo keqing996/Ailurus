@@ -12,7 +12,7 @@
 
 namespace Ailurus
 {
-	class MaterialInstance : public Asset
+	class MaterialInstance : public TypedAsset<AssetType::MaterialInstance>
 	{
 		friend class AssetsSystem;
 		MaterialInstance(uint64_t assetId, const AssetRef<Material>& targetMaterial);
