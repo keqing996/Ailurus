@@ -3,6 +3,7 @@
 #include "VulkanSystem/Helper/VulkanHelper.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "VulkanSystem/Resource/VulkanResourceManager.h"
+#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
@@ -67,9 +68,9 @@ namespace Ailurus
 		return _indexType;
 	}
 
-	vk::Buffer VulkanIndexBuffer::GetBuffer() const
+	VulkanDeviceBuffer* VulkanIndexBuffer::GetBuffer() const
 	{
-		return _buffer->buffer;
+		return _buffer;
 	}
 
 	size_t VulkanIndexBuffer::GetIndexCount() const

@@ -10,7 +10,7 @@ namespace Ailurus
         VulkanVertexBuffer(const void* vertexData, size_t dataSizeInBytes);
         ~VulkanVertexBuffer();
 
-        vk::Buffer GetBuffer() const;
+        class VulkanDeviceBuffer* GetBuffer() const;
         size_t GetSize() const;
 
     private:

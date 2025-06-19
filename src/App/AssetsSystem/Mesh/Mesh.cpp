@@ -35,4 +35,9 @@ namespace Ailurus
 	{
 		return _pIndexBuffer.get();
 	}
+
+	uint32_t Mesh::GetVertexCount() const
+	{
+		return _vertexCount;
+	}
 } // namespace Ailurus

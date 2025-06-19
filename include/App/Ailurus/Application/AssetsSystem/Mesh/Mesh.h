@@ -19,11 +19,13 @@ namespace Ailurus
 		~Mesh();
 
 	public:
+		uint32_t GetVertexCount() const;
 		const VulkanVertexBuffer* GetVertexBuffer() const;
 		uint64_t GetVertexLayoutId() const;
 		const VulkanIndexBuffer* GetIndexBuffer() const;
 
 	private:
+		uint32_t _vertexCount;
 		std::unique_ptr<VulkanVertexBuffer> _pVertexBuffer;
 		uint64_t _layoutId;
 		std::unique_ptr<VulkanIndexBuffer> _pIndexBuffer;

@@ -24,8 +24,10 @@ namespace Ailurus
 		void EndRenderPass();
 		void SetViewportAndScissor();
 		void BindPipeline(const class VulkanPipeline* pPipeline);
-		void BindVertexBuffer(const class VulkanVerexBuffer* pVertexBuffer);
+		void BindVertexBuffer(const class VulkanVertexBuffer* pVertexBuffer);
 		void BindIndexBuffer(const class VulkanIndexBuffer* pIndexBuffer);
+		void DrawIndexed(uint32_t indexCount);
+		void DrawNonIndexed(uint32_t vertexCount);
 
 	private:
 		vk::CommandBuffer _buffer;

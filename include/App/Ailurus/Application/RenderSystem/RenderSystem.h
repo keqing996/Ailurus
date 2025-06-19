@@ -53,7 +53,6 @@ namespace Ailurus
 		void ReBuildSwapChain();
 		void RenderForwardPass(VulkanCommandBuffer* pCommandBuffer);
 		void RenderPipelineMeshes(const class VulkanPipelineEntry& pipeline, const std::vector<const Mesh*>& pMeshList, VulkanCommandBuffer* pCommandBuffer);
-		void RenderMesh(const CompStaticMeshRender* pMeshRender, VulkanCommandBuffer* pCommandBuffer) const;
 
 	private:
 		bool _needRebuildSwapChain = false;

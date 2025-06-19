@@ -118,7 +118,7 @@ namespace Ailurus
 		_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline->GetPipeline());
 	}
 
-	void VulkanCommandBuffer::BindVertexBuffer(const class VulkanVerexBuffer* pVertexBuffer)
+	void VulkanCommandBuffer::BindVertexBuffer(const VulkanVertexBuffer* pVertexBuffer)
 	{
 		if (pVertexBuffer == nullptr)
 		{
@@ -127,15 +127,40 @@ namespace Ailurus
 		}
 
 		// Record resources
-		pVertexBuffer->AddRef(*this);
-		_referencedResources.insert(pVertexBuffer);
+		auto* pInternalBuffer = pVertexBuffer->GetBuffer();
+		pInternalBuffer->AddRef(*this);
+		_referencedResources.insert(pInternalBuffer);
 
 		// Record command
 		const vk::DeviceSize offset = 0;
-		_buffer.bindVertexBuffers(0, 1, &pVertexBuffer->buffer, &offset);
+		_buffer.bindVertexBuffers(0, 1, &pInternalBuffer->buffer, &offset);
 	}
 
-	void VulkanCommandBuffer::BindIndexBuffer(const class VulkanIndexBuffer* pIndexBuffer)
+	void VulkanCommandBuffer::BindIndexBuffer(const VulkanIndexBuffer* pIndexBuffer)
 	{
+		if (pIndexBuffer == nullptr)
+		{
+			Logger::LogError("VulkanCommandBuffer::BindIndexBuffer: Index buffer is nullptr");
+			return;
+		}
+
+		// Record resources
+		auto* pInternalBuffer = pIndexBuffer->GetBuffer();
+		pInternalBuffer->AddRef(*this);
+		_referencedResources.insert(pInternalBuffer);
+
+		// Record command
+		const vk::DeviceSize offset = 0;
+		_buffer.bindIndexBuffer(pInternalBuffer->buffer, offset, pIndexBuffer->GetIndexType());
+	}
+
+	void VulkanCommandBuffer::DrawIndexed(uint32_t indexCount)
+	{
+		_buffer.drawIndexed(indexCount, 1, 0, 0, 0);
+	}
+
+	void VulkanCommandBuffer::DrawNonIndexed(uint32_t vertexCount)
+	{
+		_buffer.draw(vertexCount, 1, 0, 0);
 	}
 } // namespace Ailurus

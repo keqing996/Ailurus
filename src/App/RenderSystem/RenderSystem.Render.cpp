@@ -10,6 +10,8 @@
 #include <vulkanSystem/CommandBuffer/VulkanCommandBuffer.h>
 #include <VulkanSystem/Pipeline/VulkanPipelineManager.h>
 #include <VulkanSystem/RenderPass/VulkanRenderPass.h>
+#include <VulkanSystem/Buffer/VulkanVertexBuffer.h>
+#include <VulkanSystem/Buffer/VulkanIndexBuffer.h>
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Assert.h>
 
@@ -108,7 +110,7 @@ namespace Ailurus
 		pCommandBuffer->BeginRenderPass(pForwardPass->GetRHIRenderPass());
 
 		for (auto& [pipelienEntry, pMeshList] : pipleMeshesMap)
-			RenderPipelineMeshes(pMaterial, pMeshList, pCommandBuffer);
+			RenderPipelineMeshes(pipelienEntry, pMeshList, pCommandBuffer);
 
 		pCommandBuffer->EndRenderPass();
 	}
@@ -128,67 +130,18 @@ namespace Ailurus
 		for (const auto* pMesh: meshList)
 		{
 			auto pVertexBuffer = pMesh->GetVertexBuffer();
-			pCommandBuffer->
+			pCommandBuffer->BindVertexBuffer(pVertexBuffer);
 
 			auto pIndexBuffer = pMesh->GetIndexBuffer();
-		}
-	}
-
-	void RenderSystem::RenderMesh(const CompStaticMeshRender* pMeshRender, VulkanCommandBuffer* pCommandBuffer) const
-	{
-		if (pMeshRender == nullptr)
-			return;
-
-		if (_pCurrentRenderPass == nullptr)
-		{
-			Logger::LogError("Command buffer draw object but not in any render pass");
-			return;
-		}
-
-		const auto commandBuffer = pCommandBuffer->GetBuffer();
-		const auto& modelRef = pMeshRender->GetModelAsset();
-		if (modelRef == nullptr)
-			return;
-
-		const auto& allModelMeshs = modelRef.Get()->GetMeshes();
-		if (allModelMeshs.empty())
-			return;
-
-		const auto pMaterial = pMeshRender->GetMaterial();
-
-		if (pMesh == nullptr || pMaterial == nullptr)
-			return;
-
-		auto optStageShaders = pMaterial->GetStageShaderArray(_pCurrentRenderPass->GetRenderPassType());
-		if (!optStageShaders.has_value())
-			return; // This object should not be drawn under this pass;
-
-		// Bind pipeline
-		VulkanPipelineConfig pipelineConfig;
-		pipelineConfig.pMesh = pMesh;
-		pipelineConfig.shaderStages = optStageShaders.value();
-		vk::Pipeline pipeline = _pCurrentRenderPass->GetRHIRenderPass()->GetPipeline(pipelineConfig)->GetPipeline();
-		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
-
-		// Set viewport & scissor
-		pCommandBuffer->SetViewportAndScissor();
-
-		// Bind vertex buffer
-		vk::Buffer vertexBuffers[] = { pMesh->GetVertexBuffer()->GetBuffer() };
-		vk::DeviceSize offsets[] = { 0 };
-		commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-
-		// Draw by index
-		auto pIndexBuffer = pMesh->GetIndexBuffer();
-		if (pIndexBuffer != nullptr)
-		{
-			commandBuffer.bindIndexBuffer(pIndexBuffer->GetBuffer(), 0, pIndexBuffer->GetIndexType());
-			commandBuffer.drawIndexed(pIndexBuffer->GetIndexCount(), 1, 0, 0, 0);
-		}
-		// Draw by vertex
-		else
-		{
-			commandBuffer.draw(pMesh->GetVertexCount(), 1, 0, 0);
+			if (pIndexBuffer != nullptr)
+			{
+				pCommandBuffer->BindIndexBuffer(pIndexBuffer);
+				pCommandBuffer->DrawIndexed(pIndexBuffer->GetIndexCount());
+			}
+			else
+			{
+				pCommandBuffer->DrawNonIndexed(pMesh->GetVertexCount());
+			}
 		}
 	}
 } // namespace Ailurus

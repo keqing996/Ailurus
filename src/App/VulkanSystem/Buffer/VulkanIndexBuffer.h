@@ -12,7 +12,7 @@ namespace Ailurus
 		~VulkanIndexBuffer();
 
 		vk::IndexType GetIndexType() const;
-		vk::Buffer GetBuffer() const;
+		class VulkanDeviceBuffer* GetBuffer() const;
 		size_t GetIndexCount() const;
 
 	private:

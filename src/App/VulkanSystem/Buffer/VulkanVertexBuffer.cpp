@@ -39,9 +39,9 @@ namespace Ailurus
     	_buffer->MarkDelete();
     }
 
-    vk::Buffer VulkanVertexBuffer::GetBuffer() const
+    VulkanDeviceBuffer* VulkanVertexBuffer::GetBuffer() const
     {
-        return _buffer->buffer;
+        return _buffer;
     }
 
     size_t VulkanVertexBuffer::GetSize() const
