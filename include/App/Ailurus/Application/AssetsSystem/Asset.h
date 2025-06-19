@@ -10,7 +10,7 @@ namespace Ailurus
 	class Asset: public NonCopyable, public NonMovable
 	{
 	public:
-		Asset(uint64_t assetId)
+		explicit Asset(uint64_t assetId)
 			: _assetId(assetId)
 		{
 		}
@@ -49,6 +49,11 @@ namespace Ailurus
 	class TypedAsset : public Asset
 	{
 	public:
+		explicit TypedAsset(uint64_t assetId)
+			: Asset(assetId)
+		{
+		}
+
 		AssetType GetAssetType() const override
 		{
 			return Type;

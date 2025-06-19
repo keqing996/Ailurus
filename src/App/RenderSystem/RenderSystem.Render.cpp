@@ -1,11 +1,14 @@
-#include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
-#include "Ailurus/Utility/EnumReflection.h"
+#include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
+#include <Ailurus/Utility/EnumReflection.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
+#include <Ailurus/Application/AssetsSystem/Mesh/Mesh.h>
+#include <Ailurus/Application/AssetsSystem/Model/Model.h>
 #include <Ailurus/Application/SceneSystem/SceneSystem.h>
 #include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
 #include <VulkanSystem/VulkanSystem.h>
-#include <VulkanSystem/Pipeline/VulkanPipelineEntry.h>
+#include <vulkanSystem/CommandBuffer/VulkanCommandBuffer.h>
+#include <VulkanSystem/Pipeline/VulkanPipelineManager.h>
 #include <VulkanSystem/RenderPass/VulkanRenderPass.h>
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Assert.h>
@@ -14,12 +17,15 @@ namespace Ailurus
 {
 	struct RenderIntermediateVariable
     {
-		using PipelineMap = std::unordered_map<VulkanPipelineEntry, std::vector<const Mesh*>,
+		using PipelineMeshMap = std::unordered_map<VulkanPipelineEntry, std::vector<const Mesh*>,
 			VulkanPipelineEntryHash, VulkanPipelineEntryEqual>;
 
+		using RenderPassPipelineMeshMap = std::unordered_map<RenderPassType, PipelineMeshMap>;
+
+		// View and projection matrices
 		Matrix4x4f projMatrix;
         Matrix4x4f viewMatrix;
-        PipelineMap pipelineMeshMap;
+        RenderPassPipelineMeshMap renderPassPipelineMeshesMap;
     };
 
     void RenderSystem::CollectCameraViewProjectionMatrix()
@@ -31,7 +37,7 @@ namespace Ailurus
     void RenderSystem::CollectPipelineMeshMap()
     {
 		const auto allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
-        auto& pipelineMeshMap = _pIntermediateVariable->pipelineMeshMap;
+        auto& renderPassMap = _pIntermediateVariable->renderPassPipelineMeshesMap;
         for (const auto pEntity : allEntities)
         {
 			const auto pMeshRender = pEntity->GetComponent<CompStaticMeshRender>();
@@ -53,11 +59,21 @@ namespace Ailurus
                 if (!pMaterial->HasRenderPass(passType))
                     continue;
 
-                auto& meshList  = renderPassObjMap[passType][materialRef.Get()];
-                for (const auto& mesh : modelRef.Get()->GetMeshes())
-                    meshList.push_back(mesh.get());
-            }
-        }
+				const auto& allMeshes = modelRef->GetMeshes();
+				for (const auto& pMesh: allMeshes)
+				{
+					// Create a pipeline entry
+					VulkanPipelineEntry pipelineEntry(
+						passType,
+						pMaterial->GetAssetId(),
+						pMesh->GetVertexLayoutId());
+
+					auto& meshList = renderPassMap[passType][pipelineEntry];
+					for (const auto& mesh : modelRef.Get()->GetMeshes())
+						meshList.push_back(mesh.get());
+				}
+			}
+		}
     }
 
 	void RenderSystem::CreateIntermediateVariable()
@@ -85,20 +101,37 @@ namespace Ailurus
     	if (pForwardPass == nullptr)
     		return;
 
-		auto& materialMeshMap = _pIntermediateVariable->renderPassObjectMap[RenderPassType::Forward];
-		if (materialMeshMap.empty())
+		auto& pipleMeshesMap = _pIntermediateVariable->renderPassPipelineMeshesMap[RenderPassType::Forward];
+		if (pipleMeshesMap.empty())
 			return;
 
 		pCommandBuffer->BeginRenderPass(pForwardPass->GetRHIRenderPass());
 
-		for (auto& [pMaterial, pMeshList] : materialMeshMap)
-			RenderMaterialMeshes(pMaterial, pMeshList, pCommandBuffer);
+		for (auto& [pipelienEntry, pMeshList] : pipleMeshesMap)
+			RenderPipelineMeshes(pMaterial, pMeshList, pCommandBuffer);
 
 		pCommandBuffer->EndRenderPass();
 	}
 
-	void RenderSystem::RenderMaterialMeshes(const MaterialInstance* pMatInst, const std::vector<const Mesh*>& pMeshList, VulkanCommandBuffer* pCommandBuffer)
+	void RenderSystem::RenderPipelineMeshes(const VulkanPipelineEntry& pipelineEntry, const std::vector<const Mesh*>& meshList, VulkanCommandBuffer* pCommandBuffer)
 	{
+		auto pPipeline = Application::Get<VulkanSystem>()->GetPipelineManager()->GetPipeline(pipelineEntry);
+		if (pPipeline == nullptr)
+		{
+			Logger::LogError("Pipeline not found for entry: {}", pipelineEntry.renderPass);
+			return;
+		}
+
+		pCommandBuffer->BindPipeline(pPipeline);
+		pCommandBuffer->SetViewportAndScissor();
+
+		for (const auto* pMesh: meshList)
+		{
+			auto pVertexBuffer = pMesh->GetVertexBuffer();
+			pCommandBuffer->
+
+			auto pIndexBuffer = pMesh->GetIndexBuffer();
+		}
 	}
 
 	void RenderSystem::RenderMesh(const CompStaticMeshRender* pMeshRender, VulkanCommandBuffer* pCommandBuffer) const

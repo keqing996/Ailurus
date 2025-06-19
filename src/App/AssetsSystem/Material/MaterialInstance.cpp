@@ -14,7 +14,7 @@ namespace Ailurus
 	}
 
 	MaterialInstance::MaterialInstance(uint64_t assetId, const AssetRef<Material>& targetMaterial)
-		: Asset(assetId)
+		: TypedAsset(assetId)
 		, _targetMaterial(targetMaterial)
 	{
 		const auto* pMaterial = targetMaterial.Get();

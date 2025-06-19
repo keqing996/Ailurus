@@ -8,7 +8,7 @@
 namespace Ailurus
 {
 	Material::Material(uint64_t assetId)
-		: Asset(assetId)
+		: TypedAsset(assetId)
 	{
 	}
 

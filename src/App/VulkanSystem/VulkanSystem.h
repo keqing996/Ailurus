@@ -55,6 +55,7 @@ namespace Ailurus
 		auto GetFrameContext() -> FrameContext*;
 		auto GetResourceManager() const -> class VulkanResourceManager*;
 		auto GetVertexLayoutManager() const -> class VulkanVertexLayoutManager*;
+		auto GetPipelineManager() const -> class VulkanPipelineManager*;
 
 		// Pool
 		auto AllocateCommandBuffer() -> vk::CommandBuffer;
@@ -120,6 +121,7 @@ namespace Ailurus
 		// Manager
 		std::unique_ptr<class VulkanResourceManager> _resourceManager;
 		std::unique_ptr<class VulkanVertexLayoutManager> _vertexLayoutManager;
+		std::unique_ptr<class VulkanPipelineManager> _pipelineManager;
 
 		// Dynamic context - swap chain
 		SwapChainConfig _swapChainConfig{};

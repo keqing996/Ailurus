@@ -6,7 +6,7 @@
 namespace Ailurus
 {
 	Model::Model(uint64_t assetId, std::vector<std::unique_ptr<Mesh>>&& meshes)
-		: Asset(assetId)
+		: TypedAsset(assetId)
 		, _meshes(std::move(meshes))
 	{
 	}

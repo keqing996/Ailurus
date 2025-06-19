@@ -4,6 +4,9 @@
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "VulkanSystem/RenderPass/VulkanRenderPass.h"
+#include "VulkanSystem/Pipeline/VulkanPipeline.h"
+#include "VulkanSystem/Buffer/VulkanVertexBuffer.h"
+#include "VulkanSystem/Buffer/VulkanIndexBuffer.h"
 
 namespace Ailurus
 {
@@ -105,5 +108,34 @@ namespace Ailurus
 		const vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
 		_buffer.setViewport(0, 1, &viewport);
 		_buffer.setScissor(0, 1, &scissor);
+	}
+
+	void VulkanCommandBuffer::BindPipeline(const class VulkanPipeline* pPipeline)
+	{
+		if (pPipeline == nullptr)
+			return;
+
+		_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pPipeline->GetPipeline());
+	}
+
+	void VulkanCommandBuffer::BindVertexBuffer(const class VulkanVerexBuffer* pVertexBuffer)
+	{
+		if (pVertexBuffer == nullptr)
+		{
+			Logger::LogError("VulkanCommandBuffer::BindVertexBuffer: Vertex buffer is nullptr");
+			return;
+		}
+
+		// Record resources
+		pVertexBuffer->AddRef(*this);
+		_referencedResources.insert(pVertexBuffer);
+
+		// Record command
+		const vk::DeviceSize offset = 0;
+		_buffer.bindVertexBuffers(0, 1, &pVertexBuffer->buffer, &offset);
+	}
+
+	void VulkanCommandBuffer::BindIndexBuffer(const class VulkanIndexBuffer* pIndexBuffer)
+	{
 	}
 } // namespace Ailurus

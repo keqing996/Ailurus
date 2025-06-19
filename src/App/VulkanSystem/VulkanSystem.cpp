@@ -9,6 +9,7 @@
 #include "VulkanSystem/FrameContext/FrameContext.h"
 #include "VulkanSystem/Resource/VulkanResourceManager.h"
 #include "VulkanSystem/Vertex/VulkanVertexLayoutManager.h"
+#include "VulkanSystem/Pipeline/VulkanPipelineManager.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -20,6 +21,7 @@ namespace Ailurus
 		: _destroySurfaceCallback(destroySurface)
 		, _resourceManager(nullptr)
 		, _vertexLayoutManager(nullptr)
+		, _pipelineManager(nullptr)
 	{
 		PrepareDispatcher();
 
@@ -43,6 +45,7 @@ namespace Ailurus
 
 		_resourceManager = std::make_unique<VulkanResourceManager>();
 		_vertexLayoutManager = std::make_unique<VulkanVertexLayoutManager>();
+		_pipelineManager = std::make_unique<VulkanPipelineManager>();
 
 		_initialized = true;
 	}
@@ -54,6 +57,7 @@ namespace Ailurus
 
 		DestroyDynamicContext();
 
+		_pipelineManager = nullptr;
 		_vertexLayoutManager = nullptr;
 		_resourceManager = nullptr;
 
@@ -274,6 +278,11 @@ namespace Ailurus
 	VulkanVertexLayoutManager* VulkanSystem::GetVertexLayoutManager() const
 	{
 		return _vertexLayoutManager.get();
+	}
+
+	VulkanPipelineManager* VulkanSystem::GetPipelineManager() const
+	{
+		return _pipelineManager.get();
 	}
 
 	FrameContext* VulkanSystem::GetFrameContext()
