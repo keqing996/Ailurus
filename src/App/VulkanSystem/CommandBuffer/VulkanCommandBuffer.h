@@ -26,6 +26,7 @@ namespace Ailurus
 		void BindPipeline(const class VulkanPipeline* pPipeline);
 		void BindVertexBuffer(const class VulkanVertexBuffer* pVertexBuffer);
 		void BindIndexBuffer(const class VulkanIndexBuffer* pIndexBuffer);
+		void BindDescriptorSet(vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& descriptorSets);
 		void DrawIndexed(uint32_t indexCount);
 		void DrawNonIndexed(uint32_t vertexCount);
 

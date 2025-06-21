@@ -13,6 +13,7 @@ namespace Ailurus
 
 	public:
 		vk::Pipeline GetPipeline() const;
+		vk::PipelineLayout GetPipelineLayout() const;
 
 	private:
 		vk::PipelineLayout _vkPipelineLayout;

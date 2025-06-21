@@ -154,6 +154,11 @@ namespace Ailurus
 		_buffer.bindIndexBuffer(pInternalBuffer->buffer, offset, pIndexBuffer->GetIndexType());
 	}
 
+	void VulkanCommandBuffer::BindDescriptorSet(vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& descriptorSets)
+	{
+		_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, descriptorSets, nullptr, nullptr);
+	}
+
 	void VulkanCommandBuffer::DrawIndexed(uint32_t indexCount)
 	{
 		_buffer.drawIndexed(indexCount, 1, 0, 0, 0);

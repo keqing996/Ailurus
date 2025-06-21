@@ -133,4 +133,9 @@ namespace Ailurus
 	{
 		return _vkPipeline;
 	}
+
+	vk::PipelineLayout VulkanPipeline::GetPipelineLayout() const
+	{
+		return _vkPipelineLayout;
+	}
 } // namespace Ailurus
