@@ -549,7 +549,7 @@ namespace Ailurus
 		for (auto i = 0; i < PARALLEL_FRAME; i++)
 		{
 			_frameContexts.push_back(std::make_unique<FrameContext>());
-			_frameContexts[i]->EnsureCommandBufferExist();
+			_frameContexts[i]->EnsureFrameInitialized();
 		}
 	}
 

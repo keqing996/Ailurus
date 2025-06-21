@@ -14,12 +14,17 @@ namespace Ailurus
 		WaitFinish();
 	}
 
-	void FrameContext::EnsureCommandBufferExist()
+	void FrameContext::EnsureFrameInitialized()
 	{
 		if (_pRecordingCommandBuffer == nullptr)
 		{
 			_pRecordingCommandBuffer = std::make_unique<VulkanCommandBuffer>();
 			_pRecordingCommandBuffer->Begin();
+		}
+
+		if (_pRecordingCommandBuffer == nullptr)
+		{
+			_pAllocatingDescriptorPool = std::move(Application::Get<VulkanSystem>()->AllocateDescriptorPool());
 		}
 	}
 
@@ -66,6 +71,11 @@ namespace Ailurus
 		return _pRecordingCommandBuffer.get();
 	}
 
+	VulkanDescriptorPool* FrameContext::GetAllocatingDescriptorPool() const
+	{
+		return _pAllocatingDescriptorPool.get();
+	}
+
 	vk::Semaphore FrameContext::SubmitCommandBuffer(vk::Semaphore imageReadySemaphore)
 	{
 		// Record end
@@ -99,12 +109,8 @@ namespace Ailurus
 			_renderingFrameContext->allFinishFence = renderFinishFence;
 		}
 
-		// New command buffer
-		_pRecordingCommandBuffer = std::make_unique<VulkanCommandBuffer>();
-		_pRecordingCommandBuffer->Begin();
-
-		// New descriptor pool
-		_pAllocatingDescriptorPool = std::move(Application::Get<VulkanSystem>()->AllocateDescriptorPool());
+		// New frame resource
+		EnsureFrameInitialized();
 
 		return signalSemaphore;
 	}

@@ -26,9 +26,10 @@ namespace Ailurus
 		~FrameContext();
 
 	public:
-		void EnsureCommandBufferExist();
+		void EnsureFrameInitialized();
 		bool WaitFinish();
 		VulkanCommandBuffer* GetRecordingCommandBuffer() const;
+		VulkanDescriptorPool* GetAllocatingDescriptorPool() const;
 		vk::Semaphore SubmitCommandBuffer(vk::Semaphore imageReadySemaphore);
 
 	private:
