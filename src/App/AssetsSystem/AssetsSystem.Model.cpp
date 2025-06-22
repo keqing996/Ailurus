@@ -1,10 +1,15 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/AssetsSystem/Model/Model.h>
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Assert.h>
+#include <VulkanSystem/Vertex/VulkanVertexLayout.h>
+#include <VulkanSystem/Helper/VulkanHelper.h>
+#include <VulkanSystem/VulkanSystem.h>
+#include <VulkanSystem/Vertex/VulkanVertexLayoutManager.h>
 
 namespace Ailurus
 {
@@ -16,7 +21,7 @@ namespace Ailurus
 		*offset += sizeof(T);
 	}
 
-	static VertexAttributeDescription ReadLayout(const aiMesh* pAssimpMesh)
+	static std::vector<AttributeType> ReadLayout(const aiMesh* pAssimpMesh)
 	{
 		std::vector<AttributeType> vertexAttrVec;
 
@@ -38,12 +43,12 @@ namespace Ailurus
 			vertexAttrVec.push_back(AttributeType::Bitangent);
 		}
 
-		return VertexAttributeDescription(vertexAttrVec);
+		return vertexAttrVec;
 	}
 
-	static std::vector<uint8_t> ReadVertex(const aiMesh* pAssimpMesh, const VertexAttributeDescription& layout)
+	static std::vector<uint8_t> ReadVertex(const aiMesh* pAssimpMesh, const std::vector<AttributeType>& attributes)
 	{
-		const auto vertexSize = layout.GetStride();
+		const auto vertexSize = VulkanHelper::CalculateVertexLayoutStride(attributes);
 		const auto vertexNum = pAssimpMesh->mNumVertices;
 		const auto dataBufferSizeInBytes = vertexSize * vertexNum;
 
@@ -55,7 +60,7 @@ namespace Ailurus
 		{
 			size_t texCoordIndex = 0;
 			size_t vertexColorIndex = 0;
-			for (const auto attr : layout.GetAttributes())
+			for (const auto attr : attributes)
 			{
 				switch (attr)
 				{
@@ -107,7 +112,7 @@ namespace Ailurus
 
 	static std::vector<uint8_t> ReadIndex(const aiMesh* pAssimpMesh, IndexBufferFormat indexFormat)
 	{
-		const auto indexSizeInByte = VertexAttributeDescription::SizeOf(indexFormat);
+		const auto indexSizeInByte = VulkanHelper::SizeOf(indexFormat);
 		const auto faceNum = pAssimpMesh->mNumFaces;
 		constexpr auto faceVertexNum = 3;
 		const auto dataBufferSizeInBytes = faceVertexNum * faceNum * indexSizeInByte;
@@ -143,18 +148,28 @@ namespace Ailurus
 
 	static std::unique_ptr<Mesh> GenerateMesh(const aiMesh* pAssimpMesh)
 	{
-		VertexAttributeDescription layout = ReadLayout(pAssimpMesh);
+		std::vector<AttributeType> layout = ReadLayout(pAssimpMesh);
+		auto layoutId = Application::Get<VulkanSystem>()->GetVertexLayoutManager()->CreateLayout(layout);
+
 		std::vector<uint8_t> vertexData = ReadVertex(pAssimpMesh, layout);
 
 		if (pAssimpMesh->HasFaces())
 		{
 			IndexBufferFormat indexFormat = ReadIndexFormat(pAssimpMesh);
 			std::vector<uint8_t> indexData = ReadIndex(pAssimpMesh, indexFormat);
-			return std::make_unique<Mesh>(vertexData.data(), vertexData.size(), layout,
-				indexFormat, indexData.data(), indexData.size());
+			return std::make_unique<Mesh>(
+				vertexData.data(),
+				vertexData.size(),
+				layoutId,
+				indexFormat,
+				indexData.data(),
+				indexData.size());
 		}
 
-		return std::make_unique<Mesh>(vertexData.data(), vertexData.size(), layout);
+		return std::make_unique<Mesh>(
+			vertexData.data(),
+			vertexData.size(),
+			layoutId);
 	}
 
 	static void AssimpProcessNode(const aiNode* pAssimpNode, const aiScene* pAssimpScene,

@@ -16,8 +16,6 @@
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Assert.h>
 
-// pass -> material(shader + uniform, descSetLayout) -> meshes
-
 namespace Ailurus
 {
 	struct RenderIntermediateVariable

@@ -133,6 +133,14 @@ namespace Ailurus
 		}
 	}
 
+	uint32_t VulkanHelper::CalculateVertexLayoutStride(const std::vector<AttributeType>& attributes)
+	{
+		uint32_t stride = 0;
+		for (auto i = 0; i < attributes.size(); i++)
+			stride += SizeOf(attributes[i]);
+		return stride;
+	}
+
 	uint32_t VulkanHelper::SizeOf(IndexBufferFormat type)
 	{
 		switch (type)

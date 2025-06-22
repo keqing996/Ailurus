@@ -17,10 +17,7 @@ namespace Ailurus
 
 	uint32_t VulkanVertexLayout::GetStride() const
 	{
-		uint32_t stride = 0;
-		for (auto i = 0; i < _attribute.size(); i++)
-			stride += VulkanHelper::SizeOf(_attribute[i]);
-		return stride;
+		return VulkanHelper::CalculateVertexLayoutStride(_attribute);
 	}
 
 	const std::vector<AttributeType>& VulkanVertexLayout::GetAttributes() const

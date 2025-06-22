@@ -34,5 +34,7 @@ namespace Ailurus
 		static uint32_t SizeOf(IndexBufferFormat type);
 
 		static vk::Format GetFormat(AttributeType type);
+
+		static uint32_t CalculateVertexLayoutStride(const std::vector<AttributeType>& attributes);
 	};
 } // namespace Ailurus

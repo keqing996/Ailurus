@@ -56,5 +56,5 @@ int Main(int argc, char* argv[])
 
 void SetUpBeforeLoop()
 {
-	auto ret = Application::Get<AssetsSystem>()->LoadAsset<Model>("./Assets/Model/Primitive/Cube.obj");
+	//auto ret = Application::Get<AssetsSystem>()->LoadAsset<Model>("./Assets/Model/Primitive/Cube.obj");
 }
