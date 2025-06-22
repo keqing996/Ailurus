@@ -4,12 +4,11 @@
 #include <memory>
 #include <optional>
 #include <vulkan/vulkan.hpp>
+#include <VulkanSystem/CommandBuffer/VulkanCommandBuffer.h>
+#include <VulkanSystem/Descriptor/VulkanDescriptorPool.h>
 
 namespace Ailurus
 {
-	class VulkanCommandBuffer;
-	class VulkanDescriptorPool;
-
 	struct RenderingFrameContext
 	{
 		uint64_t renderingFrameCount;

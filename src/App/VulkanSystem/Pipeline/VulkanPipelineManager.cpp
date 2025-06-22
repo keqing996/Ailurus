@@ -20,7 +20,8 @@ namespace Ailurus
 		auto pRenderPass = Application::Get<RenderSystem>()->GetRenderPass(entry.renderPass);
 		if (pRenderPass == nullptr)
 		{
-			Logger::LogError("VulkanPipelineManager::GetPipeline: Render pass not found for entry: {}", entry.renderPass);
+			Logger::LogError("VulkanPipelineManager::GetPipeline: Render pass not found for entry: {}",
+				EnumReflection<RenderPassType>::ToString(entry.renderPass));
 			return nullptr;
 		}
 
@@ -35,7 +36,7 @@ namespace Ailurus
 		if (pShaderArray == nullptr)
 		{
 			Logger::LogError("VulkanPipelineManager::GetPipeline: Shader array not found for material {} in render pass {}", 
-				entry.materialAssetId, entry.renderPass);
+				entry.materialAssetId, EnumReflection<RenderPassType>::ToString(entry.renderPass));
 			return nullptr;
 		}
 

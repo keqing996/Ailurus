@@ -35,6 +35,10 @@ namespace Ailurus
 		}
 	}
 
+	UniformVariableNumeric::~UniformVariableNumeric()
+	{
+	}
+
 	const UniformValueType& UniformVariableNumeric::ValueType() const
 	{
 		return _type;
@@ -55,6 +59,10 @@ namespace Ailurus
 		return UniformVaribleType::Numeric;
 	}
 
+	UniformVariableStructure::~UniformVariableStructure()
+	{
+	}
+
 	void UniformVariableStructure::AddMember(const std::string& name, std::unique_ptr<UniformVariable>&& pUniformVar)
 	{
 		_members[name] = std::move(pUniformVar);
@@ -68,6 +76,10 @@ namespace Ailurus
 	UniformVaribleType UniformVariableStructure::VaribleType() const
 	{
 		return UniformVaribleType::Structure;
+	}
+
+	UniformVariableArray::~UniformVariableArray()
+	{
 	}
 
 	void UniformVariableArray::AddMember(std::unique_ptr<UniformVariable>&& pUniformVar)

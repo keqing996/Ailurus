@@ -2,7 +2,7 @@
 #include "Ailurus/Application/Application.h"
 #include "VulkanSystem/VulkanSystem.h"
 #include "VulkanSystem/Resource/VulkanResourceManager.h"
-#include <vulkan/vulkan_enums.hpp>
+#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
 
 namespace Ailurus
 {

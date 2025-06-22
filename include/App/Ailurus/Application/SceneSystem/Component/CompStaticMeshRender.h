@@ -16,8 +16,8 @@ namespace Ailurus
 		~CompStaticMeshRender() override;
 
 	public:
-		const AssetRef<Model>& GetModelAsset() const { return _modelAsset; }
-		const AssetRef<MaterialInstance>& GetMaterialAsset() const { return _materialAsset; }
+		const AssetRef<Model>& GetModelAsset() const;
+		const AssetRef<MaterialInstance>& GetMaterialAsset() const;
 
 	private:
 		AssetRef<Model> _modelAsset;

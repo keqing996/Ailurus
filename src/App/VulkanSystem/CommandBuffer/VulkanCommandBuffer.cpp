@@ -156,7 +156,7 @@ namespace Ailurus
 
 	void VulkanCommandBuffer::BindDescriptorSet(vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& descriptorSets)
 	{
-		_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, descriptorSets, nullptr, nullptr);
+		_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, descriptorSets, nullptr);
 	}
 
 	void VulkanCommandBuffer::DrawIndexed(uint32_t indexCount)

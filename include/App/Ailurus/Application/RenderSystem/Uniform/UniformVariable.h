@@ -17,6 +17,7 @@ namespace Ailurus
 	{
 	public:
 		virtual UniformVaribleType VaribleType() const = 0;
+		virtual ~UniformVariable() = default;
 	};
 
 	class UniformVariableNumeric;
@@ -27,6 +28,7 @@ namespace Ailurus
 	{
 	public:
 		UniformVariableNumeric(UniformValueType type);
+		~UniformVariableNumeric() override;
 
 		auto ValueType() const -> const UniformValueType&;
 		auto GetValue() const -> const UniformValue&;
@@ -41,6 +43,9 @@ namespace Ailurus
 	class UniformVariableStructure : public UniformVariable
 	{
 	public:
+		~UniformVariableStructure() override;
+
+	public:
 		auto AddMember(const std::string& name, std::unique_ptr<UniformVariable>&& pUniformVar) -> void;
 		auto GetMembers() const -> const std::unordered_map<std::string, std::unique_ptr<UniformVariable>>&;
 		auto VaribleType() const -> UniformVaribleType override;
@@ -51,6 +56,9 @@ namespace Ailurus
 
 	class UniformVariableArray : public UniformVariable
 	{
+	public:
+		~UniformVariableArray() override;
+
 	public:
 		auto AddMember(std::unique_ptr<UniformVariable>&& pUniformVar) -> void;
 		auto GetMembers() const -> const std::vector<std::unique_ptr<UniformVariable>>&;

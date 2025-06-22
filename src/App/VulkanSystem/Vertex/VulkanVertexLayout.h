@@ -15,7 +15,7 @@ namespace Ailurus
 		auto GetVulkanAttributeDescription() const -> const std::vector<vk::VertexInputAttributeDescription>&;
 
 	private:
-		friend class VertexLayoutManager;
+		friend class VulkanVertexLayoutManager;
 		explicit VulkanVertexLayout(const std::initializer_list<AttributeType>& attributes);
 		explicit VulkanVertexLayout(const std::vector<AttributeType>& attributes);
 

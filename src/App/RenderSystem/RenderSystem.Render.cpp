@@ -14,40 +14,10 @@
 #include <VulkanSystem/Buffer/VulkanIndexBuffer.h>
 #include <VulkanSystem/Vertex/VulkanVertexLayoutManager.h>
 #include <Ailurus/Utility/Logger.h>
-#include <Ailurus/Assert.h>
+#include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
 {
-	struct RenderIntermediateVariable
-    {
-		struct RenderInfoPerVertexLayout
-		{
-			const VulkanVertexLayout* pVertexLayout;
-			std::vector<const Mesh*> meshes;
-		};
-
-		struct RenderInfoPerMaterial
-		{
-			const Material* pMaterial;
-			std::unordered_map<uint64_t, RenderInfoPerVertexLayout> vertexLayoutsMap;
-		};
-
-		struct RenderInfoPerPass
-		{
-			std::unordered_map<uint32_t, RenderInfoPerMaterial> materialsMap;
-		};
-
-		struct RenderInfo
-		{
-			std::unordered_map<RenderPassType, RenderInfoPerPass> renderPassesMap;
-		};
-
-		// View and projection matrices
-		Matrix4x4f projMatrix;
-        Matrix4x4f viewMatrix;
-		RenderInfo renderInfo;
-    };
-
     void RenderSystem::CollectCameraViewProjectionMatrix()
     {
 		_pIntermediateVariable->projMatrix = _pMainCamera->GetProjectionMatrix();
@@ -160,7 +130,8 @@ namespace Ailurus
 				const auto pPipeline = pVulkanSystem->GetPipelineManager()->GetPipeline(pipelineEntry);
 				if (pPipeline == nullptr)
 				{
-					Logger::LogError("Pipeline not found for entry: {}", pipelineEntry.renderPass);
+					Logger::LogError("Pipeline not found for entry: {}",
+						EnumReflection<RenderPassType>::ToString(pipelineEntry.renderPass));
 					continue;
 				}
 

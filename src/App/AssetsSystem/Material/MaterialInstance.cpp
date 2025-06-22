@@ -30,7 +30,7 @@ namespace Ailurus
 			const auto renderPassUniformBufferSize = pUniformSet->GetUniformBufferSize();
 
 			// Record current
-			_renderPassUniformBufferOffsetMap[pass] = { offset, renderPassUniformBufferSize };
+			_renderPassUniformBufferOffsetMap.insert({ pass, RenderPassUniformBufferOffsetInfo{ offset, renderPassUniformBufferSize }});
 			offset += renderPassUniformBufferSize;
 		}
 
