@@ -6,10 +6,9 @@
 
 using namespace Ailurus;
 
-void SetUpBeforeLoop();
-
 int Main(int argc, char* argv[])
 {
+	/* Backup
 	static std::array<float, 20> vertices = {
 		-0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
 		0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
@@ -20,41 +19,33 @@ int Main(int argc, char* argv[])
 	const std::vector<uint16_t> indices = {
 		0, 1, 2, 2, 3, 0
 	};
+	*/
 
-	// VertexAttributeDescription desc{ AttributeType::Vector2, AttributeType::Vector3 };
-
+	// Create the application instance
 	Application::Create(800, 600, "Triangle", Application::Style{});
 
-	SetUpBeforeLoop();
-	/*
-	auto pMesh = std::make_shared<Mesh>(
-	vertices.data(), vertices.size() * sizeof(float),
-	desc, IndexBufferFormat::UInt16,
-	indices.data(), indices.size() * sizeof(uint16_t));
-
-	auto pMaterial = std::make_shared<Material>();
-	pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Vertex, "./Assets/ShaderBin/triangle.vert.spv");
-	pMaterial->SetShader(RenderPassType::Forward, ShaderStage::Fragment, "./Assets/ShaderBin/triangle.frag.spv");
+	// Load assets and set up the scene
+	auto modelRef = Application::Get<AssetsSystem>()->LoadModel("./Assets/Model/Primitive/Cube.fbx");
+	auto materialRef = Application::Get<AssetsSystem>()->LoadMaterial("./Assets/Material/DefaultMaterial.json");
 
 	auto pEntityWeak = Application::Get<SceneSystem>()->CreateEntity();
 	if (auto pEntity = pEntityWeak.lock())
 	{
-		auto pMeshRender = pEntity->AddComponent<CompMeshRender>();
-		if (pMeshRender != nullptr)
-		{
-			pMeshRender->SetMesh(pMesh);
-			pMeshRender->SetMaterial(pMaterial);
-		}
+		pEntity->AddComponent<CompStaticMeshRender>(modelRef, materialRef);
 	}
-	*/
 
+	auto pCamera = Application::Get<SceneSystem>()->CreateEntity();
+	if (auto pCameraEntity = pCamera.lock())
+	{
+		auto pCam = pCameraEntity->AddComponent<CompCamera>(-2, 2, -2, 2, 0.1f, 100.0f, true);
+		Application::Get<RenderSystem>()->SetMainCamera(pCam);
+
+		pCameraEntity->SetPosition({ -3.0f, 0.0f, 5.0f });
+	}
+
+	// Render
 	Application::Loop(nullptr);
 	Application::Destroy();
 
 	return 0;
-}
-
-void SetUpBeforeLoop()
-{
-	//auto ret = Application::Get<AssetsSystem>()->LoadAsset<Model>("./Assets/Model/Primitive/Cube.obj");
 }

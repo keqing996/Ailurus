@@ -7,7 +7,7 @@
 #include <Ailurus/Application/SceneSystem/SceneSystem.h>
 #include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
 #include <VulkanSystem/VulkanSystem.h>
-#include <vulkanSystem/CommandBuffer/VulkanCommandBuffer.h>
+#include <VulkanSystem/CommandBuffer/VulkanCommandBuffer.h>
 #include <VulkanSystem/Pipeline/VulkanPipelineManager.h>
 #include <VulkanSystem/RenderPass/VulkanRenderPass.h>
 #include <VulkanSystem/Buffer/VulkanVertexBuffer.h>
