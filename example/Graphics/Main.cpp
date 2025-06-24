@@ -1,6 +1,7 @@
 
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
+#include <Ailurus/Application/SceneSystem/Component/CompCamera.h>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include <Ailurus/Application/AssetsSystem/Model/Model.h>
 
@@ -22,10 +23,10 @@ int Main(int argc, char* argv[])
 	*/
 
 	// Create the application instance
-	Application::Create(800, 600, "Triangle", Application::Style{});
+	Application::Create(800, 600, "Test", Application::Style{});
 
 	// Load assets and set up the scene
-	auto modelRef = Application::Get<AssetsSystem>()->LoadModel("./Assets/Model/Primitive/Cube.fbx");
+	auto modelRef = Application::Get<AssetsSystem>()->LoadModel("./Assets/Model/Cube.fbx");
 	auto materialRef = Application::Get<AssetsSystem>()->LoadMaterial("./Assets/Material/DefaultMaterial.json");
 
 	auto pEntityWeak = Application::Get<SceneSystem>()->CreateEntity();
@@ -37,7 +38,7 @@ int Main(int argc, char* argv[])
 	auto pCamera = Application::Get<SceneSystem>()->CreateEntity();
 	if (auto pCameraEntity = pCamera.lock())
 	{
-		auto pCam = pCameraEntity->AddComponent<CompCamera>(-2, 2, -2, 2, 0.1f, 100.0f, true);
+		auto pCam = pCameraEntity->AddComponent<CompCamera>(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f, true);
 		Application::Get<RenderSystem>()->SetMainCamera(pCam);
 
 		pCameraEntity->SetPosition({ -3.0f, 0.0f, 5.0f });

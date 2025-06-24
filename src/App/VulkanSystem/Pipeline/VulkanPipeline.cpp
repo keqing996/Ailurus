@@ -1,7 +1,6 @@
 #include "VulkanPipeline.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
-#include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "Ailurus/Application/RenderSystem/Shader/Shader.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
 #include "VulkanSystem/VulkanSystem.h"
@@ -12,8 +11,11 @@
 
 namespace Ailurus
 {
-	VulkanPipeline::VulkanPipeline(const VulkanRenderPass* pRenderPass, const StageShaderArray& shaderArray, 
-		const VulkanVertexLayout* pVertexLayout, const std::vector<const UniformSet*>& uniformSets)
+	VulkanPipeline::VulkanPipeline(
+		const VulkanRenderPass* pRenderPass,
+		const StageShaderArray& shaderArray,
+		const VulkanVertexLayout* pVertexLayout,
+		const std::vector<const UniformSet*>& uniformSets)
 	{
 		// Shader stages
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;

@@ -17,14 +17,12 @@ namespace Ailurus
 				return sizeof(int32_t);
 			case UniformValueType::Float:
 				return sizeof(float);
-			case UniformValueType::Vector2f:
+			case UniformValueType::Vector2:
 				return sizeof(Vector2f);
-			case UniformValueType::Vector3f:
+			case UniformValueType::Vector3:
 				return sizeof(Vector3f);
-			case UniformValueType::Vector4f:
+			case UniformValueType::Vector4:
 				return sizeof(Vector4f);
-			case UniformValueType::Mat3:
-				return sizeof(Matrix4x4f);
 			case UniformValueType::Mat4:
 				return sizeof(Matrix4x4f);
 			default:
@@ -45,12 +43,11 @@ namespace Ailurus
 					case UniformValueType::Int:
 					case UniformValueType::Float:
 						return 4;
-					case UniformValueType::Vector2f:
+					case UniformValueType::Vector2:
 						return 8;
-					case UniformValueType::Vector3f:
-					case UniformValueType::Vector4f:
+					case UniformValueType::Vector3:
+					case UniformValueType::Vector4:
 						return 16;
-					case UniformValueType::Mat3:
 					case UniformValueType::Mat4:
 						return 16;
 					default:
@@ -74,6 +71,8 @@ namespace Ailurus
 				return AlignOffset(firstElementAlignment, 16);
 			}
 		}
+
+		return 0;
 	}
 
 	static void PopulateUniformOffsets(UniformVariable* pUniform, const std::string& prefix,

@@ -175,8 +175,6 @@ namespace Ailurus
 	static void AssimpProcessNode(const aiNode* pAssimpNode, const aiScene* pAssimpScene,
 		std::vector<std::unique_ptr<Mesh>>& resultMeshVec)
 	{
-		resultMeshVec.clear();
-
 		for (unsigned int i = 0; i < pAssimpNode->mNumMeshes; i++)
 		{
 			const aiMesh* pAssimpMesh = pAssimpScene->mMeshes[pAssimpNode->mMeshes[i]];

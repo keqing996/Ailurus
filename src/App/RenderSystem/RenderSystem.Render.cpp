@@ -38,12 +38,12 @@ namespace Ailurus
             if (!modelRef)
                 continue;
 
-            const auto& materialRef = pMeshRender->GetMaterialAsset();
-            if (!materialRef)
+            const auto& materialInstRef = pMeshRender->GetMaterialInstanceAsset();
+            if (!materialInstRef)
 				continue;
 
-        	uint32_t materialId = materialRef->GetAssetId();
-			const auto* pMaterial = materialRef.Get()->GetTargetMaterial();
+			const auto* pMaterial = materialInstRef->GetTargetMaterial();
+        	const auto materialId = pMaterial->GetAssetId();
             for (auto i = 0; i < EnumReflection<RenderPassType>::Size(); i++)
             {
                 auto passType = static_cast<RenderPassType>(i);

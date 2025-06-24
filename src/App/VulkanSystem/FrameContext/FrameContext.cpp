@@ -22,7 +22,7 @@ namespace Ailurus
 			_pRecordingCommandBuffer->Begin();
 		}
 
-		if (_pRecordingCommandBuffer == nullptr)
+		if (_pAllocatingDescriptorPool == nullptr)
 		{
 			_pAllocatingDescriptorPool = std::move(Application::Get<VulkanSystem>()->AllocateDescriptorPool());
 		}

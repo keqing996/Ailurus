@@ -304,7 +304,7 @@ namespace Ailurus
         if (_mousePos != _lastMousePos && _onMouseMove != nullptr)
             _onMouseMove(_lastMousePos, _mousePos);
 
-        if (_mouseWheel != Vector2f(0, 0))
+        if (_mouseWheel != Vector2f(0, 0) && _onMouseWheel != nullptr)
             _onMouseWheel(_mouseWheel);
     }
 

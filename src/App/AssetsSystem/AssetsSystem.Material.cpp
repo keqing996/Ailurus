@@ -57,9 +57,9 @@ namespace Ailurus
 
 		for (const auto& shaderConfig : passShaderConfig)
 		{
-			if (!shaderConfig.contains("stage") || !shaderConfig.contains("path"))
+			if (!shaderConfig.contains("stage") || !shaderConfig.contains("source"))
 			{
-				Logger::LogError("Material render pass shader config missing stage or path, {}, {}", path, shaderConfig.dump());
+				Logger::LogError("Material render pass shader config missing stage or source, {}, {}", path, shaderConfig.dump());
 				continue;
 			}
 
@@ -71,11 +71,12 @@ namespace Ailurus
 				continue;
 			}
 
-			const std::string& shaderFilePath = shaderConfig["path"].get<std::string>();
-			const Shader* pShader = Application::Get<RenderSystem>()->GetShaderLibrary()->GetShader(stage, shaderFilePath);
+			const std::string& shaderFilePath = shaderConfig["source"].get<std::string>();
+			auto shaderFilePathSpv = String::Replace(shaderFilePath, "/Shader/", "/ShaderBin/") + ".spv";
+			const Shader* pShader = Application::Get<RenderSystem>()->GetShaderLibrary()->GetShader(stage, shaderFilePathSpv);
 			if (pShader == nullptr)
 			{
-				Logger::LogError("Material shader load error, {}, {}", path, shaderFilePath);
+				Logger::LogError("Material shader load error, {}, {}", path, shaderFilePathSpv);
 				continue;
 			}
 
@@ -165,24 +166,24 @@ namespace Ailurus
 					UniformValueType::Float,
 					uniformVarConfig["value"].get<float>()
 				};
-			case UniformValueType::Vector2f:
+			case UniformValueType::Vector2:
 				return {
-					UniformValueType::Vector2f,
+					UniformValueType::Vector2,
 					Vector2f{
 						uniformVarConfig["x"].get<float>(),
 						uniformVarConfig["y"].get<float>() }
 				};
-			case UniformValueType::Vector3f:
+			case UniformValueType::Vector3:
 				return {
-					UniformValueType::Vector3f,
+					UniformValueType::Vector3,
 					Vector3f{
 						uniformVarConfig["x"].get<float>(),
 						uniformVarConfig["y"].get<float>(),
 						uniformVarConfig["z"].get<float>() }
 				};
-			case UniformValueType::Vector4f:
+			case UniformValueType::Vector4:
 				return {
-					UniformValueType::Vector4f,
+					UniformValueType::Vector4,
 					Vector4f{
 						uniformVarConfig["x"].get<float>(),
 						uniformVarConfig["y"].get<float>(),
@@ -209,9 +210,9 @@ namespace Ailurus
 			return nullptr;
 		}
 
-		if (!uniformVarConfig.contains("type") || !uniformVarConfig.contains("name"))
+		if (!uniformVarConfig.contains("type"))
 		{
-			Logger::LogError("Material render pass uniform config access node missing type or name, {}", uniformVarConfig.dump());
+			Logger::LogError("Material render pass uniform config access node missing type, {}", uniformVarConfig.dump());
 			return nullptr;
 		}
 
@@ -219,7 +220,7 @@ namespace Ailurus
 		const std::string& accessType = uniformVarConfig["type"].get<std::string>();
 		if (!EnumReflection<UniformVaribleType>::TryFromString(accessType, &varType))
 		{
-			Logger::LogError("Material render pass uniform config access type error, {}, {}", accessType);
+			Logger::LogError("Material render pass uniform config access type error, {}", accessType);
 			return nullptr;
 		}
 
@@ -294,8 +295,8 @@ namespace Ailurus
 		}
 	}
 
-	static std::unique_ptr<UniformSet> JsonReadUniformSet(const std::string& path,
-		const nlohmann::basic_json<>& renderPassConfig, std::vector<std::tuple<uint32_t, std::string, UniformValue>>& outAccessValues)
+	static std::unique_ptr<UniformSet> JsonReadUniformSet(const std::string& path, RenderPassType renderPass,
+		const nlohmann::basic_json<>& renderPassConfig, std::vector<std::pair<MaterialUniformAccess, UniformValue>>& outAccessValues)
 	{
 		if (!renderPassConfig.contains("uniforms"))
 			return nullptr;
@@ -357,7 +358,11 @@ namespace Ailurus
 
 			// Update access values
 			for (const auto& [accessName, value] : defaultAccessValues)
-				outAccessValues.emplace_back( *bindingIdOpt, accessName, value );
+			{
+				outAccessValues.emplace_back(
+					MaterialUniformAccess{ renderPass, *bindingIdOpt, accessName },
+					value);
+			}
 		}
 
 		pUniformSet->InitUniformBufferInfo();
@@ -379,6 +384,12 @@ namespace Ailurus
 		fileStream >> json;
 		fileStream.close();
 
+		if (!json.is_array())
+		{
+			Logger::LogError("Material json is not array: {}", path);
+			return AssetRef<MaterialInstance>(nullptr);
+		}
+
 		// Create material
 		auto pMaterialRaw = new Material(NextAssetId());
 		_fileAssetToIdMap[path] = pMaterialRaw->GetAssetId();
@@ -387,12 +398,9 @@ namespace Ailurus
 		// Create material asset reference
 		const AssetRef<Material> materialRef(pMaterialRaw);
 
-		// Create material instance
-		auto pMaterialInstanceRaw = new MaterialInstance(NextAssetId(), materialRef);
-		_assetsMap[pMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<MaterialInstance>(pMaterialInstanceRaw);
-
 		// Load
-		for (const auto& renderPassConfig : json.array())
+		std::vector<std::pair<MaterialUniformAccess, UniformValue>> accessValues;
+		for (const auto& renderPassConfig : json)
 		{
 			// Read render pass
 			auto passOpt = JsonReadRenderPass(path, renderPassConfig);
@@ -403,18 +411,22 @@ namespace Ailurus
 			auto shaders = JsonReadShader(path, renderPassConfig);
 
 			// Read the uniform set
-			std::vector<std::tuple<uint32_t, std::string, UniformValue>> accessValues;
-			auto pUniformSet = JsonReadUniformSet(path, renderPassConfig, accessValues);
+			auto pUniformSet = JsonReadUniformSet(path, *passOpt, renderPassConfig, accessValues);
 			if (pUniformSet == nullptr)
 				continue;
 
 			// Set shader and uniform
 			pMaterialRaw->SetPassShaderAndUniform(*passOpt, shaders, std::move(pUniformSet));
-
-			// Update material instance uniform values
-			for (const auto& [bindingId, accessName, value] : accessValues)
-				pMaterialInstanceRaw->_uniformValueMap[{*passOpt, bindingId, accessName}] = value;
 		}
+
+		// Create material instance
+		auto pMaterialInstanceRaw = new MaterialInstance(NextAssetId(), materialRef);
+
+		// Update material instance uniform values
+		for (const auto& [access, value] : accessValues)
+			pMaterialInstanceRaw->_uniformValueMap[access] = value;
+
+		_assetsMap[pMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<MaterialInstance>(pMaterialInstanceRaw);
 
 		return AssetRef<MaterialInstance>(pMaterialInstanceRaw);
 	}

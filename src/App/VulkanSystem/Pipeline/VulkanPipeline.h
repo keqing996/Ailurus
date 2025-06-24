@@ -4,11 +4,16 @@
 
 namespace Ailurus
 {
+	class VulkanRenderPass;
+	struct StageShaderArray;
+	class VulkanVertexLayout;
+	class UniformSet;
+
 	class VulkanPipeline
 	{
 	public:
-		VulkanPipeline(const class VulkanRenderPass* pRenderPass, const class StageShaderArray& shaderArray, 
-			const class VulkanVertexLayout* pVertexLayout, const std::vector<const class UniformSet*>& uniformSets);
+		VulkanPipeline(const VulkanRenderPass* pRenderPass, const StageShaderArray& shaderArray, 
+			const VulkanVertexLayout* pVertexLayout, const std::vector<const UniformSet*>& uniformSets);
 		~VulkanPipeline();
 
 	public:

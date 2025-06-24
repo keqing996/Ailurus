@@ -31,13 +31,10 @@ namespace Ailurus
 		~UniformVariableNumeric() override;
 
 		auto ValueType() const -> const UniformValueType&;
-		auto GetValue() const -> const UniformValue&;
-		auto SetValue(UniformValue newValue) -> void;
 		auto VaribleType() const -> UniformVaribleType override;
 
 	private:
 		UniformValueType _type;
-		UniformValue _value;
 	};
 
 	class UniformVariableStructure : public UniformVariable

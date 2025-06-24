@@ -17,7 +17,7 @@ namespace Ailurus
 
 	public:
 		const AssetRef<Model>& GetModelAsset() const;
-		const AssetRef<MaterialInstance>& GetMaterialAsset() const;
+		const AssetRef<MaterialInstance>& GetMaterialInstanceAsset() const;
 
 	private:
 		AssetRef<Model> _modelAsset;

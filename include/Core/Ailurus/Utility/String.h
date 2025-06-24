@@ -44,6 +44,9 @@ namespace Ailurus
         static void
         Replace(std::string& inStr, const std::string& from, const std::string& to);
 
+        static std::string
+		Replace(const std::string& inStr, const std::string& from, const std::string& to);
+
         static void
         TrimStart(std::string& str);
 

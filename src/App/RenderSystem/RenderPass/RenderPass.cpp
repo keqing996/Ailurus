@@ -4,11 +4,12 @@
 namespace Ailurus
 {
 	RenderPass::RenderPass(RenderPassType passType)
+		: _pVulkanRenderPass(nullptr)
 	{
 		switch (passType)
 		{
 			case RenderPassType::Forward:
-				_pRHI = std::make_unique<VulkanRenderPassForward>();
+				_pVulkanRenderPass = std::make_unique<VulkanRenderPassForward>();
 				break;
 		}
 	}
@@ -17,12 +18,12 @@ namespace Ailurus
 
 	RenderPassType RenderPass::GetRenderPassType() const
 	{
-		return _pRHI->GetRenderPassType();
+		return _pVulkanRenderPass->GetRenderPassType();
 	}
 
 	VulkanRenderPass* RenderPass::GetRHIRenderPass() const
 	{
-		return _pRHI.get();
+		return _pVulkanRenderPass.get();
 	}
 
 } // namespace Ailurus

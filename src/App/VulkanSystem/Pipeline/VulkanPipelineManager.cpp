@@ -51,16 +51,14 @@ namespace Ailurus
 		std::vector<const UniformSet*> uniformSets;
 		uniformSets.push_back(refMaterial->GetUniformSet(entry.renderPass));
 
-		auto pPipeline = std::make_unique<VulkanPipeline>(
+		const auto pPipeline = new VulkanPipeline(
 			pRenderPass->GetRHIRenderPass(), 
 			*pShaderArray,
 			pVertexLayout, 
 			uniformSets);
 
-		auto pResultRaw = pPipeline.get();
+		_pipelinesMap[entry] = std::unique_ptr<VulkanPipeline>(pPipeline);
 
-		_pipelinesMap[entry] = std::move(pPipeline);
-
-		return pResultRaw;
+		return pPipeline;
 	}
 } // namespace Ailurus

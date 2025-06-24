@@ -16,7 +16,7 @@ namespace Ailurus
 		return _modelAsset;
 	}
 
-	const AssetRef<MaterialInstance>& CompStaticMeshRender::GetMaterialAsset() const
+	const AssetRef<MaterialInstance>& CompStaticMeshRender::GetMaterialInstanceAsset() const
 	{
 		return _materialAsset;
 	}

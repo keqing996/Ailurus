@@ -125,6 +125,13 @@ namespace Ailurus
         }
     }
 
+    std::string String::Replace(const std::string& inStr, const std::string& from, const std::string& to)
+    {
+    	std::string result = inStr;
+    	Replace(result, from, to);
+    	return result;
+    }
+
     void String::TrimStart(std::string& str)
     {
         size_t start = 0;
