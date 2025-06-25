@@ -32,13 +32,21 @@ namespace Ailurus
 			shaderStages.push_back(pRHIShader->GeneratePipelineCreateInfo(pShader->GetStage()));
 		}
 
-		// Pipeline layout
+		// Push constant range
+		vk::PushConstantRange pushConstantRange;
+		pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex)
+			.setOffset(0)
+			.setSize(sizeof(Matrix4x4f));	// One materix for MVP
+
+		// Descriptor set layouts
 		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 		for (const auto* pUniformSet: uniformSets)
 			descriptorSetLayouts.push_back(pUniformSet->GetDescriptorSetLayout()->GetDescriptorSetLayout());
 
+		// Create pipeline layout
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-		pipelineLayoutInfo.setSetLayouts(descriptorSetLayouts);
+		pipelineLayoutInfo.setSetLayouts(descriptorSetLayouts)
+			.setPushConstantRanges(pushConstantRange);
 		_vkPipelineLayout = Application::Get<VulkanSystem>()->GetDevice().createPipelineLayout(pipelineLayoutInfo);
 
 		// Vertex input description

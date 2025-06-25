@@ -8,11 +8,18 @@ namespace Ailurus
 	class VulkanVertexLayout;
 	class Mesh;
 	class Material;
+	class Entity;
+
+	struct RenderingMeshInfo
+	{
+		const Mesh* pTargetMesh;
+		const Entity* pEntity;
+	};
 
 	struct RenderInfoPerVertexLayout
 	{
 		const VulkanVertexLayout* pVertexLayout;
-		std::vector<const Mesh*> meshes;
+		std::vector<RenderingMeshInfo> meshes;
 	};
 
 	struct RenderInfoPerMaterial

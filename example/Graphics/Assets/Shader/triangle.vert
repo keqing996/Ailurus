@@ -1,21 +1,13 @@
 #version 450
 
-layout (binding = 0) uniform UniformBufferObject
-{
-    mat4 model;
-    mat4 view;
-    mat4 proj;
-} ubo;
+layout(push_constant) uniform PushConstants {
+    mat4 mvp;
+} pushConstants;
 
-layout (location = 0) in vec3 a_Position;
-layout (location = 1) in vec3 a_Normal;
-layout (location = 2) in vec2 a_TexCoord;
-
-layout (location = 0) out vec2 v_TexCoord;
-layout (location = 1) out vec3 v_Normal;
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 uv;
 
 void main() {
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(a_Position, 1.0);
-    v_TexCoord = a_TexCoord;
-    v_Normal = a_Normal;
+    gl_Position = pushConstants.mvp * vec4(inPosition, 1.0);
 }

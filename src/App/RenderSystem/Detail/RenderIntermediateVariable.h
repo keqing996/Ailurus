@@ -8,8 +8,7 @@ namespace Ailurus
 	struct RenderIntermediateVariable
 	{
 		// View and projection matrices
-		Matrix4x4f projMatrix;
-		Matrix4x4f viewMatrix;
+		Matrix4x4f viewProjectionMatrix;
 		RenderInfo renderInfo;
 	};
 }

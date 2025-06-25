@@ -20,8 +20,9 @@ namespace Ailurus
 {
     void RenderSystem::CollectCameraViewProjectionMatrix()
     {
-		_pIntermediateVariable->projMatrix = _pMainCamera->GetProjectionMatrix();
-		_pIntermediateVariable->viewMatrix = _pMainCamera->GetEntity()->GetModelMatrix();
+		const auto& projMat = _pMainCamera->GetProjectionMatrix();
+		const auto& viewMat = _pMainCamera->GetEntity()->GetModelMatrix();
+		_pIntermediateVariable->viewProjectionMatrix = projMat * viewMat;
     }
 
     void RenderSystem::CollectPipelineMeshMap()
@@ -74,7 +75,7 @@ namespace Ailurus
 
 					auto vertexLayoutInfo = materialInfo.vertexLayoutsMap[vertexLayoutId];
 					for (const auto& mesh : modelRef.Get()->GetMeshes())
-						vertexLayoutInfo.meshes.push_back(mesh.get());
+						vertexLayoutInfo.meshes.push_back({ mesh.get(), pEntity });
 				}
 			}
 		}
@@ -138,16 +139,24 @@ namespace Ailurus
 				pCommandBuffer->BindPipeline(pPipeline);
 				pCommandBuffer->SetViewportAndScissor();
 
-				for (const auto& pMesh : renderInfoPerVertexLayout.meshes)
+				for (const auto& [pMesh, pEntity] : renderInfoPerVertexLayout.meshes)
 				{
 					std::vector<vk::DescriptorSet> descriptorSets;
 					descriptorSets.push_back(descriptorSet);
 
+					// Update descriptor set
 					pCommandBuffer->BindDescriptorSet(pPipeline->GetPipelineLayout(), descriptorSets);
 
+					// Push constant MVP matrix 
+					const auto& modelMatrix = pEntity->GetModelMatrix();
+					auto mvpMatrix = _pIntermediateVariable->viewProjectionMatrix * modelMatrix;
+					pCommandBuffer->PushConstantMvpMaterix(pPipeline, mvpMatrix);
+
+					// Bind vertex buffer
 					const auto pVertexBuffer = pMesh->GetVertexBuffer();
 					pCommandBuffer->BindVertexBuffer(pVertexBuffer);
 
+					// Bind index buffer and draw
 					const auto pIndexBuffer = pMesh->GetIndexBuffer();
 					if (pIndexBuffer != nullptr)
 					{
