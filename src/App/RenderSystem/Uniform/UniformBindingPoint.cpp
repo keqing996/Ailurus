@@ -120,7 +120,7 @@ namespace Ailurus
 	}
 
 	UniformBindingPoint::UniformBindingPoint(uint32_t bindingPoint, const std::vector<ShaderStage>& shaderStage, 
-		const std::string name, std::unique_ptr<UniformVariable>&& pUniform)
+		const std::string& name, std::unique_ptr<UniformVariable>&& pUniform)
 		: _bindingPoint(bindingPoint)
 		, _usingStages(shaderStage)
 		, _bindingPointName(name)

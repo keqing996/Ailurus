@@ -101,16 +101,8 @@ namespace Ailurus
 
 		// Write value to uniform buffer
 		uint32_t offset = renderPassOffset + bindingOffset + *accessOffset;
-		auto pBeginPos = _pUniformBuffer->GetWriteBeginPos() + offset;
+		_pUniformBuffer->WriteData(offset, value);
 		
-		auto visitor = [pBeginPos](auto&& arg) 
-		{
-			using T = std::decay_t<decltype(arg)>;
-			std::memcpy(static_cast<void*>(pBeginPos), &arg, sizeof(T));
-		};
-
-		std::visit(visitor, value);
-
 		// Record uniform value
 		_uniformValueMap[entry] = value;
 	}

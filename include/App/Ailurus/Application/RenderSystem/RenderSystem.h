@@ -15,6 +15,8 @@ namespace Ailurus
 	class RenderPass;
 	class CompStaticMeshRender;
 	class VulkanCommandBuffer;
+	class VulkanUniformBuffer;
+	class UniformSet;
 	struct RenderIntermediateVariable;
 
 	class RenderSystem : public NonCopyable, public NonMovable
@@ -26,6 +28,8 @@ namespace Ailurus
 		void NeedRecreateSwapChain();
 
 		auto GetRenderPass(RenderPassType pass) const -> RenderPass*;
+		auto GetGlobalUniformSet() const -> UniformSet*;
+		auto GetGlobalUniformBuffer() const -> VulkanUniformBuffer*;
 
 		// Shader library
 		ShaderLibrary* GetShaderLibrary() const;
@@ -46,12 +50,18 @@ namespace Ailurus
 		// Create
 		void CreateIntermediateVariable();
 		void BuildRenderPass();
+		void BuildGlobalUniform();
 
 		// Render
 		void CollectCameraViewProjectionMatrix();
 		void CollectPipelineMeshMap();
+		void UpdateGlobalUniformBuffer();
 		void ReBuildSwapChain();
 		void RenderForwardPass(VulkanCommandBuffer* pCommandBuffer);
+
+		// Global uniform
+		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;
+		static auto GetGlobalUniformAccessNameCameraPos() -> const std::string&;
 
 	private:
 		bool _needRebuildSwapChain = false;
@@ -65,5 +75,12 @@ namespace Ailurus
 
 		// Intermediate variables for every frame
 		std::unique_ptr<RenderIntermediateVariable> _pIntermediateVariable;
+
+		// Uniforms set for global usage
+		static const char* GLOBAL_UNIFORM_SET_NAME;
+		static const char* GLOBAL_UNIFORM_ACCESS_VIEW_PROJ_MAT;
+		static const char* GLOBAL_UNIFORM_ACCESS_CAMERA_POS;
+		std::unique_ptr<UniformSet> _pGlobalUniformSet;
+		std::unique_ptr<VulkanUniformBuffer> _pGlobalUniformBuffer;
 	};
 } // namespace Ailurus

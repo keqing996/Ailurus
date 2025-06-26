@@ -36,7 +36,7 @@ namespace Ailurus
 		vk::PushConstantRange pushConstantRange;
 		pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex)
 			.setOffset(0)
-			.setSize(sizeof(Matrix4x4f));	// One materix for MVP
+			.setSize(sizeof(Matrix4x4f));	// One materix for model matrix 
 
 		// Descriptor set layouts
 		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;

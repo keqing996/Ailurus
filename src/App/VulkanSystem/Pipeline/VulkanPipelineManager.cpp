@@ -49,6 +49,7 @@ namespace Ailurus
 
 		// Create the pipeline
 		std::vector<const UniformSet*> uniformSets;
+		uniformSets.push_back(Application::Get<RenderSystem>()->GetGlobalUniformSet());
 		uniformSets.push_back(refMaterial->GetUniformSet(entry.renderPass));
 
 		const auto pPipeline = new VulkanPipeline(

@@ -169,11 +169,11 @@ namespace Ailurus
 		_buffer.draw(vertexCount, 1, 0, 0);
 	}
 
-	void VulkanCommandBuffer::PushConstantMvpMaterix(const VulkanPipeline* pPipeline, const Matrix4x4f& mvpMatrix)
+	void VulkanCommandBuffer::PushConstantModelMaterix(const VulkanPipeline* pPipeline, const Matrix4x4f& modelMatrix)
 	{
 		if (pPipeline == nullptr)
 		{
-			Logger::LogError("VulkanCommandBuffer::PushConstantMvpMaterix: Pipeline is nullptr");
+			Logger::LogError("VulkanCommandBuffer::PushConstantModelMaterix: Pipeline is nullptr");
 			return;
 		}
 
@@ -182,6 +182,6 @@ namespace Ailurus
 			vk::ShaderStageFlagBits::eVertex, 
 			0, 
 			sizeof(Matrix4x4f), 
-			&mvpMatrix);
+			&modelMatrix);
 	}
 } // namespace Ailurus

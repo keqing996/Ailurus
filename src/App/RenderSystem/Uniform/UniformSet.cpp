@@ -60,15 +60,6 @@ namespace Ailurus
 		return itr->second.get();
 	}
 
-	UniformBindingPoint* UniformSet::GetBindingPoint(uint32_t bindingPoint)
-	{
-		auto itr = _bindingPoints.find(bindingPoint);
-		if (itr != _bindingPoints.end())
-			return itr->second.get();
-
-		return nullptr;
-	}
-
 	uint32_t UniformSet::GetSetId() const
 	{
 		return _setId;

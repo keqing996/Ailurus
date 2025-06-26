@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformValue.h>
 #include "VulkanSystem/VulkanSystem.h"
 
 namespace Ailurus
@@ -13,6 +14,7 @@ namespace Ailurus
 
 	public:
 		uint8_t* GetWriteBeginPos() const;
+		void WriteData(uint32_t offset, const UniformValue& value) const;
 		void TransitionDataToGpu() const;
 
 	private:

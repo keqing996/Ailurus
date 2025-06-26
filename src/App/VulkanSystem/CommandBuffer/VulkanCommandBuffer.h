@@ -30,7 +30,7 @@ namespace Ailurus
 		void BindDescriptorSet(vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& descriptorSets);
 		void DrawIndexed(uint32_t indexCount);
 		void DrawNonIndexed(uint32_t vertexCount);
-		void PushConstantMvpMaterix(const VulkanPipeline* pPipeline, const Matrix4x4f& mvpMatrix);
+		void PushConstantModelMaterix(const VulkanPipeline* pPipeline, const Matrix4x4f& mvpMatrix);
 
 	private:
 		vk::CommandBuffer _buffer;

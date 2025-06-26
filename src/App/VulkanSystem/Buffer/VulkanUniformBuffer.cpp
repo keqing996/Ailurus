@@ -3,6 +3,7 @@
 #include "VulkanSystem/VulkanSystem.h"
 #include "VulkanSystem/Resource/VulkanResourceManager.h"
 #include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -50,5 +51,23 @@ namespace Ailurus
 		pCommandBuffer->CopyBuffer(_cpuBuffers[index], _gpuBuffers[index], _bufferSize);
 		pCommandBuffer->BufferMemoryBarrier(_gpuBuffers[index], vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eUniformRead, 
 			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexShader);
+	}
+
+	void VulkanUniformBuffer::WriteData(uint32_t offset, const UniformValue& value) const
+	{
+		if (offset >= _bufferSize)
+		{
+			Logger::LogError("Offset {} is out of range for uniform buffer size {}", offset, _bufferSize);
+			return;
+		}
+
+		auto pBeginPos = GetWriteBeginPos() + offset;
+		auto visitor = [pBeginPos](auto&& arg) 
+		{
+			using T = std::decay_t<decltype(arg)>;
+			std::memcpy(static_cast<void*>(pBeginPos), &arg, sizeof(T));
+		};
+
+		std::visit(visitor, value);
 	}
 } // namespace Ailurus

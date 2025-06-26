@@ -40,9 +40,6 @@ namespace Ailurus
 		auto GetDescriptorSetLayout() const -> VulkanDescriptorSetLayout*;
 
 	private:
-		auto GetBindingPoint(uint32_t bindingPoint) -> UniformBindingPoint*;
-
-	private:
 		// Set id in shader
 		uint32_t _setId;
 

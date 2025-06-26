@@ -2,6 +2,7 @@
 #include <Ailurus/Utility/EnumReflection.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <Ailurus/Application/AssetsSystem/Mesh/Mesh.h>
 #include <Ailurus/Application/AssetsSystem/Model/Model.h>
 #include <Ailurus/Application/SceneSystem/SceneSystem.h>
@@ -12,8 +13,10 @@
 #include <VulkanSystem/RenderPass/VulkanRenderPass.h>
 #include <VulkanSystem/Buffer/VulkanVertexBuffer.h>
 #include <VulkanSystem/Buffer/VulkanIndexBuffer.h>
+#include <VulkanSystem/Buffer/VulkanUniformBuffer.h>
 #include <VulkanSystem/Vertex/VulkanVertexLayoutManager.h>
 #include <Ailurus/Utility/Logger.h>
+#include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -73,7 +76,7 @@ namespace Ailurus
 						materialInfo.vertexLayoutsMap[vertexLayoutId].pVertexLayout = pLayout;
 					}
 
-					auto vertexLayoutInfo = materialInfo.vertexLayoutsMap[vertexLayoutId];
+					auto& vertexLayoutInfo = materialInfo.vertexLayoutsMap[vertexLayoutId];
 					for (const auto& mesh : modelRef.Get()->GetMeshes())
 						vertexLayoutInfo.meshes.push_back({ mesh.get(), pEntity });
 				}
@@ -95,9 +98,33 @@ namespace Ailurus
         CollectPipelineMeshMap();
 
 		auto* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
+		
+		UpdateGlobalUniformBuffer();
 		RenderForwardPass(pCommandBuffer);
 
 		Application::Get<VulkanSystem>()->RenderFrame(&_needRebuildSwapChain);
+	}
+
+	void RenderSystem::UpdateGlobalUniformBuffer()
+	{
+		auto bindingPointOffset = _pGlobalUniformSet->GetBindingPointOffsetInUniformBuffer(0);
+		const UniformBindingPoint* pBindingPoint = _pGlobalUniformSet->GetBindingPoint(0);
+
+		auto vpMatOffset = pBindingPoint->GetAccessOffset(GetGlobalUniformAccessNameViewProjMat());
+		if (vpMatOffset)
+		{
+			auto mat = _pIntermediateVariable->viewProjectionMatrix;
+			_pGlobalUniformBuffer->WriteData(bindingPointOffset + *vpMatOffset, mat);
+		}
+
+		auto cameraPosOffset = pBindingPoint->GetAccessOffset(GetGlobalUniformAccessNameCameraPos());
+		if (cameraPosOffset)
+		{
+			const auto& cameraPos = _pMainCamera->GetEntity()->GetPosition();
+			_pGlobalUniformBuffer->WriteData(bindingPointOffset + *cameraPosOffset, cameraPos);
+		}
+
+		_pGlobalUniformBuffer->TransitionDataToGpu();
 	}
 
 	void RenderSystem::RenderForwardPass(VulkanCommandBuffer* pCommandBuffer)
@@ -147,10 +174,8 @@ namespace Ailurus
 					// Update descriptor set
 					pCommandBuffer->BindDescriptorSet(pPipeline->GetPipelineLayout(), descriptorSets);
 
-					// Push constant MVP matrix 
-					const auto& modelMatrix = pEntity->GetModelMatrix();
-					auto mvpMatrix = _pIntermediateVariable->viewProjectionMatrix * modelMatrix;
-					pCommandBuffer->PushConstantMvpMaterix(pPipeline, mvpMatrix);
+					// Push constant model matrix 
+					pCommandBuffer->PushConstantModelMaterix(pPipeline, pEntity->GetModelMatrix());
 
 					// Bind vertex buffer
 					const auto pVertexBuffer = pMesh->GetVertexBuffer();
