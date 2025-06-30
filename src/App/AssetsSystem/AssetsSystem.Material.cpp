@@ -6,7 +6,7 @@
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
-#include <Ailurus/Application/AssetsSystem/Material/MaterialUniformAccess.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 
 namespace Ailurus
@@ -295,8 +295,11 @@ namespace Ailurus
 		}
 	}
 
-	static std::unique_ptr<UniformSet> JsonReadUniformSet(const std::string& path, RenderPassType renderPass,
-		const nlohmann::basic_json<>& renderPassConfig, std::vector<std::pair<MaterialUniformAccess, UniformValue>>& outAccessValues)
+	static std::unique_ptr<UniformSet> JsonReadUniformSet(
+		const std::string& path, 
+		RenderPassType renderPass,
+		const nlohmann::basic_json<>& renderPassConfig, 
+		std::unordered_map<RenderPassType, UniformValueMap>& outAccessValues)
 	{
 		if (!renderPassConfig.contains("uniforms"))
 			return nullptr;
@@ -359,9 +362,8 @@ namespace Ailurus
 			// Update access values
 			for (const auto& [accessName, value] : defaultAccessValues)
 			{
-				outAccessValues.emplace_back(
-					MaterialUniformAccess{ renderPass, *bindingIdOpt, accessName },
-					value);
+				auto unifromAccess = UniformAccess{ *bindingIdOpt, accessName };
+				outAccessValues[renderPass][unifromAccess] = value;
 			}
 		}
 
@@ -399,7 +401,7 @@ namespace Ailurus
 		const AssetRef<Material> materialRef(pMaterialRaw);
 
 		// Load
-		std::vector<std::pair<MaterialUniformAccess, UniformValue>> accessValues;
+		std::unordered_map<RenderPassType, UniformValueMap> accessValues;
 		for (const auto& renderPassConfig : json)
 		{
 			// Read render pass
@@ -423,8 +425,14 @@ namespace Ailurus
 		auto pMaterialInstanceRaw = new MaterialInstance(NextAssetId(), materialRef);
 
 		// Update material instance uniform values
-		for (const auto& [access, value] : accessValues)
-			pMaterialInstanceRaw->_uniformValueMap[access] = value;
+		for (const auto& [renderPass, uniformValueMap] : accessValues)
+		{
+			for (const auto& [access, value] : uniformValueMap)
+			{
+				UniformSetMemory* pRenderPassUniformMemory = pMaterialInstanceRaw->_renderPassUniformBufferMap[renderPass].get();
+				pRenderPassUniformMemory->SetUniformValue(access, value);
+			}
+		}
 
 		_assetsMap[pMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<MaterialInstance>(pMaterialInstanceRaw);
 
@@ -433,13 +441,21 @@ namespace Ailurus
 
 	AssetRef<MaterialInstance> AssetsSystem::CopyMaterialInstance(const AssetRef<MaterialInstance>& materialInstance)
 	{
-		const auto pTargetMaterialRef = materialInstance.Get()->_targetMaterial;
+		const auto pMatInstRaw = materialInstance.Get();
+		const auto pMatRaw = pMatInstRaw->_targetMaterial;
 
-		const auto pNewMaterialInstanceRaw = new MaterialInstance(NextAssetId(), pTargetMaterialRef);
-		pNewMaterialInstanceRaw->_uniformValueMap = materialInstance.Get()->_uniformValueMap;
+		const auto pMatInstRawNew = new MaterialInstance(NextAssetId(), pMatRaw);
+		for (const auto& [renderPass, pPassUniformMemory] : pMatInstRaw->_renderPassUniformBufferMap)
+		{
+			auto& uniformValueMap = pPassUniformMemory->GetUniformValueMap();
+			for (const auto& [access, value] : uniformValueMap)
+			{
+				pMatInstRawNew->SetUniformValue(renderPass, access, value);
+			}
+		}
 
-		_assetsMap[pNewMaterialInstanceRaw->GetAssetId()] = std::unique_ptr<MaterialInstance>(pNewMaterialInstanceRaw);
+		_assetsMap[pMatInstRawNew->GetAssetId()] = std::unique_ptr<MaterialInstance>(pMatInstRawNew);
 
-		return AssetRef<MaterialInstance>(pNewMaterialInstanceRaw);
+		return AssetRef<MaterialInstance>(pMatInstRawNew);
 	}
 } // namespace Ailurus

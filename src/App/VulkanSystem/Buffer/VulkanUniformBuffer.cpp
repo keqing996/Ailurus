@@ -70,4 +70,9 @@ namespace Ailurus
 
 		std::visit(visitor, value);
 	}
+
+	uint32_t VulkanUniformBuffer::GetBufferSize() const
+	{
+		return static_cast<uint32_t>(_bufferSize);
+	}
 } // namespace Ailurus

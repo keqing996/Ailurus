@@ -1,9 +1,8 @@
 #include <Ailurus/Utility/EnumReflection.h>
 #include <Ailurus/Utility/Logger.h>
-#include <Ailurus/Application/AssetsSystem/Material/MaterialUniformAccess.h>
 #include <Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
-#include "VulkanSystem/Buffer/VulkanUniformBuffer.h"
 
 namespace Ailurus
 {
@@ -19,7 +18,6 @@ namespace Ailurus
 	{
 		const auto* pMaterial = targetMaterial.Get();
 
-		uint32_t offset = 0;
 		for (auto i = 0; i < EnumReflection<RenderPassType>::Size(); i++)
 		{
 			auto pass = static_cast<RenderPassType>(i);
@@ -30,11 +28,10 @@ namespace Ailurus
 			const auto renderPassUniformBufferSize = pUniformSet->GetUniformBufferSize();
 
 			// Record current
-			_renderPassUniformBufferOffsetMap.insert({ pass, RenderPassUniformBufferOffsetInfo{ offset, renderPassUniformBufferSize }});
-			offset += renderPassUniformBufferSize;
+			_renderPassUniformBufferMap.insert({ 
+				pass, 
+				std::make_unique<UniformSetMemory>(pUniformSet) });
 		}
-
-		_pUniformBuffer = std::make_unique<VulkanUniformBuffer>(offset);
 	}
 
 	MaterialInstance::~MaterialInstance()
@@ -48,82 +45,29 @@ namespace Ailurus
 
 	void MaterialInstance::SetUniformValue(RenderPassType pass, uint32_t bindingId, const std::string& access, const UniformValue& value)
 	{
-		MaterialUniformAccess entry{ pass, bindingId, access };
-		SetUniformValue(entry, value);
+		UniformAccess entry{ bindingId, access };
+		SetUniformValue(pass, entry, value);
 	}
 
-	void MaterialInstance::SetUniformValue(const MaterialUniformAccess& entry, const UniformValue& value)
+	void MaterialInstance::SetUniformValue(RenderPassType pass, const UniformAccess& entry, const UniformValue& value)
 	{
-		// Check uniform buffer initialization
-		if (_pUniformBuffer == nullptr)
+		auto itr = _renderPassUniformBufferMap.find(pass);
+		if (itr == _renderPassUniformBufferMap.end())
 		{
-			Logger::LogError("Uniform buffer not initialized for UniformSet");
+			Logger::LogError("Render pass {} not found in material instance", EnumReflection<RenderPassType>::ToString(pass));
 			return;
 		}
 
-		// Get render pass offset and range
-		auto renderPassInfoOpt = GetRenderPassUniformBufferOffset(entry.pass);
-		if (!renderPassInfoOpt.has_value())
-		{
-			Logger::LogError("Render pass uniform buffer offset not found for pass: {}", EnumReflection<RenderPassType>::ToString(entry.pass));
-			return;
-		}
-
-		auto [renderPassOffset, renderPassSize] = renderPassInfoOpt.value();
-
-		// Get uniform set
-		const auto* pUniformSet = _targetMaterial.Get()->GetUniformSet(entry.pass);
-		if (pUniformSet == nullptr)
-		{
-			Logger::LogError("Uniform set not found for render pass: {}", EnumReflection<RenderPassType>::ToString(entry.pass));
-			return;
-		}
-
-		// Get binding point offset
-		const auto bindingOffset = pUniformSet->GetBindingPointOffsetInUniformBuffer(entry.bindingId);
-
-		// Get access offset
-		const auto* pBindingPoint = pUniformSet->GetBindingPoint(entry.bindingId);
-		const auto accessOffset = pBindingPoint->GetAccessOffset(entry.access);
-		if (!accessOffset.has_value())
-		{
-			Logger::LogError("Access '{}' not found in binding point with ID: {}", entry.access, entry.bindingId);
-			return;
-		}
-
-		// Check if access offset is valid
-		if (bindingOffset + *accessOffset >= renderPassSize)
-		{
-			Logger::LogError("Access offset out of range for binding ID: {}, access: {}, render pass size: {}, binding offset: {}, access offset: {}",
-				entry.bindingId, entry.access, renderPassSize, bindingOffset, *accessOffset);
-			return;
-		}
-
-		// Write value to uniform buffer
-		uint32_t offset = renderPassOffset + bindingOffset + *accessOffset;
-		_pUniformBuffer->WriteData(offset, value);
-		
-		// Record uniform value
-		_uniformValueMap[entry] = value;
+		auto& pUniformSetMemory = itr->second;
+		pUniformSetMemory->SetUniformValue(entry, value);
 	}
 
-	VulkanUniformBuffer* MaterialInstance::GetUniformBuffer() const
+	UniformSetMemory* MaterialInstance::GetUniformSetMemory(RenderPassType pass) const
 	{
-		return _pUniformBuffer.get();
-	}
+		auto itr = _renderPassUniformBufferMap.find(pass);
+		if (itr != _renderPassUniformBufferMap.end())
+			return itr->second.get();
 
-	auto MaterialInstance::GetRenderPassUniformBufferOffset(RenderPassType pass) const -> std::optional<RenderPassUniformBufferOffsetInfo>
-	{
-		const auto itr = _renderPassUniformBufferOffsetMap.find(pass);
-		if (itr != _renderPassUniformBufferOffsetMap.end())
-			return itr->second;
-
-		return std::nullopt;
-	}
-
-	void MaterialInstance::UpdateAllUniformValuesToUniformBuffer()
-	{
-		for (const auto& [entry, value] : _uniformValueMap)
-			SetUniformValue(entry, value);
+		return nullptr;
 	}
 } // namespace Ailurus
