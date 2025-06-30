@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdint>
+#include <array>
 #include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
 #include <Ailurus/Utility/EnumReflection.h>
 #include <Ailurus/Application/Application.h>
@@ -24,12 +25,14 @@
 
 namespace Ailurus
 {
-    void RenderSystem::CollectCameraViewProjectionMatrix()
-    {
+	void RenderSystem::RenderPrepare()
+	{
 		const auto& projMat = _pMainCamera->GetProjectionMatrix();
 		const auto& viewMat = _pMainCamera->GetEntity()->GetModelMatrix();
 		_pIntermediateVariable->viewProjectionMatrix = projMat * viewMat;
-    }
+		_pIntermediateVariable->renderingMeshes.clear();
+		_pIntermediateVariable->renderingDescriptorSets.fill(VulkanDescriptorSet{});
+	}
 
     void RenderSystem::CollectOpaqueRenderingObject()
     {
@@ -104,7 +107,8 @@ namespace Ailurus
 		if (_needRebuildSwapChain)
 			ReBuildSwapChain();
 
-        CollectCameraViewProjectionMatrix();
+        RenderPrepare();
+
 		UpdateGlobalUniformBuffer();
         
 		auto* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
@@ -126,6 +130,17 @@ namespace Ailurus
 			{ 1, GetGlobalUniformAccessNameCameraPos() }, 
 			_pMainCamera->GetEntity()->GetPosition()
 		);
+
+		// Allocate descriptor set
+		auto globalUniformSetLayout = _pGlobalUniformSet->GetDescriptorSetLayout();
+		auto globalDescriptorSet = Application::Get<VulkanSystem>()->GetFrameContext()
+			->GetAllocatingDescriptorPool()->AllocateDescriptorSet(globalUniformSetLayout);
+
+		// Save set
+		_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::General)] = globalDescriptorSet;
+
+		// Write descriptor set
+		_pGlobalUniformMemory->UpdateToDescriptorSet(globalDescriptorSet);
 	}
 
 	void RenderSystem::RenderSpecificPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer)
@@ -150,19 +165,7 @@ namespace Ailurus
 
 		// Pipeline variables
 		VulkanDescriptorSetLayout* pCurrentVkSetLayout;
-		std::vector<std::unique_ptr<VulkanDescriptorSet>> currentVkDescriptorSets;
 		VulkanPipeline* pCurrentVkPipeline;
-		for (auto i = 0; i < EnumReflection<UniformSetUsage>::Size(); i++)
-		{
-			if (i == static_cast<int>(UniformSetUsage::General))
-			{
-				_pGlobalUniformMemory->
-			}
-			else
-				currentVkDescriptorSets.push_back(nullptr);
-		}
-
-		
 
 		for (const auto& renderingMesh : _pIntermediateVariable->renderingMeshes)
 		{
@@ -174,14 +177,13 @@ namespace Ailurus
 				pCurrentMaterialInstance = nullptr;
 				currentVertexLayoutId = 0;
 
-				// Assemble descriptor set
-				currentVkDescriptorSet.clear();
-				{
-					
+				// Allocate descriptor set
+				auto pUniformSet = pCurrentMaterial->GetUniformSet(pass);
+				pCurrentVkSetLayout = pUniformSet->GetDescriptorSetLayout();
+				auto materialDescriptorSet = pDescriptorPool->AllocateDescriptorSet(pCurrentVkSetLayout);
 
-				}
-				pCurrentVkSetLayout = pCurrentMaterial->GetUniformSet(RenderPassType::Forward)->GetDescriptorSetLayout();
-				currentVkDescriptorSet = pDescriptorPool->AllocateDescriptorSet(pCurrentVkSetLayout);
+				// Save set
+				_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)] = materialDescriptorSet;
 			}
 
 			if (renderingMesh.pMaterialInstance != pCurrentMaterialInstance)
@@ -189,7 +191,8 @@ namespace Ailurus
 				pCurrentMaterialInstance = renderingMesh.pMaterialInstance;
 				
 				// Update descriptor set memory
-				pCurrentMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet()
+				pCurrentMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(
+					_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)]);
 			}
 
 			if (currentVertexLayoutId != renderingMesh.vertexLayoutId)
@@ -206,8 +209,13 @@ namespace Ailurus
 				}
 
 				pCommandBuffer->BindPipeline(pCurrentVkPipeline);
-				pCommandBuffer->BindDescriptorSet(pCurrentVkPipeline->GetPipelineLayout(), currentVkDescriptorSet);
 				pCommandBuffer->SetViewportAndScissor();
+
+				std::vector<vk::DescriptorSet> descriptorSets;
+				for (const auto& descriptorSet : _pIntermediateVariable->renderingDescriptorSets)
+					descriptorSets.push_back(descriptorSet.descriptorSet);
+
+				pCommandBuffer->BindDescriptorSet(pCurrentVkPipeline->GetPipelineLayout(), descriptorSets);
 			}
 
 			// Push constant model matrix 
@@ -227,75 +235,6 @@ namespace Ailurus
 			else
 			{
 				pCommandBuffer->DrawNonIndexed(renderingMesh.pTargetMesh->GetVertexCount());
-			}
-		}
-
-		pCommandBuffer->EndRenderPass();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		// ---------------------
-    	auto pForwardPass = GetRenderPass(RenderPassType::Forward);
-    	if (pForwardPass == nullptr)
-    		return;
-
-		auto& renderingPassInfo = _pIntermediateVariable->renderingInfo.renderPassInfoMap[RenderPassType::Forward];
-		if (renderingPassInfo.materialInfoMap.empty())
-			return;
-
-
-
-		pCommandBuffer->BeginRenderPass(pForwardPass->GetRHIRenderPass());
-
-		// For each material
-		for (auto& [pMaterial,  renderingMaterialInfo] : renderingPassInfo.materialInfoMap)
-		{
-			// Allocate descriptor set
-			auto setLayout = pMaterial->GetUniformSet(RenderPassType::Forward)->GetDescriptorSetLayout();
-			auto descriptorSet = pDescriptorPool->AllocateDescriptorSet(setLayout);
-
-			// For each material instance
-			for (auto& [pMatInst, renderingMatInstInfo] : renderingMaterialInfo.materialInstanceInfoMap)
-			{
-				// Bind descriptor set
-				pMatInst->GetUniformSetMemory()
-
-
-
-				// Create pipeline entry
-				VulkanPipelineEntry pipelineEntry(RenderPassType::Forward, materialId, vertexLayoutId);
-				const auto pPipeline = pVulkanSystem->GetPipelineManager()->GetPipeline(pipelineEntry);
-				if (pPipeline == nullptr)
-				{
-					Logger::LogError("Pipeline not found for entry: {}",
-						EnumReflection<RenderPassType>::ToString(pipelineEntry.renderPass));
-					continue;
-				}
-
-				pCommandBuffer->BindPipeline(pPipeline);
-				pCommandBuffer->SetViewportAndScissor();
-
-				for (const auto& [pMesh, pEntity] : renderInfoPerVertexLayout.meshes)
-				{
-					std::vector<vk::DescriptorSet> descriptorSets;
-					descriptorSets.push_back(descriptorSet);
-
-					// Update descriptor set
-					pCommandBuffer->BindDescriptorSet(pPipeline->GetPipelineLayout(), descriptorSets);
-
-					
-				}
 			}
 		}
 

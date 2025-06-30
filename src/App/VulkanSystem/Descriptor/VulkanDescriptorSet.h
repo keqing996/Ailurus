@@ -4,16 +4,8 @@
 
 namespace Ailurus
 {
-    class VulkanDescriptorSet
+    struct VulkanDescriptorSet
     {
-    public:
-		explicit VulkanDescriptorSet(vk::DescriptorSet set);
-		~VulkanDescriptorSet();
-
-	public:
-		vk::DescriptorSet GetDescriptorSet() const;
-
-	private:
-        vk::DescriptorSet _descriptorSet;
+        vk::DescriptorSet descriptorSet;
     };
 } // namespace Ailurus

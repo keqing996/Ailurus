@@ -53,7 +53,7 @@ namespace Ailurus
 		void BuildGlobalUniform();
 
 		// Render
-		void CollectCameraViewProjectionMatrix();
+		void RenderPrepare();
 		void CollectOpaqueRenderingObject();
 		void UpdateGlobalUniformBuffer();
 		void ReBuildSwapChain();

@@ -1,7 +1,10 @@
 #pragma once
 
+#include <array>
 #include <vector>
 #include <Ailurus/Math/Matrix4x4.hpp>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
+#include <VulkanSystem/Descriptor/VulkanDescriptorSet.h>
 
 namespace Ailurus
 {
@@ -26,6 +29,11 @@ namespace Ailurus
 	{
 		// View and projection matrices
 		Matrix4x4f viewProjectionMatrix;
+
+		// Rendering meshes
 		std::vector<RenderingMesh> renderingMeshes;
+
+		// Rendering descriptor sets
+		std::array<VulkanDescriptorSet, EnumReflection<UniformSetUsage>::Size()> renderingDescriptorSets;
 	};
 }
