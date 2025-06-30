@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cstdint>
-#include <optional>
 #include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
 #include <Ailurus/Utility/EnumReflection.h>
 #include <Ailurus/Application/Application.h>
@@ -20,6 +19,7 @@
 #include <VulkanSystem/Buffer/VulkanUniformBuffer.h>
 #include <VulkanSystem/Vertex/VulkanVertexLayoutManager.h>
 #include <Ailurus/Utility/Logger.h>
+#include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -126,8 +126,6 @@ namespace Ailurus
 			{ 1, GetGlobalUniformAccessNameCameraPos() }, 
 			_pMainCamera->GetEntity()->GetPosition()
 		);
-
-		_pGlobalUniformMemory->TransitionDataToGpu();
 	}
 
 	void RenderSystem::RenderSpecificPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer)
@@ -142,21 +140,93 @@ namespace Ailurus
 		pCommandBuffer->BeginRenderPass(pRenderPass->GetRHIRenderPass());
 
 		// Prepare
+		auto pVulkanSystem = Application::Get<VulkanSystem>();
+    	auto pDescriptorPool = pVulkanSystem->GetFrameContext()->GetAllocatingDescriptorPool();
+
+		// Intermidiate variables
 		const Material* pCurrentMaterial = nullptr;
 		const MaterialInstance* pCurrentMaterialInstance = nullptr;
-		std::optional<uint64_t> pVertexLayoutId = std::nullopt;
+		uint64_t currentVertexLayoutId = 0;
+
+		// Pipeline variables
+		VulkanDescriptorSetLayout* pCurrentVkSetLayout;
+		std::vector<std::unique_ptr<VulkanDescriptorSet>> currentVkDescriptorSets;
+		VulkanPipeline* pCurrentVkPipeline;
+		for (auto i = 0; i < EnumReflection<UniformSetUsage>::Size(); i++)
+		{
+			if (i == static_cast<int>(UniformSetUsage::General))
+			{
+				_pGlobalUniformMemory->
+			}
+			else
+				currentVkDescriptorSets.push_back(nullptr);
+		}
+
+		
 
 		for (const auto& renderingMesh : _pIntermediateVariable->renderingMeshes)
 		{
 			if (renderingMesh.pMaterial != pCurrentMaterial)
 			{
 				pCurrentMaterial = renderingMesh.pMaterial;
-				pCurrentMaterialInstance = nullptr;
-				pVertexLayoutId = std::nullopt;
 
-				// Allocate descriptor set
-				auto setLayout = pMaterial->GetUniformSet(RenderPassType::Forward)->GetDescriptorSetLayout();
-				auto descriptorSet = pDescriptorPool->AllocateDescriptorSet(setLayout);
+				// Reset material instace and vertex layout
+				pCurrentMaterialInstance = nullptr;
+				currentVertexLayoutId = 0;
+
+				// Assemble descriptor set
+				currentVkDescriptorSet.clear();
+				{
+					
+
+				}
+				pCurrentVkSetLayout = pCurrentMaterial->GetUniformSet(RenderPassType::Forward)->GetDescriptorSetLayout();
+				currentVkDescriptorSet = pDescriptorPool->AllocateDescriptorSet(pCurrentVkSetLayout);
+			}
+
+			if (renderingMesh.pMaterialInstance != pCurrentMaterialInstance)
+			{
+				pCurrentMaterialInstance = renderingMesh.pMaterialInstance;
+				
+				// Update descriptor set memory
+				pCurrentMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet()
+			}
+
+			if (currentVertexLayoutId != renderingMesh.vertexLayoutId)
+			{
+				currentVertexLayoutId = renderingMesh.vertexLayoutId;
+
+				// Get vulkan pipeline
+				VulkanPipelineEntry pipelineEntry(pass, pCurrentMaterial->GetAssetId(), currentVertexLayoutId);
+				pCurrentVkPipeline = pVulkanSystem->GetPipelineManager()->GetPipeline(pipelineEntry);
+				if (pCurrentVkPipeline == nullptr)
+				{
+					Logger::LogError("Pipeline not found for entry: {}", EnumReflection<RenderPassType>::ToString(pipelineEntry.renderPass));
+					continue;
+				}
+
+				pCommandBuffer->BindPipeline(pCurrentVkPipeline);
+				pCommandBuffer->BindDescriptorSet(pCurrentVkPipeline->GetPipelineLayout(), currentVkDescriptorSet);
+				pCommandBuffer->SetViewportAndScissor();
+			}
+
+			// Push constant model matrix 
+			pCommandBuffer->PushConstantModelMaterix(pCurrentVkPipeline, renderingMesh.pEntity->GetModelMatrix());
+
+			// Bind vertex buffer
+			const auto pVertexBuffer = renderingMesh.pTargetMesh->GetVertexBuffer();
+			pCommandBuffer->BindVertexBuffer(pVertexBuffer);
+
+			// Bind index buffer and draw
+			const auto pIndexBuffer = renderingMesh.pTargetMesh->GetIndexBuffer();
+			if (pIndexBuffer != nullptr)
+			{
+				pCommandBuffer->BindIndexBuffer(pIndexBuffer);
+				pCommandBuffer->DrawIndexed(pIndexBuffer->GetIndexCount());
+			}
+			else
+			{
+				pCommandBuffer->DrawNonIndexed(renderingMesh.pTargetMesh->GetVertexCount());
 			}
 		}
 
@@ -184,9 +254,7 @@ namespace Ailurus
 		if (renderingPassInfo.materialInfoMap.empty())
 			return;
 
-    	// Prepare
-		auto pVulkanSystem = Application::Get<VulkanSystem>();
-    	auto pDescriptorPool = pVulkanSystem->GetFrameContext()->GetAllocatingDescriptorPool();
+
 
 		pCommandBuffer->BeginRenderPass(pForwardPass->GetRHIRenderPass());
 
@@ -226,24 +294,7 @@ namespace Ailurus
 					// Update descriptor set
 					pCommandBuffer->BindDescriptorSet(pPipeline->GetPipelineLayout(), descriptorSets);
 
-					// Push constant model matrix 
-					pCommandBuffer->PushConstantModelMaterix(pPipeline, pEntity->GetModelMatrix());
-
-					// Bind vertex buffer
-					const auto pVertexBuffer = pMesh->GetVertexBuffer();
-					pCommandBuffer->BindVertexBuffer(pVertexBuffer);
-
-					// Bind index buffer and draw
-					const auto pIndexBuffer = pMesh->GetIndexBuffer();
-					if (pIndexBuffer != nullptr)
-					{
-						pCommandBuffer->BindIndexBuffer(pIndexBuffer);
-						pCommandBuffer->DrawIndexed(pIndexBuffer->GetIndexCount());
-					}
-					else
-					{
-						pCommandBuffer->DrawNonIndexed(pMesh->GetVertexCount());
-					}
+					
 				}
 			}
 		}

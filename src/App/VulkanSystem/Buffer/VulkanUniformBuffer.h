@@ -6,6 +6,9 @@
 
 namespace Ailurus
 {
+	class VulkanHostBuffer;
+	class VulkanDeviceBuffer;
+
 	class VulkanUniformBuffer
 	{
 	public:
@@ -17,10 +20,11 @@ namespace Ailurus
 		uint32_t GetBufferSize() const;
 		void WriteData(uint32_t offset, const UniformValue& value) const;
 		void TransitionDataToGpu() const;
+		VulkanDeviceBuffer* GetThisFrameDeviceBuffer() const;
 
 	private:
 		size_t _bufferSize;
-		std::array<class VulkanHostBuffer*, VulkanSystem::PARALLEL_FRAME> _cpuBuffers;
-		std::array<class VulkanDeviceBuffer*, VulkanSystem::PARALLEL_FRAME> _gpuBuffers;
+		std::array<VulkanHostBuffer*, VulkanSystem::PARALLEL_FRAME> _cpuBuffers;
+		std::array<VulkanDeviceBuffer*, VulkanSystem::PARALLEL_FRAME> _gpuBuffers;
 	};
 } // namespace Ailurus

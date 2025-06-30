@@ -6,28 +6,32 @@
 
 namespace Ailurus
 {
-    class VulkanUniformBuffer;
+	class VulkanUniformBuffer;
+	class VulkanDescriptorSet;
 
-    class UniformSetMemory 
-    {
-    public:
+	class UniformSetMemory
+	{
+	public:
 		UniformSetMemory(const UniformSet* pTargetUniformSet);
 		~UniformSetMemory();
 
-    public:
+	public:
 		auto GetUniformValueMap() const -> const UniformValueMap&;
 		auto SetUniformValue(uint32_t bindingId, const std::string& access, const UniformValue& value) -> void;
 		auto SetUniformValue(const UniformAccess& entry, const UniformValue& value) -> void;
+		auto UpdateToDescriptorSet(const VulkanDescriptorSet& descriptorSet) const -> void;
+
+	private:
 		auto TransitionDataToGpu() const -> void;
 
 	private:
-        // Target uniform set
-        const UniformSet* _pTargetUniformSet;
+		// Target uniform set
+		const UniformSet* _pTargetUniformSet;
 
-        // Uniform access -> uniform value
+		// Uniform access -> uniform value
 		UniformValueMap _uniformValueMap;
 
-        // Uniform buffer memory
-        std::unique_ptr<VulkanUniformBuffer> _pUniformBuffer;
-    };
-}
+		// Uniform buffer memory
+		std::unique_ptr<VulkanUniformBuffer> _pUniformBuffer;
+	};
+} // namespace Ailurus

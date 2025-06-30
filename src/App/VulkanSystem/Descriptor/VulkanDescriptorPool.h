@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
+#include "VulkanDescriptorSet.h"
 
 namespace Ailurus
 {
@@ -29,7 +30,7 @@ namespace Ailurus
 
 	public:
 		auto ResetPool() -> void;
-		auto AllocateDescriptorSet(const class VulkanDescriptorSetLayout* pSetLayout) -> vk::DescriptorSet;
+		auto AllocateDescriptorSet(const class VulkanDescriptorSetLayout* pSetLayout) -> VulkanDescriptorSet;
 
 	private:
 		auto CreatePoolItem() -> PoolItem;

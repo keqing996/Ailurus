@@ -53,6 +53,12 @@ namespace Ailurus
 			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexShader);
 	}
 
+	VulkanDeviceBuffer* VulkanUniformBuffer::GetThisFrameDeviceBuffer() const
+	{
+		auto index = Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex();
+		return _gpuBuffers[index];
+	}
+
 	void VulkanUniformBuffer::WriteData(uint32_t offset, const UniformValue& value) const
 	{
 		if (offset >= _bufferSize)

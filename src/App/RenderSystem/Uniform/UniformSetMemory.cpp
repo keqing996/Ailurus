@@ -1,5 +1,7 @@
-#include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Utility/Logger.h>
+#include <Ailurus/Application/Application.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
+#include <VulkanSystem/VulkanSystem.h>
 #include <VulkanSystem/Buffer/VulkanUniformBuffer.h>
 
 namespace Ailurus
@@ -56,6 +58,37 @@ namespace Ailurus
 		
 		// Record uniform value
 		_uniformValueMap[entry] = value;
+	}
+
+	void UniformSetMemory::UpdateToDescriptorSet(const VulkanDescriptorSet& descriptorSet) const
+	{
+		TransitionDataToGpu();
+
+		std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+
+		auto& allBindingPoints = _pTargetUniformSet->GetAllBindingPoints();
+		for (auto& [bindingId, pBindingPoint] : allBindingPoints)
+		{
+			auto offset = _pTargetUniformSet->GetBindingPointOffsetInUniformBuffer(bindingId);
+			auto range = pBindingPoint->GetTotalSize();
+
+			vk::DescriptorBufferInfo descriptorBufferInfo;
+			descriptorBufferInfo.setBuffer(_pUniformBuffer->GetThisFrameDeviceBuffer()->buffer)
+				.setOffset(offset)
+				.setRange(range);
+
+			vk::WriteDescriptorSet writeDescriptorSet;
+			writeDescriptorSet.setDstSet(descriptorSet.GetDescriptorSet())
+				.setDstBinding(bindingId)
+				.setDstArrayElement(0)
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setDescriptorCount(1)
+				.setBufferInfo(descriptorBufferInfo);
+
+			writeDescriptorSets.push_back(writeDescriptorSet);
+		}
+
+		Application::Get<VulkanSystem>()->GetDevice().updateDescriptorSets(writeDescriptorSets, {});
 	}
 
 	auto UniformSetMemory::TransitionDataToGpu() const -> void

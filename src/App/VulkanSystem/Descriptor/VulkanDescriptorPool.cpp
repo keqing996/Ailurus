@@ -33,16 +33,16 @@ namespace Ailurus
 		}
 	}
 
-	vk::DescriptorSet VulkanDescriptorPool::AllocateDescriptorSet(const VulkanDescriptorSetLayout* pSetLayout)
+	VulkanDescriptorSet VulkanDescriptorPool::AllocateDescriptorSet(const VulkanDescriptorSetLayout* pSetLayout)
 	{
 		for (auto& poolItem : _pools)
 		{
 			if (CanPoolItemAllocateNewSet(poolItem, pSetLayout))
-				return PoolItemAllocateNewSet(poolItem, pSetLayout);
+				return VulkanDescriptorSet{ PoolItemAllocateNewSet(poolItem, pSetLayout) };
 		}
 
 		_pools.push_back(CreatePoolItem());
-		return PoolItemAllocateNewSet(_pools.back(), pSetLayout);
+		return VulkanDescriptorSet{ PoolItemAllocateNewSet(_pools.back(), pSetLayout) };
 	}
 
 	VulkanDescriptorPool::PoolItem VulkanDescriptorPool::CreatePoolItem()
