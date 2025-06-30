@@ -29,90 +29,85 @@ namespace Ailurus
 	{
 		const auto& projMat = _pMainCamera->GetProjectionMatrix();
 		const auto& viewMat = _pMainCamera->GetEntity()->GetModelMatrix();
-		_pIntermediateVariable->viewProjectionMatrix = projMat * viewMat;
+		_pIntermediateVariable->viewProjectionMatrix = viewMat * projMat;
 		_pIntermediateVariable->renderingMeshes.clear();
 		_pIntermediateVariable->renderingDescriptorSets.fill(VulkanDescriptorSet{});
 	}
 
-    void RenderSystem::CollectOpaqueRenderingObject()
-    {
+	void RenderSystem::CollectOpaqueRenderingObject()
+	{
 		auto& renderingMeshes = _pIntermediateVariable->renderingMeshes;
 		renderingMeshes.clear();
 
 		const auto allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
-        for (const auto pEntity : allEntities)
-        {
+		for (const auto pEntity : allEntities)
+		{
 			const auto pMeshRender = pEntity->GetComponent<CompStaticMeshRender>();
-            if (pMeshRender == nullptr)
-                continue;
+			if (pMeshRender == nullptr)
+				continue;
 
-            const auto& modelRef = pMeshRender->GetModelAsset();
-            if (!modelRef)
-                continue;
+			const auto& modelRef = pMeshRender->GetModelAsset();
+			if (!modelRef)
+				continue;
 
-            const auto& materialInstRef = pMeshRender->GetMaterialInstanceAsset();
-            if (!materialInstRef)
+			const auto& materialInstRef = pMeshRender->GetMaterialInstanceAsset();
+			if (!materialInstRef)
 				continue;
 
 			const auto* pMaterial = materialInstRef->GetTargetMaterial();
 			const auto* pMaterialInstance = materialInstRef.Get();
-            for (auto i = 0; i < EnumReflection<RenderPassType>::Size(); i++)
-            {
-                auto passType = static_cast<RenderPassType>(i);
+			for (auto i = 0; i < EnumReflection<RenderPassType>::Size(); i++)
+			{
+				auto passType = static_cast<RenderPassType>(i);
 				if (!pMaterial->HasRenderPass(passType))
-                    continue;
+					continue;
 
 				const auto& allMeshes = modelRef->GetMeshes();
-				for (const auto& pMesh: allMeshes)
+				for (const auto& pMesh : allMeshes)
 				{
 					const auto vertexLayoutId = pMesh->GetVertexLayoutId();
 
-					for (const auto& mesh : modelRef.Get()->GetMeshes())
-					{
-						renderingMeshes.push_back(RenderingMesh{
-							pMaterial,
-							pMaterialInstance,
-							vertexLayoutId,
-							mesh.get(),
-							pEntity
-						});
-					}
+					renderingMeshes.push_back(RenderingMesh{
+						pMaterial,
+						pMaterialInstance,
+						vertexLayoutId,
+						pMesh.get(),
+						pEntity });
 				}
 			}
 		}
 
 		std::sort(renderingMeshes.begin(), renderingMeshes.end(),
-			[](const RenderingMesh& lhs, const RenderingMesh& rhs) -> bool
-			{
+			[](const RenderingMesh& lhs, const RenderingMesh& rhs) -> bool {
 				// Compare by Material
-        		if (lhs.pMaterial != rhs.pMaterial)
-        		    return lhs.pMaterial < rhs.pMaterial;
+				if (lhs.pMaterial != rhs.pMaterial)
+					return lhs.pMaterial < rhs.pMaterial;
 
-        		// Compare by MaterialInstance
-        		if (lhs.pMaterialInstance != rhs.pMaterialInstance)
-        		    return lhs.pMaterialInstance < rhs.pMaterialInstance;
+				// Compare by MaterialInstance
+				if (lhs.pMaterialInstance != rhs.pMaterialInstance)
+					return lhs.pMaterialInstance < rhs.pMaterialInstance;
 
-        		// Compare by vertexLayoutId
-        		return lhs.vertexLayoutId < rhs.vertexLayoutId;
+				// Compare by vertexLayoutId
+				return lhs.vertexLayoutId < rhs.vertexLayoutId;
 			});
-    }
+	}
 
 	void RenderSystem::CreateIntermediateVariable()
-    {
-        _pIntermediateVariable = std::make_unique<RenderIntermediateVariable>();
-    }
+	{
+		_pIntermediateVariable = std::make_unique<RenderIntermediateVariable>();
+	}
 
 	void RenderSystem::RenderScene()
 	{
 		if (_needRebuildSwapChain)
 			ReBuildSwapChain();
 
-        RenderPrepare();
+		RenderPrepare();
 
 		UpdateGlobalUniformBuffer();
-        
+
 		auto* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
-		
+
 		CollectOpaqueRenderingObject();
 		RenderSpecificPass(RenderPassType::Forward, pCommandBuffer);
 
@@ -122,19 +117,16 @@ namespace Ailurus
 	void RenderSystem::UpdateGlobalUniformBuffer()
 	{
 		_pGlobalUniformMemory->SetUniformValue(
-			{ 0, GetGlobalUniformAccessNameViewProjMat() }, 
-			_pIntermediateVariable->viewProjectionMatrix
-		);
+			{ 0, GetGlobalUniformAccessNameViewProjMat() },
+			_pIntermediateVariable->viewProjectionMatrix);
 
 		_pGlobalUniformMemory->SetUniformValue(
-			{ 1, GetGlobalUniformAccessNameCameraPos() }, 
-			_pMainCamera->GetEntity()->GetPosition()
-		);
+			{ 1, GetGlobalUniformAccessNameCameraPos() },
+			_pMainCamera->GetEntity()->GetPosition());
 
 		// Allocate descriptor set
 		auto globalUniformSetLayout = _pGlobalUniformSet->GetDescriptorSetLayout();
-		auto globalDescriptorSet = Application::Get<VulkanSystem>()->GetFrameContext()
-			->GetAllocatingDescriptorPool()->AllocateDescriptorSet(globalUniformSetLayout);
+		auto globalDescriptorSet = Application::Get<VulkanSystem>()->GetFrameContext()->GetAllocatingDescriptorPool()->AllocateDescriptorSet(globalUniformSetLayout);
 
 		// Save set
 		_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::General)] = globalDescriptorSet;
@@ -149,14 +141,14 @@ namespace Ailurus
 			return;
 
 		auto pRenderPass = GetRenderPass(pass);
-    	if (pRenderPass == nullptr)
-    		return;
+		if (pRenderPass == nullptr)
+			return;
 
 		pCommandBuffer->BeginRenderPass(pRenderPass->GetRHIRenderPass());
 
 		// Prepare
 		auto pVulkanSystem = Application::Get<VulkanSystem>();
-    	auto pDescriptorPool = pVulkanSystem->GetFrameContext()->GetAllocatingDescriptorPool();
+		auto pDescriptorPool = pVulkanSystem->GetFrameContext()->GetAllocatingDescriptorPool();
 
 		// Intermidiate variables
 		const Material* pCurrentMaterial = nullptr;
@@ -180,16 +172,13 @@ namespace Ailurus
 				// Allocate descriptor set
 				auto pUniformSet = pCurrentMaterial->GetUniformSet(pass);
 				pCurrentVkSetLayout = pUniformSet->GetDescriptorSetLayout();
-				auto materialDescriptorSet = pDescriptorPool->AllocateDescriptorSet(pCurrentVkSetLayout);
-
-				// Save set
-				_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)] = materialDescriptorSet;
+				_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)] = pDescriptorPool->AllocateDescriptorSet(pCurrentVkSetLayout);
 			}
 
 			if (renderingMesh.pMaterialInstance != pCurrentMaterialInstance)
 			{
 				pCurrentMaterialInstance = renderingMesh.pMaterialInstance;
-				
+
 				// Update descriptor set memory
 				pCurrentMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(
 					_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)]);
@@ -218,7 +207,7 @@ namespace Ailurus
 				pCommandBuffer->BindDescriptorSet(pCurrentVkPipeline->GetPipelineLayout(), descriptorSets);
 			}
 
-			// Push constant model matrix 
+			// Push constant model matrix
 			pCommandBuffer->PushConstantModelMaterix(pCurrentVkPipeline, renderingMesh.pEntity->GetModelMatrix());
 
 			// Bind vertex buffer
