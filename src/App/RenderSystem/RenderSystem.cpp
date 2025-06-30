@@ -1,7 +1,7 @@
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
-#include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformVariable.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <VulkanSystem/VulkanSystem.h>
@@ -105,7 +105,7 @@ namespace Ailurus
 		_pGlobalUniformSet->InitUniformBufferInfo();
 		_pGlobalUniformSet->InitDescriptorSetLayout();
 
-		_pGlobalUniformBuffer = std::make_unique<VulkanUniformBuffer>(_pGlobalUniformSet->GetUniformBufferSize());
+		_pGlobalUniformMemory = std::make_unique<UniformSetMemory>(_pGlobalUniformSet.get());
 	}
 
 	auto RenderSystem::GetRenderPass(RenderPassType pass) const -> RenderPass*
@@ -120,11 +120,6 @@ namespace Ailurus
 	auto RenderSystem::GetGlobalUniformSet() const -> UniformSet*
 	{
 		return _pGlobalUniformSet.get();
-	}
-
-	auto RenderSystem::GetGlobalUniformBuffer() const -> VulkanUniformBuffer*
-	{
-		return _pGlobalUniformBuffer.get();
 	}
 
 	auto RenderSystem::GetGlobalUniformAccessNameViewProjMat() -> const std::string&

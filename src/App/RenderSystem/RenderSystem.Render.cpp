@@ -1,8 +1,12 @@
+#include <algorithm>
+#include <cstdint>
+#include <optional>
 #include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
 #include <Ailurus/Utility/EnumReflection.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Application/AssetsSystem/Mesh/Mesh.h>
 #include <Ailurus/Application/AssetsSystem/Model/Model.h>
 #include <Ailurus/Application/SceneSystem/SceneSystem.h>
@@ -16,7 +20,6 @@
 #include <VulkanSystem/Buffer/VulkanUniformBuffer.h>
 #include <VulkanSystem/Vertex/VulkanVertexLayoutManager.h>
 #include <Ailurus/Utility/Logger.h>
-#include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -28,10 +31,12 @@ namespace Ailurus
 		_pIntermediateVariable->viewProjectionMatrix = projMat * viewMat;
     }
 
-    void RenderSystem::CollectPipelineMeshMap()
+    void RenderSystem::CollectOpaqueRenderingObject()
     {
+		auto& renderingMeshes = _pIntermediateVariable->renderingMeshes;
+		renderingMeshes.clear();
+
 		const auto allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
-        auto& renderInfo = _pIntermediateVariable->renderInfo;
         for (const auto pEntity : allEntities)
         {
 			const auto pMeshRender = pEntity->GetComponent<CompStaticMeshRender>();
@@ -47,41 +52,46 @@ namespace Ailurus
 				continue;
 
 			const auto* pMaterial = materialInstRef->GetTargetMaterial();
-        	const auto materialId = pMaterial->GetAssetId();
+			const auto* pMaterialInstance = materialInstRef.Get();
             for (auto i = 0; i < EnumReflection<RenderPassType>::Size(); i++)
             {
                 auto passType = static_cast<RenderPassType>(i);
-
-            	// Fill render pass info
-            	auto& renderPassInfo = renderInfo.renderPassesMap[passType];
-
-                if (!pMaterial->HasRenderPass(passType))
+				if (!pMaterial->HasRenderPass(passType))
                     continue;
-
-            	// Fill material render info
-            	if (!renderPassInfo.materialsMap.contains(materialId))
-            		renderPassInfo.materialsMap[materialId].pMaterial = pMaterial;
-
-				auto& materialInfo =  renderPassInfo.materialsMap[materialId];
 
 				const auto& allMeshes = modelRef->GetMeshes();
 				for (const auto& pMesh: allMeshes)
 				{
 					const auto vertexLayoutId = pMesh->GetVertexLayoutId();
 
-					// Create vertex layout render info
-					if (!materialInfo.vertexLayoutsMap.contains(vertexLayoutId))
-					{
-						const auto* pLayout = Application::Get<VulkanSystem>()->GetVertexLayoutManager()->GetLayout(vertexLayoutId);
-						materialInfo.vertexLayoutsMap[vertexLayoutId].pVertexLayout = pLayout;
-					}
-
-					auto& vertexLayoutInfo = materialInfo.vertexLayoutsMap[vertexLayoutId];
 					for (const auto& mesh : modelRef.Get()->GetMeshes())
-						vertexLayoutInfo.meshes.push_back({ mesh.get(), pEntity });
+					{
+						renderingMeshes.push_back(RenderingMesh{
+							pMaterial,
+							pMaterialInstance,
+							vertexLayoutId,
+							mesh.get(),
+							pEntity
+						});
+					}
 				}
 			}
 		}
+
+		std::sort(renderingMeshes.begin(), renderingMeshes.end(),
+			[](const RenderingMesh& lhs, const RenderingMesh& rhs) -> bool
+			{
+				// Compare by Material
+        		if (lhs.pMaterial != rhs.pMaterial)
+        		    return lhs.pMaterial < rhs.pMaterial;
+
+        		// Compare by MaterialInstance
+        		if (lhs.pMaterialInstance != rhs.pMaterialInstance)
+        		    return lhs.pMaterialInstance < rhs.pMaterialInstance;
+
+        		// Compare by vertexLayoutId
+        		return lhs.vertexLayoutId < rhs.vertexLayoutId;
+			});
     }
 
 	void RenderSystem::CreateIntermediateVariable()
@@ -95,46 +105,83 @@ namespace Ailurus
 			ReBuildSwapChain();
 
         CollectCameraViewProjectionMatrix();
-        CollectPipelineMeshMap();
-
+		UpdateGlobalUniformBuffer();
+        
 		auto* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
 		
-		UpdateGlobalUniformBuffer();
-		RenderForwardPass(pCommandBuffer);
+		CollectOpaqueRenderingObject();
+		RenderSpecificPass(RenderPassType::Forward, pCommandBuffer);
 
 		Application::Get<VulkanSystem>()->RenderFrame(&_needRebuildSwapChain);
 	}
 
 	void RenderSystem::UpdateGlobalUniformBuffer()
 	{
-		auto bindingPointOffset = _pGlobalUniformSet->GetBindingPointOffsetInUniformBuffer(0);
-		const UniformBindingPoint* pBindingPoint = _pGlobalUniformSet->GetBindingPoint(0);
+		_pGlobalUniformMemory->SetUniformValue(
+			{ 0, GetGlobalUniformAccessNameViewProjMat() }, 
+			_pIntermediateVariable->viewProjectionMatrix
+		);
 
-		auto vpMatOffset = pBindingPoint->GetAccessOffset(GetGlobalUniformAccessNameViewProjMat());
-		if (vpMatOffset)
-		{
-			auto mat = _pIntermediateVariable->viewProjectionMatrix;
-			_pGlobalUniformBuffer->WriteData(bindingPointOffset + *vpMatOffset, mat);
-		}
+		_pGlobalUniformMemory->SetUniformValue(
+			{ 1, GetGlobalUniformAccessNameCameraPos() }, 
+			_pMainCamera->GetEntity()->GetPosition()
+		);
 
-		auto cameraPosOffset = pBindingPoint->GetAccessOffset(GetGlobalUniformAccessNameCameraPos());
-		if (cameraPosOffset)
-		{
-			const auto& cameraPos = _pMainCamera->GetEntity()->GetPosition();
-			_pGlobalUniformBuffer->WriteData(bindingPointOffset + *cameraPosOffset, cameraPos);
-		}
-
-		_pGlobalUniformBuffer->TransitionDataToGpu();
+		_pGlobalUniformMemory->TransitionDataToGpu();
 	}
 
-	void RenderSystem::RenderForwardPass(VulkanCommandBuffer* pCommandBuffer)
+	void RenderSystem::RenderSpecificPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer)
 	{
+		if (_pIntermediateVariable->renderingMeshes.empty())
+			return;
+
+		auto pRenderPass = GetRenderPass(pass);
+    	if (pRenderPass == nullptr)
+    		return;
+
+		pCommandBuffer->BeginRenderPass(pRenderPass->GetRHIRenderPass());
+
+		// Prepare
+		const Material* pCurrentMaterial = nullptr;
+		const MaterialInstance* pCurrentMaterialInstance = nullptr;
+		std::optional<uint64_t> pVertexLayoutId = std::nullopt;
+
+		for (const auto& renderingMesh : _pIntermediateVariable->renderingMeshes)
+		{
+			if (renderingMesh.pMaterial != pCurrentMaterial)
+			{
+				pCurrentMaterial = renderingMesh.pMaterial;
+				pCurrentMaterialInstance = nullptr;
+				pVertexLayoutId = std::nullopt;
+
+				// Allocate descriptor set
+				auto setLayout = pMaterial->GetUniformSet(RenderPassType::Forward)->GetDescriptorSetLayout();
+				auto descriptorSet = pDescriptorPool->AllocateDescriptorSet(setLayout);
+			}
+		}
+
+		pCommandBuffer->EndRenderPass();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		// ---------------------
     	auto pForwardPass = GetRenderPass(RenderPassType::Forward);
     	if (pForwardPass == nullptr)
     		return;
 
-		auto& renderInfo = _pIntermediateVariable->renderInfo.renderPassesMap[RenderPassType::Forward];
-		if (renderInfo.materialsMap.empty())
+		auto& renderingPassInfo = _pIntermediateVariable->renderingInfo.renderPassInfoMap[RenderPassType::Forward];
+		if (renderingPassInfo.materialInfoMap.empty())
 			return;
 
     	// Prepare
@@ -143,16 +190,21 @@ namespace Ailurus
 
 		pCommandBuffer->BeginRenderPass(pForwardPass->GetRHIRenderPass());
 
-		for (auto& [materialId,  renderInfoPerMaterial] : renderInfo.materialsMap)
+		// For each material
+		for (auto& [pMaterial,  renderingMaterialInfo] : renderingPassInfo.materialInfoMap)
 		{
-			const auto pMaterial = renderInfoPerMaterial.pMaterial;
-			const auto pDescriptorSetLayout = pMaterial->GetUniformSet(RenderPassType::Forward)->GetDescriptorSetLayout();
-
 			// Allocate descriptor set
-			auto descriptorSet = pDescriptorPool->AllocateDescriptorSet(pDescriptorSetLayout);
+			auto setLayout = pMaterial->GetUniformSet(RenderPassType::Forward)->GetDescriptorSetLayout();
+			auto descriptorSet = pDescriptorPool->AllocateDescriptorSet(setLayout);
 
-			for (auto& [vertexLayoutId, renderInfoPerVertexLayout] : renderInfoPerMaterial.vertexLayoutsMap)
+			// For each material instance
+			for (auto& [pMatInst, renderingMatInstInfo] : renderingMaterialInfo.materialInstanceInfoMap)
 			{
+				// Bind descriptor set
+				pMatInst->GetUniformSetMemory()
+
+
+
 				// Create pipeline entry
 				VulkanPipelineEntry pipelineEntry(RenderPassType::Forward, materialId, vertexLayoutId);
 				const auto pPipeline = pVulkanSystem->GetPipelineManager()->GetPipeline(pipelineEntry);
