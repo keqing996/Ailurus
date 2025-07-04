@@ -32,17 +32,23 @@ namespace Ailurus
 			return;
 		}
 
-		// Get binding point offset
-		const auto bindingOffset = _pTargetUniformSet->GetBindingPointOffsetInUniformBuffer(entry.bindingId);
-
 		// Get access offset
 		const auto* pBindingPoint = _pTargetUniformSet->GetBindingPoint(entry.bindingId);
+    	if (pBindingPoint == nullptr)
+    	{
+    		Logger::LogError("Uniform does not have binding point {}", entry.bindingId);
+    		return;
+    	}
+
 		const auto accessOffset = pBindingPoint->GetAccessOffset(entry.access);
 		if (!accessOffset.has_value())
 		{
 			Logger::LogError("Access '{}' not found in binding point with ID: {}", entry.access, entry.bindingId);
 			return;
 		}
+
+    	// Get binding point offset
+    	const auto bindingOffset = _pTargetUniformSet->GetBindingPointOffsetInUniformBuffer(entry.bindingId);
 
 		// Check if access offset is valid
 		uint32_t offset = bindingOffset + *accessOffset;
@@ -78,7 +84,7 @@ namespace Ailurus
 				.setRange(range);
 
 			vk::WriteDescriptorSet writeDescriptorSet;
-			writeDescriptorSet.setDstSet(descriptorSet.GetDescriptorSet())
+			writeDescriptorSet.setDstSet(descriptorSet.descriptorSet)
 				.setDstBinding(bindingId)
 				.setDstArrayElement(0)
 				.setDescriptorType(vk::DescriptorType::eUniformBuffer)

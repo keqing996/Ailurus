@@ -27,11 +27,16 @@ namespace Ailurus
 
 	struct RenderIntermediateVariable
 	{
+		using MatInstDescriptorSetMap = std::unordered_map<const MaterialInstance*, VulkanDescriptorSet>;
+
 		// View and projection matrices
 		Matrix4x4f viewProjectionMatrix;
 
 		// Rendering meshes
-		std::vector<RenderingMesh> renderingMeshes;
+		std::unordered_map<RenderPassType, std::vector<RenderingMesh>> renderingMeshes;
+
+		// Material instance descriptor sets map
+		std::unordered_map<RenderPassType, MatInstDescriptorSetMap> materialInstanceDescriptorsMap;
 
 		// Rendering descriptor sets
 		std::array<VulkanDescriptorSet, EnumReflection<UniformSetUsage>::Size()> renderingDescriptorSets;

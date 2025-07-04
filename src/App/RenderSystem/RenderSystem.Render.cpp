@@ -31,13 +31,14 @@ namespace Ailurus
 		const auto& viewMat = _pMainCamera->GetEntity()->GetModelMatrix();
 		_pIntermediateVariable->viewProjectionMatrix = viewMat * projMat;
 		_pIntermediateVariable->renderingMeshes.clear();
+		_pIntermediateVariable->materialInstanceDescriptorsMap.clear();
 		_pIntermediateVariable->renderingDescriptorSets.fill(VulkanDescriptorSet{});
 	}
 
-	void RenderSystem::CollectOpaqueRenderingObject()
+	void RenderSystem::CollectRenderingContext()
 	{
-		auto& renderingMeshes = _pIntermediateVariable->renderingMeshes;
-		renderingMeshes.clear();
+		auto& renderingMeshesMap = _pIntermediateVariable->renderingMeshes;
+		renderingMeshesMap.clear();
 
 		const auto allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
 		for (const auto pEntity : allEntities)
@@ -67,7 +68,7 @@ namespace Ailurus
 				{
 					const auto vertexLayoutId = pMesh->GetVertexLayoutId();
 
-					renderingMeshes.push_back(RenderingMesh{
+					renderingMeshesMap[passType].push_back(RenderingMesh{
 						pMaterial,
 						pMaterialInstance,
 						vertexLayoutId,
@@ -77,7 +78,9 @@ namespace Ailurus
 			}
 		}
 
-		std::sort(renderingMeshes.begin(), renderingMeshes.end(),
+		// Opaque meshes sorted by material & material instance
+		auto& forwardPassMeshes = renderingMeshesMap[RenderPassType::Forward];
+		std::sort(forwardPassMeshes.begin(), forwardPassMeshes.end(),
 			[](const RenderingMesh& lhs, const RenderingMesh& rhs) -> bool {
 				// Compare by Material
 				if (lhs.pMaterial != rhs.pMaterial)
@@ -104,11 +107,12 @@ namespace Ailurus
 
 		RenderPrepare();
 
+		CollectRenderingContext();
 		UpdateGlobalUniformBuffer();
+		UpdateMaterialInstanceUniformBuffer();
 
 		auto* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
 
-		CollectOpaqueRenderingObject();
 		RenderSpecificPass(RenderPassType::Forward, pCommandBuffer);
 
 		Application::Get<VulkanSystem>()->RenderFrame(&_needRebuildSwapChain);
@@ -121,7 +125,7 @@ namespace Ailurus
 			_pIntermediateVariable->viewProjectionMatrix);
 
 		_pGlobalUniformMemory->SetUniformValue(
-			{ 1, GetGlobalUniformAccessNameCameraPos() },
+			{ 0, GetGlobalUniformAccessNameCameraPos() },
 			_pMainCamera->GetEntity()->GetPosition());
 
 		// Allocate descriptor set
@@ -131,8 +135,37 @@ namespace Ailurus
 		// Save set
 		_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::General)] = globalDescriptorSet;
 
-		// Write descriptor set
+		// Write the descriptor set
 		_pGlobalUniformMemory->UpdateToDescriptorSet(globalDescriptorSet);
+	}
+
+	void RenderSystem::UpdateMaterialInstanceUniformBuffer()
+	{
+		auto* pDescriptorPool = Application::Get<VulkanSystem>()->GetFrameContext()->GetAllocatingDescriptorPool();
+
+		auto& opaqueMeshes = _pIntermediateVariable->renderingMeshes;
+		for (auto& [pass, meshes] : opaqueMeshes)
+		{
+			auto& mapInstDescriptorSetMap = _pIntermediateVariable->materialInstanceDescriptorsMap[pass];
+			for (auto& pRenderingMesh : meshes)
+			{
+				const auto* pMaterial = pRenderingMesh.pMaterial;
+				const auto* pMaterialInstance = pRenderingMesh.pMaterialInstance;
+
+				if (mapInstDescriptorSetMap.contains(pMaterialInstance))
+					continue;
+
+				// Allocate a set by layout.
+				auto* pDescriptorLayout = pMaterial->GetUniformSet(pass)->GetDescriptorSetLayout();
+				auto descriptorSet = pDescriptorPool->AllocateDescriptorSet(pDescriptorLayout);
+
+				// Update material data to descriptor set
+				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(descriptorSet);
+
+				// Record material instance descriptor set
+				mapInstDescriptorSetMap[pMaterialInstance] = descriptorSet;
+			}
+		}
 	}
 
 	void RenderSystem::RenderSpecificPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer)
@@ -148,7 +181,6 @@ namespace Ailurus
 
 		// Prepare
 		auto pVulkanSystem = Application::Get<VulkanSystem>();
-		auto pDescriptorPool = pVulkanSystem->GetFrameContext()->GetAllocatingDescriptorPool();
 
 		// Intermidiate variables
 		const Material* pCurrentMaterial = nullptr;
@@ -159,29 +191,23 @@ namespace Ailurus
 		VulkanDescriptorSetLayout* pCurrentVkSetLayout;
 		VulkanPipeline* pCurrentVkPipeline;
 
-		for (const auto& renderingMesh : _pIntermediateVariable->renderingMeshes)
+		for (const auto& renderingMesh : _pIntermediateVariable->renderingMeshes[pass])
 		{
 			if (renderingMesh.pMaterial != pCurrentMaterial)
 			{
 				pCurrentMaterial = renderingMesh.pMaterial;
 
-				// Reset material instace and vertex layout
+				// Reset the material instance and the vertex layout
 				pCurrentMaterialInstance = nullptr;
 				currentVertexLayoutId = 0;
-
-				// Allocate descriptor set
-				auto pUniformSet = pCurrentMaterial->GetUniformSet(pass);
-				pCurrentVkSetLayout = pUniformSet->GetDescriptorSetLayout();
-				_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)] = pDescriptorPool->AllocateDescriptorSet(pCurrentVkSetLayout);
 			}
 
 			if (renderingMesh.pMaterialInstance != pCurrentMaterialInstance)
 			{
 				pCurrentMaterialInstance = renderingMesh.pMaterialInstance;
 
-				// Update descriptor set memory
-				pCurrentMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(
-					_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)]);
+				_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)] =
+					_pIntermediateVariable->materialInstanceDescriptorsMap[pass][pCurrentMaterialInstance];
 			}
 
 			if (currentVertexLayoutId != renderingMesh.vertexLayoutId)

@@ -54,8 +54,9 @@ namespace Ailurus
 
 		// Render
 		void RenderPrepare();
-		void CollectOpaqueRenderingObject();
+		void CollectRenderingContext();
 		void UpdateGlobalUniformBuffer();
+		void UpdateMaterialInstanceUniformBuffer();
 		void ReBuildSwapChain();
 		void RenderSpecificPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer);
 
