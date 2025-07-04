@@ -11,7 +11,21 @@ namespace Ailurus
 {
 	FrameContext::~FrameContext()
 	{
+		// Recycle fling resources
 		WaitFinish();
+
+		// Recycle recording resources
+		if (_pRecordingCommandBuffer != nullptr)
+		{
+			_pRecordingCommandBuffer.reset();
+		}
+
+		// Reset and free descriptor pool
+		if (_pAllocatingDescriptorPool != nullptr)
+		{
+			_pAllocatingDescriptorPool->ResetPool();
+			Application::Get<VulkanSystem>()->FreeDescriptorPool(std::move(_pAllocatingDescriptorPool));
+		}
 	}
 
 	void FrameContext::EnsureFrameInitialized()

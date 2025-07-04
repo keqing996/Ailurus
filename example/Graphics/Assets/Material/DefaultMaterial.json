@@ -13,7 +13,7 @@
 		],
 		"uniforms": [
 			{
-				"binding": 2,
+				"binding": 0,
 				"shaderStage": [ "Fragment" ],
 				"name": "materialProperty",
 				"variable": {

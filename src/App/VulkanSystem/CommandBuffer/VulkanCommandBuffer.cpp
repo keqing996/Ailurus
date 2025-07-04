@@ -18,6 +18,8 @@ namespace Ailurus
 
 	VulkanCommandBuffer::~VulkanCommandBuffer()
 	{
+		_buffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
+
 		// Release resources
 		for (auto& vulkanResource : _referencedResources)
 			vulkanResource->RemoveRef(*this);
