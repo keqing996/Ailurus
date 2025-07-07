@@ -37,12 +37,6 @@ namespace Ailurus
 			cpuBuffer->MarkDelete();
 	}
 
-	uint8_t* VulkanUniformBuffer::GetWriteBeginPos() const
-	{
-		auto index = Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex();
-		return static_cast<uint8_t*>(_cpuBuffers[index]->mappedAddr);
-	}
-
 	void VulkanUniformBuffer::TransitionDataToGpu() const
 	{
 		auto index = Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex();
@@ -61,16 +55,19 @@ namespace Ailurus
 
 	void VulkanUniformBuffer::WriteData(uint32_t offset, const UniformValue& value) const
 	{
-		auto pBeginPos = GetWriteBeginPos() + offset;
-		auto writeSize = value.GetSize();
-		if (writeSize + offset > _bufferSize)
+		for (auto* pHostBuffer: _cpuBuffers)
 		{
-			Logger::LogError("Write size {} at offset {} exceeds uniform buffer size {}", writeSize, offset, _bufferSize);
-			return;
-		}
+			auto pBeginPos = static_cast<uint8_t*>(pHostBuffer->mappedAddr) + offset;
+			auto writeSize = value.GetSize();
+			if (writeSize + offset > _bufferSize)
+			{
+				Logger::LogError("Write size {} at offset {} exceeds uniform buffer size {}", writeSize, offset, _bufferSize);
+				return;
+			}
 
-		auto pWriteData = value.GetDataPointer();
-		std::memcpy(static_cast<void*>(pBeginPos), pWriteData, writeSize);
+			auto pWriteData = value.GetDataPointer();
+			std::memcpy(static_cast<void*>(pBeginPos), pWriteData, writeSize);
+		}
 	}
 
 	uint32_t VulkanUniformBuffer::GetBufferSize() const

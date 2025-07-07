@@ -16,7 +16,6 @@ namespace Ailurus
 		~VulkanUniformBuffer();
 
 	public:
-		uint8_t* GetWriteBeginPos() const;
 		uint32_t GetBufferSize() const;
 		void WriteData(uint32_t offset, const UniformValue& value) const;
 		void TransitionDataToGpu() const;
