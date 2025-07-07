@@ -61,20 +61,16 @@ namespace Ailurus
 
 	void VulkanUniformBuffer::WriteData(uint32_t offset, const UniformValue& value) const
 	{
-		if (offset >= _bufferSize)
+		auto pBeginPos = GetWriteBeginPos() + offset;
+		auto writeSize = value.GetSize();
+		if (writeSize + offset > _bufferSize)
 		{
-			Logger::LogError("Offset {} is out of range for uniform buffer size {}", offset, _bufferSize);
+			Logger::LogError("Write size {} at offset {} exceeds uniform buffer size {}", writeSize, offset, _bufferSize);
 			return;
 		}
 
-		auto pBeginPos = GetWriteBeginPos() + offset;
-		auto visitor = [pBeginPos](auto&& arg) 
-		{
-			using T = std::decay_t<decltype(arg)>;
-			std::memcpy(static_cast<void*>(pBeginPos), &arg, sizeof(T));
-		};
-
-		std::visit(visitor, value);
+		auto pWriteData = value.GetDataPointer();
+		std::memcpy(static_cast<void*>(pBeginPos), pWriteData, writeSize);
 	}
 
 	uint32_t VulkanUniformBuffer::GetBufferSize() const

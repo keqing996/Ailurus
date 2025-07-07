@@ -9,28 +9,6 @@ namespace Ailurus
 		return (offset + alignment - 1) & ~(alignment - 1);
 	}
 
-	static uint32_t GetUniformVariableGetSize(UniformValueType type)
-	{
-		switch (type)
-		{
-			case UniformValueType::Int:
-				return sizeof(int32_t);
-			case UniformValueType::Float:
-				return sizeof(float);
-			case UniformValueType::Vector2:
-				return sizeof(Vector2f);
-			case UniformValueType::Vector3:
-				return sizeof(Vector3f);
-			case UniformValueType::Vector4:
-				return sizeof(Vector4f);
-			case UniformValueType::Mat4:
-				return sizeof(Matrix4x4f);
-			default:
-				Logger::LogError("UniformVariableNumeric: Unsupported UniformValueType for size calculation.");
-				return 0;
-		}
-	}
-
 	static uint32_t GetStd140BaseAlignment(const UniformVariable* pUniform)
 	{
 		switch (pUniform->VaribleType())
@@ -85,7 +63,7 @@ namespace Ailurus
 				offsetMap[prefix] = currentOffset;
 
 				const auto pNumericUniform = static_cast<const UniformVariableNumeric*>(pUniform);
-				currentOffset += GetUniformVariableGetSize(pNumericUniform->ValueType());
+				currentOffset += UniformValue::GetSize(pNumericUniform->ValueType());
 				break;
 			}
 			case UniformVaribleType::Structure:
