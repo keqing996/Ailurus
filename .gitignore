@@ -54,3 +54,5 @@ intermediates
 
 !CppToolSet/Artifacts/*
 .DS_Store
+
+*.spv
