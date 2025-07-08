@@ -27,9 +27,9 @@ namespace Ailurus
 {
 	void RenderSystem::RenderPrepare()
 	{
-		const auto& projMat = _pMainCamera->GetProjectionMatrix();
-		const auto& viewMat = _pMainCamera->GetEntity()->GetModelMatrix();
-		_pIntermediateVariable->viewProjectionMatrix = viewMat * projMat;
+		const Matrix4x4f projMat = _pMainCamera->GetProjectionMatrix();
+		const Matrix4x4f viewMat = _pMainCamera->GetViewMatrix();
+		_pIntermediateVariable->viewProjectionMatrix = projMat * viewMat;
 		_pIntermediateVariable->renderingMeshes.clear();
 		_pIntermediateVariable->materialInstanceDescriptorsMap.clear();
 		_pIntermediateVariable->renderingDescriptorSets.fill(VulkanDescriptorSet{});

@@ -33,15 +33,16 @@ int Main(int argc, char* argv[])
 	if (auto pEntity = pEntityWeak.lock())
 	{
 		pEntity->AddComponent<CompStaticMeshRender>(modelRef, materialRef);
+		pEntity->SetPosition({ 0.0f, 0.0f, 0.0f });
 	}
 
 	auto pCamera = Application::Get<SceneSystem>()->CreateEntity();
 	if (auto pCameraEntity = pCamera.lock())
 	{
-		auto pCam = pCameraEntity->AddComponent<CompCamera>(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f, true);
+		auto pCam = pCameraEntity->AddComponent<CompCamera>(-2.0f, 2.0f, -2.0f, 2.0f, -2.0f, 2.0f, true);
 		Application::Get<RenderSystem>()->SetMainCamera(pCam);
 
-		pCameraEntity->SetPosition({ -3.0f, 0.0f, 5.0f });
+		pCameraEntity->SetPosition({ 0.0f, 0.0f, 0.0f });
 	}
 
 	// Render

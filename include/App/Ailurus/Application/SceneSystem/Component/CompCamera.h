@@ -22,7 +22,8 @@ namespace Ailurus
 		void SetPerspective(bool isPerspective);
 		float GetHorizontalFOV() const;
 		float GetAspectRatio() const;
-		const Matrix4x4f& GetProjectionMatrix();
+		Matrix4x4f GetProjectionMatrix();
+		Matrix4x4f GetViewMatrix();
 
 		void Set(float l, float r, float t, float b, float n, float f);
 		void Set(float fovHorizontal, float aspect, float n, float f);
@@ -41,9 +42,5 @@ namespace Ailurus
 
 		float _fovHorizontal = 0;
 		float _aspect = 0;
-
-		// projection matrix
-		bool _needUpdateProjectionMatrix = true;
-		Matrix4x4f _projectionMatrix;
 	};
 } // namespace Ailurus

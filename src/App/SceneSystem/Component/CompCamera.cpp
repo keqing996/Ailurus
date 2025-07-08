@@ -1,4 +1,5 @@
 #include "Ailurus/Application/SceneSystem/Component/CompCamera.h"
+#include "Ailurus/Application/SceneSystem/Entity/Entity.h"
 
 namespace Ailurus
 {
@@ -75,8 +76,6 @@ namespace Ailurus
 
 		_aspect = (r - l) / (t - b);
 		_fovHorizontal = 2 * std::atan((r - l) / (2 * n));
-
-		_needUpdateProjectionMatrix = true;
 	}
 
 	void CompCamera::Set(float fovHorizontal, float aspect, float n, float f)
@@ -90,22 +89,20 @@ namespace Ailurus
 		_left = -_right;
 		_top = _aspect * _right;
 		_bottom = -_top;
-
-		_needUpdateProjectionMatrix = true;
 	}
 
-	const Matrix4x4f& CompCamera::GetProjectionMatrix()
+	Matrix4x4f CompCamera::GetProjectionMatrix()
 	{
-		if (_needUpdateProjectionMatrix)
-		{
-			_needUpdateProjectionMatrix = false;
+		if (_isPerspective)
+			return Math::MakePerspectiveProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
+		else
+			return Math::MakeOrthoProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
+	}
 
-			if (_isPerspective)
-				_projectionMatrix = Math::MakePerspectiveProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
-			else
-				_projectionMatrix = Math::MakeOrthoProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
-		}
-
-		return _projectionMatrix;
+	Matrix4x4f CompCamera::GetViewMatrix()
+	{
+		const Matrix4x4f translation = Math::TranslateMatrix(_parentEntity->GetPosition() * -1);
+		const Matrix4x4f rotation = Math::QuaternionToRotateMatrix(_parentEntity->GetRotation()).Transpose();
+		return translation * rotation;
 	}
 }
