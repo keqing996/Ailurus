@@ -91,15 +91,25 @@ namespace Ailurus
 		_bottom = -_top;
 	}
 
-	Matrix4x4f CompCamera::GetProjectionMatrix()
+	Matrix4x4f CompCamera::GetProjectionMatrix() const
 	{
+		Matrix4x4f standardProj;
 		if (_isPerspective)
-			return Math::MakePerspectiveProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
+			standardProj = Math::MakePerspectiveProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
 		else
-			return Math::MakeOrthoProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
+			standardProj = Math::MakeOrthoProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
+
+		Matrix4x4f coordRemap = {
+			{ 0, 1, 0, 0 },
+			{ 0, 0, 1, 0 },
+			{ 1, 0, 0, 0 },
+			{ 0, 0, 0, 1 }
+		};
+
+		return standardProj * coordRemap;
 	}
 
-	Matrix4x4f CompCamera::GetViewMatrix()
+	Matrix4x4f CompCamera::GetViewMatrix() const
 	{
 		const Matrix4x4f translation = Math::TranslateMatrix(_parentEntity->GetPosition() * -1);
 		const Matrix4x4f rotation = Math::QuaternionToRotateMatrix(_parentEntity->GetRotation()).Transpose();

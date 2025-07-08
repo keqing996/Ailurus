@@ -243,16 +243,12 @@ namespace Ailurus::Math
 	template <typename T>
 	Matrix4x4<T> MakePerspectiveProjectionMatrix(float l, float r, float t, float b, float n, float f)
 	{
-		Matrix4x4<T> standardOrthoProj = MakeOrthoProjectionMatrix<T>(l, r, t, b, n, f);
-
-		Matrix4x4<T> compressMatrix = {
-			{ n, 0, 0, 0 },
-			{ 0, n, 0, 0 },
-			{ 0, 0, n + f, -f * n },
+		return Matrix4x4<T> {
+			{ 2 * n / (r - l), 0, 0, 0 },
+			{ 0, 2 * n / (t - b), 0, 0 },
+			{ 0, 0, f / (f - n), -(n * f) / (f - n) },
 			{ 0, 0, 1, 0 }
 		};
-
-		return standardOrthoProj * compressMatrix;
 	}
 
 	template <typename T, typename U> requires std::is_floating_point_v<U>
