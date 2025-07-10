@@ -3,6 +3,48 @@
 
 namespace Ailurus
 {
+	template <typename T>
+	Matrix4x4<T> MakeViewMatrix(const Vector3<T>& pos, const Quaternion<T>& rot)
+	{
+		Matrix4x4<T> translationMatrix = TranslateMatrix(-pos);
+		Matrix4x4<T> rotationMatrix = QuaternionToRotateMatrix(rot.Conjugate());
+
+		return rotationMatrix * translationMatrix;
+	}
+
+	template <typename T>
+	Matrix4x4<T> MakeOrthoProjectionMatrix(float l, float r, float t, float b, float n, float f)
+	{
+		Matrix4x4<T> translationMatrix = Math::TranslateMatrix(Vector3<T>{
+			-(r + l) / 2,
+			-(t + b) / 2,
+			-(n + f) / 2 });
+
+		Matrix4x4<T> scaleMatrix = Math::ScaleMatrix(Vector3<T>{
+			2 / (r - l),
+			2 / (t - b),
+			2 / (f - n) });
+
+		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
+
+		return standardOrthoProj;
+	}
+
+	template <typename T>
+	Matrix4x4<T> MakePerspectiveProjectionMatrix(float l, float r, float t, float b, float n, float f)
+	{
+		Matrix4x4<T> standardOrthoProj = MakeOrthoProjectionMatrix<T>(l, r, t, b, n, f);
+
+		Matrix4x4<T> compressMatrix = {
+			{ n, 0, 0, 0 },
+			{ 0, n, 0, 0 },
+			{ 0, 0, n + f, -f * n },
+			{ 0, 0, 1, 0 }
+		};
+
+		return standardOrthoProj * compressMatrix;
+	}
+
 	CompCamera::CompCamera(float l, float r, float t, float b, float n, float f, bool isPerspective)
 		: _isPerspective(isPerspective)
 	{
@@ -94,9 +136,9 @@ namespace Ailurus
 	Matrix4x4f CompCamera::GetProjectionMatrix()
 	{
 		if (_isPerspective)
-			return Math::MakePerspectiveProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
+			return MakePerspectiveProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
 		else
-			return Math::MakeOrthoProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
+			return MakeOrthoProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
 	}
 
 	Matrix4x4f CompCamera::GetViewMatrix()

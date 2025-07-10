@@ -83,7 +83,9 @@ namespace Ailurus
 
 	Matrix4x4f Entity::GetModelMatrix() const
 	{
-		return Math::MakeModelMatrix(GetPosition(), GetRotation(), GetScale());
+    	return Math::TranslateMatrix(GetPosition())
+    		* Math::QuaternionToRotateMatrix(GetRotation())
+    		* Math::ScaleMatrix(GetScale());
 	}
 
 	Entity::Entity(uint32_t guid)

@@ -6,10 +6,6 @@
 #include "Quaternion.hpp"
 #include "EulerAngle.hpp"
 
-/*
- * Left-hand coordinate, forward = +x, up = +y, right = +z.
- */
-
 namespace Ailurus::Math
 {
 #pragma region[Basic Math Functions]
@@ -137,92 +133,6 @@ namespace Ailurus::Math
 	 */
 	template <typename T>
 	EulerAngles<T> RotateMatrixToEulerAngle(const Matrix4x4<T>& matrix);
-
-#pragma endregion
-
-#pragma region[MVP Matrix]
-
-	/**
-	 * @brief Creates a model matrix from position, rotation, and scale.
-	 *
-	 * @param pos The position vector.
-	 * @param rot The rotation quaternion.
-	 * @param scale The scale vector.
-	 * @return Matrix4x4 representing the model transformation.
-	 */
-	template <typename T>
-	Matrix4x4<T> MakeModelMatrix(const Vector3<T>& pos, const Quaternion<T>& rot, const Vector3<T>& scale);
-
-	/**
-	 * @brief Creates a view matrix from position and rotation.
-	 *
-	 * @param pos The camera position.
-	 * @param rot The camera rotation quaternion.
-	 * @return Matrix4x4 representing the view transformation.
-	 */
-	template <typename T>
-	Matrix4x4<T> MakeViewMatrix(const Vector3<T>& pos, const Quaternion<T>& rot);
-
-	/**
-	 * @brief Projection matrix of ortho camera, camera is looking at +x, frustum is symmetry by y-axis
-	 * and z-axis.
-	 *
-	 * @remark The matrix will eventually restrict all points within the range to be between -1 and 1
-	 * on all three coordinate axes.
-	 *
-	 * @param l Left boundary of viewing frustum at near plane
-	 * @param r Right boundary of viewing frustum at near plane
-	 * @param t Top boundary of viewing frustum at near plane
-	 * @param b Bottom boundary of viewing frustum at near plane
-	 * @param n Distance to near clipping plane
-	 * @param f Distance to far clipping plane
-	 */
-	template <typename T>
-	Matrix4x4<T> MakeOrthoProjectionMatrix(float l, float r, float t, float b, float n, float f);
-
-	/**
-	 * @brief Projection matrix of perspective camera, camera is looking at +x, frustum is symmetry by y-axis
-	 * and z-axis.
-	 *
-	 * @remark The matrix will eventually restrict all points within the range to be between -1 and 1
-	 * on all three coordinate axes.
-	 *
-	 * @param l Left boundary of viewing frustum at near plane
-	 * @param r Right boundary of viewing frustum at near plane
-	 * @param t Top boundary of viewing frustum at near plane
-	 * @param b Bottom boundary of viewing frustum at near plane
-	 * @param n Distance to near clipping plane
-	 * @param f Distance to far clipping plane
-	 */
-	template <typename T>
-	Matrix4x4<T> MakePerspectiveProjectionMatrix(float l, float r, float t, float b, float n, float f);
-
-	/**
-	 * @brief Get matrix that turns clips space to NDC space.
-	 *
-	 * @remark In OpenGL, the camera is looking at +z, up is +y, right is +x, and
-	 * the depth range is [-1, 1].
-	 */
-	template <typename T>
-	constexpr Matrix4x4<T> MakeNdcMatrixOpenGL();
-
-	/**
-	 * @brief Get matrix that turns clips space to NDC space.
-	 *
-	 * @remark In Vulkan, the camera is looking at +z, up is -y, right is +x, and
-	 * the depth range is [0, 1].
-	 */
-	template <typename T>
-	constexpr Matrix4x4<T> MakeNdcMatrixVulkan();
-
-	/**
-	 * @brief Get matrix that turns clips space to NDC space.
-	 *
-	 * @remark In DirectX, the camera is looking at -z, up is -y, right is +x, and
-	 * the depth range is [0, 1].
-	 */
-	template <typename T>
-	constexpr Matrix4x4<T> MakeNdcMatrixD3D();
 
 #pragma endregion
 

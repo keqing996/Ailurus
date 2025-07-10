@@ -207,54 +207,6 @@ namespace Ailurus::Math
 		return QuaternionToEulerAngles(quaternion);
 	}
 
-	template <typename T>
-	Matrix4x4<T> MakeModelMatrix(const Vector3<T>& pos, const Quaternion<T>& rot, const Vector3<T>& scale)
-	{
-		return TranslateMatrix(pos) * QuaternionToRotateMatrix(rot) * ScaleMatrix(scale);
-	}
-
-	template <typename T>
-	Matrix4x4<T> MakeViewMatrix(const Vector3<T>& pos, const Quaternion<T>& rot)
-	{
-		Matrix4x4<T> translationMatrix = TranslateMatrix(-pos);
-		Matrix4x4<T> rotationMatrix = QuaternionToRotateMatrix(rot.Conjugate());
-
-		return rotationMatrix * translationMatrix;
-	}
-
-	template <typename T>
-	Matrix4x4<T> MakeOrthoProjectionMatrix(float l, float r, float t, float b, float n, float f)
-	{
-		Matrix4x4<T> translationMatrix = TranslateMatrix(Vector3<T>{
-			-(r + l) / 2,
-			-(t + b) / 2,
-			-(n + f) / 2 });
-
-		Matrix4x4<T> scaleMatrix = ScaleMatrix(Vector3<T>{
-			2 / (r - l),
-			2 / (t - b),
-			2 / (f - n) });
-
-		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
-
-		return standardOrthoProj;
-	}
-
-	template <typename T>
-	Matrix4x4<T> MakePerspectiveProjectionMatrix(float l, float r, float t, float b, float n, float f)
-	{
-		Matrix4x4<T> standardOrthoProj = MakeOrthoProjectionMatrix<T>(l, r, t, b, n, f);
-
-		Matrix4x4<T> compressMatrix = {
-			{ n, 0, 0, 0 },
-			{ 0, n, 0, 0 },
-			{ 0, 0, n + f, -f * n },
-			{ 0, 0, 1, 0 }
-		};
-
-		return standardOrthoProj * compressMatrix;
-	}
-
 	template <typename T, typename U> requires std::is_floating_point_v<U>
 	T Lerp(const T& a, const T& b, U t)
 	{
@@ -278,60 +230,5 @@ namespace Ailurus::Math
 
 		Quaternion q3 = (q2 - q1 * dot).Normalize();
 		return q1 * std::cos(theta) + q3 * std::sin(theta);
-	}
-
-	template <typename T>
-	constexpr Matrix4x4<T> MakeNdcMatrixOpenGL()
-	{
-		auto matSwitchAxis = Matrix4x4<T>{
-			{ 0, 0, 1, 0 }, // +x -> +z
-			{ 1, 0, 0, 0 }, // +y -> +x
-			{ 0, 1, 0, 0 }, // +z -> +y
-			{ 0, 0, 0, 1 }
-		};
-
-		auto matCompressZ = Matrix4x4<T>::Identity;
-
-		return matCompressZ * matSwitchAxis;
-	}
-
-	template <typename T>
-	constexpr Matrix4x4<T> MakeNdcMatrixVulkan()
-	{
-		auto matSwitchAxis = Matrix4x4<T>{
-			{ 0, 0, 1, 0 }, // +x -> +z
-			{ 1, 0, 0, 0 }, // +y -> +x
-			{ 0, 1, 0, 0 }, // +z -> -y
-			{ 0, 0, 0, 1 }
-		};
-
-		auto matCompressZ = Matrix4x4<T>{
-			{ 1, 0, 0, 0 },
-			{ 0, 1, 0, 0 },
-			{ 0, 0, 0.5, 0.5 }, // 0.5 * z + 0.6
-			{ 0, 0, 0, 1 }
-		};
-
-		return matCompressZ * matSwitchAxis;
-	}
-
-	template <typename T>
-	constexpr Matrix4x4<T> MakeNdcMatrixD3D()
-	{
-		auto matSwitchAxis = Matrix4x4<T>{
-			{ 0, 0, 1, 0 }, // +x -> +z
-			{ 1, 0, 0, 0 }, // +y -> +x
-			{ 0, 1, 0, 0 }, // +z -> +y
-			{ 0, 0, 0, 1 }
-		};
-
-		auto matCompressZ = Matrix4x4<T>{
-			{ 1, 0, 0, 0 },
-			{ 0, 1, 0, 0 },
-			{ 0, 0, 0.5, 0.5 }, // 0.5 * z + 0.6
-			{ 0, 0, 0, 1 }
-		};
-
-		return matCompressZ * matSwitchAxis;
 	}
 } // namespace Ailurus::Math

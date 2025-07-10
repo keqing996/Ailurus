@@ -8,8 +8,7 @@ namespace Ailurus
 	/**
 	 * @brief Degrees Euler angles.
 	 *
-	 * Euler angle describe a ZYX intrinsic rotation, uses +X as forward, so 'row' rotates around
-	 * X axis, 'pitch' rotates around Y axis, 'yaw' rotates around Z axis.
+	 * Euler angle describes a ZYX intrinsic rotation.
 	 */
 	template <typename ElementType>
 		requires std::is_floating_point_v<ElementType>
