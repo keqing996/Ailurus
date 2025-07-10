@@ -104,7 +104,7 @@ TEST_SUITE("Vector3")
 		glm::vec<3, T> glmV1(T(2), T(3), T(4));
 		glm::vec<3, T> glmV2(T(5), T(6), T(7));
 
-		// compare with glm, both right handle coordinate
+		// compare with glm, both right handle coordinates
 		Vector3<T> crossMy = v1.Cross(v2);
 		glm::vec<3, T> glmCross1 = glm::cross(glmV1, glmV2);
 		CHECK(crossMy.x == glmCross1.x);
