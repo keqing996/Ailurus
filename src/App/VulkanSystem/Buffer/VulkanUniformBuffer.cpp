@@ -65,7 +65,17 @@ namespace Ailurus
 				return;
 			}
 
-			auto pWriteData = value.GetDataPointer();
+			const void* pWriteData = nullptr;
+			if (value.GetType() == UniformValueType::Mat4)
+			{
+				UniformValue newMat4(value.GetData().matrix4x4Value.Transpose());
+				pWriteData = newMat4.GetDataPointer();
+			}
+			else
+			{
+				pWriteData = value.GetDataPointer();
+			}
+
 			std::memcpy(static_cast<void*>(pBeginPos), pWriteData, writeSize);
 		}
 	}

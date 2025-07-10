@@ -39,10 +39,10 @@ int Main(int argc, char* argv[])
 	auto pCamera = Application::Get<SceneSystem>()->CreateEntity();
 	if (auto pCameraEntity = pCamera.lock())
 	{
-		auto pCam = pCameraEntity->AddComponent<CompCamera>(-2.0f, 2.0f, -2.0f, 2.0f, -2.0f, 2.0f, true);
+		auto pCam = pCameraEntity->AddComponent<CompCamera>(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 5.0f, true);
 		Application::Get<RenderSystem>()->SetMainCamera(pCam);
 
-		pCameraEntity->SetPosition({ 0.0f, 0.0f, 0.0f });
+		pCameraEntity->SetPosition({ -1.0f, 0.5f, 0.0f });
 	}
 
 	// Render

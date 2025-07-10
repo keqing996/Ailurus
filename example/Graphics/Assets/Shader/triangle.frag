@@ -9,6 +9,8 @@
 
 // layout (location = 0) uniform sampler2D mainTexture;
 
+layout(location = 0) in vec2 inUV;
+
 layout(location = 0) out vec4 outColor;
 
 layout(set = 1, binding = 0) uniform MaterialProperty {
@@ -16,5 +18,5 @@ layout(set = 1, binding = 0) uniform MaterialProperty {
 } materialProperty;
 
 void main() {
-    outColor = vec4(materialProperty.u_SelfColor, 1.0);
+    outColor = vec4(1.0, inUV, 1.0);
 }
