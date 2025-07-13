@@ -1,5 +1,13 @@
 #include "Ailurus/Application/SceneSystem/Component/CompCamera.h"
 #include "Ailurus/Application/SceneSystem/Entity/Entity.h"
+#include "Ailurus/Assert.h"
+
+/*
+ * Before projective transformation, world coordinate is right-hand, so the eye locates
+ * at (0, 0, 0), looks towards -z, which means 0 > near > far. After projection, coordinate
+ * turns to the Vulkan NDC coordinate, which is a left-hand coordinate. So the near(<0) will
+ * be mapped to -1 in Vulkan NDC, and the far(<near<0) will be mapped to the 1.
+ */
 
 namespace Ailurus
 {
@@ -15,72 +23,59 @@ namespace Ailurus
 	template <typename T>
 	Matrix4x4<T> MakeOrthoProjectionMatrix(float l, float r, float t, float b, float n, float f)
 	{
-		Matrix4x4<T> translationMatrix = Math::TranslateMatrix(Vector3<T>{
-			-(r + l) / 2,
-			-(t + b) / 2,
-			-(n + f) / 2 });
+		float a11 = 2 / (r - l);
+		float a22 = 2 / (t - b);
+		float a33 = 2 / (f - n);
+		float a34 = -(f + n) / (f - n);
+		float a44 = 1;
 
-		Matrix4x4<T> scaleMatrix = Math::ScaleMatrix(Vector3<T>{
-			2 / (r - l),
-			2 / (t - b),
-			2 / (f - n) });
-
-		Matrix4x4<T> standardOrthoProj = scaleMatrix * translationMatrix;
-
-		return standardOrthoProj;
-	}
-
-	template <typename T>
-	Matrix4x4<T> MakePerspectiveProjectionMatrix(float l, float r, float t, float b, float n, float f)
-	{
-		return Matrix4x4<T> {
-				{ 2 * n / (r - l), 0, 0, 0 },
-				{ 0, 2 * n / (t - b), 0, 0 },
-				{ 0, 0, f / (f - n), -(n * f) / (f - n) },
-				{ 0, 0, 1, 0 }
+		return -1 * Matrix4x4<T>{
+				{ a11,	0,		0,		0	},
+				{ 0,	a22,	0,		0	},
+				{ 0,	0,		a33,	a34 },
+				{ 0,	0,		0,		a44	}
 		};
 	}
 
-	CompCamera::CompCamera(float l, float r, float t, float b, float n, float f, bool isPerspective)
-		: _isPerspective(isPerspective)
+	template <typename T>
+	Matrix4x4<T> MakePerspectiveProjectionMatrix(float leftCoord, float rightCoord, float topCoord, float bottomCoord, float nearAbs, float farAbs)
 	{
-		Set(l, r, t, b, n, f);
+		float a11 = 2 * nearAbs / (rightCoord - leftCoord);
+		float a22 = 2 * nearAbs / (topCoord - bottomCoord);
+		float a33 = nearAbs / (farAbs - nearAbs);
+		float a34 = (farAbs * nearAbs) / (farAbs - nearAbs);
+		float a43 = -1;
+
+		Matrix4x4f projMat = Matrix4x4<T>{
+			{ a11, 0, 0, 0 },
+			{ 0, a22, 0, 0 },
+			{ 0, 0, a33, a34 },
+			{ 0, 0, a43, 0 }
+		};
+
+		return projMat;
 	}
 
-	CompCamera::CompCamera(float fovHorizontal, float aspect, float n, float f, bool isPerspective)
-		: _isPerspective(isPerspective)
+	CompCamera::CompCamera(float widthInWorldCoord, float heightInWorldCoord, float nearPlaneDist, float farPlaneDist)
+		: _isPerspective(true)
 	{
-		Set(fovHorizontal, aspect, n, f);
+		ASSERT_MSG(widthInWorldCoord > 0, "Camera width should be greater than 0");
+		ASSERT_MSG(heightInWorldCoord > 0, "Camera height should be greater than 0");
+		ASSERT_MSG(nearPlaneDist > 0, "Near plane distance should be greater than 0");
+		ASSERT_MSG(farPlaneDist > 0, "Far plane distance should be greater than 0");
+
+		const float left = -widthInWorldCoord / 2.0f;
+		const float right = widthInWorldCoord / 2.0f;
+		const float top = heightInWorldCoord / 2.0f;
+		const float bottom = -heightInWorldCoord / 2.0f;
+
+		Set(left, right, top, bottom, nearPlaneDist, farPlaneDist);
 	}
 
-	float CompCamera::GetLeft() const
+	CompCamera::CompCamera(const CameraFieldOfView& fieldOfViewSetting, float nearPlaneDist, float farPlaneDist)
+		: _isPerspective(true)
 	{
-		return _left;
-	}
-
-	float CompCamera::GetRight() const
-	{
-		return _right;
-	}
-
-	float CompCamera::GetTop() const
-	{
-		return _top;
-	}
-
-	float CompCamera::GetBottom() const
-	{
-		return _bottom;
-	}
-
-	float CompCamera::GetNear() const
-	{
-		return _near;
-	}
-
-	float CompCamera::GetFar() const
-	{
-		return _far;
+		// todo
 	}
 
 	bool CompCamera::IsPerspective() const
@@ -106,9 +101,9 @@ namespace Ailurus
 	Matrix4x4f CompCamera::GetProjectionMatrix() const
 	{
 		if (_isPerspective)
-			return MakePerspectiveProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
+			return MakePerspectiveProjectionMatrix<float>(_left, _right, _top, _bottom, _nearPlaneDist, _farPlaneDist);
 		else
-			return MakeOrthoProjectionMatrix<float>(_left, _right, _bottom, _top, _near, _far);
+			return MakeOrthoProjectionMatrix<float>(_left, _right, _top, _bottom, _nearPlaneDist, _farPlaneDist);
 	}
 
 	Matrix4x4f CompCamera::GetViewMatrix() const
@@ -122,8 +117,8 @@ namespace Ailurus
 		_right = r;
 		_top = t;
 		_bottom = b;
-		_near = n;
-		_far = f;
+		_nearPlaneDist = n;
+		_farPlaneDist = f;
 
 		_aspect = (r - l) / (t - b);
 		_fovHorizontal = 2 * std::atan((r - l) / (2 * n));
@@ -133,8 +128,8 @@ namespace Ailurus
 	{
 		_fovHorizontal = Math::DegreeToRadian(fovHorizontal) / 2;
 		_aspect = aspect;
-		_near = n;
-		_far = f;
+		_nearPlaneDist = n;
+		_farPlaneDist = f;
 
 		_right = n * std::tan(_fovHorizontal);
 		_left = -_right;

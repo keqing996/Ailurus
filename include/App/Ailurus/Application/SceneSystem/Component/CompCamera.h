@@ -5,19 +5,21 @@
 
 namespace Ailurus
 {
+	struct CameraFieldOfView
+	{
+		float horizontalFieldOfView;
+
+		// width / height
+		float rationWidthByHeight;
+	};
+
 	class CompCamera : public TComponent<ComponentType::Camera, Component>
 	{
 	public:
-		CompCamera(float l, float r, float t, float b, float n, float f, bool isPerspective = true);
-		CompCamera(float fovHorizontal, float aspect, float n, float f, bool isPerspective = true);
+		CompCamera(float widthInWorldCoord, float heightInWorldCoord, float nearPlaneDist, float farPlaneDist);
+		CompCamera(const CameraFieldOfView& fieldOfViewSetting, float nearPlaneDist, float farPlaneDist);
 
 	public:
-		float GetLeft() const;
-		float GetRight() const;
-		float GetTop() const;
-		float GetBottom() const;
-		float GetNear() const;
-		float GetFar() const;
 		bool IsPerspective() const;
 		void SetPerspective(bool isPerspective);
 		float GetHorizontalFOV() const;
@@ -37,8 +39,8 @@ namespace Ailurus
 		float _right = 0;
 		float _top = 0;
 		float _bottom = 0;
-		float _near = 0;
-		float _far = 0;
+		float _nearPlaneDist = 0;
+		float _farPlaneDist = 0;
 
 		float _fovHorizontal = 0;
 		float _aspect = 0;

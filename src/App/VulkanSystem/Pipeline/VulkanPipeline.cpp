@@ -111,7 +111,7 @@ namespace Ailurus
 		vk::PipelineDynamicStateCreateInfo dynamicState;
 		dynamicState.setDynamicStates(dynamicStates);
 
-		// Create pipeline
+		// Create the pipeline
 		vk::GraphicsPipelineCreateInfo pipelineInfo;
 		pipelineInfo.setStages(shaderStages)
 			.setPVertexInputState(&vertexInputInfo)
