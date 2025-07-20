@@ -18,35 +18,24 @@ namespace Ailurus
 		uint32_t imageCount;
 	};
 
-	class VulkanSystem : public NonCopyable, public NonMovable
+	class VulkanContext : public NonCopyable, public NonMovable
 	{
-		friend class Application;
-
 		using GetWindowInstanceExtension = std::function<std::vector<const char*>()>;
 		using WindowCreateSurfaceCallback = std::function<vk::SurfaceKHR(const vk::Instance&)>;
 		using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
 
 	public:
-		~VulkanSystem();
+		~VulkanContext();
 
 	public:
-		inline static bool enableValidation = true;
+
 		static constexpr uint32_t PARALLEL_FRAME = 2;
 
 	public:
 		bool Initialized() const;
 
 		// Getters
-		auto GetDevice() const -> vk::Device;
-		auto GetPhysicalDevice() const -> vk::PhysicalDevice;
-		auto GetSurface() const -> vk::SurfaceKHR;
-		auto GetPresentQueueIndex() const -> uint32_t;
-		auto GetComputeQueueIndex() const -> uint32_t;
-		auto GetGraphicQueueIndex() const -> uint32_t;
-		auto GetPresentQueue() const -> vk::Queue;
-		auto GetGraphicQueue() const -> vk::Queue;
-		auto GetComputeQueue() const -> vk::Queue;
-		auto GetCommandPool() const -> vk::CommandPool;
+
 		auto GetSwapChainConfig() const -> const SwapChainConfig&;
 		auto GetSwapChain() const -> const vk::SwapchainKHR&;
 		auto GetSwapChainImageViews() -> const std::vector<vk::ImageView>&;
@@ -76,41 +65,13 @@ namespace Ailurus
 		bool RenderFrame(bool* needRebuild);
 
 	private:
-		VulkanSystem(const GetWindowInstanceExtension& getWindowRequiredExtension,
-			const WindowCreateSurfaceCallback& createSurface,
-			const WindowDestroySurfaceCallback& destroySurface);
+		VulkanContext();
 
-	private:
-		void PrepareDispatcher();
-		void CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension);
-		void CreatDebugUtilsMessenger();
-		void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
-		void ChoosePhysicsDevice();
-		bool CreateLogicalDevice();
-		void CreateCommandPool();
+
 		void CreateSwapChain();
 		void DestroySwapChain();
 
-	private:
-		// Init
-		bool _initialized = false;
 
-		// Destroy callback
-		WindowDestroySurfaceCallback _destroySurfaceCallback = nullptr;
-
-		// Static context
-		vk::Instance _vkInstance = nullptr;
-		vk::DebugUtilsMessengerEXT _vkDebugUtilsMessenger = nullptr;
-		vk::PhysicalDevice _vkPhysicalDevice = nullptr;
-		vk::SurfaceKHR _vkSurface = nullptr;
-		vk::Device _vkDevice = nullptr;
-		uint32_t _presentQueueIndex = 0;
-		uint32_t _graphicQueueIndex = 0;
-		uint32_t _computeQueueIndex = 0;
-		vk::Queue _vkPresentQueue = nullptr;
-		vk::Queue _vkGraphicQueue = nullptr;
-		vk::Queue _vkComputeQueue = nullptr;
-		vk::CommandPool _vkGraphicCommandPool = nullptr;
 
 		// Static context - pools
 		VulkanObjectPool<vk::CommandBuffer> _commandBufferPool{};

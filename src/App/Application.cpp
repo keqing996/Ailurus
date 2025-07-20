@@ -44,7 +44,7 @@ namespace Ailurus
 
 	std::unique_ptr<TimeSystem> Application::_pTimeSystem = nullptr;
 	std::unique_ptr<InputSystem> Application::_pInputManager = nullptr;
-	std::unique_ptr<VulkanSystem> Application::_pVulkanSystem = nullptr;
+	std::unique_ptr<VulkanContext> Application::_pVulkanSystem = nullptr;
 	std::unique_ptr<RenderSystem> Application::_pRenderSystem = nullptr;
 	std::unique_ptr<AssetsSystem> Application::_pAssetsSystem = nullptr;
 	std::unique_ptr<SceneSystem> Application::_pSceneManager = nullptr;
@@ -70,7 +70,7 @@ namespace Ailurus
 
 		SetWindowVisible(true);
 
-		_pVulkanSystem.reset(new VulkanSystem(VulkanContextGetInstanceExtensions, 
+		_pVulkanSystem.reset(new VulkanContext(VulkanContextGetInstanceExtensions, 
 			VulkanContextCreateSurface, VulkanContextDestroySurface));
 		if (!_pVulkanSystem->Initialized())
 		{
@@ -332,7 +332,7 @@ namespace Ailurus
 	}
 
 	template <>
-    VulkanSystem* Application::Get<VulkanSystem>()
+    VulkanContext* Application::Get<VulkanContext>()
 	{
 		return _pVulkanSystem.get();
 	}
