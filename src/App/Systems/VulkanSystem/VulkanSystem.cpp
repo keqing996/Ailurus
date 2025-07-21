@@ -242,45 +242,7 @@ namespace Ailurus
 		return _frameContexts[_currentParallelFrameIndex].get();
 	}
 
-	vk::CommandBuffer VulkanSystem::AllocateCommandBuffer()
-	{
-		return _commandBufferPool.Allocate();
-	}
-
-	void VulkanSystem::FreeCommandBuffer(vk::CommandBuffer commandBuffer)
-	{
-		_commandBufferPool.Free(commandBuffer);
-	}
-
-	vk::Semaphore VulkanSystem::AllocateSemaphore()
-	{
-		return _semaphorePool.Allocate();
-	}
-
-	void VulkanSystem::FreeSemaphore(vk::Semaphore semaphore)
-	{
-		_semaphorePool.Free(semaphore);
-	}
-
-	vk::Fence VulkanSystem::AllocateFence()
-	{
-		return _fencePool.Allocate();
-	}
-
-	void VulkanSystem::FreeFence(vk::Fence fence)
-	{
-		_fencePool.Free(fence);
-	}
 	
-	std::unique_ptr<VulkanDescriptorPool> VulkanSystem::AllocateDescriptorPool()
-	{
-		return _descriptorPool.Allocate();
-	}
-
-	void VulkanSystem::FreeDescriptorPool(std::unique_ptr<VulkanDescriptorPool>&& pDescriptorPool)
-	{
-		_descriptorPool.Free(std::move(pDescriptorPool));
-	}
 
 
 

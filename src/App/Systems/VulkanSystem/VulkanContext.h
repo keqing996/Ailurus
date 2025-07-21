@@ -74,10 +74,7 @@ namespace Ailurus
 
 
 		// Static context - pools
-		VulkanObjectPool<vk::CommandBuffer> _commandBufferPool{};
-		VulkanObjectPool<vk::Fence> _fencePool{};
-		VulkanObjectPool<vk::Semaphore> _semaphorePool{};
-		VulkanObjectPool<VulkanDescriptorPool> _descriptorPool{};
+
 
 		// Manager
 		std::unique_ptr<class VulkanResourceManager> _resourceManager;

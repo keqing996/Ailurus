@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
@@ -8,6 +9,8 @@
 
 namespace Ailurus
 {
+	class VulkanDescriptorPool;
+	
 	class VulkanContext : public NonCopyable, public NonMovable
 	{
 		using GetWindowInstanceExtension = std::function<std::vector<const char*>()>;
@@ -33,7 +36,18 @@ namespace Ailurus
 		static auto GetComputeQueue() -> vk::Queue;
 		static auto GetCommandPool() -> vk::CommandPool;
 
+		// Pool objects
+		static auto AllocateCommandBuffer() -> vk::CommandBuffer;
+		static auto AllocateSemaphore() -> vk::Semaphore;
+		static auto AllocateFence() -> vk::Fence;
+		static auto AllocateDescriptorPool() -> std::unique_ptr<VulkanDescriptorPool>;
+		static void FreeCommandBuffer(vk::CommandBuffer commandBuffer, bool destroyImmediately = false);
+		static void FreeSemaphore(vk::Semaphore semaphore, bool destroyImmediately = false);
+		static void FreeFence(vk::Fence fence, bool destroyImmediately = false);
+		static void FreeDescriptorPool(std::unique_ptr<VulkanDescriptorPool>&& pDescriptorPool, bool destroyImmediately = false);
+
 	private:
+		// Init functions
 		static void PrepareDispatcher();
 		static void CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation);
 		static void CreatDebugUtilsMessenger();
@@ -41,6 +55,14 @@ namespace Ailurus
 		static void ChoosePhysicsDevice();
 		static bool CreateLogicalDevice();
 		static void CreateCommandPool();
+
+		// Pool objects
+		static auto CreateCommandBuffer() -> vk::CommandBuffer;
+		static auto CreateFence() -> vk::Fence;
+		static auto CreateSemaphore() -> vk::Semaphore;
+		static void DestroyCommandBuffer(vk::CommandBuffer buffer);
+		static void DestroyFence(vk::Fence fence);
+		static void DestroySemaphore(vk::Semaphore semaphore);
 
 	private:
 		// Init
@@ -59,5 +81,11 @@ namespace Ailurus
 		inline static vk::Queue _vkGraphicQueue = nullptr;
 		inline static vk::Queue _vkComputeQueue = nullptr;
 		inline static vk::CommandPool _vkGraphicCommandPool = nullptr;
+
+		// Object pools
+		inline static std::vector<vk::CommandBuffer> _queuedCommandBuffers {};
+		inline static std::vector<vk::Fence> _queuedFences {};
+		inline static std::vector<vk::Semaphore> _queuedSemaphores {};
+		inline static std::vector<std::unique_ptr<VulkanDescriptorPool>> _queuedDescriptorPools {};
 	};
 }
