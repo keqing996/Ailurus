@@ -75,14 +75,6 @@ namespace Ailurus
 
 
 		// Manager
-		std::unique_ptr<class VulkanResourceManager> _resourceManager;
-		std::unique_ptr<class VulkanVertexLayoutManager> _vertexLayoutManager;
-		std::unique_ptr<class VulkanPipelineManager> _pipelineManager;
-
 		
-
-		// Dynamic context - rendering frame
-		uint32_t _currentParallelFrameIndex = 0;
-		std::vector<std::unique_ptr<FrameContext>> _frameContexts{};
 	};
 } // namespace Ailurus

@@ -7,6 +7,9 @@
 #include "SwapChain/VulkanSwapChain.h"
 #include "Descriptor/VulkanDescriptorPool.h"
 #include "Helper/VulkanHelper.h"
+#include "Resource/VulkanResourceManager.h"
+#include "Vertex/VulkanVertexLayoutManager.h"
+#include "Pipeline/VulkanPipelineManager.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -40,6 +43,11 @@ namespace Ailurus
 
 		// Create swap chain
 		_pSwapChain = std::make_unique<VulkanSwapChain>();
+
+		// Create managers
+		_resourceManager = std::make_unique<VulkanResourceManager>();
+		_vertexLayoutManager = std::make_unique<VulkanVertexLayoutManager>();
+		_pipelineManager = std::make_unique<VulkanPipelineManager>();
 
 		_initialized = true;
 	}
@@ -153,6 +161,21 @@ namespace Ailurus
 		return _vkGraphicCommandPool;
 	}
 
+	VulkanResourceManager* VulkanContext::GetResourceManager()
+	{
+		return _resourceManager.get();
+	}
+
+	VulkanVertexLayoutManager* VulkanContext::GetVertexLayoutManager()
+	{
+		return _vertexLayoutManager.get();
+	}
+
+	VulkanPipelineManager* VulkanContext::GetPipelineManager()
+	{
+		return _pipelineManager.get();
+	}
+
 	vk::CommandBuffer VulkanContext::AllocateCommandBuffer()
 	{
 		if (_queuedCommandBuffers.empty())
@@ -257,7 +280,72 @@ namespace Ailurus
 		}
 	}
 
-	auto VulkanContext::GetSwapChain() -> VulkanSwapChain*
+	bool VulkanContext::RenderFrame(bool* needRebuild)
+	{
+		FrameContext* pFrameContext = GetFrameContext();
+
+		// Fence frame context
+		bool waitFinishSucc = pFrameContext->WaitFinish();
+		if (!waitFinishSucc)
+			return false;
+
+		// Acquire next image
+		const vk::Semaphore imageReadySemaphore = AllocateSemaphore();
+
+		auto acquireImage = _vkDevice.acquireNextImageKHR(
+			_vkSwapChain,
+			std::numeric_limits<uint64_t>::max(), 
+			imageReadySemaphore);
+
+		switch (acquireImage.result)
+		{
+			case vk::Result::eErrorOutOfDateKHR:
+				*needRebuild = true;
+				return false;
+			case vk::Result::eSuboptimalKHR:
+				*needRebuild = true;
+				break;
+			case vk::Result::eSuccess:
+				break;
+			default:
+				Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
+				_semaphorePool.Free(imageReadySemaphore, true);
+				return false;
+		}
+
+		auto currentSwapChainImageIndex = acquireImage.value;
+
+		// Submit command buffers
+		const vk::Semaphore renderFinishSemaphore = pFrameContext->SubmitCommandBuffer(imageReadySemaphore);
+
+		// Present
+		vk::PresentInfoKHR presentInfo;
+		presentInfo.setWaitSemaphores(renderFinishSemaphore)
+			.setSwapchains(_vkSwapChain)
+			.setImageIndices(currentSwapChainImageIndex);
+
+		switch (const auto present = _vkPresentQueue.presentKHR(presentInfo))
+		{
+			case vk::Result::eErrorOutOfDateKHR:
+				*needRebuild = true;
+				return false;
+			case vk::Result::eSuboptimalKHR:
+				*needRebuild = true;
+				break;
+			case vk::Result::eSuccess:
+				break;
+			default:
+				Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
+				return false;
+		}
+
+		// Update flight index
+		_currentParallelFrameIndex = (_currentParallelFrameIndex + 1) % PARALLEL_FRAME;
+
+		return true;
+	}
+
+	VulkanSwapChain* VulkanContext::GetSwapChain()
 	{
 		return _pSwapChain.get();
 	}

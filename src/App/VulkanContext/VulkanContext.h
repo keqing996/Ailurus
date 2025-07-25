@@ -6,12 +6,13 @@
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
 
-// Static class for all vulkan static variables
-
 namespace Ailurus
 {
 	class VulkanDescriptorPool;
 	class VulkanSwapChain;
+	class VulkanVertexLayoutManager;
+	class VulkanPipelineManager;
+	class VulkanResourceManager;
 	
 	class VulkanContext : public NonCopyable, public NonMovable
 	{
@@ -38,6 +39,9 @@ namespace Ailurus
 		static auto GetComputeQueue() -> vk::Queue;
 		static auto GetCommandPool() -> vk::CommandPool;
 		static auto GetSwapChain() -> VulkanSwapChain*;
+		static auto GetPipelineManager() -> VulkanPipelineManager*;
+		static auto GetResourceManager() -> VulkanResourceManager*;
+		static auto GetVertexLayoutManager() -> VulkanVertexLayoutManager*;
 
 		// Pool objects
 		static auto AllocateCommandBuffer() -> vk::CommandBuffer;
@@ -48,6 +52,9 @@ namespace Ailurus
 		static void FreeSemaphore(vk::Semaphore semaphore, bool destroyImmediately = false);
 		static void FreeFence(vk::Fence fence, bool destroyImmediately = false);
 		static void FreeDescriptorPool(std::unique_ptr<VulkanDescriptorPool>&& pDescriptorPool, bool destroyImmediately = false);
+
+		// Render
+		static bool RenderFrame(bool* needRebuild);
 
 	private:
 		// Init functions
@@ -85,13 +92,22 @@ namespace Ailurus
 		inline static vk::Queue _vkComputeQueue = nullptr;
 		inline static vk::CommandPool _vkGraphicCommandPool = nullptr;
 
+		// Swap chain
+		inline static std::unique_ptr<VulkanSwapChain> _pSwapChain = nullptr;
+
 		// Object pools
 		inline static std::vector<vk::CommandBuffer> _queuedCommandBuffers {};
 		inline static std::vector<vk::Fence> _queuedFences {};
 		inline static std::vector<vk::Semaphore> _queuedSemaphores {};
 		inline static std::vector<std::unique_ptr<VulkanDescriptorPool>> _queuedDescriptorPools {};
 
-		// Swap chain
-		inline static std::unique_ptr<VulkanSwapChain> _pSwapChain = nullptr;
+		// Managers
+		inline static std::unique_ptr<VulkanResourceManager> _resourceManager;
+		inline static std::unique_ptr<VulkanVertexLayoutManager> _vertexLayoutManager;
+		inline static std::unique_ptr<VulkanPipelineManager> _pipelineManager;
+
+		// Frame context
+		uint32_t _currentParallelFrameIndex = 0;
+		std::vector<std::unique_ptr<FrameContext>> _frameContexts {};
 	};
 }
