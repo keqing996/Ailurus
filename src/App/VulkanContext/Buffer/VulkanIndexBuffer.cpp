@@ -1,9 +1,9 @@
 #include "VulkanIndexBuffer.h"
 #include "Ailurus/Application/Application.h"
-#include "VulkanSystem/Helper/VulkanHelper.h"
-#include "VulkanSystem/VulkanSystem.h"
-#include "VulkanSystem/Resource/VulkanResourceManager.h"
-#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanContext/Helper/VulkanHelper.h"
+#include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/Resource/VulkanResourceManager.h"
+#include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus

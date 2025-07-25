@@ -36,9 +36,7 @@ namespace Ailurus
 
 		// Getters
 
-		auto GetSwapChainConfig() const -> const SwapChainConfig&;
-		auto GetSwapChain() const -> const vk::SwapchainKHR&;
-		auto GetSwapChainImageViews() -> const std::vector<vk::ImageView>&;
+		
 		auto GetCurrentParallelFrameIndex() const -> uint32_t;
 		auto GetFrameContext() const -> const FrameContext*;
 		auto GetFrameContext() -> FrameContext*;
@@ -81,11 +79,7 @@ namespace Ailurus
 		std::unique_ptr<class VulkanVertexLayoutManager> _vertexLayoutManager;
 		std::unique_ptr<class VulkanPipelineManager> _pipelineManager;
 
-		// Dynamic context - swap chain
-		SwapChainConfig _swapChainConfig{};
-		vk::SwapchainKHR _vkSwapChain = nullptr;
-		std::vector<vk::Image> _vkSwapChainImages{};
-		std::vector<vk::ImageView> _vkSwapChainImageViews{};
+		
 
 		// Dynamic context - rendering frame
 		uint32_t _currentParallelFrameIndex = 0;

@@ -5,7 +5,7 @@
 #include <vulkan/vulkan.hpp>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
-#include "VulkanSystem/Helper/HashHelper.hpp"
+#include "VulkanContext/Helper/HashHelper.hpp"
 
 namespace Ailurus
 {

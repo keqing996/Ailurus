@@ -18,6 +18,5 @@ namespace Ailurus
 
     protected:
         std::vector<vk::Framebuffer> _vkFrameBuffer;
-
     };
 }

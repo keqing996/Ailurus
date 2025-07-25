@@ -4,6 +4,7 @@
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "VulkanContext.h"
+#include "SwapChain/VulkanSwapChain.h"
 #include "Descriptor/VulkanDescriptorPool.h"
 #include "Helper/VulkanHelper.h"
 
@@ -37,6 +38,9 @@ namespace Ailurus
 
 		CreateCommandPool();
 
+		// Create swap chain
+		_pSwapChain = std::make_unique<VulkanSwapChain>();
+
 		_initialized = true;
 	}
 
@@ -44,6 +48,10 @@ namespace Ailurus
 	{
 		if (!_initialized)
 			return;
+
+		// Destroy swap chain
+		if (_pSwapChain)
+			_pSwapChain = nullptr;
 
 		// Clear pool objects
 		while (_queuedCommandBuffers.size() > 0)
@@ -247,6 +255,11 @@ namespace Ailurus
 		{
 			_queuedDescriptorPools.push_back(std::move(pDescriptorPool));
 		}
+	}
+
+	auto VulkanContext::GetSwapChain() -> VulkanSwapChain*
+	{
+		return _pSwapChain.get();
 	}
 
 	void VulkanContext::PrepareDispatcher()
@@ -490,4 +503,6 @@ namespace Ailurus
 	{
 		_vkDevice.destroySemaphore(semaphore);
 	}
+
+	
 } // namespace Ailurus

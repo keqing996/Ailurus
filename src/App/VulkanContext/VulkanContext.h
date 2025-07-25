@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
@@ -10,6 +11,7 @@
 namespace Ailurus
 {
 	class VulkanDescriptorPool;
+	class VulkanSwapChain;
 	
 	class VulkanContext : public NonCopyable, public NonMovable
 	{
@@ -35,6 +37,7 @@ namespace Ailurus
 		static auto GetGraphicQueue() -> vk::Queue;
 		static auto GetComputeQueue() -> vk::Queue;
 		static auto GetCommandPool() -> vk::CommandPool;
+		static auto GetSwapChain() -> VulkanSwapChain*;
 
 		// Pool objects
 		static auto AllocateCommandBuffer() -> vk::CommandBuffer;
@@ -87,5 +90,8 @@ namespace Ailurus
 		inline static std::vector<vk::Fence> _queuedFences {};
 		inline static std::vector<vk::Semaphore> _queuedSemaphores {};
 		inline static std::vector<std::unique_ptr<VulkanDescriptorPool>> _queuedDescriptorPools {};
+
+		// Swap chain
+		inline static std::unique_ptr<VulkanSwapChain> _pSwapChain = nullptr;
 	};
 }

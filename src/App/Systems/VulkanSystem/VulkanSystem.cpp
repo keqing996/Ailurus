@@ -93,129 +93,15 @@ namespace Ailurus
 
 	void VulkanSystem::CreateSwapChain()
 	{
-		// Present mode
-		auto allPresentMode = _vkPhysicalDevice.getSurfacePresentModesKHR(_vkSurface);
-		for (const vk::PresentModeKHR& mode : allPresentMode)
-		{
-			if (mode == vk::PresentModeKHR::eMailbox)
-			{
-				_swapChainConfig.presentMode = mode;
-				break;
-			}
-		}
-
-		// Format
-		auto surfaceFormats = _vkPhysicalDevice.getSurfaceFormatsKHR(_vkSurface);
-		for (auto& surfaceFormat : surfaceFormats)
-		{
-			if (surfaceFormat.format == vk::Format::eR8G8B8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-			{
-				_swapChainConfig.surfaceFormat = surfaceFormat;
-				break;
-			}
-
-			if (surfaceFormat.format == vk::Format::eB8G8R8A8Unorm && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-			{
-				_swapChainConfig.surfaceFormat = surfaceFormat;
-				break;
-			}
-		}
-
-		if (_swapChainConfig.surfaceFormat.format == vk::Format::eUndefined)
-			Logger::LogError("No suitable surface format (format R8G8B8SRGB & colorspace SRGB non-linear)");
-
-		// Swap chain image count & size
-		Vector2i windowSize = Application::GetSize();
-		vk::SurfaceCapabilitiesKHR surfaceCapabilities = _vkPhysicalDevice.getSurfaceCapabilitiesKHR(_vkSurface);
-		_swapChainConfig.imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
-		_swapChainConfig.extent.width = std::clamp(static_cast<uint32_t>(windowSize.x),
-			surfaceCapabilities.minImageExtent.width,
-			surfaceCapabilities.maxImageExtent.width);
-		_swapChainConfig.extent.height = std::clamp(static_cast<uint32_t>(windowSize.y),
-			surfaceCapabilities.minImageExtent.height,
-			surfaceCapabilities.maxImageExtent.height);
-
-		// Create
-		vk::SwapchainCreateInfoKHR swapChainCreateInfo;
-		swapChainCreateInfo
-			.setSurface(_vkSurface) // target surface
-			.setImageArrayLayers(1) // not cube image
-			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-			.setClipped(true)										   // clipped when image's pixel outside of window
-			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // No alpha blending when image output to window
-			.setMinImageCount(_swapChainConfig.imageCount)
-			.setImageFormat(_swapChainConfig.surfaceFormat.format)
-			.setImageColorSpace(_swapChainConfig.surfaceFormat.colorSpace)
-			.setImageExtent(_swapChainConfig.extent);
-
-		if (_graphicQueueIndex == _presentQueueIndex)
-		{
-			swapChainCreateInfo
-				.setImageSharingMode(vk::SharingMode::eExclusive)
-				.setQueueFamilyIndices(_graphicQueueIndex);
-		}
-		else
-		{
-			std::array indices = { _graphicQueueIndex, _presentQueueIndex };
-			swapChainCreateInfo
-				.setImageSharingMode(vk::SharingMode::eConcurrent)
-				.setQueueFamilyIndices(indices);
-		}
-
-		_vkSwapChain = _vkDevice.createSwapchainKHR(swapChainCreateInfo);
-
-		// Swap chain image & view
-		_vkSwapChainImages = _vkDevice.getSwapchainImagesKHR(_vkSwapChain);
-		_vkSwapChainImageViews.resize(_vkSwapChainImages.size());
-		for (auto i = 0; i < _vkSwapChainImages.size(); i++)
-		{
-			vk::ImageSubresourceRange range;
-			range.setAspectMask(vk::ImageAspectFlagBits::eColor)
-				.setBaseMipLevel(0)	  // first mipmap level accessible to the view
-				.setLevelCount(1)	  // number of mipmap levels (starting from baseMipLevel) accessible to the view
-				.setBaseArrayLayer(0) // first array layer accessible to the view
-				.setLayerCount(1);	  // number of array layers (starting from baseArrayLayer) accessible to the view
-
-			vk::ImageViewCreateInfo imageViewCreateInfo;
-			imageViewCreateInfo
-				.setImage(_vkSwapChainImages[i])
-				.setViewType(vk::ImageViewType::e2D)
-				.setFormat(_swapChainConfig.surfaceFormat.format)
-				.setComponents(vk::ComponentMapping())
-				.setSubresourceRange(range);
-
-			_vkSwapChainImageViews[i] = _vkDevice.createImageView(imageViewCreateInfo);
-		}
+		
 	}
 
 	void VulkanSystem::DestroySwapChain()
 	{
-		for (const auto& view : _vkSwapChainImageViews)
-			_vkDevice.destroyImageView(view);
-
-		_vkSwapChainImageViews.clear();
-
-		if (_vkSwapChain != nullptr)
-		{
-			_vkDevice.destroySwapchainKHR(_vkSwapChain);
-			_vkSwapChain = nullptr;
-		}
+		
 	}
 
-	const SwapChainConfig& VulkanSystem::GetSwapChainConfig() const
-	{
-		return _swapChainConfig;
-	}
-
-	const vk::SwapchainKHR& VulkanSystem::GetSwapChain() const
-	{
-		return _vkSwapChain;
-	}
-
-	const std::vector<vk::ImageView>& VulkanSystem::GetSwapChainImageViews()
-	{
-		return _vkSwapChainImageViews;
-	}
+	
 
 	const FrameContext* VulkanSystem::GetFrameContext() const
 	{
