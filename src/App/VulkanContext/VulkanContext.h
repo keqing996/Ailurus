@@ -46,6 +46,7 @@ namespace Ailurus
 
 		// Render
 		static bool RenderFrame(bool* needRebuild);
+		static void WaitDeviceIdle();
 
 	private:
 		// Init functions
@@ -56,9 +57,6 @@ namespace Ailurus
 		static void ChoosePhysicsDevice();
 		static bool CreateLogicalDevice();
 		static void CreateCommandPool();
-
-		// Pool objects
-		
 
 	private:
 		// Init

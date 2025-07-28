@@ -103,17 +103,7 @@ namespace Ailurus
 
 	
 
-	const FrameContext* VulkanSystem::GetFrameContext() const
-	{
-		return _frameContexts[_currentParallelFrameIndex].get();
-	}
-
 	
-
-	FrameContext* VulkanSystem::GetFrameContext()
-	{
-		return _frameContexts[_currentParallelFrameIndex].get();
-	}
 
 	
 
@@ -151,16 +141,7 @@ namespace Ailurus
 		DestroySwapChain();
 	}
 
-	void VulkanSystem::WaitDeviceIdle() const
-	{
-		// Fence all flinging frame -> Make sure tash all command buffers, semaphores
-		// and fences are recycled.
-		for (auto& pFrameContext : _frameContexts)
-			pFrameContext->WaitFinish();
-
-		// Wait gpu end
-		_vkDevice.waitIdle();
-	}
+	
 
 	bool VulkanSystem::RenderFrame(bool* needRebuild)
 	{
