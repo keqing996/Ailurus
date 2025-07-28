@@ -1,37 +1,55 @@
 #include "Ailurus/Utility/Logger.h"
+#include "Ailurus/Application/Application.h"
 #include "VulkanFlightManager.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
 #include "VulkanContext/Descriptor/VulkanDescriptorAllocator.h"
+#include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 
 namespace Ailurus
 {
 	VulkanFlightManager::VulkanFlightManager(uint32_t parallelFrames)
 		: _parallelFrame(parallelFrames)
 	{
-		// Create frame context
-		_frameContexts.clear();
-		for (auto i = 0; i < _parallelFrame; i++)
-		{
-			_frameContexts.push_back(std::make_unique<FrameContext>());
-			_frameContexts[i]->EnsureFrameInitialized();
-		}
 	}
 
 	VulkanFlightManager::~VulkanFlightManager()
 	{
-		WaitAllFrameFinish();
+		WaitAllFlight();
+
+		// Recycle recording resources
+		if (_pRecordingCommandBuffer != nullptr)
+		{
+			_pRecordingCommandBuffer.reset();
+		}
+
+		// Reset and free descriptor pool
+		if (_pAllocatingDescriptorPool != nullptr)
+		{
+			_pAllocatingDescriptorPool->ResetPool();
+			VulkanContext::GetResourceManager()->FreeDescriptorAllocator(
+				std::move(_pAllocatingDescriptorPool));
+		}
 	}
 
-    bool VulkanFlightManager::WaitCurrentFrameFinish()
+	void VulkanFlightManager::EnsurePreparation()
 	{
-		return GetFrameContext()->WaitFinish();
+		if (_pRecordingCommandBuffer == nullptr)
+		{
+			_pRecordingCommandBuffer = std::make_unique<VulkanCommandBuffer>();
+			_pRecordingCommandBuffer->Begin();
+		}
+
+		if (_pAllocatingDescriptorPool == nullptr)
+		{
+			_pAllocatingDescriptorPool = std::move(VulkanContext::GetResourceManager()->AllocateDescriptorAllocator());
+		}
 	}
 
 	bool VulkanFlightManager::WaitOneFlight()
 	{
-		if (_onAirFrames.empty())
+		if (_onAirFrames.size() < _parallelFrame)
 			return true;
 
 		auto onAirFrame = std::move(_onAirFrames.front());
@@ -69,7 +87,7 @@ namespace Ailurus
 		return true;
 	}
 
-    void VulkanFlightManager::WaitAllFlight()
+	void VulkanFlightManager::WaitAllFlight()
 	{
 		while (!_onAirFrames.empty())
 		{
@@ -83,7 +101,39 @@ namespace Ailurus
 
 	bool VulkanFlightManager::TakeOffFlight(uint32_t imageIndex, vk::Semaphore imageReadySemaphore, bool* needRebuild)
 	{
-		auto renderFinishSemaphore = GetFrameContext()->SubmitCommandBuffer(imageReadySemaphore);
+		EnsurePreparation();
+
+		// Record end
+		_pRecordingCommandBuffer->End();
+
+		// Create a fence and semaphore
+		auto vkResMgr = VulkanContext::GetResourceManager();
+		const vk::Fence renderFinishFence = vkResMgr->AllocateFence();
+		const vk::Semaphore renderFinishSemaphore = vkResMgr->AllocateSemaphore();
+
+		// Do submit
+		vk::SubmitInfo submitInfo;
+		submitInfo.setCommandBuffers(_pRecordingCommandBuffer->GetBuffer())
+			.setSignalSemaphores(renderFinishSemaphore)
+			.setWaitSemaphores(imageReadySemaphore);
+
+		// Wait stages
+		std::vector<vk::PipelineStageFlags> waitStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+		submitInfo.setWaitDstStageMask(waitStages);
+
+		// Submit
+		VulkanContext::GetGraphicQueue().submit(submitInfo, renderFinishFence);
+		_onAirFrames.push_back(OnAirFrame {
+			.frameCount = Application::Get<TimeSystem>()->FrameCount(),
+			.pRenderingCommandBuffer = std::move(_pRecordingCommandBuffer),
+			.pFrameDescriptorAllocator = std::move(_pAllocatingDescriptorPool),
+			.waitSemaphore = imageReadySemaphore,
+			.signalSemaphore = renderFinishSemaphore,
+			.allFinishFence = renderFinishFence,
+		});
+
+		// New frame resource
+		EnsurePreparation();
 
 		// Present
 		vk::PresentInfoKHR presentInfo;
@@ -106,14 +156,6 @@ namespace Ailurus
 				return false;
 		}
 
-		// Update flight index
-		_currentParallelFrameIndex = (_currentParallelFrameIndex + 1) % _parallelFrame;
-
 		return true;
-	}
-
-	FrameContext* VulkanFlightManager::GetFrameContext()
-	{
-		return _frameContexts[_currentParallelFrameIndex].get();
 	}
 } // namespace Ailurus

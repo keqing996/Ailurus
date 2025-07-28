@@ -4,10 +4,12 @@
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
-#include "FrameContext.h"
 
 namespace Ailurus
 {
+	class VulkanCommandBuffer;
+	class VulkanDescriptorAllocator;
+
 	class VulkanFlightManager : public NonCopyable, public NonMovable
 	{
 		struct OnAirFrame
@@ -20,30 +22,24 @@ namespace Ailurus
 			vk::Fence allFinishFence;
 		};
 
-		struct PrepareFrame
-		{
-			std::unique_ptr<VulkanCommandBuffer> pRecordingCommandBuffer;
-			std::unique_ptr<VulkanDescriptorAllocator> pAllocatingDescriptorPool;
-		};
-
 	public:
 		VulkanFlightManager(uint32_t parallelFrames);
 		~VulkanFlightManager();
 
 	public:
+		void EnsurePreparation();
 		bool WaitOneFlight();
 		void WaitAllFlight();
 		bool TakeOffFlight(uint32_t imageIndex, vk::Semaphore imageReadySemaphore, bool* needRebuild);
 
 	private:
-		FrameContext* GetFrameContext();
-
-	private:
 		const uint32_t _parallelFrame;
-		uint32_t _currentParallelFrameIndex = 0;
-		std::vector<std::unique_ptr<FrameContext>> _frameContexts{};
 
+		// Current rendering (not fenced) frame context
 		std::deque<OnAirFrame> _onAirFrames;
-		PrepareFrame _preparingFrame;
+
+		// Recording buffer & descriptor allocator
+		std::unique_ptr<VulkanCommandBuffer> _pRecordingCommandBuffer;
+		std::unique_ptr<VulkanDescriptorAllocator> _pAllocatingDescriptorPool;
 	};
 } // namespace Ailurus

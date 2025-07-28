@@ -48,7 +48,7 @@ namespace Ailurus
 		_resourceManager = std::make_unique<VulkanResourceManager>();
 		_vertexLayoutManager = std::make_unique<VulkanVertexLayoutManager>();
 		_pipelineManager = std::make_unique<VulkanPipelineManager>();
-		_flightManager = std::make_unique<VulkanFlightManager>();
+		_flightManager = std::make_unique<VulkanFlightManager>(2);
 
 		_initialized = true;
 	}
@@ -165,7 +165,7 @@ namespace Ailurus
 	bool VulkanContext::RenderFrame(bool* needRebuild)
 	{
 		// Fence frame context
-		bool waitFinishSucc = _flightManager->WaitCurrentFrameFinish();
+		bool waitFinishSucc = _flightManager->WaitOneFlight();
 		if (!waitFinishSucc)
 			return false;
 
@@ -201,7 +201,7 @@ namespace Ailurus
 	{
 		// Fence all flinging frame -> Make sure tash all command buffers, semaphores
 		// and fences are recycled.
-		_flightManager->WaitAllFrameFinish();
+		_flightManager->WaitAllFlight();
 
 		// Wait gpu end
 		_vkDevice.waitIdle();
