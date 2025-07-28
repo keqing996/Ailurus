@@ -158,4 +158,16 @@ namespace Ailurus
 
 		return true;
 	}
+
+	VulkanCommandBuffer* VulkanFlightManager::GetRecordingCommandBuffer()
+	{
+		EnsurePreparation();
+		return _pRecordingCommandBuffer.get();
+	}
+
+	VulkanDescriptorAllocator* VulkanFlightManager::GetAllocatingDescriptorPool()
+	{
+		EnsurePreparation();
+		return _pAllocatingDescriptorPool.get();
+	}
 } // namespace Ailurus

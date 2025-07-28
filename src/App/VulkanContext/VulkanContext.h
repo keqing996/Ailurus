@@ -43,6 +43,10 @@ namespace Ailurus
 		static auto GetPipelineManager() -> VulkanPipelineManager*;
 		static auto GetResourceManager() -> VulkanResourceManager*;
 		static auto GetVertexLayoutManager() -> VulkanVertexLayoutManager*;
+		static auto GetFlightManager() -> VulkanFlightManager*;
+
+		// Swap chain
+		static void RebuildSwapChain();
 
 		// Render
 		static bool RenderFrame(bool* needRebuild);

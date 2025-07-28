@@ -1,10 +1,11 @@
 #include "VulkanIndexBuffer.h"
 #include "Ailurus/Application/Application.h"
+#include "Ailurus/Utility/Logger.h"
 #include "VulkanContext/Helper/VulkanHelper.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
 #include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
-#include "Ailurus/Utility/Logger.h"
+#include "VulkanContext/Flight/VulkanFlightManager.h"
 
 namespace Ailurus
 {
@@ -49,7 +50,7 @@ namespace Ailurus
 		std::memcpy(stageBuffer->mappedAddr, indexData, sizeInBytes);
 
 		// Cpu buffer -> Gpu buffer
-		VulkanCommandBuffer* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
+		VulkanCommandBuffer* pCommandBuffer = VulkanContext::GetFlightManager()->GetRecordingCommandBuffer();
 		pCommandBuffer->CopyBuffer(stageBuffer, _buffer, sizeInBytes);
 		pCommandBuffer->BufferMemoryBarrier(_buffer, vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eIndexRead, 
 			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput);

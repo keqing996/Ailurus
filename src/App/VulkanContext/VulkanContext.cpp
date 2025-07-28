@@ -157,6 +157,23 @@ namespace Ailurus
 		return _vertexLayoutManager.get();
 	}
 
+	VulkanFlightManager* VulkanContext::GetFlightManager()
+	{
+		return _flightManager.get();
+	}
+
+	void VulkanContext::RebuildSwapChain()
+	{
+		if (!_initialized)
+			return;
+
+		// Wait GPU finishing all tasks
+		WaitDeviceIdle();
+
+		// Create a new swap chain (auto release the old one)
+		_pSwapChain = std::make_unique<VulkanSwapChain>();
+	}
+
 	VulkanPipelineManager* VulkanContext::GetPipelineManager()
 	{
 		return _pipelineManager.get();

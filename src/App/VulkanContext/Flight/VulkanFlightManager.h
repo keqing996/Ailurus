@@ -31,6 +31,8 @@ namespace Ailurus
 		bool WaitOneFlight();
 		void WaitAllFlight();
 		bool TakeOffFlight(uint32_t imageIndex, vk::Semaphore imageReadySemaphore, bool* needRebuild);
+		auto GetRecordingCommandBuffer() -> VulkanCommandBuffer*;
+		auto GetAllocatingDescriptorPool() -> VulkanDescriptorAllocator*;
 
 	private:
 		const uint32_t _parallelFrame;
