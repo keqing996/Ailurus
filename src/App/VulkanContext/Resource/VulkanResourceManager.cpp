@@ -1,11 +1,9 @@
 #include "VulkanResourceManager.h"
-#include "Ailurus/Application/Application.h"
-#include "Ailurus/Utility/ScopeGuard.h"
 #include "Ailurus/Utility/Logger.h"
-#include "VulkanSystem/Resource/VulkanBuffer.h"
-#include "VulkanSystem/VulkanSystem.h"
-#include <cstdint>
-#include <memory>
+#include "VulkanContext/Resource/VulkanBuffer.h"
+#include "VulkanContext/Resource/VulkanResource.h"
+#include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/Descriptor/VulkanDescriptorAllocator.h"
 
 namespace Ailurus
 {
@@ -25,13 +23,11 @@ namespace Ailurus
 	static std::optional<BufferMemoryRequirement>
 	GetBufferMemoryRequirement(vk::Buffer buffer, vk::MemoryPropertyFlags propertyFlag)
 	{
-		auto device = Application::Get<VulkanSystem>()->GetDevice();
-
-		vk::MemoryRequirements memRequirements = device.getBufferMemoryRequirements(buffer);
+		vk::MemoryRequirements memRequirements = VulkanContext::GetDevice().getBufferMemoryRequirements(buffer);
 
 		// Find memory type
 		std::optional<uint32_t> memoryTypeIndex = std::nullopt;
-		vk::PhysicalDeviceMemoryProperties memProperties = Application::Get<VulkanSystem>()->GetPhysicalDevice().getMemoryProperties();
+		vk::PhysicalDeviceMemoryProperties memProperties = VulkanContext::GetPhysicalDevice().getMemoryProperties();
 		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
 		{
 			if ((memRequirements.memoryTypeBits & (1 << i))
@@ -51,7 +47,7 @@ namespace Ailurus
 	static std::optional<CreatedBuffer>
 	CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usageFlag, vk::MemoryPropertyFlags propertyFlag)
 	{
-		const auto device = Application::Get<VulkanSystem>()->GetDevice();
+		const auto device = VulkanContext::GetDevice();
 
 		// Create buffer
 		vk::BufferCreateInfo bufferInfo;
@@ -88,7 +84,7 @@ namespace Ailurus
 	void DeleteVulkanResource<VulkanHostBuffer>(VulkanResource* pResource)
 	{
 		auto ptr = static_cast<VulkanHostBuffer*>(pResource);
-		const auto device = Application::Get<VulkanSystem>()->GetDevice();
+		const auto device = VulkanContext::GetDevice();
 
 		if (ptr->mappedAddr != nullptr)
 			device.unmapMemory(ptr->deviceMemory);
@@ -107,7 +103,7 @@ namespace Ailurus
 	void DeleteVulkanResource<VulkanDeviceBuffer>(VulkanResource* pResource)
 	{
 		auto ptr = static_cast<VulkanDeviceBuffer*>(pResource);
-		const auto device = Application::Get<VulkanSystem>()->GetDevice();
+		const auto device = VulkanContext::GetDevice();
 
 		// Destroy buffer first, then device memory.
 		if (ptr->buffer != nullptr)
@@ -117,6 +113,30 @@ namespace Ailurus
 			device.freeMemory(ptr->deviceMemory);
 
 		delete ptr;
+	}
+
+	VulkanResourceManager::~VulkanResourceManager()
+	{
+		// Clear pool objects
+		while (_queuedCommandBuffers.size() > 0)
+		{
+			DestroyCommandBuffer(_queuedCommandBuffers.back());
+			_queuedCommandBuffers.pop_back();
+		}
+
+		while (_queuedSemaphores.size() > 0)
+		{
+			DestroySemaphore(_queuedSemaphores.back());
+			_queuedSemaphores.pop_back();
+		}
+
+		while (_queuedFences.size() > 0)
+		{
+			DestroyFence(_queuedFences.back());
+			_queuedFences.pop_back();
+		}
+
+		_queuedDescriptorAllocators.clear();
 	}
 
 	VulkanDeviceBuffer* VulkanResourceManager::CreateDeviceBuffer(vk::DeviceSize size, DeviceBufferUsage usage)
@@ -172,7 +192,7 @@ namespace Ailurus
 			return nullptr;
 
 		// Map memory
-		void* mappedAddr = Application::Get<VulkanSystem>()->GetDevice().mapMemory(bufferRet->deviceMem, 0, size, {});
+		void* mappedAddr = VulkanContext::GetDevice().mapMemory(bufferRet->deviceMem, 0, size, {});
 
 		VulkanHostBuffer* pBufferRaw = new VulkanHostBuffer(bufferRet->realSize, bufferRet->buffer, bufferRet->deviceMem, mappedAddr);
 		_resources.push_back(ResourcePtr(pBufferRaw, &DeleteVulkanResource<VulkanHostBuffer>));
@@ -205,6 +225,148 @@ namespace Ailurus
 		}
 
 		std::swap(_resources, resourcesBuffer);
+	}
+
+	vk::CommandBuffer VulkanResourceManager::AllocateCommandBuffer()
+	{
+		if (_queuedCommandBuffers.empty())
+		{
+			return CreateCommandBuffer();
+		}
+		else
+		{
+			vk::CommandBuffer commandBuffer = _queuedCommandBuffers.back();
+			_queuedCommandBuffers.pop_back();
+			return commandBuffer;
+		}
+	}
+
+	void VulkanResourceManager::FreeCommandBuffer(vk::CommandBuffer commandBuffer, bool destroyImmediately)
+	{
+		if (destroyImmediately)
+		{
+			DestroyCommandBuffer(commandBuffer);
+		}
+		else
+		{
+			_queuedCommandBuffers.push_back(commandBuffer);
+		}
+	}
+
+	vk::Semaphore VulkanResourceManager::AllocateSemaphore()
+	{
+		if (_queuedSemaphores.empty())
+		{
+			return CreateSemaphore();
+		}
+		else
+		{
+			vk::Semaphore semaphore = _queuedSemaphores.back();
+			_queuedSemaphores.pop_back();
+			return semaphore;
+		}
+	}
+
+	void VulkanResourceManager::FreeSemaphore(vk::Semaphore semaphore, bool destroyImmediately)
+	{
+		if (destroyImmediately)
+		{
+			DestroySemaphore(semaphore);
+		}
+		else
+		{
+			_queuedSemaphores.push_back(semaphore);
+		}
+	}
+
+	vk::Fence VulkanResourceManager::AllocateFence()
+	{
+		if (_queuedFences.empty())
+		{
+			return CreateFence();
+		}
+		else
+		{
+			vk::Fence fence = _queuedFences.back();
+			_queuedFences.pop_back();
+			return fence;
+		}
+	}
+
+	void VulkanResourceManager::FreeFence(vk::Fence fence, bool destroyImmediately)
+	{
+		if (destroyImmediately)
+		{
+			DestroyFence(fence);
+		}
+		else
+		{
+			_queuedFences.push_back(fence);
+		}
+	}
+
+	std::unique_ptr<VulkanDescriptorAllocator> VulkanResourceManager::AllocateDescriptorAllocator()
+	{
+		if (_queuedDescriptorAllocators.empty())
+		{
+			return std::make_unique<VulkanDescriptorAllocator>();
+		}
+		else
+		{
+			auto pDescriptorPool = std::move(_queuedDescriptorAllocators.back());
+			_queuedDescriptorAllocators.pop_back();
+			return pDescriptorPool;
+		}
+	}
+
+	void VulkanResourceManager::FreeDescriptorAllocator(std::unique_ptr<VulkanDescriptorAllocator>&& pDescriptorPool, bool destroyImmediately)
+	{
+		if (destroyImmediately)
+		{
+			pDescriptorPool.reset();
+		}
+		else
+		{
+			_queuedDescriptorAllocators.push_back(std::move(pDescriptorPool));
+		}
+	}
+
+	vk::CommandBuffer VulkanResourceManager::CreateCommandBuffer()
+	{
+		vk::CommandBufferAllocateInfo allocInfo;
+		allocInfo.setCommandPool(VulkanContext::GetCommandPool())
+			.setLevel(vk::CommandBufferLevel::ePrimary)
+			.setCommandBufferCount(1);
+
+		const std::vector<vk::CommandBuffer> tempBuffers = VulkanContext::GetDevice().allocateCommandBuffers(allocInfo);
+		return tempBuffers[0];
+	}
+
+	vk::Fence VulkanResourceManager::CreateFence()
+	{
+		vk::FenceCreateInfo fenceInfo;
+		return VulkanContext::GetDevice().createFence(fenceInfo);
+	}
+
+	vk::Semaphore VulkanResourceManager::CreateSemaphore()
+	{
+		vk::SemaphoreCreateInfo semaphoreInfo;
+		return VulkanContext::GetDevice().createSemaphore(semaphoreInfo);
+	}
+
+	void VulkanResourceManager::DestroyCommandBuffer(vk::CommandBuffer buffer)
+	{
+		VulkanContext::GetDevice().freeCommandBuffers(VulkanContext::GetCommandPool(), buffer);
+	}
+
+	void VulkanResourceManager::DestroyFence(vk::Fence fence)
+	{
+		VulkanContext::GetDevice().destroyFence(fence);
+	}
+
+	void VulkanResourceManager::DestroySemaphore(vk::Semaphore semaphore)
+	{
+		VulkanContext::GetDevice().destroySemaphore(semaphore);
 	}
 
 } // namespace Ailurus

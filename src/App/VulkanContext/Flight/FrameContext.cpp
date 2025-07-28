@@ -1,11 +1,10 @@
 #include <optional>
 #include "FrameContext.h"
 #include "Ailurus/Application/Application.h"
-#include "VulkanSystem/VulkanSystem.h"
 #include "Ailurus/Utility/Logger.h"
-#include "VulkanSystem/Resource/VulkanResourceManager.h"
-#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
-#include "VulkanSystem/Descriptor/VulkanDescriptorPool.h"
+#include "VulkanContext/Resource/VulkanResourceManager.h"
+#include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanContext/Descriptor/VulkanDescriptorPool.h"
 
 namespace Ailurus
 {
@@ -85,7 +84,7 @@ namespace Ailurus
 		return _pRecordingCommandBuffer.get();
 	}
 
-	VulkanDescriptorPool* FrameContext::GetAllocatingDescriptorPool() const
+	VulkanDescriptorAllocator* FrameContext::GetAllocatingDescriptorPool() const
 	{
 		return _pAllocatingDescriptorPool.get();
 	}

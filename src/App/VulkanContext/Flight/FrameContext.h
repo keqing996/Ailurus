@@ -1,16 +1,11 @@
 #pragma once
 
-#include <cstdint>
 #include <memory>
 #include <optional>
-#include <vulkan/vulkan.hpp>
-#include <VulkanSystem/CommandBuffer/VulkanCommandBuffer.h>
-#include <VulkanSystem/Descriptor/VulkanDescriptorPool.h>
+#include "RenderingFrameContext.h"
 
 namespace Ailurus
 {
-	
-
 	struct FrameContext
 	{
 	public:
@@ -20,7 +15,7 @@ namespace Ailurus
 		void EnsureFrameInitialized();
 		bool WaitFinish();
 		VulkanCommandBuffer* GetRecordingCommandBuffer() const;
-		VulkanDescriptorPool* GetAllocatingDescriptorPool() const;
+		VulkanDescriptorAllocator* GetAllocatingDescriptorPool() const;
 		vk::Semaphore SubmitCommandBuffer(vk::Semaphore imageReadySemaphore);
 
 	private:
@@ -31,6 +26,6 @@ namespace Ailurus
 		std::unique_ptr<VulkanCommandBuffer> _pRecordingCommandBuffer;
 
 		// Allocating descriptor pool
-		std::unique_ptr<VulkanDescriptorPool> _pAllocatingDescriptorPool;
+		std::unique_ptr<VulkanDescriptorAllocator> _pAllocatingDescriptorPool;
 	};
 } // namespace Ailurus

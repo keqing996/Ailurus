@@ -5,11 +5,11 @@
 #include "Ailurus/Application/Application.h"
 #include "VulkanContext.h"
 #include "SwapChain/VulkanSwapChain.h"
-#include "Descriptor/VulkanDescriptorPool.h"
 #include "Helper/VulkanHelper.h"
 #include "Resource/VulkanResourceManager.h"
 #include "Vertex/VulkanVertexLayoutManager.h"
 #include "Pipeline/VulkanPipelineManager.h"
+#include "Flight/VulkanFlightManager.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -48,6 +48,7 @@ namespace Ailurus
 		_resourceManager = std::make_unique<VulkanResourceManager>();
 		_vertexLayoutManager = std::make_unique<VulkanVertexLayoutManager>();
 		_pipelineManager = std::make_unique<VulkanPipelineManager>();
+		_flightManager = std::make_unique<VulkanFlightManager>();
 
 		_initialized = true;
 	}
@@ -57,30 +58,15 @@ namespace Ailurus
 		if (!_initialized)
 			return;
 
+		// Destroy managers
+		_flightManager.reset();
+		_pipelineManager.reset();
+		_vertexLayoutManager.reset();
+		_resourceManager.reset();
+
 		// Destroy swap chain
 		if (_pSwapChain)
 			_pSwapChain = nullptr;
-
-		// Clear pool objects
-		while (_queuedCommandBuffers.size() > 0)
-		{
-			DestroyCommandBuffer(_queuedCommandBuffers.back());
-			_queuedCommandBuffers.pop_back();
-		}
-
-		while (_queuedSemaphores.size() > 0)
-		{
-			DestroySemaphore(_queuedSemaphores.back());
-			_queuedSemaphores.pop_back();
-		}
-
-		while (_queuedFences.size() > 0)
-		{
-			DestroyFence(_queuedFences.back());
-			_queuedFences.pop_back();
-		}
-
-		_queuedDescriptorPools.clear();
 
 		// Clear vulkan objects
 		if (_vkDevice)
@@ -174,110 +160,6 @@ namespace Ailurus
 	VulkanPipelineManager* VulkanContext::GetPipelineManager()
 	{
 		return _pipelineManager.get();
-	}
-
-	vk::CommandBuffer VulkanContext::AllocateCommandBuffer()
-	{
-		if (_queuedCommandBuffers.empty())
-		{
-			return CreateCommandBuffer();
-		}
-		else
-		{
-			vk::CommandBuffer commandBuffer = _queuedCommandBuffers.back();
-			_queuedCommandBuffers.pop_back();
-			return commandBuffer;
-		}
-	}
-
-	void VulkanContext::FreeCommandBuffer(vk::CommandBuffer commandBuffer, bool destroyImmediately)
-	{
-		if (destroyImmediately)
-		{
-			DestroyCommandBuffer(commandBuffer);
-		}
-		else
-		{
-			_queuedCommandBuffers.push_back(commandBuffer);
-		}
-	}
-
-	vk::Semaphore VulkanContext::AllocateSemaphore()
-	{
-		if (_queuedSemaphores.empty())
-		{
-			return CreateSemaphore();
-		}
-		else
-		{
-			vk::Semaphore semaphore = _queuedSemaphores.back();
-			_queuedSemaphores.pop_back();
-			return semaphore;
-		}
-	}
-
-	void VulkanContext::FreeSemaphore(vk::Semaphore semaphore, bool destroyImmediately)
-	{
-		if (destroyImmediately)
-		{
-			DestroySemaphore(semaphore);
-		}
-		else
-		{
-			_queuedSemaphores.push_back(semaphore);
-		}
-	}
-
-	vk::Fence VulkanContext::AllocateFence()
-	{
-		if (_queuedFences.empty())
-		{
-			return CreateFence();
-		}
-		else
-		{
-			vk::Fence fence = _queuedFences.back();
-			_queuedFences.pop_back();
-			return fence;
-		}
-	}
-
-	void VulkanContext::FreeFence(vk::Fence fence, bool destroyImmediately)
-	{
-		if (destroyImmediately)
-		{
-			DestroyFence(fence);
-		}
-		else
-		{
-			_queuedFences.push_back(fence);
-		}
-	}
-
-	std::unique_ptr<VulkanDescriptorPool> VulkanContext::AllocateDescriptorPool()
-	{
-		if (_queuedDescriptorPools.empty())
-		{
-			return std::make_unique<VulkanDescriptorPool>();
-		}
-		else
-		{
-			auto pDescriptorPool = std::move(_queuedDescriptorPools.back());
-			_queuedDescriptorPools.pop_back();
-			return pDescriptorPool;
-		}
-	}
-
-	void VulkanContext::FreeDescriptorPool(std::unique_ptr<VulkanDescriptorPool>&& pDescriptorPool, bool destroyImmediately)
-	{
-		if (destroyImmediately)
-		{
-			pDescriptorPool.reset();
-		}
-		else
-		{
-			_queuedDescriptorPools.push_back(std::move(pDescriptorPool));
-		}
 	}
 
 	bool VulkanContext::RenderFrame(bool* needRebuild)
@@ -554,43 +436,7 @@ namespace Ailurus
 		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
 	}
 
-	vk::CommandBuffer VulkanContext::CreateCommandBuffer()
-	{
-		vk::CommandBufferAllocateInfo allocInfo;
-		allocInfo.setCommandPool(_vkGraphicCommandPool)
-			.setLevel(vk::CommandBufferLevel::ePrimary)
-			.setCommandBufferCount(1);
-
-		const std::vector<vk::CommandBuffer> tempBuffers = _vkDevice.allocateCommandBuffers(allocInfo);
-		return tempBuffers[0];
-	}
-
-	vk::Fence VulkanContext::CreateFence()
-	{
-		vk::FenceCreateInfo fenceInfo;
-		return _vkDevice.createFence(fenceInfo);
-	}
-
-	vk::Semaphore VulkanContext::CreateSemaphore()
-	{
-		vk::SemaphoreCreateInfo semaphoreInfo;
-		return _vkDevice.createSemaphore(semaphoreInfo);
-	}
-
-	void VulkanContext::DestroyCommandBuffer(vk::CommandBuffer buffer)
-	{
-		_vkDevice.freeCommandBuffers(_vkGraphicCommandPool, buffer);
-	}
-
-	void VulkanContext::DestroyFence(vk::Fence fence)
-	{
-		_vkDevice.destroyFence(fence);
-	}
-
-	void VulkanContext::DestroySemaphore(vk::Semaphore semaphore)
-	{
-		_vkDevice.destroySemaphore(semaphore);
-	}
+	
 
 	
 } // namespace Ailurus

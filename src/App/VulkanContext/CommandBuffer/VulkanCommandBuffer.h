@@ -4,10 +4,13 @@
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Math/Matrix4x4.hpp>
-#include "VulkanSystem/Resource/VulkanBuffer.h"
 
 namespace Ailurus
 {
+	class VulkanCommandBuffer;
+	class VulkanResource;
+	class VulkanDataBuffer;
+
 	class VulkanCommandBuffer : public NonCopyable
 	{
 	public:

@@ -1,12 +1,12 @@
 #include "VulkanCommandBuffer.h"
 #include "Ailurus/Application/Application.h"
-#include "VulkanSystem/VulkanSystem.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
-#include "VulkanSystem/RenderPass/VulkanRenderPass.h"
-#include "VulkanSystem/Pipeline/VulkanPipeline.h"
-#include "VulkanSystem/Buffer/VulkanVertexBuffer.h"
-#include "VulkanSystem/Buffer/VulkanIndexBuffer.h"
+#include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/RenderPass/VulkanRenderPass.h"
+#include "VulkanContext/Pipeline/VulkanPipeline.h"
+#include "VulkanContext/Buffer/VulkanVertexBuffer.h"
+#include "VulkanContext/Buffer/VulkanIndexBuffer.h"
 
 namespace Ailurus
 {

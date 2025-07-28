@@ -9,7 +9,7 @@
 
 namespace Ailurus
 {
-	class VulkanDescriptorPool : public NonCopyable, public NonMovable
+	class VulkanDescriptorAllocator : public NonCopyable, public NonMovable
 	{
 		struct PoolCapacity
 		{
@@ -25,8 +25,8 @@ namespace Ailurus
 		};
 
 	public:
-		VulkanDescriptorPool();
-		~VulkanDescriptorPool();
+		VulkanDescriptorAllocator();
+		~VulkanDescriptorAllocator();
 
 	public:
 		auto ResetPool() -> void;

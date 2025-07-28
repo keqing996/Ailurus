@@ -33,7 +33,7 @@ namespace Ailurus
 				EnumReflection<IndexBufferFormat>::ToString(format));
 		}
 
-		const auto pVulkanResManager = Application::Get<VulkanSystem>()->GetResourceManager();
+		const auto pVulkanResManager = VulkanContext::GetResourceManager();
 
 		// Create gpu buffer
 		_buffer = pVulkanResManager->CreateDeviceBuffer(sizeInBytes, DeviceBufferUsage::Index);
