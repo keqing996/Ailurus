@@ -23,7 +23,7 @@ namespace Ailurus
 		};
 
 	public:
-		VulkanFlightManager(uint32_t parallelFrames);
+		explicit VulkanFlightManager(uint32_t parallelFrames);
 		~VulkanFlightManager();
 
 	public:
@@ -33,6 +33,7 @@ namespace Ailurus
 		bool TakeOffFlight(uint32_t imageIndex, vk::Semaphore imageReadySemaphore, bool* needRebuild);
 		auto GetRecordingCommandBuffer() -> VulkanCommandBuffer*;
 		auto GetAllocatingDescriptorPool() -> VulkanDescriptorAllocator*;
+		uint32_t GetParallelFramesCount() const;
 
 	private:
 		const uint32_t _parallelFrame;
@@ -44,4 +45,5 @@ namespace Ailurus
 		std::unique_ptr<VulkanCommandBuffer> _pRecordingCommandBuffer;
 		std::unique_ptr<VulkanDescriptorAllocator> _pAllocatingDescriptorPool;
 	};
+
 } // namespace Ailurus

@@ -1,12 +1,11 @@
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
-#include "VulkanSystem/Helper/VulkanHelper.h"
-#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanContext/Helper/VulkanHelper.h"
+#include "VulkanContext/VulkanContext.h"
 #include "VulkanDescriptorSetLayout.h"
 
 namespace Ailurus
 {
-
 	VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(UniformSet* pUniformSet)
 	{
 		std::vector<vk::DescriptorSetLayoutBinding> layoutBindings;
@@ -34,12 +33,12 @@ namespace Ailurus
 		vk::DescriptorSetLayoutCreateInfo layoutInfo;
 		layoutInfo.setBindings(layoutBindings);
 
-		_descriptorSetLayout = Application::Get<VulkanSystem>()->GetDevice().createDescriptorSetLayout(layoutInfo);
+		_descriptorSetLayout = VulkanContext::GetDevice().createDescriptorSetLayout(layoutInfo);
 	}
 
 	VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
 	{
-		Application::Get<VulkanSystem>()->GetDevice().destroyDescriptorSetLayout(_descriptorSetLayout);
+		VulkanContext::GetDevice().destroyDescriptorSetLayout(_descriptorSetLayout);
 	}
 
 	vk::DescriptorSetLayout VulkanDescriptorSetLayout::GetDescriptorSetLayout() const

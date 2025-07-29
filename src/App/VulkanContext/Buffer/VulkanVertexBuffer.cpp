@@ -1,15 +1,16 @@
 #include "VulkanVertexBuffer.h"
 #include "Ailurus/Application/Application.h"
-#include "VulkanSystem/VulkanSystem.h"
-#include "VulkanSystem/Resource/VulkanResourceManager.h"
-#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/Resource/VulkanResourceManager.h"
+#include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanContext/Flight/VulkanFlightManager.h"
 
 namespace Ailurus
 {
     VulkanVertexBuffer::VulkanVertexBuffer(const void* vertexData, size_t sizeInBytes)
         : _sizeInBytes(sizeInBytes)
     {
-		auto pVulkanResManager = Application::Get<VulkanSystem>()->GetResourceManager();
+    	const auto pVulkanResManager = VulkanContext::GetResourceManager();
 
     	// Create gpu buffer
 		_buffer = pVulkanResManager->CreateDeviceBuffer(sizeInBytes, DeviceBufferUsage::Vertex);
@@ -25,7 +26,7 @@ namespace Ailurus
     	std::memcpy(stageBuffer->mappedAddr, vertexData, sizeInBytes);
 
     	// Cpu buffer -> Gpu buffer
-		VulkanCommandBuffer* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
+    	VulkanCommandBuffer* pCommandBuffer = VulkanContext::GetFlightManager()->GetRecordingCommandBuffer();
 		pCommandBuffer->CopyBuffer(stageBuffer, _buffer, sizeInBytes);
 		pCommandBuffer->BufferMemoryBarrier(_buffer, vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead, 
 			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput);

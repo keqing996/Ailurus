@@ -64,7 +64,7 @@ namespace Ailurus
 		_vertexLayoutManager.reset();
 		_resourceManager.reset();
 
-		// Destroy swap chain
+		// Destroy the swap chain
 		if (_pSwapChain)
 			_pSwapChain = nullptr;
 
@@ -232,7 +232,7 @@ namespace Ailurus
 	void VulkanContext::PrepareDispatcher()
 	{
 		vk::detail::DynamicLoader loader;
-		PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
+		auto vkGetInstanceProcAddr =
 			loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
 
 		VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
@@ -260,7 +260,7 @@ namespace Ailurus
 
 #if AILURUS_PLATFORM_MAC
 		// Under macOS, the VK_KHR_portability_subset extension is required for portability, because
-		// Metal do not fully support all Vulkan features.
+		// Metal does not fully support all Vulkan features.
 		extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 

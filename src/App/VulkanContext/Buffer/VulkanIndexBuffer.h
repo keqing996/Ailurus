@@ -19,6 +19,6 @@ namespace Ailurus
 		vk::IndexType _indexType;
 		size_t _indexCount;
 		size_t _sizeInBytes;
-		class VulkanDeviceBuffer* _buffer;
+		VulkanDeviceBuffer* _buffer;
 	};
 } // namespace Ailurus

@@ -1,8 +1,9 @@
 #pragma once
 
-#include <array>
+#include <deque>
+#include <optional>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformValue.h>
-#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanContext/VulkanContext.h"
 
 namespace Ailurus
 {
@@ -11,19 +12,29 @@ namespace Ailurus
 
 	class VulkanUniformBuffer
 	{
+		struct BufferPair
+		{
+			VulkanHostBuffer* cpuBuffer;
+			VulkanDeviceBuffer* gpuBuffer;
+		};
+
 	public:
 		explicit VulkanUniformBuffer(size_t bufferSize);
 		~VulkanUniformBuffer();
 
 	public:
 		uint32_t GetBufferSize() const;
-		void WriteData(uint32_t offset, const UniformValue& value) const;
-		void TransitionDataToGpu() const;
-		VulkanDeviceBuffer* GetThisFrameDeviceBuffer() const;
+		void WriteData(uint32_t offset, const UniformValue& value);
+		void TransitionDataToGpu();
+		VulkanDeviceBuffer* GetThisFrameDeviceBuffer();
+
+	private:
+		BufferPair CreateBufferPair() const;
+		void EnsureCurrentBufferValid();
 
 	private:
 		size_t _bufferSize;
-		std::array<VulkanHostBuffer*, VulkanSystem::PARALLEL_FRAME> _cpuBuffers;
-		std::array<VulkanDeviceBuffer*, VulkanSystem::PARALLEL_FRAME> _gpuBuffers;
+		std::optional<BufferPair> _currentBuffer;
+		std::deque<BufferPair> _backgroundBuffer;
 	};
 } // namespace Ailurus

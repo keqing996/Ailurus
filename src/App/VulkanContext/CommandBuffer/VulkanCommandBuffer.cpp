@@ -7,12 +7,13 @@
 #include "VulkanContext/Pipeline/VulkanPipeline.h"
 #include "VulkanContext/Buffer/VulkanVertexBuffer.h"
 #include "VulkanContext/Buffer/VulkanIndexBuffer.h"
+#include "VulkanContext/Resource/VulkanResourceManager.h"
+#include "VulkanContext/SwapChain/VulkanSwapChain.h"
 
 namespace Ailurus
 {
-
 	VulkanCommandBuffer::VulkanCommandBuffer()
-		: _buffer(Application::Get<VulkanSystem>()->AllocateCommandBuffer())
+		: _buffer(VulkanContext::GetResourceManager()->AllocateCommandBuffer())
 	{
 	}
 
@@ -25,7 +26,7 @@ namespace Ailurus
 			vulkanResource->RemoveRef(*this);
 
 		// Recycle command buffer
-		Application::Get<VulkanSystem>()->FreeCommandBuffer(_buffer);
+		VulkanContext::GetResourceManager()->FreeCommandBuffer(_buffer);
 	}
 
 	const vk::CommandBuffer& VulkanCommandBuffer::GetBuffer() const
@@ -105,7 +106,7 @@ namespace Ailurus
 
 	void VulkanCommandBuffer::SetViewportAndScissor()
 	{
-		const auto extent = Application::Get<VulkanSystem>()->GetSwapChainConfig().extent;
+		const auto extent = VulkanContext::GetSwapChain()->GetConfig().extent;
 		const vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
 		const vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
 		_buffer.setViewport(0, 1, &viewport);

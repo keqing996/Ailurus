@@ -170,4 +170,9 @@ namespace Ailurus
 		EnsurePreparation();
 		return _pAllocatingDescriptorPool.get();
 	}
+
+	uint32_t VulkanFlightManager::GetParallelFramesCount() const
+	{
+		return _parallelFrame;
+	}
 } // namespace Ailurus

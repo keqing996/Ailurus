@@ -1,9 +1,8 @@
 #include "VulkanUniformBuffer.h"
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Utility/Logger.h"
-#include "VulkanSystem/VulkanSystem.h"
-#include "VulkanSystem/Resource/VulkanResourceManager.h"
-#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanContext/Resource/VulkanResourceManager.h"
+#include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 #include "VulkanContext/Flight/VulkanFlightManager.h"
 
 namespace Ailurus
@@ -11,74 +10,92 @@ namespace Ailurus
 	VulkanUniformBuffer::VulkanUniformBuffer(size_t bufferSize)
 		: _bufferSize(bufferSize)
 	{
-		auto pVulkanResManager = Application::Get<VulkanSystem>()->GetResourceManager();
-
-		for (auto i = 0; i < Application::Get<VulkanSystem>()->PARALLEL_FRAME; i++)
-		{
-			auto cpuBuffer = pVulkanResManager->CreateHostBuffer(bufferSize, HostBufferUsage::TransferSrc);
-			if (cpuBuffer == nullptr)
-				return;
-
-			_cpuBuffers[i] = cpuBuffer;
-
-			auto gpuBuffer = pVulkanResManager->CreateDeviceBuffer(bufferSize, DeviceBufferUsage::Uniform);
-			if (gpuBuffer == nullptr)
-				return;
-
-			_gpuBuffers[i] = gpuBuffer;
-		}
+		const auto parallelCount = VulkanContext::GetFlightManager()->GetParallelFramesCount();
+		for (auto i = 0; i < parallelCount; i++)
+			_backgroundBuffer.emplace_back(CreateBufferPair());
 	}
 
 	VulkanUniformBuffer::~VulkanUniformBuffer()
 	{
-		for (auto gpuBuffer : _gpuBuffers)
-			gpuBuffer->MarkDelete();
-
-		for (auto cpuBuffer : _cpuBuffers)
-			cpuBuffer->MarkDelete();
-	}
-
-	void VulkanUniformBuffer::TransitionDataToGpu() const
-	{
-		auto index = Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex();
-
-		VulkanCommandBuffer* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
-		pCommandBuffer->CopyBuffer(_cpuBuffers[index], _gpuBuffers[index], _bufferSize);
-		pCommandBuffer->BufferMemoryBarrier(_gpuBuffers[index], vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eUniformRead, 
-			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexShader);
-	}
-
-	VulkanDeviceBuffer* VulkanUniformBuffer::GetThisFrameDeviceBuffer() const
-	{
-		auto index = Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex();
-		return _gpuBuffers[index];
-	}
-
-	void VulkanUniformBuffer::WriteData(uint32_t offset, const UniformValue& value) const
-	{
-		for (auto* pHostBuffer: _cpuBuffers)
+		if (_currentBuffer.has_value())
 		{
-			auto pBeginPos = static_cast<uint8_t*>(pHostBuffer->mappedAddr) + offset;
-			auto writeSize = value.GetSize();
-			if (writeSize + offset > _bufferSize)
-			{
-				Logger::LogError("Write size {} at offset {} exceeds uniform buffer size {}", writeSize, offset, _bufferSize);
-				return;
-			}
-
-			const void* pWriteData = nullptr;
-			if (value.GetType() == UniformValueType::Mat4)
-			{
-				UniformValue newMat4(value.GetData().matrix4x4Value.Transpose());
-				pWriteData = newMat4.GetDataPointer();
-			}
-			else
-			{
-				pWriteData = value.GetDataPointer();
-			}
-
-			std::memcpy(static_cast<void*>(pBeginPos), pWriteData, writeSize);
+			_currentBuffer->cpuBuffer->MarkDelete();
+			_currentBuffer->gpuBuffer->MarkDelete();
 		}
+
+		for (auto [cpuBuffer, gpuBuffer]: _backgroundBuffer)
+		{
+			cpuBuffer->MarkDelete();
+			gpuBuffer->MarkDelete();
+		}
+	}
+
+	void VulkanUniformBuffer::TransitionDataToGpu()
+	{
+		EnsureCurrentBufferValid();
+
+		VulkanCommandBuffer* pCommandBuffer = VulkanContext::GetFlightManager()->GetRecordingCommandBuffer();
+		pCommandBuffer->CopyBuffer(_currentBuffer->cpuBuffer, _currentBuffer->gpuBuffer, _bufferSize);
+		pCommandBuffer->BufferMemoryBarrier(_currentBuffer->gpuBuffer, vk::AccessFlagBits::eTransferWrite,
+			vk::AccessFlagBits::eUniformRead, vk::PipelineStageFlagBits::eTransfer,
+			vk::PipelineStageFlagBits::eVertexShader);
+	}
+
+	VulkanDeviceBuffer* VulkanUniformBuffer::GetThisFrameDeviceBuffer()
+	{
+		EnsureCurrentBufferValid();
+		return _currentBuffer->gpuBuffer;
+	}
+
+	VulkanUniformBuffer::BufferPair VulkanUniformBuffer::CreateBufferPair() const
+	{
+		auto pVkResMgr = VulkanContext::GetResourceManager();
+		auto cpuBuffer = pVkResMgr->CreateHostBuffer(_bufferSize, HostBufferUsage::TransferSrc);
+		auto gpuBuffer = pVkResMgr->CreateDeviceBuffer(_bufferSize, DeviceBufferUsage::Uniform);
+		return { cpuBuffer, gpuBuffer };
+	}
+
+	void VulkanUniformBuffer::EnsureCurrentBufferValid()
+	{
+		if (_currentBuffer.has_value())
+			return;
+
+		auto& oldestBuffer = _backgroundBuffer.front();
+		if (oldestBuffer.cpuBuffer->GetRefCount() == 0 && oldestBuffer.gpuBuffer->GetRefCount() == 0)
+		{
+			_currentBuffer = oldestBuffer;
+			_backgroundBuffer.pop_front();
+		}
+		else
+		{
+			_currentBuffer = CreateBufferPair();
+		}
+	}
+
+	void VulkanUniformBuffer::WriteData(uint32_t offset, const UniformValue& value)
+	{
+		EnsureCurrentBufferValid();
+
+		auto pBeginPos = static_cast<uint8_t*>(_currentBuffer->cpuBuffer->mappedAddr) + offset;
+		auto writeSize = value.GetSize();
+		if (writeSize + offset > _bufferSize)
+		{
+			Logger::LogError("Write size {} at offset {} exceeds uniform buffer size {}", writeSize, offset, _bufferSize);
+			return;
+		}
+
+		const void* pWriteData = nullptr;
+		if (value.GetType() == UniformValueType::Mat4)
+		{
+			UniformValue newMat4(value.GetData().matrix4x4Value.Transpose());
+			pWriteData = newMat4.GetDataPointer();
+		}
+		else
+		{
+			pWriteData = value.GetDataPointer();
+		}
+
+		std::memcpy(static_cast<void*>(pBeginPos), pWriteData, writeSize);
 	}
 
 	uint32_t VulkanUniformBuffer::GetBufferSize() const
