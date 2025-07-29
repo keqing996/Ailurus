@@ -25,7 +25,7 @@ namespace Ailurus
 	{
 		vk::MemoryRequirements memRequirements = VulkanContext::GetDevice().getBufferMemoryRequirements(buffer);
 
-		// Find memory type
+		// Find a memory type
 		std::optional<uint32_t> memoryTypeIndex = std::nullopt;
 		vk::PhysicalDeviceMemoryProperties memProperties = VulkanContext::GetPhysicalDevice().getMemoryProperties();
 		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)

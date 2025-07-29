@@ -1,6 +1,7 @@
 #include "VulkanRenderPassForward.h"
 #include "Ailurus/Application/Application.h"
-#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/SwapChain/VulkanSwapChain.h"
 
 namespace Ailurus
 {
@@ -13,9 +14,9 @@ namespace Ailurus
 	VulkanRenderPassForward::~VulkanRenderPassForward()
 	{
 		for (auto frameBuffer : _backBuffers)
-			Application::Get<VulkanSystem>()->GetDevice().destroyFramebuffer(frameBuffer);
+			VulkanContext::GetDevice().destroyFramebuffer(frameBuffer);
 
-		Application::Get<VulkanSystem>()->GetDevice().destroyRenderPass(_vkRenderPass);
+		VulkanContext::GetDevice().destroyRenderPass(_vkRenderPass);
 	}
 
 	RenderPassType VulkanRenderPassForward::GetRenderPassType()
@@ -34,10 +35,10 @@ namespace Ailurus
 
 		vk::RenderPassBeginInfo renderPassInfo;
 		renderPassInfo.setRenderPass(_vkRenderPass)
-			.setFramebuffer(_backBuffers[Application::Get<VulkanSystem>()->GetCurrentParallelFrameIndex()])
+			.setFramebuffer(_backBuffers[VulkanContext::GetCurrentParallelFrameIndex()])
 			.setRenderArea(vk::Rect2D{
 				vk::Offset2D{ 0, 0 },
-				Application::Get<VulkanSystem>()->GetSwapChainConfig().extent })
+				VulkanContext::GetSwapChain()->GetConfig().extent })
 			.setClearValues(clearColor);
 
 		return renderPassInfo;
@@ -46,7 +47,7 @@ namespace Ailurus
 	void VulkanRenderPassForward::SetupRenderPass()
 	{
 		vk::AttachmentDescription colorAttachment;
-		colorAttachment.setFormat(Application::Get<VulkanSystem>()->GetSwapChainConfig().surfaceFormat.format)
+		colorAttachment.setFormat(VulkanContext::GetSwapChain()->GetConfig().surfaceFormat.format)
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
@@ -76,14 +77,14 @@ namespace Ailurus
 			.setSubpasses(subpass)
 			.setDependencies(dependency);
 
-		_vkRenderPass = Application::Get<VulkanSystem>()->GetDevice().createRenderPass(renderPassInfo);
+		_vkRenderPass = VulkanContext::GetDevice().createRenderPass(renderPassInfo);
 	}
 
 	void VulkanRenderPassForward::SetupBackBuffers()
 	{
-		const auto vkLogicalDevice = Application::Get<VulkanSystem>()->GetDevice();
-		const auto extent = Application::Get<VulkanSystem>()->GetSwapChainConfig().extent;
-		auto& swapChainImageViews = Application::Get<VulkanSystem>()->GetSwapChainImageViews();
+		const auto vkLogicalDevice = VulkanContext::GetDevice();
+		const auto extent = VulkanContext::GetSwapChain()->GetConfig().extent;
+		auto& swapChainImageViews = VulkanContext::GetSwapChain()->GetSwapChainImageViews();
 		for (auto swapChainImageView : swapChainImageViews)
 		{
 			vk::FramebufferCreateInfo framebufferInfo;

@@ -3,7 +3,6 @@
 
 namespace Ailurus
 {
-
 	VulkanDataBuffer::VulkanDataBuffer(vk::DeviceSize size, vk::Buffer buf, vk::DeviceMemory mem)
 		: realSize(size), buffer(buf), deviceMemory(mem)
 	{

@@ -1,7 +1,7 @@
 #include <vulkan/vulkan_hash.hpp>
 #include "VulkanResource.h"
 #include "Ailurus/Utility/Logger.h"
-#include "VulkanSystem/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 
 namespace Ailurus
 {

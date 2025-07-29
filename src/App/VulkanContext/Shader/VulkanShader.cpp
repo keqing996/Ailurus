@@ -1,8 +1,8 @@
 #include "VulkanShader.h"
 #include "Ailurus/Utility/File.h"
 #include "Ailurus/Application/Application.h"
-#include "VulkanSystem/VulkanSystem.h"
-#include "VulkanSystem/Helper/VulkanHelper.h"
+#include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/Helper/VulkanHelper.h"
 
 namespace Ailurus
 {
@@ -20,7 +20,7 @@ namespace Ailurus
 
     VulkanShader::~VulkanShader()
     {
-        Application::Get<VulkanSystem>()->GetDevice().destroyShaderModule(_vkShaderModule);
+        VulkanContext::GetDevice().destroyShaderModule(_vkShaderModule);
     }
 
     vk::ShaderModule VulkanShader::GetShaderModule() const
@@ -44,6 +44,6 @@ namespace Ailurus
         createInfo.setPCode(reinterpret_cast<const uint32_t*>(binaryData))
                 .setCodeSize(size);
 
-        _vkShaderModule = Application::Get<VulkanSystem>()->GetDevice().createShaderModule(createInfo);
+        _vkShaderModule = VulkanContext::GetDevice().createShaderModule(createInfo);
     }
 }

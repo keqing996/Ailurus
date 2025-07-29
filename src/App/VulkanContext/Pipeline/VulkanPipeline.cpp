@@ -3,11 +3,11 @@
 #include "Ailurus/Application/Application.h"
 #include "Ailurus/Application/RenderSystem/Shader/Shader.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
-#include "VulkanSystem/VulkanSystem.h"
-#include "VulkanSystem/RenderPass/VulkanRenderPass.h"
-#include "VulkanSystem/Shader/VulkanShader.h"
-#include "VulkanSystem/Vertex/VulkanVertexLayout.h"
-#include "VulkanSystem/Descriptor/VulkanDescriptorSetLayout.h"
+#include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/RenderPass/VulkanRenderPass.h"
+#include "VulkanContext/Shader/VulkanShader.h"
+#include "VulkanContext/Vertex/VulkanVertexLayout.h"
+#include "VulkanContext/Descriptor/VulkanDescriptorSetLayout.h"
 
 namespace Ailurus
 {
@@ -47,7 +47,7 @@ namespace Ailurus
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setSetLayouts(descriptorSetLayouts)
 			.setPushConstantRanges(pushConstantRange);
-		_vkPipelineLayout = Application::Get<VulkanSystem>()->GetDevice().createPipelineLayout(pipelineLayoutInfo);
+		_vkPipelineLayout = VulkanContext::GetDevice().createPipelineLayout(pipelineLayoutInfo);
 
 		// Vertex input description
 		vk::VertexInputBindingDescription vertexInputDesc;
@@ -126,7 +126,7 @@ namespace Ailurus
 			.setSubpass(0)
 			.setBasePipelineHandle(nullptr);
 
-		auto pipelineCreateResult = Application::Get<VulkanSystem>()->GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
+		auto pipelineCreateResult = VulkanContext::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
 		if (pipelineCreateResult.result == vk::Result::eSuccess)
 			_vkPipeline = pipelineCreateResult.value;
 		else
@@ -135,8 +135,8 @@ namespace Ailurus
 
 	VulkanPipeline::~VulkanPipeline()
 	{
-		Application::Get<VulkanSystem>()->GetDevice().destroyPipeline(_vkPipeline);
-		Application::Get<VulkanSystem>()->GetDevice().destroyPipelineLayout(_vkPipelineLayout);
+		VulkanContext::GetDevice().destroyPipeline(_vkPipeline);
+		VulkanContext::GetDevice().destroyPipelineLayout(_vkPipelineLayout);
 	}
 
 	vk::Pipeline VulkanPipeline::GetPipeline() const

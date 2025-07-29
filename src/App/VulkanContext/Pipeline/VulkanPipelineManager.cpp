@@ -40,7 +40,7 @@ namespace Ailurus
 			return nullptr;
 		}
 
-		auto pVertexLayout = Application::Get<VulkanSystem>()->GetVertexLayoutManager()->GetLayout(entry.vertexLayoutId);
+		auto pVertexLayout = VulkanContext::GetVertexLayoutManager()->GetLayout(entry.vertexLayoutId);
 		if (pVertexLayout == nullptr)
 		{
 			Logger::LogError("VulkanPipelineManager::GetPipeline: Vertex layout not found for entry: {}", entry.vertexLayoutId);
