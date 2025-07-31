@@ -7,9 +7,9 @@
 
 namespace Ailurus
 {
-    VulkanSwapChain::VulkanSwapChain()
-    {
-        // Present mode
+	VulkanSwapChain::VulkanSwapChain()
+	{
+		// Present mode
 		auto allPresentMode = VulkanContext::GetPhysicalDevice().getSurfacePresentModesKHR(VulkanContext::GetSurface());
 		for (const vk::PresentModeKHR& mode : allPresentMode)
 		{
@@ -55,7 +55,7 @@ namespace Ailurus
 		vk::SwapchainCreateInfoKHR swapChainCreateInfo;
 		swapChainCreateInfo
 			.setSurface(VulkanContext::GetSurface()) // target surface
-			.setImageArrayLayers(1) // not cube image
+			.setImageArrayLayers(1)					 // not cube image
 			.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
 			.setClipped(true)										   // clipped when image's pixel outside of window
 			.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque) // No alpha blending when image output to window
@@ -64,7 +64,7 @@ namespace Ailurus
 			.setImageColorSpace(_swapChainConfig.surfaceFormat.colorSpace)
 			.setImageExtent(_swapChainConfig.extent);
 
-        const uint32_t graphicQueueIndex = VulkanContext::GetGraphicQueueIndex();
+		const uint32_t graphicQueueIndex = VulkanContext::GetGraphicQueueIndex();
 		const uint32_t presentQueueIndex = VulkanContext::GetPresentQueueIndex();
 
 		if (graphicQueueIndex == presentQueueIndex)
@@ -105,11 +105,11 @@ namespace Ailurus
 
 			_vkSwapChainImageViews[i] = VulkanContext::GetDevice().createImageView(imageViewCreateInfo);
 		}
-    }
+	}
 
-    VulkanSwapChain::~VulkanSwapChain()
-    {
-        for (const auto& view : _vkSwapChainImageViews)
+	VulkanSwapChain::~VulkanSwapChain()
+	{
+		for (const auto& view : _vkSwapChainImageViews)
 			VulkanContext::GetDevice().destroyImageView(view);
 
 		_vkSwapChainImageViews.clear();

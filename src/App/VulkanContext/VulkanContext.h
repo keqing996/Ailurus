@@ -10,10 +10,12 @@ namespace Ailurus
 {
 	class VulkanDescriptorAllocator;
 	class VulkanSwapChain;
+	class VulkanCommandBuffer;
 	class VulkanVertexLayoutManager;
 	class VulkanPipelineManager;
 	class VulkanResourceManager;
 	class VulkanFlightManager;
+	class VulkanFrameBufferManager;
 	
 	class VulkanContext : public NonCopyable, public NonMovable
 	{
@@ -49,7 +51,7 @@ namespace Ailurus
 		static void RebuildSwapChain();
 
 		// Render
-		static bool RenderFrame(bool* needRebuild);
+		static bool RenderFrame(const std::function<void(VulkanCommandBuffer*)>& recordCmdBufFunc);
 		static void WaitDeviceIdle();
 
 	private:
@@ -88,5 +90,6 @@ namespace Ailurus
 		inline static std::unique_ptr<VulkanVertexLayoutManager> _vertexLayoutManager = nullptr;
 		inline static std::unique_ptr<VulkanPipelineManager> _pipelineManager = nullptr;
 		inline static std::unique_ptr<VulkanFlightManager> _flightManager = nullptr;
+		inline static std::unique_ptr<VulkanFrameBufferManager> _frameBufferManager = nullptr;
 	};
 }
