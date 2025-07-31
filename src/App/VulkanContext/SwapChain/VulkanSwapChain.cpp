@@ -140,4 +140,34 @@ namespace Ailurus
 	{
 		return _vkSwapChainImageViews;
 	}
+
+	uint32_t VulkanSwapChain::GetCurrentImageIndex() const
+	{
+		return _currentImageIndex;
+	}
+
+	bool VulkanSwapChain::AcquireNextImage(vk::Semaphore imageReadySemaphore, bool* needRebuildSwapChain)
+	{
+		auto acquireImage = VulkanContext::GetDevice().acquireNextImageKHR(
+			_vkSwapChain,
+			std::numeric_limits<uint64_t>::max(), 
+			imageReadySemaphore);
+
+		switch (acquireImage.result)
+		{
+			case vk::Result::eErrorOutOfDateKHR:
+				*needRebuildSwapChain = true;
+				return false;
+			case vk::Result::eSuboptimalKHR:
+				*needRebuildSwapChain = true;
+				break;
+			case vk::Result::eSuccess:
+				break;
+			default:
+				Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
+				return false;
+		}
+
+		return true;
+	}
 } // namespace Ailurus

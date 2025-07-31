@@ -1,6 +1,6 @@
 #include "VulkanUniformBuffer.h"
-#include "Ailurus/Application/Application.h"
 #include "Ailurus/Utility/Logger.h"
+#include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
 #include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 #include "VulkanContext/Flight/VulkanFlightManager.h"

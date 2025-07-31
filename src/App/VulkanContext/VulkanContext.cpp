@@ -181,6 +181,12 @@ namespace Ailurus
 
 	bool VulkanContext::RenderFrame(const std::function<void(VulkanCommandBuffer*)>& recordCmdBufFunc)
 	{
+		if (_needRebuildSwapChain)
+		{
+			RebuildSwapChain();
+			_needRebuildSwapChain = false;
+		}
+		
 		// Fence frame context
 		bool waitFinishSucc = _flightManager->WaitOneFlight();
 		if (!waitFinishSucc)
@@ -188,37 +194,19 @@ namespace Ailurus
 
 		// Acquire next image
 		const vk::Semaphore imageReadySemaphore = _resourceManager->AllocateSemaphore();
-
-		auto acquireImage = _vkDevice.acquireNextImageKHR(
-			_pSwapChain->GetSwapChain(),
-			std::numeric_limits<uint64_t>::max(), 
-			imageReadySemaphore);
-
-		bool needRebuildSwapChain = false;
-		switch (acquireImage.result)
+		bool acquireImageSucc = _pSwapChain->AcquireNextImage(imageReadySemaphore, &_needRebuildSwapChain);
+		if (!acquireImageSucc)
 		{
-			case vk::Result::eErrorOutOfDateKHR:
-				needRebuildSwapChain = true;
-				return false;
-			case vk::Result::eSuboptimalKHR:
-				needRebuildSwapChain = true;
-				break;
-			case vk::Result::eSuccess:
-				break;
-			default:
-				Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
-				_resourceManager->FreeSemaphore(imageReadySemaphore, true);
-				return false;
+			_resourceManager->FreeSemaphore(imageReadySemaphore, true);
+			return false;
 		}
-
-		if (needRebuildSwapChain)
-			RebuildSwapChain();
 
 		if (recordCmdBufFunc != nullptr)
 			recordCmdBufFunc(_flightManager->GetRecordingCommandBuffer());
 
 		// Submit command buffers
-		return _flightManager->TakeOffFlight(acquireImage.value, imageReadySemaphore, needRebuild);
+		return _flightManager->TakeOffFlight(_pSwapChain->GetCurrentImageIndex(), 
+			imageReadySemaphore, &_needRebuildSwapChain);
 	}
 
 	void VulkanContext::WaitDeviceIdle()
@@ -439,5 +427,9 @@ namespace Ailurus
 
 		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
 	}
-	
+
+	void VulkanContext::RequestRebuildSwapChain()
+	{
+		_needRebuildSwapChain = true;
+	}
 } // namespace Ailurus

@@ -17,11 +17,14 @@ namespace Ailurus
 		const vk::SwapchainKHR& GetSwapChain() const;
 		const std::vector<vk::Image>& GetSwapChainImages() const;
 		const std::vector<vk::ImageView>& GetSwapChainImageViews() const;
+		uint32_t GetCurrentImageIndex() const;
+		bool AcquireNextImage(vk::Semaphore imageReadySemaphore, bool* needRebuildSwapChain);
 
 	private:
 		SwapChainConfig _swapChainConfig{};
 		vk::SwapchainKHR _vkSwapChain = nullptr;
 		std::vector<vk::Image> _vkSwapChainImages{};
 		std::vector<vk::ImageView> _vkSwapChainImageViews{};
+		uint32_t _currentImageIndex = 0;
 	};
 } // namespace Ailurus

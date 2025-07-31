@@ -5,8 +5,8 @@
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/RenderPass/VulkanRenderPass.h"
 #include "VulkanContext/Pipeline/VulkanPipeline.h"
-#include "VulkanContext/Buffer/VulkanVertexBuffer.h"
-#include "VulkanContext/Buffer/VulkanIndexBuffer.h"
+#include "VulkanContext/DataBuffer/VulkanVertexBuffer.h"
+#include "VulkanContext/DataBuffer/VulkanIndexBuffer.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
 

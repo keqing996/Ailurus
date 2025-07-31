@@ -48,7 +48,7 @@ namespace Ailurus
 		static auto GetFlightManager() -> VulkanFlightManager*;
 
 		// Swap chain
-		static void RebuildSwapChain();
+		static void RequestRebuildSwapChain();
 
 		// Render
 		static bool RenderFrame(const std::function<void(VulkanCommandBuffer*)>& recordCmdBufFunc);
@@ -63,6 +63,7 @@ namespace Ailurus
 		static void ChoosePhysicsDevice();
 		static bool CreateLogicalDevice();
 		static void CreateCommandPool();
+		static void RebuildSwapChain();
 
 	private:
 		// Init
@@ -83,6 +84,7 @@ namespace Ailurus
 		inline static vk::CommandPool _vkGraphicCommandPool = nullptr;
 
 		// Swap chain
+		inline static bool _needRebuildSwapChain = false;
 		inline static std::unique_ptr<VulkanSwapChain> _pSwapChain = nullptr;
 
 		// Managers

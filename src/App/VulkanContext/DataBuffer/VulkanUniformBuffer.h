@@ -3,7 +3,6 @@
 #include <deque>
 #include <optional>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformValue.h>
-#include "VulkanContext/VulkanContext.h"
 
 namespace Ailurus
 {
