@@ -4,7 +4,7 @@
 #include <vector>
 #include <Ailurus/Math/Matrix4x4.hpp>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
-#include <VulkanSystem/Descriptor/VulkanDescriptorSet.h>
+#include <VulkanContext/Descriptor/VulkanDescriptorSet.h>
 
 namespace Ailurus
 {

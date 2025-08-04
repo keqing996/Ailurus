@@ -1,5 +1,5 @@
 #include "Ailurus/Application/Application.h"
-#include "VulkanSystem/VulkanSystem.h"
+#include "VulkanContext/VulkanContext.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
 #include <memory>
@@ -28,26 +28,25 @@ namespace Ailurus
 		SDL_Vulkan_DestroySurface(instance, surface, nullptr);
 	}
 
-	void* Application::_pWindow = nullptr;
-	bool Application::_ignoreNextQuit = false;
+	void* 							Application::_pWindow = nullptr;
+	bool 							Application::_ignoreNextQuit = false;
 
-	std::function<void()> Application::_onWindowCreated = nullptr;
-	std::function<void(Vector2i)> Application::_onWindowMoved = nullptr;
-	std::function<bool()> Application::_onWindowTryToClose = nullptr;
-	std::function<void()> Application::_onWindowClosed = nullptr;
-	std::function<void()> Application::_onWindowPreDestroyed = nullptr;
-	std::function<void()> Application::_onWindowPostDestroyed = nullptr;
-	std::function<void(Vector2i)> Application::_onWindowResize = nullptr;
-	std::function<void(bool)> Application::_onWindowFocusChanged = nullptr;
-	std::function<void(bool)> Application::_onWindowCursorEnteredOrLeaved = nullptr;
-	std::function<void(bool)> Application::_onWindowCursorVisibleChanged = nullptr;
+	std::function<void()> 			Application::_onWindowCreated = nullptr;
+	std::function<void(Vector2i)> 	Application::_onWindowMoved = nullptr;
+	std::function<bool()> 			Application::_onWindowTryToClose = nullptr;
+	std::function<void()> 			Application::_onWindowClosed = nullptr;
+	std::function<void()> 			Application::_onWindowPreDestroyed = nullptr;
+	std::function<void()> 			Application::_onWindowPostDestroyed = nullptr;
+	std::function<void(Vector2i)> 	Application::_onWindowResize = nullptr;
+	std::function<void(bool)> 		Application::_onWindowFocusChanged = nullptr;
+	std::function<void(bool)> 		Application::_onWindowCursorEnteredOrLeaved = nullptr;
+	std::function<void(bool)> 		Application::_onWindowCursorVisibleChanged = nullptr;
 
-	std::unique_ptr<TimeSystem> Application::_pTimeSystem = nullptr;
-	std::unique_ptr<InputSystem> Application::_pInputManager = nullptr;
-	std::unique_ptr<VulkanContext> Application::_pVulkanSystem = nullptr;
-	std::unique_ptr<RenderSystem> Application::_pRenderSystem = nullptr;
-	std::unique_ptr<AssetsSystem> Application::_pAssetsSystem = nullptr;
-	std::unique_ptr<SceneSystem> Application::_pSceneManager = nullptr;
+	std::unique_ptr<TimeSystem> 	Application::_pTimeSystem = nullptr;
+	std::unique_ptr<InputSystem> 	Application::_pInputManager = nullptr;
+	std::unique_ptr<RenderSystem> 	Application::_pRenderSystem = nullptr;
+	std::unique_ptr<AssetsSystem> 	Application::_pAssetsSystem = nullptr;
+	std::unique_ptr<SceneSystem> 	Application::_pSceneManager = nullptr;
 
 	bool Application::Create(int width, int height, const std::string& title, Style style)
 	{
@@ -70,9 +69,8 @@ namespace Ailurus
 
 		SetWindowVisible(true);
 
-		_pVulkanSystem.reset(new VulkanContext(VulkanContextGetInstanceExtensions, 
-			VulkanContextCreateSurface, VulkanContextDestroySurface));
-		if (!_pVulkanSystem->Initialized())
+		VulkanContext::Initialize(VulkanContextGetInstanceExtensions, VulkanContextCreateSurface, true);
+		if (!VulkanContext::Initialized())
 		{
 			Destroy();
 			return false;
@@ -100,8 +98,9 @@ namespace Ailurus
 			_pSceneManager = nullptr;
 			_pAssetsSystem = nullptr;
 			_pRenderSystem = nullptr;
-			_pVulkanSystem = nullptr;
 			_pInputManager = nullptr;
+
+			VulkanContext::Destroy(VulkanContextDestroySurface);
 
 			SDL_DestroyWindow(static_cast<SDL_Window*>(_pWindow));
 			_pWindow = nullptr;
@@ -134,7 +133,7 @@ namespace Ailurus
 			_pRenderSystem->RenderScene();
 		}
 
-		_pRenderSystem->GraphicsWaitIdle();
+		VulkanContext::WaitDeviceIdle();
 
 		Destroy();
 	}
@@ -329,12 +328,6 @@ namespace Ailurus
     SceneSystem* Application::Get<SceneSystem>()
 	{
 		return _pSceneManager.get();
-	}
-
-	template <>
-    VulkanContext* Application::Get<VulkanContext>()
-	{
-		return _pVulkanSystem.get();
 	}
 
 	template <>

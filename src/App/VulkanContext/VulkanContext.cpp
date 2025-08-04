@@ -10,6 +10,7 @@
 #include "Vertex/VulkanVertexLayoutManager.h"
 #include "Pipeline/VulkanPipelineManager.h"
 #include "Flight/VulkanFlightManager.h"
+#include "FrameBuffer/VulkanFrameBufferManager.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -51,6 +52,11 @@ namespace Ailurus
 		_flightManager = std::make_unique<VulkanFlightManager>(2);
 
 		_initialized = true;
+	}
+
+	bool VulkanContext::Initialized()
+	{
+		return _initialized;
 	}
 
 	void VulkanContext::Destroy(const WindowDestroySurfaceCallback& destroySurface)

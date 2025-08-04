@@ -1,5 +1,5 @@
 #include "Ailurus/Application/RenderSystem/Shader/Shader.h"
-#include "VulkanSystem/Shader/VulkanShader.h"
+#include "VulkanContext/Shader/VulkanShader.h"
 
 namespace Ailurus
 {

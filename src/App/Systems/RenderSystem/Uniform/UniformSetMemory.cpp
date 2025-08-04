@@ -1,8 +1,9 @@
 #include <Ailurus/Utility/Logger.h>
-#include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
-#include <VulkanSystem/VulkanSystem.h>
-#include <VulkanSystem/Buffer/VulkanUniformBuffer.h>
+#include <VulkanContext/VulkanContext.h>
+#include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
+#include <VulkanContext/Resource/VulkanBuffer.h>
+#include <VulkanContext/Descriptor/VulkanDescriptorSet.h>
 
 namespace Ailurus
 {
@@ -94,7 +95,7 @@ namespace Ailurus
 			writeDescriptorSets.push_back(writeDescriptorSet);
 		}
 
-		Application::Get<VulkanSystem>()->GetDevice().updateDescriptorSets(writeDescriptorSets, {});
+		VulkanContext::GetDevice().updateDescriptorSets(writeDescriptorSets, {});
 	}
 
 	auto UniformSetMemory::TransitionDataToGpu() const -> void

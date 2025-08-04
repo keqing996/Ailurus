@@ -1,7 +1,7 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 #include <Ailurus/Utility/Logger.h>
-#include <VulkanSystem/Buffer/VulkanUniformBuffer.h>
-#include <VulkanSystem/Descriptor/VulkanDescriptorSetLayout.h>
+#include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
+#include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
 
 namespace Ailurus
 {

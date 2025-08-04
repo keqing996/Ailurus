@@ -27,6 +27,7 @@ namespace Ailurus
 		static void Initialize(const GetWindowInstanceExtension& getWindowRequiredExtension,
 			const WindowCreateSurfaceCallback& createSurface,
 			bool enableValidation);
+		static bool Initialized();
 
 		static void Destroy(const WindowDestroySurfaceCallback& destroySurface);
 

@@ -165,7 +165,6 @@ namespace Ailurus
         // System
         static std::unique_ptr<TimeSystem> _pTimeSystem;
         static std::unique_ptr<InputSystem> _pInputManager;
-        static std::unique_ptr<class VulkanContext> _pVulkanSystem;
         static std::unique_ptr<RenderSystem> _pRenderSystem;
     	static std::unique_ptr<AssetsSystem> _pAssetsSystem;
         static std::unique_ptr<SceneSystem> _pSceneManager;

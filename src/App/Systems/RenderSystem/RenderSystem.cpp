@@ -4,8 +4,8 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformVariable.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
-#include <VulkanSystem/VulkanSystem.h>
-#include <VulkanSystem/Buffer/VulkanUniformBuffer.h>
+#include <VulkanContext/VulkanContext.h>
+#include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -55,7 +55,7 @@ namespace Ailurus
 
 	void RenderSystem::GraphicsWaitIdle() const
 	{
-		Application::Get<VulkanSystem>()->GetDevice().waitIdle();
+		VulkanContext::WaitDeviceIdle();
 	}
 
 	void RenderSystem::ReBuildSwapChain()
@@ -64,8 +64,8 @@ namespace Ailurus
 
 		_renderPassMap.clear();
 
-		Application::Get<VulkanSystem>()->DestroyDynamicContext();
-		Application::Get<VulkanSystem>()->CreateDynamicContext();
+		VulkanContext::DestroyDynamicContext();
+		VulkanContext::CreateDynamicContext();
 
 		BuildRenderPass();
 
