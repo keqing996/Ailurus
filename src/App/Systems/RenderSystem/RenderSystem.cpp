@@ -16,8 +16,6 @@ namespace Ailurus
 
 	RenderSystem::RenderSystem()
 	{
-		Application::Get<VulkanSystem>()->CreateDynamicContext();
-
 		_pShaderLibrary.reset(new ShaderLibrary());
 
 		CreateIntermediateVariable();
@@ -27,7 +25,6 @@ namespace Ailurus
 
 	RenderSystem::~RenderSystem()
 	{
-		Application::Get<VulkanSystem>()->DestroyDynamicContext();
 	}
 
 	void RenderSystem::NeedRecreateSwapChain()
