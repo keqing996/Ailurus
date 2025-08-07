@@ -15,6 +15,7 @@ namespace Ailurus
 	class RenderPass;
 	class CompStaticMeshRender;
 	class VulkanCommandBuffer;
+	class VulkanDescriptorAllocator;
 	class VulkanUniformBuffer;
 	class UniformSet;
 	class UniformSetMemory;
@@ -55,8 +56,8 @@ namespace Ailurus
 		// Render
 		void RenderPrepare();
 		void CollectRenderingContext();
-		void UpdateGlobalUniformBuffer();
-		void UpdateMaterialInstanceUniformBuffer();
+		void UpdateGlobalUniformBuffer(VulkanDescriptorAllocator* pDescriptorAllocator);
+		void UpdateMaterialInstanceUniformBuffer(VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
 		void RenderSpecificPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer);
 

@@ -5,8 +5,8 @@
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include "VulkanPipelineManager.h"
-#include "VulkanSystem/VulkanSystem.h"
-#include "VulkanSystem/Vertex/VulkanVertexLayoutManager.h"
+#include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/Vertex/VulkanVertexLayoutManager.h"
 
 namespace Ailurus
 {

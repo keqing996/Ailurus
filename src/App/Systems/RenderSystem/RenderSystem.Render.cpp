@@ -1,10 +1,12 @@
 #include <algorithm>
 #include <cstdint>
 #include <array>
-#include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
 #include <Ailurus/Utility/EnumReflection.h>
+#include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
+#include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Application/AssetsSystem/Mesh/Mesh.h>
@@ -19,8 +21,7 @@
 #include <VulkanContext/DataBuffer/VulkanIndexBuffer.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include <VulkanContext/Vertex/VulkanVertexLayoutManager.h>
-#include <Ailurus/Utility/Logger.h>
-#include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
+#include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -106,18 +107,18 @@ namespace Ailurus
 			RebuildSwapChain();
 
 		VulkanContext::RenderFrame(&_needRebuildSwapChain, 
-			[this](VulkanCommandBuffer* pCommandBuffer) -> void 
+			[this](VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void 
 		{
 			RenderPrepare();
 
 			CollectRenderingContext();
-			UpdateGlobalUniformBuffer();
-			UpdateMaterialInstanceUniformBuffer();
+			UpdateGlobalUniformBuffer(pDescriptorAllocator);
+			UpdateMaterialInstanceUniformBuffer(pDescriptorAllocator);
 			RenderSpecificPass(RenderPassType::Forward, pCommandBuffer);
 		});
 	}
 
-	void RenderSystem::UpdateGlobalUniformBuffer()
+	void RenderSystem::UpdateGlobalUniformBuffer(VulkanDescriptorAllocator* pDescriptorAllocator)
 	{
 		_pGlobalUniformMemory->SetUniformValue(
 			{ 0, GetGlobalUniformAccessNameViewProjMat() },
@@ -129,7 +130,7 @@ namespace Ailurus
 
 		// Allocate descriptor set
 		auto globalUniformSetLayout = _pGlobalUniformSet->GetDescriptorSetLayout();
-		auto globalDescriptorSet = Application::Get<VulkanSystem>()->GetFrameContext()->GetAllocatingDescriptorPool()->AllocateDescriptorSet(globalUniformSetLayout);
+		auto globalDescriptorSet = pDescriptorAllocator->AllocateDescriptorSet(globalUniformSetLayout);
 
 		// Save set
 		_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::General)] = globalDescriptorSet;
@@ -138,10 +139,8 @@ namespace Ailurus
 		_pGlobalUniformMemory->UpdateToDescriptorSet(globalDescriptorSet);
 	}
 
-	void RenderSystem::UpdateMaterialInstanceUniformBuffer()
+	void RenderSystem::UpdateMaterialInstanceUniformBuffer(VulkanDescriptorAllocator* pDescriptorAllocator)
 	{
-		auto* pDescriptorPool = Application::Get<VulkanSystem>()->GetFrameContext()->GetAllocatingDescriptorPool();
-
 		auto& opaqueMeshes = _pIntermediateVariable->renderingMeshes;
 		for (auto& [pass, meshes] : opaqueMeshes)
 		{
@@ -156,7 +155,7 @@ namespace Ailurus
 
 				// Allocate a set by layout.
 				auto* pDescriptorLayout = pMaterial->GetUniformSet(pass)->GetDescriptorSetLayout();
-				auto descriptorSet = pDescriptorPool->AllocateDescriptorSet(pDescriptorLayout);
+				auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(pDescriptorLayout);
 
 				// Update material data to descriptor set
 				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(descriptorSet);
@@ -177,9 +176,6 @@ namespace Ailurus
 			return;
 
 		pCommandBuffer->BeginRenderPass(pRenderPass->GetRHIRenderPass());
-
-		// Prepare
-		auto pVulkanSystem = Application::Get<VulkanSystem>();
 
 		// Intermidiate variables
 		const Material* pCurrentMaterial = nullptr;
@@ -215,7 +211,7 @@ namespace Ailurus
 
 				// Get vulkan pipeline
 				VulkanPipelineEntry pipelineEntry(pass, pCurrentMaterial->GetAssetId(), currentVertexLayoutId);
-				pCurrentVkPipeline = pVulkanSystem->GetPipelineManager()->GetPipeline(pipelineEntry);
+				pCurrentVkPipeline = VulkanContext::GetPipelineManager()->GetPipeline(pipelineEntry);
 				if (pCurrentVkPipeline == nullptr)
 				{
 					Logger::LogError("Pipeline not found for entry: {}", EnumReflection<RenderPassType>::ToString(pipelineEntry.renderPass));

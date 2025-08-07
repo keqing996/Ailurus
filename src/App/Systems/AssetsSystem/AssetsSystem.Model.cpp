@@ -6,10 +6,10 @@
 #include <Ailurus/Application/AssetsSystem/Model/Model.h>
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Assert.h>
-#include <VulkanSystem/Vertex/VulkanVertexLayout.h>
-#include <VulkanSystem/Helper/VulkanHelper.h>
-#include <VulkanSystem/VulkanSystem.h>
-#include <VulkanSystem/Vertex/VulkanVertexLayoutManager.h>
+#include <VulkanContext/VulkanContext.h>
+#include <VulkanContext/Vertex/VulkanVertexLayout.h>
+#include <VulkanContext/Helper/VulkanHelper.h>
+#include <VulkanContext/Vertex/VulkanVertexLayoutManager.h>
 
 namespace Ailurus
 {
@@ -149,7 +149,7 @@ namespace Ailurus
 	static std::unique_ptr<Mesh> GenerateMesh(const aiMesh* pAssimpMesh)
 	{
 		std::vector<AttributeType> layout = ReadLayout(pAssimpMesh);
-		auto layoutId = Application::Get<VulkanSystem>()->GetVertexLayoutManager()->CreateLayout(layout);
+		auto layoutId = VulkanContext::GetVertexLayoutManager()->CreateLayout(layout);
 
 		std::vector<uint8_t> vertexData = ReadVertex(pAssimpMesh, layout);
 

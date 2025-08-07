@@ -52,7 +52,7 @@ namespace Ailurus
 		static void RebuildSwapChain();
 
 		// Render
-		static bool RenderFrame(bool* needRebuildSwapchain, const std::function<void(VulkanCommandBuffer*)>& recordCmdBufFunc);
+		static bool RenderFrame(bool* needRebuildSwapchain, const std::function<void(VulkanCommandBuffer*, VulkanDescriptorAllocator*)>& recordCmdBufFunc);
 		static void WaitDeviceIdle();
 
 	private:
@@ -67,30 +67,30 @@ namespace Ailurus
 
 	private:
 		// Init
-		inline static bool _initialized = false;
+		static bool _initialized;
 
 		// Static context
-		inline static vk::Instance _vkInstance = nullptr;
-		inline static vk::DebugUtilsMessengerEXT _vkDebugUtilsMessenger = nullptr;
-		inline static vk::PhysicalDevice _vkPhysicalDevice = nullptr;
-		inline static vk::SurfaceKHR _vkSurface = nullptr;
-		inline static vk::Device _vkDevice = nullptr;
-		inline static uint32_t _presentQueueIndex = 0;
-		inline static uint32_t _graphicQueueIndex = 0;
-		inline static uint32_t _computeQueueIndex = 0;
-		inline static vk::Queue _vkPresentQueue = nullptr;
-		inline static vk::Queue _vkGraphicQueue = nullptr;
-		inline static vk::Queue _vkComputeQueue = nullptr;
-		inline static vk::CommandPool _vkGraphicCommandPool = nullptr;
+		static vk::Instance _vkInstance;
+		static vk::DebugUtilsMessengerEXT _vkDebugUtilsMessenger;
+		static vk::PhysicalDevice _vkPhysicalDevice;
+		static vk::SurfaceKHR _vkSurface;
+		static vk::Device _vkDevice;
+		static uint32_t _presentQueueIndex;
+		static uint32_t _graphicQueueIndex;
+		static uint32_t _computeQueueIndex;
+		static vk::Queue _vkPresentQueue;
+		static vk::Queue _vkGraphicQueue;
+		static vk::Queue _vkComputeQueue;
+		static vk::CommandPool _vkGraphicCommandPool;
 
 		// Swap chain
-		inline static std::unique_ptr<VulkanSwapChain> _pSwapChain = nullptr;
+		static std::unique_ptr<VulkanSwapChain> _pSwapChain;
 
 		// Managers
-		inline static std::unique_ptr<VulkanResourceManager> _resourceManager = nullptr;
-		inline static std::unique_ptr<VulkanVertexLayoutManager> _vertexLayoutManager = nullptr;
-		inline static std::unique_ptr<VulkanPipelineManager> _pipelineManager = nullptr;
-		inline static std::unique_ptr<VulkanFlightManager> _flightManager = nullptr;
-		inline static std::unique_ptr<VulkanFrameBufferManager> _frameBufferManager = nullptr;
+		static std::unique_ptr<VulkanResourceManager> _resourceManager;
+		static std::unique_ptr<VulkanVertexLayoutManager> _vertexLayoutManager;
+		static std::unique_ptr<VulkanPipelineManager> _pipelineManager;
+		static std::unique_ptr<VulkanFlightManager> _flightManager;
+		static std::unique_ptr<VulkanFrameBufferManager> _frameBufferManager;
 	};
 }

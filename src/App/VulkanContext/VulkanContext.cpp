@@ -16,6 +16,29 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace Ailurus
 {
+	bool 										VulkanContext::_initialized = false;
+
+	vk::Instance 								VulkanContext::_vkInstance = nullptr;
+	vk::DebugUtilsMessengerEXT 					VulkanContext::_vkDebugUtilsMessenger = nullptr;
+	vk::PhysicalDevice 							VulkanContext::_vkPhysicalDevice = nullptr;
+	vk::SurfaceKHR 								VulkanContext::_vkSurface = nullptr;
+	vk::Device 									VulkanContext::_vkDevice = nullptr;
+	uint32_t 									VulkanContext::_presentQueueIndex = 0;
+	uint32_t 									VulkanContext::_graphicQueueIndex = 0;
+	uint32_t 									VulkanContext::_computeQueueIndex = 0;
+	vk::Queue 									VulkanContext::_vkPresentQueue = nullptr;
+	vk::Queue 									VulkanContext::_vkGraphicQueue = nullptr;
+	vk::Queue 									VulkanContext::_vkComputeQueue = nullptr;
+	vk::CommandPool 							VulkanContext::_vkGraphicCommandPool = nullptr;
+
+	std::unique_ptr<VulkanSwapChain> 			VulkanContext::_pSwapChain = nullptr;
+
+	std::unique_ptr<VulkanResourceManager> 		VulkanContext::_resourceManager = nullptr;
+	std::unique_ptr<VulkanVertexLayoutManager> 	VulkanContext::_vertexLayoutManager = nullptr;
+	std::unique_ptr<VulkanPipelineManager> 		VulkanContext::_pipelineManager = nullptr;
+	std::unique_ptr<VulkanFlightManager> 		VulkanContext::_flightManager = nullptr;
+	std::unique_ptr<VulkanFrameBufferManager> 	VulkanContext::_frameBufferManager = nullptr;
+
 	void VulkanContext::Initialize(const GetWindowInstanceExtension& getWindowRequiredExtension,
 		const WindowCreateSurfaceCallback& createSurface, bool enableValidation)
 	{
@@ -185,7 +208,7 @@ namespace Ailurus
 		return _pipelineManager.get();
 	}
 
-	bool VulkanContext::RenderFrame(bool* needRebuildSwapchain, const std::function<void(VulkanCommandBuffer*)>& recordCmdBufFunc)
+	bool VulkanContext::RenderFrame(bool* needRebuildSwapchain, const std::function<void(VulkanCommandBuffer*, VulkanDescriptorAllocator*)>& recordCmdBufFunc)
 	{
 		// Fence frame context
 		bool waitFinishSucc = _flightManager->WaitOneFlight();
@@ -202,10 +225,10 @@ namespace Ailurus
 		}
 
 		if (recordCmdBufFunc != nullptr)
-			recordCmdBufFunc(_flightManager->GetRecordingCommandBuffer());
+			recordCmdBufFunc(_flightManager->GetRecordingCommandBuffer(), _flightManager->GetAllocatingDescriptorPool());
 
 		// Submit command buffers
-		return _flightManager->TakeOffFlight(_pSwapChain->GetCurrentImageIndex(), 
+		return _flightManager->TakeOffFlight(_pSwapChain->GetCurrentImageIndex(),
 			imageReadySemaphore, needRebuildSwapchain);
 	}
 
