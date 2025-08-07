@@ -143,20 +143,19 @@ namespace Ailurus
 
 		switch (const auto present = VulkanContext::GetPresentQueue().presentKHR(presentInfo))
 		{
-			case vk::Result::eErrorOutOfDateKHR:
-				*needRebuild = true;
-				return false;
+			case vk::Result::eSuccess:
+				return true;
 			case vk::Result::eSuboptimalKHR:
 				*needRebuild = true;
-				break;
-			case vk::Result::eSuccess:
-				break;
+				return true;
+			case vk::Result::eErrorOutOfDateKHR:
+				Logger::LogError("Fail to present, error out of date");
+				*needRebuild = true;
+				return false;
 			default:
 				Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
 				return false;
 		}
-
-		return true;
 	}
 
 	VulkanCommandBuffer* VulkanFlightManager::GetRecordingCommandBuffer()

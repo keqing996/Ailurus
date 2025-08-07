@@ -185,14 +185,8 @@ namespace Ailurus
 		return _pipelineManager.get();
 	}
 
-	bool VulkanContext::RenderFrame(const std::function<void(VulkanCommandBuffer*)>& recordCmdBufFunc)
+	bool VulkanContext::RenderFrame(bool* needRebuildSwapchain, const std::function<void(VulkanCommandBuffer*)>& recordCmdBufFunc)
 	{
-		if (_needRebuildSwapChain)
-		{
-			RebuildSwapChain();
-			_needRebuildSwapChain = false;
-		}
-		
 		// Fence frame context
 		bool waitFinishSucc = _flightManager->WaitOneFlight();
 		if (!waitFinishSucc)
@@ -200,7 +194,7 @@ namespace Ailurus
 
 		// Acquire next image
 		const vk::Semaphore imageReadySemaphore = _resourceManager->AllocateSemaphore();
-		bool acquireImageSucc = _pSwapChain->AcquireNextImage(imageReadySemaphore, &_needRebuildSwapChain);
+		bool acquireImageSucc = _pSwapChain->AcquireNextImage(imageReadySemaphore, needRebuildSwapchain);
 		if (!acquireImageSucc)
 		{
 			_resourceManager->FreeSemaphore(imageReadySemaphore, true);
@@ -212,7 +206,7 @@ namespace Ailurus
 
 		// Submit command buffers
 		return _flightManager->TakeOffFlight(_pSwapChain->GetCurrentImageIndex(), 
-			imageReadySemaphore, &_needRebuildSwapChain);
+			imageReadySemaphore, needRebuildSwapchain);
 	}
 
 	void VulkanContext::WaitDeviceIdle()
@@ -432,10 +426,5 @@ namespace Ailurus
 			.setQueueFamilyIndex(GetGraphicQueueIndex());
 
 		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
-	}
-
-	void VulkanContext::RequestRebuildSwapChain()
-	{
-		_needRebuildSwapChain = true;
 	}
 } // namespace Ailurus

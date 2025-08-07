@@ -55,14 +55,13 @@ namespace Ailurus
 		VulkanContext::WaitDeviceIdle();
 	}
 
-	void RenderSystem::ReBuildSwapChain()
+	void RenderSystem::RebuildSwapChain()
 	{
 		GraphicsWaitIdle();
 
 		_renderPassMap.clear();
 
-		VulkanContext::DestroyDynamicContext();
-		VulkanContext::CreateDynamicContext();
+		VulkanContext::RebuildSwapChain();
 
 		BuildRenderPass();
 

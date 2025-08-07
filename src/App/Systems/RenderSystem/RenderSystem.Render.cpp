@@ -103,19 +103,18 @@ namespace Ailurus
 	void RenderSystem::RenderScene()
 	{
 		if (_needRebuildSwapChain)
-			ReBuildSwapChain();
+			RebuildSwapChain();
 
-		RenderPrepare();
+		VulkanContext::RenderFrame(&_needRebuildSwapChain, 
+			[this](VulkanCommandBuffer* pCommandBuffer) -> void 
+		{
+			RenderPrepare();
 
-		CollectRenderingContext();
-		UpdateGlobalUniformBuffer();
-		UpdateMaterialInstanceUniformBuffer();
-
-		auto* pCommandBuffer = Application::Get<VulkanSystem>()->GetFrameContext()->GetRecordingCommandBuffer();
-
-		RenderSpecificPass(RenderPassType::Forward, pCommandBuffer);
-
-		Application::Get<VulkanSystem>()->RenderFrame(&_needRebuildSwapChain);
+			CollectRenderingContext();
+			UpdateGlobalUniformBuffer();
+			UpdateMaterialInstanceUniformBuffer();
+			RenderSpecificPass(RenderPassType::Forward, pCommandBuffer);
+		});
 	}
 
 	void RenderSystem::UpdateGlobalUniformBuffer()
