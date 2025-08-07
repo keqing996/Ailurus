@@ -191,6 +191,11 @@ namespace Ailurus
 		return _flightManager.get();
 	}
 
+	VulkanFrameBufferManager* VulkanContext::GetFrameBufferManager()
+	{
+		return _frameBufferManager.get();
+	}
+
 	void VulkanContext::RebuildSwapChain()
 	{
 		if (!_initialized)
@@ -198,6 +203,9 @@ namespace Ailurus
 
 		// Wait GPU finishing all tasks
 		WaitDeviceIdle();
+
+		// Clear all backbuffers
+		_frameBufferManager->ClearBackBuffers();
 
 		// Create a new swap chain (auto release the old one)
 		_pSwapChain = std::make_unique<VulkanSwapChain>();

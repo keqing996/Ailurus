@@ -1,50 +1,11 @@
 #include "VulkanRenderPassForward.h"
-#include "Ailurus/Application/Application.h"
 #include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/FrameBuffer/VulkanFrameBuffer.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
 
 namespace Ailurus
 {
 	VulkanRenderPassForward::VulkanRenderPassForward()
-	{
-		SetupRenderPass();
-		SetupBackBuffers();
-	}
-
-	VulkanRenderPassForward::~VulkanRenderPassForward()
-	{
-		for (auto frameBuffer : _backBuffers)
-			VulkanContext::GetDevice().destroyFramebuffer(frameBuffer);
-
-		VulkanContext::GetDevice().destroyRenderPass(_vkRenderPass);
-	}
-
-	RenderPassType VulkanRenderPassForward::GetRenderPassType()
-	{
-		return RenderPassType::Forward;
-	}
-
-	vk::RenderPass VulkanRenderPassForward::GetRenderPass() const
-	{
-		return _vkRenderPass;
-	}
-
-	vk::RenderPassBeginInfo VulkanRenderPassForward::GetRenderPassBeginInfo() const
-	{
-		static vk::ClearValue clearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
-
-		vk::RenderPassBeginInfo renderPassInfo;
-		renderPassInfo.setRenderPass(_vkRenderPass)
-			.setFramebuffer(_backBuffers[VulkanContext::GetCurrentParallelFrameIndex()])
-			.setRenderArea(vk::Rect2D{
-				vk::Offset2D{ 0, 0 },
-				VulkanContext::GetSwapChain()->GetConfig().extent })
-			.setClearValues(clearColor);
-
-		return renderPassInfo;
-	}
-
-	void VulkanRenderPassForward::SetupRenderPass()
 	{
 		vk::AttachmentDescription colorAttachment;
 		colorAttachment.setFormat(VulkanContext::GetSwapChain()->GetConfig().surfaceFormat.format)
@@ -80,21 +41,33 @@ namespace Ailurus
 		_vkRenderPass = VulkanContext::GetDevice().createRenderPass(renderPassInfo);
 	}
 
-	void VulkanRenderPassForward::SetupBackBuffers()
+	VulkanRenderPassForward::~VulkanRenderPassForward()
 	{
-		const auto vkLogicalDevice = VulkanContext::GetDevice();
-		const auto extent = VulkanContext::GetSwapChain()->GetConfig().extent;
-		auto& swapChainImageViews = VulkanContext::GetSwapChain()->GetSwapChainImageViews();
-		for (auto swapChainImageView : swapChainImageViews)
-		{
-			vk::FramebufferCreateInfo framebufferInfo;
-			framebufferInfo.setRenderPass(_vkRenderPass)
-				.setAttachments(swapChainImageView)
-				.setWidth(extent.width)
-				.setHeight(extent.height)
-				.setLayers(1);
+		VulkanContext::GetDevice().destroyRenderPass(_vkRenderPass);
+	}
 
-			_backBuffers.push_back(vkLogicalDevice.createFramebuffer(framebufferInfo));
-		}
+	RenderPassType VulkanRenderPassForward::GetRenderPassType()
+	{
+		return RenderPassType::Forward;
+	}
+
+	vk::RenderPass VulkanRenderPassForward::GetRenderPass() const
+	{
+		return _vkRenderPass;
+	}
+
+	vk::RenderPassBeginInfo VulkanRenderPassForward::GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const
+	{
+		static vk::ClearValue clearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
+
+		vk::RenderPassBeginInfo renderPassInfo;
+		renderPassInfo.setRenderPass(_vkRenderPass)
+			.setFramebuffer(pTargetFrameBuffer->GetBuffer())
+			.setRenderArea(vk::Rect2D{
+				vk::Offset2D{ 0, 0 },
+				VulkanContext::GetSwapChain()->GetConfig().extent })
+			.setClearValues(clearColor);
+
+		return renderPassInfo;
 	}
 } // namespace Ailurus

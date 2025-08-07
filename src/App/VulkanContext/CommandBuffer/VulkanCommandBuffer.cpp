@@ -1,5 +1,4 @@
 #include "VulkanCommandBuffer.h"
-#include "Ailurus/Application/Application.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "VulkanContext/VulkanContext.h"
@@ -91,12 +90,12 @@ namespace Ailurus
 		_buffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, barrier, nullptr);
 	}
 
-	void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* pRenderPass)
+	void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* pRenderPass, VulkanFrameBuffer* pTargetFrameBuffer)
 	{
 		if (pRenderPass == nullptr)
 			return;
 
-		_buffer.beginRenderPass(pRenderPass->GetRenderPassBeginInfo(), {});
+		_buffer.beginRenderPass(pRenderPass->GetRenderPassBeginInfo(pTargetFrameBuffer), {});
 	}
 
 	void VulkanCommandBuffer::EndRenderPass()
@@ -113,7 +112,7 @@ namespace Ailurus
 		_buffer.setScissor(0, 1, &scissor);
 	}
 
-	void VulkanCommandBuffer::BindPipeline(const class VulkanPipeline* pPipeline)
+	void VulkanCommandBuffer::BindPipeline(const VulkanPipeline* pPipeline)
 	{
 		if (pPipeline == nullptr)
 			return;

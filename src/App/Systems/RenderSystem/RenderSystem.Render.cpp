@@ -14,6 +14,7 @@
 #include <Ailurus/Application/SceneSystem/SceneSystem.h>
 #include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
 #include <VulkanContext/VulkanContext.h>
+#include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/CommandBuffer/VulkanCommandBuffer.h>
 #include <VulkanContext/Pipeline/VulkanPipelineManager.h>
 #include <VulkanContext/RenderPass/VulkanRenderPass.h>
@@ -22,6 +23,7 @@
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include <VulkanContext/Vertex/VulkanVertexLayoutManager.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
+#include <VulkanContext/FrameBuffer/VulkanFrameBufferManager.h>
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -175,7 +177,10 @@ namespace Ailurus
 		if (pRenderPass == nullptr)
 			return;
 
-		pCommandBuffer->BeginRenderPass(pRenderPass->GetRHIRenderPass());
+		auto pVkRenderPass = pRenderPass->GetRHIRenderPass();
+		auto currentBackBufferIndex = VulkanContext::GetSwapChain()->GetCurrentImageIndex();
+		auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pVkRenderPass, currentBackBufferIndex);
+		pCommandBuffer->BeginRenderPass(pVkRenderPass, pBackBuffer);
 
 		// Intermidiate variables
 		const Material* pCurrentMaterial = nullptr;

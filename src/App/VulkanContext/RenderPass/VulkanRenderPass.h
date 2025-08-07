@@ -9,6 +9,8 @@
 
 namespace Ailurus
 {
+	class VulkanFrameBuffer;
+
 	class VulkanRenderPass : public NonCopyable, public NonMovable
 	{
 	public:
@@ -17,7 +19,7 @@ namespace Ailurus
 	public:
 		virtual RenderPassType GetRenderPassType() = 0;
 		virtual vk::RenderPass GetRenderPass() const = 0;
-		virtual vk::RenderPassBeginInfo GetRenderPassBeginInfo() const = 0;
+		virtual vk::RenderPassBeginInfo GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const = 0;
 
 	};
 } // namespace Ailurus

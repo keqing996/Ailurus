@@ -155,19 +155,20 @@ namespace Ailurus
 
 		switch (acquireImage.result)
 		{
-			case vk::Result::eErrorOutOfDateKHR:
-				*needRebuildSwapChain = true;
-				return false;
 			case vk::Result::eSuboptimalKHR:
 				*needRebuildSwapChain = true;
 				break;
 			case vk::Result::eSuccess:
 				break;
+			case vk::Result::eErrorOutOfDateKHR:
+				*needRebuildSwapChain = true;
+				return false;
 			default:
 				Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
 				return false;
 		}
 
+		_currentImageIndex = acquireImage.value;
 		return true;
 	}
 } // namespace Ailurus

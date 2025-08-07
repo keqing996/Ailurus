@@ -47,6 +47,7 @@ namespace Ailurus
 		static auto GetResourceManager() -> VulkanResourceManager*;
 		static auto GetVertexLayoutManager() -> VulkanVertexLayoutManager*;
 		static auto GetFlightManager() -> VulkanFlightManager*;
+		static auto GetFrameBufferManager() -> VulkanFrameBufferManager*;
 
 		// Swap chain
 		static void RebuildSwapChain();

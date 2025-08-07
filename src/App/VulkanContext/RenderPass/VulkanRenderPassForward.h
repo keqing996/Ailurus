@@ -14,14 +14,9 @@ namespace Ailurus
 	public:
 		RenderPassType GetRenderPassType() override;
 		vk::RenderPass GetRenderPass() const override;
-		vk::RenderPassBeginInfo GetRenderPassBeginInfo() const override;
-
-	private:
-		void SetupRenderPass();
-		void SetupBackBuffers();
+		vk::RenderPassBeginInfo GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const override;
 
 	private:
 		vk::RenderPass _vkRenderPass;
-		std::vector<vk::Framebuffer> _backBuffers;
 	};
 } // namespace Ailurus

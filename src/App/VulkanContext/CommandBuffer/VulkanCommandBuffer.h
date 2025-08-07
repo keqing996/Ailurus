@@ -10,6 +10,11 @@ namespace Ailurus
 	class VulkanCommandBuffer;
 	class VulkanResource;
 	class VulkanDataBuffer;
+	class VulkanRenderPass;
+	class VulkanPipeline;
+	class VulkanVertexBuffer;
+	class VulkanIndexBuffer;
+	class VulkanFrameBuffer;
 
 	class VulkanCommandBuffer : public NonCopyable
 	{
@@ -24,12 +29,12 @@ namespace Ailurus
 		void End();
 		void CopyBuffer(VulkanDataBuffer* pSrcBuffer, VulkanDataBuffer* pDstBuffer, vk::DeviceSize size);
 		void BufferMemoryBarrier(VulkanDataBuffer* pBuffer, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask);
-		void BeginRenderPass(class VulkanRenderPass* pRenderPass);
+		void BeginRenderPass(VulkanRenderPass* pRenderPass, VulkanFrameBuffer* pTargetFrameBuffer);
 		void EndRenderPass();
 		void SetViewportAndScissor();
-		void BindPipeline(const class VulkanPipeline* pPipeline);
-		void BindVertexBuffer(const class VulkanVertexBuffer* pVertexBuffer);
-		void BindIndexBuffer(const class VulkanIndexBuffer* pIndexBuffer);
+		void BindPipeline(const VulkanPipeline* pPipeline);
+		void BindVertexBuffer(const VulkanVertexBuffer* pVertexBuffer);
+		void BindIndexBuffer(const VulkanIndexBuffer* pIndexBuffer);
 		void BindDescriptorSet(vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& descriptorSets);
 		void DrawIndexed(uint32_t indexCount);
 		void DrawNonIndexed(uint32_t vertexCount);
