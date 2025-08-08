@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>

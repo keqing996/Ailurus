@@ -72,6 +72,7 @@ namespace Ailurus
 		_resourceManager = std::make_unique<VulkanResourceManager>();
 		_vertexLayoutManager = std::make_unique<VulkanVertexLayoutManager>();
 		_pipelineManager = std::make_unique<VulkanPipelineManager>();
+		_frameBufferManager = std::make_unique<VulkanFrameBufferManager>();
 		_flightManager = std::make_unique<VulkanFlightManager>(2);
 
 		_initialized = true;
@@ -89,6 +90,7 @@ namespace Ailurus
 
 		// Destroy managers
 		_flightManager.reset();
+		_frameBufferManager.reset();
 		_pipelineManager.reset();
 		_vertexLayoutManager.reset();
 		_resourceManager.reset();
