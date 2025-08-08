@@ -2,7 +2,6 @@
 #include <optional>
 #include <array>
 #include "Ailurus/Utility/Logger.h"
-#include "Ailurus/Application/Application.h"
 #include "VulkanContext.h"
 #include "SwapChain/VulkanSwapChain.h"
 #include "Helper/VulkanHelper.h"
@@ -11,6 +10,7 @@
 #include "Pipeline/VulkanPipelineManager.h"
 #include "Flight/VulkanFlightManager.h"
 #include "FrameBuffer/VulkanFrameBufferManager.h"
+#include "Descriptor/VulkanDescriptorAllocator.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
