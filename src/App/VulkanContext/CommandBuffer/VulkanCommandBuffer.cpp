@@ -8,6 +8,7 @@
 #include "VulkanContext/DataBuffer/VulkanIndexBuffer.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
+#include "VulkanContext/Descriptor/VulkanDescriptorAllocator.h"
 
 namespace Ailurus
 {

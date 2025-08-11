@@ -4,12 +4,11 @@
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
+#include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanContext/Descriptor/VulkanDescriptorAllocator.h"
 
 namespace Ailurus
 {
-	class VulkanCommandBuffer;
-	class VulkanDescriptorAllocator;
-
 	class VulkanFlightManager : public NonCopyable, public NonMovable
 	{
 		struct OnAirFrame
