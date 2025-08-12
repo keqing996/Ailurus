@@ -55,7 +55,7 @@ namespace Ailurus
 		auto onAirFrame = std::move(_onAirFrames.front());
 		_onAirFrames.pop_front();
 
-		const auto waitFence = VulkanContext::GetDevice().waitForFences(onAirFrame.allFinishFence,
+		const auto waitFence = VulkanContext::GetDevice().waitForFences(onAirFrame.renderFinishFence,
 			true, std::numeric_limits<uint64_t>::max());
 		if (waitFence != vk::Result::eSuccess)
 		{
@@ -70,12 +70,12 @@ namespace Ailurus
 		onAirFrame.pRenderingCommandBuffer.reset();
 
 		// Free used semaphores
-		vkResMgr->FreeSemaphore(onAirFrame.waitSemaphore);
-		vkResMgr->FreeSemaphore(onAirFrame.signalSemaphore);
+		vkResMgr->FreeSemaphore(onAirFrame.imageReadySemaphore);
+		vkResMgr->FreeSemaphore(onAirFrame.renderFinishSemaphore);
 
 		// Reset fence and free
-		VulkanContext::GetDevice().resetFences(onAirFrame.allFinishFence);
-		vkResMgr->FreeFence(onAirFrame.allFinishFence);
+		VulkanContext::GetDevice().resetFences(onAirFrame.renderFinishFence);
+		vkResMgr->FreeFence(onAirFrame.renderFinishFence);
 
 		// Reset and free descriptor pool
 		onAirFrame.pFrameDescriptorAllocator->ResetPool();
@@ -127,9 +127,9 @@ namespace Ailurus
 			.frameCount = Application::Get<TimeSystem>()->FrameCount(),
 			.pRenderingCommandBuffer = std::move(_pRecordingCommandBuffer),
 			.pFrameDescriptorAllocator = std::move(_pAllocatingDescriptorPool),
-			.waitSemaphore = imageReadySemaphore,
-			.signalSemaphore = renderFinishSemaphore,
-			.allFinishFence = renderFinishFence,
+			.imageReadySemaphore = imageReadySemaphore,
+			.renderFinishSemaphore = renderFinishSemaphore,
+			.renderFinishFence = renderFinishFence,
 		});
 
 		// New frame resource

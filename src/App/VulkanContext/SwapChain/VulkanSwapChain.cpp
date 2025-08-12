@@ -146,7 +146,7 @@ namespace Ailurus
 		return _currentImageIndex;
 	}
 
-	bool VulkanSwapChain::AcquireNextImage(vk::Semaphore imageReadySemaphore, bool* needRebuildSwapChain)
+	std::optional<VulkanSwapChain::AcquireResult> VulkanSwapChain::AcquireNextImage(bool* needRebuildSwapChain)
 	{
 		auto acquireImage = VulkanContext::GetDevice().acquireNextImageKHR(
 			_vkSwapChain,

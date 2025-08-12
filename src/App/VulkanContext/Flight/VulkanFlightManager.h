@@ -17,9 +17,9 @@ namespace Ailurus
 			uint64_t frameCount;
 			std::unique_ptr<VulkanCommandBuffer> pRenderingCommandBuffer;
 			std::unique_ptr<VulkanDescriptorAllocator> pFrameDescriptorAllocator;
-			vk::Semaphore waitSemaphore;
-			vk::Semaphore signalSemaphore;
-			vk::Fence allFinishFence;
+			vk::Semaphore imageReadySemaphore;
+			vk::Semaphore renderFinishSemaphore;
+			vk::Fence renderFinishFence;
 		};
 
 	public:
