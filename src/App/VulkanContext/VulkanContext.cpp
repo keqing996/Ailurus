@@ -236,7 +236,10 @@ namespace Ailurus
 		// Clear all back buffers
 		_frameBufferManager->ClearBackBuffers();
 
-		// Create a new swap chain (auto release the old one)
+		// Release old swap chian fist
+		_pSwapChain = nullptr;
+
+		// Create a new swap chain
 		_pSwapChain = std::make_unique<VulkanSwapChain>();
 	}
 
