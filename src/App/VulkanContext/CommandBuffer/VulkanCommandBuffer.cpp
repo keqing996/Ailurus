@@ -12,9 +12,20 @@
 
 namespace Ailurus
 {
-	VulkanCommandBuffer::VulkanCommandBuffer()
-		: _buffer(VulkanContext::GetResourceManager()->AllocateCommandBuffer())
+	VulkanCommandBuffer::VulkanCommandBuffer(bool isPrimary)
+		: _isPrimary(isPrimary)
 	{
+		vk::CommandBufferLevel level = _isPrimary
+			? vk::CommandBufferLevel::ePrimary
+			: vk::CommandBufferLevel::eSecondary;
+
+		vk::CommandBufferAllocateInfo allocInfo;
+		allocInfo.setCommandPool(VulkanContext::GetCommandPool())
+			.setLevel(level)
+			.setCommandBufferCount(1);
+
+		const std::vector<vk::CommandBuffer> tempBuffers = VulkanContext::GetDevice().allocateCommandBuffers(allocInfo);
+		_buffer = tempBuffers[0];
 	}
 
 	VulkanCommandBuffer::~VulkanCommandBuffer()
@@ -22,11 +33,10 @@ namespace Ailurus
 		_buffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
 
 		// Release resources
-		for (auto& vulkanResource : _referencedResources)
-			vulkanResource->RemoveRef(*this);
+		ClearResourceReferences();
 
 		// Recycle command buffer
-		VulkanContext::GetResourceManager()->FreeCommandBuffer(_buffer);
+		VulkanContext::GetDevice().freeCommandBuffers(VulkanContext::GetCommandPool(), _buffer);
 	}
 
 	const vk::CommandBuffer& VulkanCommandBuffer::GetBuffer() const
@@ -34,16 +44,40 @@ namespace Ailurus
 		return _buffer;
 	}
 
+	bool VulkanCommandBuffer::IsRecording() const
+	{
+		return _isRecording;
+	}
+
+	void VulkanCommandBuffer::ClearResourceReferences()
+	{
+		for (auto& vulkanResource : _referencedResources)
+			vulkanResource->RemoveRef(*this);
+
+		_referencedResources.clear();
+	}
+
 	void VulkanCommandBuffer::Begin()
 	{
 		vk::CommandBufferBeginInfo beginInfo;
 		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+		if (!_isPrimary)
+		{
+			vk::CommandBufferInheritanceInfo inheritanceInfo;
+			beginInfo.setPInheritanceInfo(&inheritanceInfo);
+		}
+
 		_buffer.begin(beginInfo);
+
+		_isRecording = true;
 	}
 
 	void VulkanCommandBuffer::End()
 	{
 		_buffer.end();
+
+		_isRecording = false;
 	}
 
 	void VulkanCommandBuffer::CopyBuffer(VulkanDataBuffer* pSrcBuffer, VulkanDataBuffer* pDstBuffer, vk::DeviceSize size)
@@ -172,11 +206,11 @@ namespace Ailurus
 		_buffer.draw(vertexCount, 1, 0, 0);
 	}
 
-	void VulkanCommandBuffer::PushConstantModelMaterix(const VulkanPipeline* pPipeline, const Matrix4x4f& modelMatrix)
+	void VulkanCommandBuffer::PushConstantModelMatrix(const VulkanPipeline* pPipeline, const Matrix4x4f& modelMatrix)
 	{
 		if (pPipeline == nullptr)
 		{
-			Logger::LogError("VulkanCommandBuffer::PushConstantModelMaterix: Pipeline is nullptr");
+			Logger::LogError("VulkanCommandBuffer::PushConstantModelMatrix: Pipeline is nullptr");
 			return;
 		}
 
@@ -186,5 +220,19 @@ namespace Ailurus
 			0, 
 			sizeof(Matrix4x4f), 
 			&modelMatrix);
+	}
+
+	void VulkanCommandBuffer::ExecuteSecondaryCommandBuffer(const VulkanCommandBuffer* pSecondaryCommandBuffer)
+	{
+		if (!_isPrimary)
+		{
+			Logger::LogError("Try execute secondary command buffer in a secondary command buffer!");
+			return;
+		}
+
+		if (pSecondaryCommandBuffer == nullptr)
+			return;
+
+		_buffer.executeCommands(pSecondaryCommandBuffer->GetBuffer());
 	}
 } // namespace Ailurus

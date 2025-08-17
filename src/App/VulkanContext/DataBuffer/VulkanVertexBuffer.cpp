@@ -3,7 +3,6 @@
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
 #include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
-#include "VulkanContext/Flight/VulkanFlightManager.h"
 
 namespace Ailurus
 {
@@ -26,10 +25,11 @@ namespace Ailurus
     	std::memcpy(stageBuffer->mappedAddr, vertexData, sizeInBytes);
 
     	// Cpu buffer -> Gpu buffer
-    	VulkanCommandBuffer* pCommandBuffer = VulkanContext::GetFlightManager()->GetRecordingCommandBuffer();
-		pCommandBuffer->CopyBuffer(stageBuffer, _buffer, sizeInBytes);
-		pCommandBuffer->BufferMemoryBarrier(_buffer, vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead, 
+    	VulkanContext::RecordSecondaryCommandBuffer([&](VulkanCommandBuffer* pCommandBuffer)->void {
+    		pCommandBuffer->CopyBuffer(stageBuffer, _buffer, sizeInBytes);
+			pCommandBuffer->BufferMemoryBarrier(_buffer, vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eVertexAttributeRead,
 			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput);
+    	});
 
     	// Destroy stage cpu buffer
     	stageBuffer->MarkDelete();

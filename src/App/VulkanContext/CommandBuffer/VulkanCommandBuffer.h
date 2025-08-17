@@ -19,11 +19,13 @@ namespace Ailurus
 	class VulkanCommandBuffer : public NonCopyable
 	{
 	public:
-		VulkanCommandBuffer();
-		~VulkanCommandBuffer();
+		explicit VulkanCommandBuffer(bool isPrimary);
+		virtual ~VulkanCommandBuffer();
 
 	public:
 		const vk::CommandBuffer& GetBuffer() const;
+		bool IsRecording() const;
+		void ClearResourceReferences();
 
 		void Begin();
 		void End();
@@ -38,10 +40,13 @@ namespace Ailurus
 		void BindDescriptorSet(vk::PipelineLayout layout, const std::vector<vk::DescriptorSet>& descriptorSets);
 		void DrawIndexed(uint32_t indexCount);
 		void DrawNonIndexed(uint32_t vertexCount);
-		void PushConstantModelMaterix(const VulkanPipeline* pPipeline, const Matrix4x4f& mvpMatrix);
+		void PushConstantModelMatrix(const VulkanPipeline* pPipeline, const Matrix4x4f& mvpMatrix);
+		void ExecuteSecondaryCommandBuffer(const VulkanCommandBuffer* pSecondaryCommandBuffer);
 
-	private:
+	protected:
 		vk::CommandBuffer _buffer;
+		bool _isPrimary;
+		bool _isRecording;
 		std::unordered_set<VulkanResource*> _referencedResources;
 	};
 } // namespace Ailurus

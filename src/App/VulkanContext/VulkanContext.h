@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include <optional>
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
@@ -17,6 +18,8 @@ namespace Ailurus
 	class VulkanResourceManager;
 	class VulkanFlightManager;
 	class VulkanFrameBufferManager;
+	class VulkanSemaphore;
+	class VulkanFence;
 	
 	class VulkanContext : public NonCopyable, public NonMovable
 	{
@@ -24,13 +27,13 @@ namespace Ailurus
 		using WindowCreateSurfaceCallback = std::function<vk::SurfaceKHR(const vk::Instance&)>;
 		using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
 		using RenderFunction = std::function<void(uint32_t, VulkanCommandBuffer*, VulkanDescriptorAllocator*)>;
+		using RecordSecondaryCommandBufferFunction = std::function<void(VulkanCommandBuffer*)>;
 
 	public:
 		static void Initialize(const GetWindowInstanceExtension& getWindowRequiredExtension,
 			const WindowCreateSurfaceCallback& createSurface,
 			bool enableValidation);
 		static bool Initialized();
-
 		static void Destroy(const WindowDestroySurfaceCallback& destroySurface);
 
 		// Getter
@@ -48,13 +51,14 @@ namespace Ailurus
 		static auto GetPipelineManager() -> VulkanPipelineManager*;
 		static auto GetResourceManager() -> VulkanResourceManager*;
 		static auto GetVertexLayoutManager() -> VulkanVertexLayoutManager*;
-		static auto GetFlightManager() -> VulkanFlightManager*;
 		static auto GetFrameBufferManager() -> VulkanFrameBufferManager*;
+		static auto GetParallelFrameCount() -> uint32_t;
 
 		// Swap chain
 		static void RebuildSwapChain();
 
 		// Render
+		static void RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction);
 		static bool RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc);
 		static void WaitDeviceIdle();
 
@@ -68,7 +72,29 @@ namespace Ailurus
 		static bool CreateLogicalDevice();
 		static void CreateCommandPool();
 
+		// Frame context
+		static bool WaitFrameFinish(uint32_t index);
+
 	private:
+		struct OnAirInfo
+		{
+			uint64_t frameCount;
+			std::vector<std::unique_ptr<VulkanCommandBuffer>> secondaryCommandBuffers;
+		};
+
+		struct FrameContext
+		{
+			std::optional<OnAirInfo> onAirInfo;
+			std::unique_ptr<VulkanCommandBuffer> pRenderingCommandBuffer;
+			std::unique_ptr<VulkanDescriptorAllocator> pFrameDescriptorAllocator;
+			std::unique_ptr<VulkanSemaphore> imageReadySemaphore;
+			std::unique_ptr<VulkanSemaphore> renderFinishSemaphore;
+			std::unique_ptr<VulkanFence> renderFinishFence;
+		};
+
+	private:
+		static uint32_t _parallelFrameCount;
+
 		// Init
 		static bool _initialized;
 
@@ -93,7 +119,14 @@ namespace Ailurus
 		static std::unique_ptr<VulkanResourceManager> _resourceManager;
 		static std::unique_ptr<VulkanVertexLayoutManager> _vertexLayoutManager;
 		static std::unique_ptr<VulkanPipelineManager> _pipelineManager;
-		static std::unique_ptr<VulkanFlightManager> _flightManager;
 		static std::unique_ptr<VulkanFrameBufferManager> _frameBufferManager;
+
+		// Flight
+		static uint32_t _currentFrameIndex;
+		static std::vector<FrameContext> _frameContext;
+
+		// Secondary command buffer
+		static std::vector<std::unique_ptr<VulkanCommandBuffer>> _recordedSecondaryCommandBuffers;
+		static std::vector<std::unique_ptr<VulkanCommandBuffer>> _secondaryCommandBufferPool;
 	};
 }

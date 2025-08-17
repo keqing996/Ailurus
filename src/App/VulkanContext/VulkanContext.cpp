@@ -1,14 +1,15 @@
 #include <memory>
 #include <optional>
 #include <array>
-#include "Ailurus/Utility/Logger.h"
 #include "VulkanContext.h"
+#include "Ailurus/Utility/Logger.h"
+#include "Ailurus/Application/Application.h"
 #include "SwapChain/VulkanSwapChain.h"
 #include "Helper/VulkanHelper.h"
 #include "Resource/VulkanResourceManager.h"
 #include "Vertex/VulkanVertexLayoutManager.h"
 #include "Pipeline/VulkanPipelineManager.h"
-#include "Flight/VulkanFlightManager.h"
+#include "Fence/VulkanFence.h"
 #include "FrameBuffer/VulkanFrameBufferManager.h"
 #include "Descriptor/VulkanDescriptorAllocator.h"
 
@@ -16,6 +17,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace Ailurus
 {
+	uint32_t									VulkanContext::_parallelFrameCount = 2;
 	bool 										VulkanContext::_initialized = false;
 
 	vk::Instance 								VulkanContext::_vkInstance = nullptr;
@@ -36,8 +38,13 @@ namespace Ailurus
 	std::unique_ptr<VulkanResourceManager> 		VulkanContext::_resourceManager = nullptr;
 	std::unique_ptr<VulkanVertexLayoutManager> 	VulkanContext::_vertexLayoutManager = nullptr;
 	std::unique_ptr<VulkanPipelineManager> 		VulkanContext::_pipelineManager = nullptr;
-	std::unique_ptr<VulkanFlightManager> 		VulkanContext::_flightManager = nullptr;
 	std::unique_ptr<VulkanFrameBufferManager> 	VulkanContext::_frameBufferManager = nullptr;
+
+	uint32_t									VulkanContext::_currentFrameIndex = 0;
+	std::vector<VulkanContext::FrameContext>	VulkanContext::_frameContext;
+
+	std::vector<std::unique_ptr<VulkanCommandBuffer>>	VulkanContext::_recordedSecondaryCommandBuffers;
+	std::vector<std::unique_ptr<VulkanCommandBuffer>>	VulkanContext::_secondaryCommandBufferPool;
 
 	void VulkanContext::Initialize(const GetWindowInstanceExtension& getWindowRequiredExtension,
 		const WindowCreateSurfaceCallback& createSurface, bool enableValidation)
@@ -73,7 +80,20 @@ namespace Ailurus
 		_vertexLayoutManager = std::make_unique<VulkanVertexLayoutManager>();
 		_pipelineManager = std::make_unique<VulkanPipelineManager>();
 		_frameBufferManager = std::make_unique<VulkanFrameBufferManager>();
-		_flightManager = std::make_unique<VulkanFlightManager>(2);
+
+		// Create frame context
+		_currentFrameIndex = 0;
+		for (auto i = 0; i < _parallelFrameCount; ++i)
+		{
+			FrameContext frameContext;
+			frameContext.onAirInfo = std::nullopt; // Not in flight
+			frameContext.pRenderingCommandBuffer = std::make_unique<VulkanCommandBuffer>(true);
+			frameContext.pFrameDescriptorAllocator = std::make_unique<VulkanDescriptorAllocator>();
+			frameContext.imageReadySemaphore = std::make_unique<VulkanSemaphore>();
+			frameContext.renderFinishSemaphore = std::make_unique<VulkanSemaphore>();
+			frameContext.renderFinishFence = std::make_unique<VulkanFence>(false);
+			_frameContext.push_back(std::move(frameContext));
+		}
 
 		_initialized = true;
 	}
@@ -88,8 +108,15 @@ namespace Ailurus
 		if (!_initialized)
 			return;
 
+		WaitDeviceIdle();
+
+		// Destroy frame context
+		_recordedSecondaryCommandBuffers.clear();
+		_secondaryCommandBufferPool.clear();
+		_frameContext.clear();
+		_currentFrameIndex = 0;
+
 		// Destroy managers
-		_flightManager.reset();
 		_frameBufferManager.reset();
 		_pipelineManager.reset();
 		_vertexLayoutManager.reset();
@@ -188,14 +215,14 @@ namespace Ailurus
 		return _vertexLayoutManager.get();
 	}
 
-	VulkanFlightManager* VulkanContext::GetFlightManager()
-	{
-		return _flightManager.get();
-	}
-
 	VulkanFrameBufferManager* VulkanContext::GetFrameBufferManager()
 	{
 		return _frameBufferManager.get();
+	}
+
+	uint32_t VulkanContext::GetParallelFrameCount()
+	{
+		return _parallelFrameCount;
 	}
 
 	void VulkanContext::RebuildSwapChain()
@@ -206,11 +233,33 @@ namespace Ailurus
 		// Wait GPU finishing all tasks
 		WaitDeviceIdle();
 
-		// Clear all backbuffers
+		// Clear all back buffers
 		_frameBufferManager->ClearBackBuffers();
 
 		// Create a new swap chain (auto release the old one)
 		_pSwapChain = std::make_unique<VulkanSwapChain>();
+	}
+
+	void VulkanContext::RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction)
+	{
+		if (recordFunction == nullptr)
+			return;
+
+		std::unique_ptr<VulkanCommandBuffer> pSecondaryCommandBuffer = nullptr;
+		if (!_secondaryCommandBufferPool.empty())
+		{
+			pSecondaryCommandBuffer = std::move(_secondaryCommandBufferPool.back());
+			_secondaryCommandBufferPool.pop_back();
+		}
+
+		if (pSecondaryCommandBuffer == nullptr)
+			pSecondaryCommandBuffer = std::make_unique<VulkanCommandBuffer>(false);
+
+		pSecondaryCommandBuffer->Begin();
+		recordFunction(pSecondaryCommandBuffer.get());
+		pSecondaryCommandBuffer->End();
+
+		_recordedSecondaryCommandBuffers.push_back(std::move(pSecondaryCommandBuffer));
 	}
 
 	VulkanPipelineManager* VulkanContext::GetPipelineManager()
@@ -221,33 +270,89 @@ namespace Ailurus
 	bool VulkanContext::RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc)
 	{
 		// Fence frame context
-		_flightManager->WaitCurrentFlightReady();
-
-		// Find a chance to collect garbage
-		_resourceManager->GarbageCollect();
+		WaitFrameFinish(_currentFrameIndex);
+		auto& frameContext = _frameContext[_currentFrameIndex];
 
 		// Acquire next image
 		//  - Image ready semaphore will **NOT** be signaled when the result of AcquireNextImageKHR is not eSuccess
 		//    or eSuboptimalKHR, so it is safe to recycle the semaphore.
-		const auto& currentFraneContext = _flightManager->GetFrameContext();
-		const auto opImageIndex = _pSwapChain->AcquireNextImage(currentFraneContext.imageReadySemaphore.get(), needRebuildSwapChain);
+		const auto opImageIndex = _pSwapChain->AcquireNextImage(frameContext.imageReadySemaphore.get(), needRebuildSwapChain);
 		if (!opImageIndex.has_value())
 			return false;
 
 		const auto imageIndex = opImageIndex.value();
 
-		if (recordCmdBufFunc != nullptr)
-			recordCmdBufFunc(imageIndex, currentFraneContext.pRenderingCommandBuffer.get(), currentFraneContext.pFrameDescriptorAllocator.get());
+		// Record
+		frameContext.pRenderingCommandBuffer->Begin();
+		{
+			// Record secondary
+			for (auto& pSecondaryCmdBuffer : _recordedSecondaryCommandBuffers)
+				frameContext.pRenderingCommandBuffer->ExecuteSecondaryCommandBuffer(pSecondaryCmdBuffer.get());
 
-		// Submit command buffers
-		return _flightManager->TakeOffFlight(imageIndex, needRebuildSwapChain);
+			// Render
+			if (recordCmdBufFunc != nullptr)
+				recordCmdBufFunc(imageIndex, frameContext.pRenderingCommandBuffer.get(), frameContext.pFrameDescriptorAllocator.get());
+		}
+		frameContext.pRenderingCommandBuffer->End();
+
+		// Do submit
+		vk::SubmitInfo submitInfo;
+		submitInfo.setCommandBuffers(frameContext.pRenderingCommandBuffer->GetBuffer())
+			.setSignalSemaphores(frameContext.renderFinishSemaphore->GetSemaphore())
+			.setWaitSemaphores(frameContext.imageReadySemaphore->GetSemaphore());
+
+		// Wait stages
+		std::vector<vk::PipelineStageFlags> waitStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+		submitInfo.setWaitDstStageMask(waitStages);
+
+		// Submit
+		_vkGraphicQueue.submit(submitInfo, frameContext.renderFinishFence->GetFence());
+
+		// Set this frame on air
+		frameContext.onAirInfo = OnAirInfo{
+			.frameCount = Application::Get<TimeSystem>()->FrameCount(),
+			.secondaryCommandBuffers = std::move(_recordedSecondaryCommandBuffers)
+		};
+
+		// Present
+		vk::PresentInfoKHR presentInfo;
+		presentInfo.setWaitSemaphores(frameContext.renderFinishSemaphore->GetSemaphore())
+			.setSwapchains(_pSwapChain->GetSwapChain())
+			.setImageIndices(imageIndex);
+
+		bool presentResult = false;
+		switch (const auto present = _vkPresentQueue.presentKHR(presentInfo))
+		{
+			case vk::Result::eSuccess:
+				presentResult = true;
+				break;
+			case vk::Result::eSuboptimalKHR:
+				*needRebuildSwapChain = true;
+				presentResult = true;
+				break;
+			case vk::Result::eErrorOutOfDateKHR:
+				Logger::LogError("Fail to present, error out of date");
+				*needRebuildSwapChain = true;
+				presentResult = false;
+				break;
+			default:
+				Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
+				presentResult = false;
+				break;
+		}
+
+		// Update frame index
+		_currentFrameIndex = (_currentFrameIndex + 1) % _parallelFrameCount;
+
+		return presentResult;
 	}
 
 	void VulkanContext::WaitDeviceIdle()
 	{
 		// Fence all flinging frame -> Make sure tash all command buffers, semaphores
 		// and fences are recycled.
-		_flightManager->WaitAllFlight();
+		for (auto i = 0; i < _frameContext.size(); i++)
+			WaitFrameFinish(i);
 
 		// Wait gpu end
 		_vkDevice.waitIdle();
@@ -460,5 +565,47 @@ namespace Ailurus
 			.setQueueFamilyIndex(GetGraphicQueueIndex());
 
 		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
+	}
+
+	bool VulkanContext::WaitFrameFinish(uint32_t index)
+	{
+		auto& context = _frameContext[index];
+
+		// Not in flight
+		if (!context.onAirInfo.has_value())
+			return true;
+
+		// Wait render finish fence
+		const auto waitFence = _vkDevice.waitForFences(context.renderFinishFence->GetFence(),
+			true, std::numeric_limits<uint64_t>::max());
+		if (waitFence != vk::Result::eSuccess)
+		{
+			Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
+			return false;
+		}
+
+		// Reset frame resource
+		context.renderFinishFence->Reset();
+		context.pRenderingCommandBuffer->ClearResourceReferences();
+		context.pFrameDescriptorAllocator->ResetPool();
+
+		// Recycle secondary command buffers
+		if (!context.onAirInfo->secondaryCommandBuffers.empty())
+		{
+			auto& vec = context.onAirInfo->secondaryCommandBuffers;
+			for (auto i = 0; i < vec.size(); i++)
+			{
+				vec[i]->ClearResourceReferences();
+				_secondaryCommandBufferPool.push_back(std::move(vec[i]));
+			}
+		}
+
+		// Reset on air info
+		context.onAirInfo = std::nullopt;
+
+		// Resource GC
+		_resourceManager->GarbageCollect();
+
+		return true;
 	}
 } // namespace Ailurus

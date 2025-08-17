@@ -12,6 +12,7 @@ namespace Ailurus
         ~VulkanFence();
 
         const vk::Fence& GetFence() const;
+    	void Reset();
 
     private:
         vk::Fence _vkFence;

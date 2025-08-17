@@ -3,15 +3,13 @@
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
 #include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
-#include "VulkanContext/Flight/VulkanFlightManager.h"
 
 namespace Ailurus
 {
 	VulkanUniformBuffer::VulkanUniformBuffer(size_t bufferSize)
 		: _bufferSize(bufferSize)
 	{
-		const auto parallelCount = VulkanContext::GetFlightManager()->GetParallelFramesCount();
-		for (auto i = 0; i < parallelCount; i++)
+		for (auto i = 0; i < VulkanContext::GetParallelFrameCount(); i++)
 			_backgroundBuffer.emplace_back(CreateBufferPair());
 	}
 

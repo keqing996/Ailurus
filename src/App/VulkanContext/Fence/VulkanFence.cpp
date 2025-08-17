@@ -22,4 +22,9 @@ namespace Ailurus
     {
         return _vkFence;
     }
-}
+
+	void VulkanFence::Reset()
+	{
+    	VulkanContext::GetDevice().resetFences(_vkFence);
+	}
+} // namespace Ailurus

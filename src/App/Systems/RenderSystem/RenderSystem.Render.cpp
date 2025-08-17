@@ -25,7 +25,6 @@
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
 #include <VulkanContext/FrameBuffer/VulkanFrameBufferManager.h>
 #include "Detail/RenderIntermediateVariable.h"
-#include "VulkanContext/Flight/VulkanFlightManager.h"
 
 namespace Ailurus
 {
@@ -232,7 +231,7 @@ namespace Ailurus
 			}
 
 			// Push constant model matrix
-			pCommandBuffer->PushConstantModelMaterix(pCurrentVkPipeline, renderingMesh.pEntity->GetModelMatrix());
+			pCommandBuffer->PushConstantModelMatrix(pCurrentVkPipeline, renderingMesh.pEntity->GetModelMatrix());
 
 			// Bind vertex buffer
 			const auto pVertexBuffer = renderingMesh.pTargetMesh->GetVertexBuffer();
