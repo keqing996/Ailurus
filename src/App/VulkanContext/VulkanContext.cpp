@@ -227,12 +227,9 @@ namespace Ailurus
 
 		// Acquire next image
 		const vk::Semaphore imageReadySemaphore = _resourceManager->AllocateSemaphore();
-		bool acquireImageSucc = _pSwapChain->AcquireNextImage(imageReadySemaphore, needRebuildSwapchain);
-		if (!acquireImageSucc)
-		{
-			_resourceManager->FreeSemaphore(imageReadySemaphore, true);
+		auto pSwapChainSyncObjects = _pSwapChain->AcquireNextImage(needRebuildSwapchain);
+		if (pSwapChainSyncObjects == nullptr)
 			return false;
-		}
 
 		if (recordCmdBufFunc != nullptr)
 			recordCmdBufFunc(_flightManager->GetRecordingCommandBuffer(), _flightManager->GetAllocatingDescriptorPool());

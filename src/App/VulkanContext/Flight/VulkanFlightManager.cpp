@@ -12,6 +12,17 @@ namespace Ailurus
 	VulkanFlightManager::VulkanFlightManager(uint32_t parallelFrames)
 		: _parallelFrame(parallelFrames)
 	{
+		for (auto i = 0; i < parallelFrames; ++i)
+		{
+			FrameContext frameContext;
+			frameContext.onAirInfo = std::nullopt; // Not in flight
+			frameContext.pRenderingCommandBuffer = std::make_unique<VulkanCommandBuffer>();
+			frameContext.pFrameDescriptorAllocator = std::make_unique<VulkanDescriptorAllocator>();
+			frameContext.imageReadySemaphore = std::make_unique<VulkanSemaphore>();
+			frameContext.renderFinishSemaphore = std::make_unique<VulkanSemaphore>();
+			frameContext.renderFinishFence = std::make_unique<VulkanFence>(false);
+			_frameContext.push_back(std::move(frameContext));
+		}
 	}
 
 	VulkanFlightManager::~VulkanFlightManager()
@@ -47,15 +58,15 @@ namespace Ailurus
 		}
 	}
 
-	bool VulkanFlightManager::WaitOneFlight()
+	bool VulkanFlightManager::WaitOneFlight(uint32_t index)
 	{
-		if (_onAirFrames.size() < _parallelFrame)
+		auto& context = _frameContext[index];
+
+		// Not in flight
+		if (!context.onAirInfo.has_value())
 			return true;
 
-		auto onAirFrame = std::move(_onAirFrames.front());
-		_onAirFrames.pop_front();
-
-		const auto waitFence = VulkanContext::GetDevice().waitForFences(onAirFrame.renderFinishFence,
+		const auto waitFence = VulkanContext::GetDevice().waitForFences(context.renderFinishFence,
 			true, std::numeric_limits<uint64_t>::max());
 		if (waitFence != vk::Result::eSuccess)
 		{

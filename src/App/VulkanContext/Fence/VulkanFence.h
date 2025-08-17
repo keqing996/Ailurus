@@ -8,7 +8,7 @@ namespace Ailurus
     class VulkanFence: public NonCopyable
     {
     public:
-        VulkanFence();
+        explicit VulkanFence(bool initSignaled);
         ~VulkanFence();
 
         vk::Fence GetFence() const;

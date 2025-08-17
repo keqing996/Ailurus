@@ -3,9 +3,13 @@
 
 namespace Ailurus
 {
-    VulkanFence::VulkanFence()
+    VulkanFence::VulkanFence(bool initSignaled)
     {
         vk::FenceCreateInfo fenceInfo;
+
+        if (initSignaled)
+            fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+
         _vkFence = VulkanContext::GetDevice().createFence(fenceInfo);
     }
 
