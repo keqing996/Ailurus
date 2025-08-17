@@ -75,6 +75,22 @@ namespace Ailurus
 
             throw std::runtime_error("Error convert string to enum: " + string);
         }
+
+    	static bool TryFromString(const std::string& string, EnumType* arg)
+        {
+        	auto const& nameArray = GetNameArray();
+
+        	for (unsigned int i = 0; i < nameArray.size(); i++)
+        	{
+        		if (string == nameArray[i])
+        		{
+        			*arg = static_cast<EnumType>(i);
+        			return true;
+        		}
+        	}
+
+        	return false;
+        }
     };
 
     template<typename EnumType> requires std::is_enum_v<EnumType>

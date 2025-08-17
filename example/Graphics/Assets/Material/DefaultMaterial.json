@@ -1,0 +1,46 @@
+[
+	{
+		"pass": "Forward",
+		"shader": [
+			{
+				"stage": "Vertex",
+				"source": "Assets/Shader/triangle.vert"
+			},
+			{
+				"stage": "Fragment",
+				"source": "Assets/Shader/triangle.frag"
+			}
+		],
+		"uniforms": [
+			{
+				"binding": 0,
+				"shaderStage": [ "Fragment" ],
+				"name": "materialProperty",
+				"variable": {
+					"type": "Structure",
+					"members": [
+						{
+							"name": "u_SelfColor",
+							"variable": {
+								"type": "Numeric",
+								"value": {
+									"type": "Vector3",
+									"x": 0.6,
+									"y": 0.1,
+									"z": 0.1
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"textures": [
+			{
+				"uniformVarName": "u_mainTexture",
+				"slot": 0,
+				"path": "Assets/Texture/wall.jpg"
+			}
+		]
+	}
+]

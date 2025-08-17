@@ -3,6 +3,7 @@
 .cache/
 .vscode/
 *.pdb
+__pycache__/
 
 # CMake generated files
 CMakeFiles/
@@ -53,3 +54,5 @@ intermediates
 
 !CppToolSet/Artifacts/*
 .DS_Store
+
+*.spv

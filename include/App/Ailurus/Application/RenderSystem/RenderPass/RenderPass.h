@@ -20,6 +20,6 @@ namespace Ailurus
 		VulkanRenderPass* GetRHIRenderPass() const;
 
 	private:
-		std::unique_ptr<VulkanRenderPass> _pRHI = nullptr;
+		std::unique_ptr<VulkanRenderPass> _pVulkanRenderPass;
 	};
 } // namespace Ailurus

@@ -1,15 +1,23 @@
+set (BUILD_SHARED_LIBS OFF)
 
 # spdlog
+set (SPDLOG_BUILD_SHARED OFF)
 add_subdirectory(spdlog)
 
 # glm
 add_subdirectory(glm)
 target_compile_definitions(glm PUBLIC GLM_FORCE_LEFT_HANDED)
 
+# nlohmann json
+add_subdirectory(nlohmann)
+
 # sdl
 set (SDL_STATIC ON) # static link sdl
 set (SDL_SHARED OFF)
 add_subdirectory(sdl)
+
+# assimp
+add_subdirectory(assimp)
 
 # imgui
 find_package(Vulkan REQUIRED)

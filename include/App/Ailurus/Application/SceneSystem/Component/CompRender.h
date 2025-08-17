@@ -1,13 +1,11 @@
 #pragma once
 
 #include <memory>
-#include "BaseComponent.h"
+#include "Base/Component.h"
 
 namespace Ailurus
 {
-	class CompRender : public Component
+	class CompRender : public TComponent<ComponentType::Render, Component>
 	{
-	public:
-		ComponentType GetType() const override;
 	};
 } // namespace Ailurus

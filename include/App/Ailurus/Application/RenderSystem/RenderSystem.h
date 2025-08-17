@@ -1,18 +1,25 @@
 #pragma once
 
-#include <string>
 #include <unordered_map>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderLibrary.h"
+#include "Ailurus/Application/SceneSystem/Component/CompCamera.h"
 
 namespace Ailurus
 {
-	class Material;
+	class MaterialInstance;
+	class Mesh;
 	class RenderPass;
-	class CompMeshRender;
+	class CompStaticMeshRender;
+	class VulkanCommandBuffer;
+	class VulkanDescriptorAllocator;
+	class VulkanUniformBuffer;
+	class UniformSet;
+	class UniformSetMemory;
+	struct RenderIntermediateVariable;
 
 	class RenderSystem : public NonCopyable, public NonMovable
 	{
@@ -22,12 +29,15 @@ namespace Ailurus
 	public:
 		void NeedRecreateSwapChain();
 
-		// Material
-		Material* GetMaterial(const std::string& name) const;
-		Material* AddMaterial(const std::string& name);
+		auto GetRenderPass(RenderPassType pass) const -> RenderPass*;
+		auto GetGlobalUniformSet() const -> UniformSet*;
 
 		// Shader library
 		ShaderLibrary* GetShaderLibrary() const;
+
+		// Camera
+		void SetMainCamera(CompCamera* pCamera);
+		CompCamera* GetMainCamera() const;
 
 		// Draw
 		void RenderScene();
@@ -38,18 +48,41 @@ namespace Ailurus
 		RenderSystem();
 
 	private:
-		void ReBuildSwapChain();
+		// Create
+		void CreateIntermediateVariable();
 		void BuildRenderPass();
-		void RenderForwardPass(std::vector<CompMeshRender*>& meshRenderList);
-		void RenderMesh(const CompMeshRender* pMeshRender, class VulkanCommandBuffer* pCommandBuffer) const;
+		void BuildGlobalUniform();
+
+		// Render
+		void RenderPrepare();
+		void CollectRenderingContext();
+		void UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator);
+		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator);
+		void RebuildSwapChain();
+		void RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
+
+		// Global uniform
+		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;
+		static auto GetGlobalUniformAccessNameCameraPos() -> const std::string&;
 
 	private:
 		bool _needRebuildSwapChain = false;
-		std::unordered_map<std::string, std::unique_ptr<Material>> _materialMap;
 		std::unordered_map<RenderPassType, std::unique_ptr<RenderPass>> _renderPassMap;
-		const RenderPass* _pCurrentRenderPass = nullptr;
+
+		// Current main camera
+		CompCamera* _pMainCamera = nullptr;
 
 		// Shader library
 		std::unique_ptr<ShaderLibrary> _pShaderLibrary;
+
+		// Intermediate variables for every frame
+		std::unique_ptr<RenderIntermediateVariable> _pIntermediateVariable;
+
+		// Uniforms set for global usage
+		static const char* GLOBAL_UNIFORM_SET_NAME;
+		static const char* GLOBAL_UNIFORM_ACCESS_VIEW_PROJ_MAT;
+		static const char* GLOBAL_UNIFORM_ACCESS_CAMERA_POS;
+		std::unique_ptr<UniformSet> _pGlobalUniformSet;
+		std::unique_ptr<UniformSetMemory> _pGlobalUniformMemory;
 	};
 } // namespace Ailurus

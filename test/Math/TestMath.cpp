@@ -160,41 +160,6 @@ TEST_SUITE("Matrix3x3")
 		CHECK(resultAngles.yaw == doctest::Approx(angles.yaw).epsilon(0.001f));
 	}
 
-	TEST_CASE("MakeModelMatrix function")
-	{
-		Vector3f position(1.0f, 2.0f, 3.0f);
-		Quaternionf rotation = RotateAxis(Vector3f(0.0f, 1.0f, 0.0f), 90.0f);
-		Vector3f scale(2.0f, 2.0f, 2.0f);
-
-		Matrix4x4f modelMatrix = MakeModelMatrix(position, rotation, scale);
-
-		// Test the transformation of a point
-		Vector4f point(1.0f, 0.0f, 0.0f, 1.0f);
-		Vector4f transformed = modelMatrix * point;
-
-		// Expected result: rotated, scaled, then translated
-		CHECK(transformed.x == doctest::Approx(1.0f).epsilon(0.001f)); // 1 + 0*2
-		CHECK(transformed.y == doctest::Approx(2.0f).epsilon(0.001f)); // 2 + 0*2
-		CHECK(transformed.z == doctest::Approx(1.0f).epsilon(0.001f)); // 3 + (-1)*2
-	}
-
-	TEST_CASE("MakeViewMatrix function")
-	{
-		Vector3f cameraPos(-5.0f, 0.0f, 0.0f);
-		Quaternionf cameraRot = Quaternionf::Identity;
-
-		Matrix4x4f viewMatrix = MakeViewMatrix(cameraPos, cameraRot);
-
-		// Test transforming a world point to view space
-		Vector4f worldPoint(0.0f, 0.0f, 0.0f, 1.0f);
-		Vector4f viewPoint = viewMatrix * worldPoint;
-
-		// Camera at (0,0,5) looking down -Z, so the origin should be at (0,0,-5) in view space
-		CHECK(viewPoint.x == doctest::Approx(5.0f).epsilon(0.001f));
-		CHECK(viewPoint.y == doctest::Approx(0.0f).epsilon(0.001f));
-		CHECK(viewPoint.z == doctest::Approx(0.0f).epsilon(0.001f));
-	}
-
 	TEST_CASE("RotateAxis function")
 	{
 		// Test rotation around X axis

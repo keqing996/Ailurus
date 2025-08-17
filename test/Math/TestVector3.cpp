@@ -1,5 +1,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest/doctest.h"
+#include <glm/glm.hpp>
 
 #include <Ailurus/Math/Vector3.hpp>
 
@@ -95,12 +96,22 @@ TEST_SUITE("Vector3")
 		CHECK(dot == T(32)); // 1*4 + 2*5 + 3*6 = 32
 	}
 
-	TEST_CASE_TEMPLATE("Vector3 cross product properties", T, float, double)
+	TEST_CASE_TEMPLATE("Vector3 cross product", T, float, double)
 	{
-		// v1 × v2 = -(v2 × v1)
 		Vector3<T> v1(T(2), T(3), T(4));
 		Vector3<T> v2(T(5), T(6), T(7));
 
+		glm::vec<3, T> glmV1(T(2), T(3), T(4));
+		glm::vec<3, T> glmV2(T(5), T(6), T(7));
+
+		// compare with glm, both right handle coordinates
+		Vector3<T> crossMy = v1.Cross(v2);
+		glm::vec<3, T> glmCross1 = glm::cross(glmV1, glmV2);
+		CHECK(crossMy.x == glmCross1.x);
+		CHECK(crossMy.y == glmCross1.y);
+		CHECK(crossMy.z == glmCross1.z);
+
+		// v1 × v2 = -(v2 × v1)
 		Vector3<T> cross1 = v1.Cross(v2);
 		Vector3<T> cross2 = v2.Cross(v1);
 		Vector3<T> negCross2 = cross2 * T(-1);

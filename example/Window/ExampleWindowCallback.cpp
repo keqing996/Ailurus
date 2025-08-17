@@ -61,7 +61,7 @@ int Main(int argc, char *argv[])
 
     Application::Loop([&]()-> void
     {
-        if (Application::GetInputManager().IsButtonPressed(ButtonType::KeyboardU))
+        if (Application::Get<InputSystem>()->IsButtonPressed(ButtonType::KeyboardU))
         {
             bool currentCursorVisible = Application::IsCursorVisible();
             Application::SetCursorVisible(!currentCursorVisible);
