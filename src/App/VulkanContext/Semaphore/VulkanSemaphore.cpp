@@ -14,7 +14,7 @@ namespace Ailurus
         VulkanContext::GetDevice().destroySemaphore(_vkSemaphore);
     }
 
-    vk::Semaphore VulkanSemaphore::GetSemaphore() const
+    const vk::Semaphore& VulkanSemaphore::GetSemaphore() const
     {
         return _vkSemaphore;
     }

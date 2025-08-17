@@ -30,11 +30,10 @@ namespace Ailurus
 		}
 	}
 
-	void VulkanUniformBuffer::TransitionDataToGpu()
+	void VulkanUniformBuffer::TransitionDataToGpu(VulkanCommandBuffer* pCommandBuffer)
 	{
 		EnsureCurrentBufferValid();
 
-		VulkanCommandBuffer* pCommandBuffer = VulkanContext::GetFlightManager()->GetRecordingCommandBuffer();
 		pCommandBuffer->CopyBuffer(_currentBuffer->cpuBuffer, _currentBuffer->gpuBuffer, _bufferSize);
 		pCommandBuffer->BufferMemoryBarrier(_currentBuffer->gpuBuffer, vk::AccessFlagBits::eTransferWrite,
 			vk::AccessFlagBits::eUniformRead, vk::PipelineStageFlagBits::eTransfer,

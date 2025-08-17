@@ -1,12 +1,12 @@
 
 add_custom_target       (ailurus_example_render_shader_compile_job ALL
         COMMENT "[Render] Shader Compile Job"
-        COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/shader_gen.py" "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Shader" "${CMAKE_CURRENT_SOURCE_DIR}/Assets/ShaderBin"
+        COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/shader_gen.py" "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Shader" "${CMAKE_CURRENT_SOURCE_DIR}/Assets/ShaderBin"
 )
 
 add_custom_target       (ailurus_example_render_assets_copy_job ALL
         COMMENT "[Render] Assets Copy Job"
-        COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/assets_copy.py" "${CMAKE_CURRENT_SOURCE_DIR}/Assets" "$<TARGET_FILE_DIR:ailurus_example_render>/Assets"
+        COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/assets_copy.py" "${CMAKE_CURRENT_SOURCE_DIR}/Assets" "$<TARGET_FILE_DIR:ailurus_example_render>/Assets"
 )
 
 file                    (GLOB_RECURSE  AILURUS_RENDER_EXAMPLE_SRC ./*.cpp)

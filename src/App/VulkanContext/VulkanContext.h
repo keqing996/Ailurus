@@ -23,6 +23,7 @@ namespace Ailurus
 		using GetWindowInstanceExtension = std::function<std::vector<const char*>()>;
 		using WindowCreateSurfaceCallback = std::function<vk::SurfaceKHR(const vk::Instance&)>;
 		using WindowDestroySurfaceCallback = std::function<void(const vk::Instance&, const vk::SurfaceKHR&)>;
+		using RenderFunction = std::function<void(uint32_t, VulkanCommandBuffer*, VulkanDescriptorAllocator*)>;
 
 	public:
 		static void Initialize(const GetWindowInstanceExtension& getWindowRequiredExtension,
@@ -54,7 +55,7 @@ namespace Ailurus
 		static void RebuildSwapChain();
 
 		// Render
-		static bool RenderFrame(bool* needRebuildSwapchain, const std::function<void(VulkanCommandBuffer*, VulkanDescriptorAllocator*)>& recordCmdBufFunc);
+		static bool RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc);
 		static void WaitDeviceIdle();
 
 	private:

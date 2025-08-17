@@ -11,7 +11,7 @@ namespace Ailurus
         explicit VulkanFence(bool initSignaled);
         ~VulkanFence();
 
-        vk::Fence GetFence() const;
+        const vk::Fence& GetFence() const;
 
     private:
         vk::Fence _vkFence;

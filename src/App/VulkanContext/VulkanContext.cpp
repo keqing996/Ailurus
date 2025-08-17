@@ -218,25 +218,29 @@ namespace Ailurus
 		return _pipelineManager.get();
 	}
 
-	bool VulkanContext::RenderFrame(bool* needRebuildSwapchain, const std::function<void(VulkanCommandBuffer*, VulkanDescriptorAllocator*)>& recordCmdBufFunc)
+	bool VulkanContext::RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc)
 	{
 		// Fence frame context
-		bool waitFinishSucc = _flightManager->WaitOneFlight();
-		if (!waitFinishSucc)
-			return false;
+		_flightManager->WaitCurrentFlightReady();
+
+		// Find a chance to collect garbage
+		_resourceManager->GarbageCollect();
 
 		// Acquire next image
-		const vk::Semaphore imageReadySemaphore = _resourceManager->AllocateSemaphore();
-		auto pSwapChainSyncObjects = _pSwapChain->AcquireNextImage(needRebuildSwapchain);
-		if (pSwapChainSyncObjects == nullptr)
+		//  - Image ready semaphore will **NOT** be signaled when the result of AcquireNextImageKHR is not eSuccess
+		//    or eSuboptimalKHR, so it is safe to recycle the semaphore.
+		const auto& currentFraneContext = _flightManager->GetFrameContext();
+		const auto opImageIndex = _pSwapChain->AcquireNextImage(currentFraneContext.imageReadySemaphore.get(), needRebuildSwapChain);
+		if (!opImageIndex.has_value())
 			return false;
 
+		const auto imageIndex = opImageIndex.value();
+
 		if (recordCmdBufFunc != nullptr)
-			recordCmdBufFunc(_flightManager->GetRecordingCommandBuffer(), _flightManager->GetAllocatingDescriptorPool());
+			recordCmdBufFunc(imageIndex, currentFraneContext.pRenderingCommandBuffer.get(), currentFraneContext.pFrameDescriptorAllocator.get());
 
 		// Submit command buffers
-		return _flightManager->TakeOffFlight(_pSwapChain->GetCurrentImageIndex(),
-			imageReadySemaphore, needRebuildSwapchain);
+		return _flightManager->TakeOffFlight(imageIndex, needRebuildSwapChain);
 	}
 
 	void VulkanContext::WaitDeviceIdle()

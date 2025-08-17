@@ -56,10 +56,10 @@ namespace Ailurus
 		// Render
 		void RenderPrepare();
 		void CollectRenderingContext();
-		void UpdateGlobalUniformBuffer(VulkanDescriptorAllocator* pDescriptorAllocator);
-		void UpdateMaterialInstanceUniformBuffer(VulkanDescriptorAllocator* pDescriptorAllocator);
+		void UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator);
+		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
-		void RenderSpecificPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer);
+		void RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
 		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;

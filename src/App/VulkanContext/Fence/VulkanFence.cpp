@@ -18,7 +18,7 @@ namespace Ailurus
         VulkanContext::GetDevice().destroyFence(_vkFence);
     }
 
-    vk::Fence VulkanFence::GetFence() const
+    const vk::Fence& VulkanFence::GetFence() const
     {
         return _vkFence;
     }

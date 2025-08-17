@@ -67,9 +67,9 @@ namespace Ailurus
 		_uniformValueMap[entry] = value;
 	}
 
-	void UniformSetMemory::UpdateToDescriptorSet(const VulkanDescriptorSet& descriptorSet) const
+	void UniformSetMemory::UpdateToDescriptorSet(VulkanCommandBuffer* pCommandBuffer, const VulkanDescriptorSet& descriptorSet) const
 	{
-		TransitionDataToGpu();
+		TransitionDataToGpu(pCommandBuffer);
 
 		std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
 
@@ -98,10 +98,10 @@ namespace Ailurus
 		VulkanContext::GetDevice().updateDescriptorSets(writeDescriptorSets, {});
 	}
 
-	auto UniformSetMemory::TransitionDataToGpu() const -> void
+	auto UniformSetMemory::TransitionDataToGpu(VulkanCommandBuffer* pCommandBuffer) const -> void
 	{
 		if (_pUniformBuffer)
-			_pUniformBuffer->TransitionDataToGpu();
+			_pUniformBuffer->TransitionDataToGpu(pCommandBuffer);
 	}
 
 	auto UniformSetMemory::GetUniformValueMap() const -> const UniformValueMap&

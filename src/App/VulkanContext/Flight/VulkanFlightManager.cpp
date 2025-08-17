@@ -28,34 +28,11 @@ namespace Ailurus
 	VulkanFlightManager::~VulkanFlightManager()
 	{
 		WaitAllFlight();
-
-		// Recycle recording resources
-		if (_pRecordingCommandBuffer != nullptr)
-		{
-			_pRecordingCommandBuffer.reset();
-		}
-
-		// Reset and free descriptor pool
-		if (_pAllocatingDescriptorPool != nullptr)
-		{
-			_pAllocatingDescriptorPool->ResetPool();
-			VulkanContext::GetResourceManager()->FreeDescriptorAllocator(
-				std::move(_pAllocatingDescriptorPool));
-		}
 	}
 
-	void VulkanFlightManager::EnsurePreparation()
+	void VulkanFlightManager::WaitCurrentFlightReady()
 	{
-		if (_pRecordingCommandBuffer == nullptr)
-		{
-			_pRecordingCommandBuffer = std::make_unique<VulkanCommandBuffer>();
-			_pRecordingCommandBuffer->Begin();
-		}
-
-		if (_pAllocatingDescriptorPool == nullptr)
-		{
-			_pAllocatingDescriptorPool = std::move(VulkanContext::GetResourceManager()->AllocateDescriptorAllocator());
-		}
+		WaitOneFlight(_currentFlightIndex);
 	}
 
 	bool VulkanFlightManager::WaitOneFlight(uint32_t index)
@@ -66,119 +43,91 @@ namespace Ailurus
 		if (!context.onAirInfo.has_value())
 			return true;
 
-		const auto waitFence = VulkanContext::GetDevice().waitForFences(context.renderFinishFence,
+		// Wait render finish fence
+		const auto waitFence = VulkanContext::GetDevice().waitForFences(context.renderFinishFence->GetFence(),
 			true, std::numeric_limits<uint64_t>::max());
 		if (waitFence != vk::Result::eSuccess)
 		{
 			Logger::LogError("Fail to wait fences, result = {}", static_cast<int>(waitFence));
-			_onAirFrames.push_front(std::move(onAirFrame));
 			return false;
 		}
 
-		auto vkResMgr = VulkanContext::GetResourceManager();
+		// Reset frame resource
+		context.pFrameDescriptorAllocator->ResetPool();
 
-		// Free finished command buffer
-		onAirFrame.pRenderingCommandBuffer.reset();
-
-		// Free used semaphores
-		vkResMgr->FreeSemaphore(onAirFrame.imageReadySemaphore);
-		vkResMgr->FreeSemaphore(onAirFrame.renderFinishSemaphore);
-
-		// Reset fence and free
-		VulkanContext::GetDevice().resetFences(onAirFrame.renderFinishFence);
-		vkResMgr->FreeFence(onAirFrame.renderFinishFence);
-
-		// Reset and free descriptor pool
-		onAirFrame.pFrameDescriptorAllocator->ResetPool();
-		vkResMgr->FreeDescriptorAllocator(std::move(onAirFrame.pFrameDescriptorAllocator));
-
-		// Trigger resource collect
-		vkResMgr->GarbageCollect();
+		// Reset on air info
+		context.onAirInfo = std::nullopt;
 
 		return true;
 	}
 
 	void VulkanFlightManager::WaitAllFlight()
 	{
-		while (!_onAirFrames.empty())
-		{
-			if (!WaitOneFlight())
-			{
-				Logger::LogError("Fail to wait flight.");
-				break;
-			}
-		}
+		for (auto i = 0; i < _frameContext.size(); i++)
+			WaitOneFlight(i);
 	}
 
-	bool VulkanFlightManager::TakeOffFlight(uint32_t imageIndex, vk::Semaphore imageReadySemaphore, bool* needRebuild)
+	bool VulkanFlightManager::TakeOffFlight(uint32_t imageIndex, bool* needRebuild)
 	{
-		EnsurePreparation();
+		auto& context = _frameContext[_currentFlightIndex];
 
 		// Record end
-		_pRecordingCommandBuffer->End();
-
-		// Create a fence and semaphore
-		auto vkResMgr = VulkanContext::GetResourceManager();
-		const vk::Fence renderFinishFence = vkResMgr->AllocateFence();
-		const vk::Semaphore renderFinishSemaphore = vkResMgr->AllocateSemaphore();
+		context.pRenderingCommandBuffer->End();
 
 		// Do submit
 		vk::SubmitInfo submitInfo;
-		submitInfo.setCommandBuffers(_pRecordingCommandBuffer->GetBuffer())
-			.setSignalSemaphores(renderFinishSemaphore)
-			.setWaitSemaphores(imageReadySemaphore);
+		submitInfo.setCommandBuffers(context.pRenderingCommandBuffer->GetBuffer())
+			.setSignalSemaphores(context.renderFinishSemaphore->GetSemaphore())
+			.setWaitSemaphores(context.imageReadySemaphore->GetSemaphore());
 
 		// Wait stages
 		std::vector<vk::PipelineStageFlags> waitStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
 		submitInfo.setWaitDstStageMask(waitStages);
 
 		// Submit
-		VulkanContext::GetGraphicQueue().submit(submitInfo, renderFinishFence);
-		_onAirFrames.push_back(OnAirFrame {
-			.frameCount = Application::Get<TimeSystem>()->FrameCount(),
-			.pRenderingCommandBuffer = std::move(_pRecordingCommandBuffer),
-			.pFrameDescriptorAllocator = std::move(_pAllocatingDescriptorPool),
-			.imageReadySemaphore = imageReadySemaphore,
-			.renderFinishSemaphore = renderFinishSemaphore,
-			.renderFinishFence = renderFinishFence,
-		});
+		VulkanContext::GetGraphicQueue().submit(submitInfo, context.renderFinishFence->GetFence());
 
-		// New frame resource
-		EnsurePreparation();
+		// Set on air info
+		context.onAirInfo = OnAirInfo{
+			.frameCount = Application::Get<TimeSystem>()->FrameCount()
+		};
 
 		// Present
 		vk::PresentInfoKHR presentInfo;
-		presentInfo.setWaitSemaphores(renderFinishSemaphore)
+		presentInfo.setWaitSemaphores(context.renderFinishSemaphore->GetSemaphore())
 			.setSwapchains(VulkanContext::GetSwapChain()->GetSwapChain())
 			.setImageIndices(imageIndex);
 
+		bool presentResult = false;
 		switch (const auto present = VulkanContext::GetPresentQueue().presentKHR(presentInfo))
 		{
 			case vk::Result::eSuccess:
-				return true;
+				presentResult = true;
+				break;
 			case vk::Result::eSuboptimalKHR:
 				*needRebuild = true;
-				return true;
+				presentResult = true;
+				break;
 			case vk::Result::eErrorOutOfDateKHR:
 				Logger::LogError("Fail to present, error out of date");
 				*needRebuild = true;
-				return false;
+				presentResult = false;
+				break;
 			default:
 				Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
-				return false;
+				presentResult = false;
+				break;
 		}
+
+		// Update frame index
+		_currentFlightIndex = (_currentFlightIndex + 1) % _parallelFrame;
+
+		return presentResult;
 	}
 
-	VulkanCommandBuffer* VulkanFlightManager::GetRecordingCommandBuffer()
+	auto VulkanFlightManager::GetFrameContext() -> FrameContext&
 	{
-		EnsurePreparation();
-		return _pRecordingCommandBuffer.get();
-	}
-
-	VulkanDescriptorAllocator* VulkanFlightManager::GetAllocatingDescriptorPool()
-	{
-		EnsurePreparation();
-		return _pAllocatingDescriptorPool.get();
+		return _frameContext[_currentFlightIndex];
 	}
 
 	uint32_t VulkanFlightManager::GetParallelFramesCount() const

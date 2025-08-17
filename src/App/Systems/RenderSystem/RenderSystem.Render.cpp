@@ -25,6 +25,7 @@
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
 #include <VulkanContext/FrameBuffer/VulkanFrameBufferManager.h>
 #include "Detail/RenderIntermediateVariable.h"
+#include "VulkanContext/Flight/VulkanFlightManager.h"
 
 namespace Ailurus
 {
@@ -109,18 +110,18 @@ namespace Ailurus
 			RebuildSwapChain();
 
 		VulkanContext::RenderFrame(&_needRebuildSwapChain, 
-			[this](VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void 
+			[this](uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void
 		{
 			RenderPrepare();
 
 			CollectRenderingContext();
-			UpdateGlobalUniformBuffer(pDescriptorAllocator);
-			UpdateMaterialInstanceUniformBuffer(pDescriptorAllocator);
-			RenderSpecificPass(RenderPassType::Forward, pCommandBuffer);
+			UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
+			UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
+			RenderSpecificPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
 		});
 	}
 
-	void RenderSystem::UpdateGlobalUniformBuffer(VulkanDescriptorAllocator* pDescriptorAllocator)
+	void RenderSystem::UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator)
 	{
 		_pGlobalUniformMemory->SetUniformValue(
 			{ 0, GetGlobalUniformAccessNameViewProjMat() },
@@ -138,10 +139,10 @@ namespace Ailurus
 		_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::General)] = globalDescriptorSet;
 
 		// Write the descriptor set
-		_pGlobalUniformMemory->UpdateToDescriptorSet(globalDescriptorSet);
+		_pGlobalUniformMemory->UpdateToDescriptorSet(pCommandBuffer, globalDescriptorSet);
 	}
 
-	void RenderSystem::UpdateMaterialInstanceUniformBuffer(VulkanDescriptorAllocator* pDescriptorAllocator)
+	void RenderSystem::UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator)
 	{
 		auto& opaqueMeshes = _pIntermediateVariable->renderingMeshes;
 		for (auto& [pass, meshes] : opaqueMeshes)
@@ -160,7 +161,7 @@ namespace Ailurus
 				auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(pDescriptorLayout);
 
 				// Update material data to descriptor set
-				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(descriptorSet);
+				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(pCommandBuffer, descriptorSet);
 
 				// Record material instance descriptor set
 				mapInstDescriptorSetMap[pMaterialInstance] = descriptorSet;
@@ -168,29 +169,26 @@ namespace Ailurus
 		}
 	}
 
-	void RenderSystem::RenderSpecificPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer)
+	void RenderSystem::RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
 	{
 		if (_pIntermediateVariable->renderingMeshes.empty())
 			return;
 
-		auto pRenderPass = GetRenderPass(pass);
+		const auto pRenderPass = GetRenderPass(pass);
 		if (pRenderPass == nullptr)
 			return;
 
-		auto pVkRenderPass = pRenderPass->GetRHIRenderPass();
-		auto currentBackBufferIndex = VulkanContext::GetSwapChain()->GetCurrentImageIndex();
-		auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pVkRenderPass, currentBackBufferIndex);
+		const auto pVkRenderPass = pRenderPass->GetRHIRenderPass();
+		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pVkRenderPass, swapChainImageIndex);
 		pCommandBuffer->BeginRenderPass(pVkRenderPass, pBackBuffer);
 
-		// Intermidiate variables
+		// Intermediate variables
 		const Material* pCurrentMaterial = nullptr;
 		const MaterialInstance* pCurrentMaterialInstance = nullptr;
 		uint64_t currentVertexLayoutId = 0;
 
 		// Pipeline variables
-		VulkanDescriptorSetLayout* pCurrentVkSetLayout;
 		VulkanPipeline* pCurrentVkPipeline;
-
 		for (const auto& renderingMesh : _pIntermediateVariable->renderingMeshes[pass])
 		{
 			if (renderingMesh.pMaterial != pCurrentMaterial)

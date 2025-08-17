@@ -7,6 +7,7 @@
 namespace Ailurus
 {
 	class VulkanUniformBuffer;
+	class VulkanCommandBuffer;
 	class VulkanDescriptorSet;
 
 	class UniformSetMemory
@@ -19,10 +20,10 @@ namespace Ailurus
 		auto GetUniformValueMap() const -> const UniformValueMap&;
 		auto SetUniformValue(uint32_t bindingId, const std::string& access, const UniformValue& value) -> void;
 		auto SetUniformValue(const UniformAccess& entry, const UniformValue& value) -> void;
-		auto UpdateToDescriptorSet(const VulkanDescriptorSet& descriptorSet) const -> void;
+		auto UpdateToDescriptorSet(VulkanCommandBuffer* pCommandBuffer, const VulkanDescriptorSet& descriptorSet) const -> void;
 
 	private:
-		auto TransitionDataToGpu() const -> void;
+		auto TransitionDataToGpu(VulkanCommandBuffer* pCommandBuffer) const -> void;
 
 	private:
 		// Target uniform set

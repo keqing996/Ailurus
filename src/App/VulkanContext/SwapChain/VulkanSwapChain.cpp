@@ -105,19 +105,6 @@ namespace Ailurus
 
 			_vkSwapChainImageViews[i] = VulkanContext::GetDevice().createImageView(imageViewCreateInfo);
 		}
-
-		// Frame context
-		for (auto i = 0; i < _vkSwapChainImages.size(); i++)
-		{
-			auto pFrameContext = std::make_unique<FrameContext>();
-			pFrameContext->frameCount = 0;
-			pFrameContext->pRenderingCommandBuffer = std::make_unique<VulkanCommandBuffer>();
-			pFrameContext->pFrameDescriptorAllocator = std::make_unique<VulkanDescriptorAllocator>();
-			pFrameContext->pImageReadySemaphore = std::make_unique<VulkanSemaphore>();
-			pFrameContext->pRenderFinishedSemaphore = std::make_unique<VulkanSemaphore>();
-			pFrameContext->pRenderFinishFence = std::make_unique<VulkanFence>();
-			_frameContext.push_back(std::move(pFrameContext));
-		}
 	}
 
 	VulkanSwapChain::~VulkanSwapChain()
@@ -154,70 +141,36 @@ namespace Ailurus
 		return _vkSwapChainImageViews;
 	}
 
-	uint32_t VulkanSwapChain::GetCurrentImageIndex() const
+	std::optional<uint32_t> VulkanSwapChain::AcquireNextImage(VulkanSemaphore* imageReadySem, bool* needRebuildSwapChain)
 	{
-		return _currentImageIndex;
-	}
-
-	std::unique_ptr<VulkanSwapChain::FrameSyncObjects> VulkanSwapChain::AcquireNextImage(bool* needRebuildSwapChain)
-	{
-		auto pFrameSyncObjects = AllocateFrameSyncObjects();
-
 		auto acquireImage = VulkanContext::GetDevice().acquireNextImageKHR(
 			_vkSwapChain,
 			std::numeric_limits<uint64_t>::max(), 
-			pFrameSyncObjects->pImageReadySemaphore->GetSemaphore());
+			imageReadySem->GetSemaphore());
 
 		bool success = true;
 		switch (acquireImage.result)
 		{
+			// Success
 			case vk::Result::eSuccess:
 				break;
-			// Swapchain can still work but is not perfect, rebuild swapchain next frame.
+			// Swap chain can still work but is not perfect, rebuild swap chain next frame.
 			case vk::Result::eSuboptimalKHR:
 				*needRebuildSwapChain = true;
 				break;
-			// Swapchain is not fit for current surface, must be rebuilded.
+			// Swap chain is not fit for current surface, must be rebuilt right now.
 			case vk::Result::eErrorOutOfDateKHR:
 				*needRebuildSwapChain = true;
 				success = false;
+			// Other errors
 			default:
 				Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
 				success = false;
 		}
 
 		if (!success)
-		{
-			// Image ready semaphore will **NOT** be signaled when the result of AcquireNextImageKHR is not eSuccess
-			// or eSuboptimalKHR, so it is safe to recycle the semaphore.
-			RecycleFrameSyncObjects(std::move(pFrameSyncObjects));
-			return nullptr;
-		}
+			return std::nullopt;
 
-		_currentImageIndex = acquireImage.value;
-		return pFrameSyncObjects;
-	}
-
-	void VulkanSwapChain::RecycleFrameSyncObjects(std::unique_ptr<FrameSyncObjects>&& pFrameSyncObjects)
-	{
-		_frameSyncObjectsQueue.push_back(std::move(pFrameSyncObjects));
-	}
-
-	std::unique_ptr<VulkanSwapChain::FrameSyncObjects> VulkanSwapChain::AllocateFrameSyncObjects()
-	{
-		if (!_frameSyncObjectsQueue.empty())
-		{
-			auto result = std::move(_frameSyncObjectsQueue.front());
-			_frameSyncObjectsQueue.pop_front();
-			return result;
-		}
-		else 
-		{
-			auto pFrameSyncObjects = std::make_unique<FrameSyncObjects>();
-			pFrameSyncObjects->pImageReadySemaphore = std::make_unique<VulkanSemaphore>();
-			pFrameSyncObjects->pRenderFinishedSemaphore = std::make_unique<VulkanSemaphore>();
-			pFrameSyncObjects->pRenderFinishFence = std::make_unique<VulkanFence>();
-			return pFrameSyncObjects;
-		}
+		return acquireImage.value;
 	}
 } // namespace Ailurus

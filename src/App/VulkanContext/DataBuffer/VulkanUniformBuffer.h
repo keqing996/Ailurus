@@ -8,6 +8,7 @@ namespace Ailurus
 {
 	class VulkanHostBuffer;
 	class VulkanDeviceBuffer;
+	class VulkanCommandBuffer;
 
 	class VulkanUniformBuffer
 	{
@@ -24,7 +25,7 @@ namespace Ailurus
 	public:
 		uint32_t GetBufferSize() const;
 		void WriteData(uint32_t offset, const UniformValue& value);
-		void TransitionDataToGpu();
+		void TransitionDataToGpu(VulkanCommandBuffer* pCommandBuffer);
 		VulkanDeviceBuffer* GetThisFrameDeviceBuffer();
 
 	private:

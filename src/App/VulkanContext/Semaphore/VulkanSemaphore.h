@@ -11,10 +11,9 @@ namespace Ailurus
         VulkanSemaphore();
         ~VulkanSemaphore();
 
-        vk::Semaphore GetSemaphore() const;
+        const vk::Semaphore& GetSemaphore() const;
 
     private:
         vk::Semaphore _vkSemaphore;
-        
     };
 }

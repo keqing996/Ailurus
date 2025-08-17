@@ -15,33 +15,34 @@ namespace Ailurus
 	class VulkanFlightManager : public NonCopyable, public NonMovable
 	{
 	public:
-		explicit VulkanFlightManager(uint32_t parallelFrames);
-		~VulkanFlightManager();
-
-	public:
-		void EnsurePreparation();
-		bool WaitOneFlight();
-		void WaitAllFlight();
-		bool TakeOffFlight(uint32_t imageIndex, vk::Semaphore imageReadySemaphore, bool* needRebuild);
-		auto GetRecordingCommandBuffer() -> VulkanCommandBuffer*;
-		auto GetAllocatingDescriptorPool() -> VulkanDescriptorAllocator*;
-		uint32_t GetParallelFramesCount() const;
-
-	private:
 		struct OnAirInfo
 		{
 			uint64_t frameCount;
 		};
-		
+
 		struct FrameContext
 		{
-			std::optional<OnAirInfo> onAirInfo;	
+			std::optional<OnAirInfo> onAirInfo;
 			std::unique_ptr<VulkanCommandBuffer> pRenderingCommandBuffer;
 			std::unique_ptr<VulkanDescriptorAllocator> pFrameDescriptorAllocator;
 			std::unique_ptr<VulkanSemaphore> imageReadySemaphore;
 			std::unique_ptr<VulkanSemaphore> renderFinishSemaphore;
 			std::unique_ptr<VulkanFence> renderFinishFence;
 		};
+
+	public:
+		explicit VulkanFlightManager(uint32_t parallelFrames);
+		~VulkanFlightManager();
+
+	public:
+		auto WaitCurrentFlightReady() -> void;
+		auto WaitAllFlight() -> void;
+		auto TakeOffFlight(uint32_t imageIndex, bool* needRebuild) -> bool;
+		auto GetFrameContext() -> FrameContext&;
+		auto GetParallelFramesCount() const -> uint32_t;
+
+	private:
+		bool WaitOneFlight(uint32_t index);
 
 	private:
 		const uint32_t _parallelFrame;
