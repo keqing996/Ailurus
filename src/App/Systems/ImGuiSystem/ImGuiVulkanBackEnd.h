@@ -11,6 +11,7 @@ namespace Ailurus
         ~ImGuiVulkanBackEnd();
 
     public:
+    	void NewFrame();
         void Init();
         void Shutdown();
 

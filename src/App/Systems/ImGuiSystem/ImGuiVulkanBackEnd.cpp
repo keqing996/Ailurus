@@ -12,8 +12,8 @@ namespace Ailurus
             {vk::DescriptorType::eCombinedImageSampler, IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE}
         };
 
-        uint32_t maxSets;
-        for (VkDescriptorPoolSize& pool_size : poolSizes)
+        uint32_t maxSets = 0;
+        for (const vk::DescriptorPoolSize& pool_size : poolSizes)
             maxSets += pool_size.descriptorCount;
 
         vk::DescriptorPoolCreateInfo poolCreateInfo{};
@@ -70,7 +70,12 @@ namespace Ailurus
             VulkanContext::GetDevice().destroyDescriptorPool(_descriptorPool);
 	}
 
-    void ImGuiVulkanBackEnd::Init()
+	void ImGuiVulkanBackEnd::NewFrame()
+	{
+		ImGui_ImplVulkan_NewFrame();
+	}
+
+	void ImGuiVulkanBackEnd::Init()
     {
         ImGui_ImplVulkan_InitInfo imGuiVkInitInfo = {};
         imGuiVkInitInfo.ApiVersion = VulkanContext::GetApiVersion();
