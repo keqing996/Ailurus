@@ -17,6 +17,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace Ailurus
 {
+	uint32_t 									VulkanContext::_apiVersion = vk::ApiVersion13;
 	uint32_t									VulkanContext::_parallelFrameCount = 2;
 	bool 										VulkanContext::_initialized = false;
 
@@ -153,6 +154,16 @@ namespace Ailurus
 		}
 
 		_initialized = false;
+	}
+
+	uint32_t VulkanContext::GetApiVersion()
+	{
+		return _apiVersion;
+	}
+
+	vk::Instance VulkanContext::GetInstance()
+	{
+		return _vkInstance;
 	}
 
 	vk::Device VulkanContext::GetDevice()
@@ -405,7 +416,7 @@ namespace Ailurus
 		vk::ApplicationInfo applicationInfo;
 		applicationInfo
 			.setPApplicationName("Ailurus")
-			.setApiVersion(VK_API_VERSION_1_3)
+			.setApiVersion(_apiVersion)
 			.setPEngineName("No Engine");
 
 		vk::InstanceCreateInfo instanceCreateInfo;

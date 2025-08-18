@@ -37,6 +37,8 @@ namespace Ailurus
 		static void Destroy(const WindowDestroySurfaceCallback& destroySurface);
 
 		// Getter
+		static auto GetApiVersion() -> uint32_t;
+		static auto GetInstance() -> vk::Instance;
 		static auto GetDevice() -> vk::Device;
 		static auto GetPhysicalDevice() -> vk::PhysicalDevice;
 		static auto GetSurface() -> vk::SurfaceKHR;
@@ -94,6 +96,7 @@ namespace Ailurus
 
 	private:
 		static uint32_t _parallelFrameCount;
+		static uint32_t _apiVersion;
 
 		// Init
 		static bool _initialized;
