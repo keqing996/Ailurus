@@ -23,17 +23,10 @@ namespace Ailurus
             .setPoolSizes(poolSizes);
 
         _descriptorPool = VulkanContext::GetDevice().createDescriptorPool(poolCreateInfo);
-        
-        // Create the render pass
-        
 	}
 
 	ImGuiVulkanBackEnd::~ImGuiVulkanBackEnd()
 	{
-        // Destroy the render pass
-        if (_renderPass)
-            VulkanContext::GetDevice().destroyRenderPass(_renderPass);
-
         // Destroy the descriptor pool
         if (_descriptorPool)
             VulkanContext::GetDevice().destroyDescriptorPool(_descriptorPool);

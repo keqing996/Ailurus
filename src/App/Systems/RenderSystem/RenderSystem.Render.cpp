@@ -25,6 +25,7 @@
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
 #include <VulkanContext/FrameBuffer/VulkanFrameBufferManager.h>
 #include "Ailurus/Application/ImGuiSystem/ImGuiSystem.h"
+#include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -256,6 +257,10 @@ namespace Ailurus
 
 	void RenderSystem::RenderImGuiPass(VulkanCommandBuffer* pCommandBuffer)
 	{
+		const auto pRenderPass = GetRenderPass(RenderPassType::ImGui);
+		if (pRenderPass == nullptr)
+			return;
+
 		auto pImGui = Application::Get<ImGuiSystem>();
 		pImGui->Render(pCommandBuffer);
 	}

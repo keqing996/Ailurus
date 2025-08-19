@@ -1,5 +1,6 @@
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "VulkanContext/RenderPass/VulkanRenderPassForward.h"
+#include "VulkanContext/RenderPass/VulkanRenderPassImGui.h"
 
 namespace Ailurus
 {
@@ -10,6 +11,9 @@ namespace Ailurus
 		{
 			case RenderPassType::Forward:
 				_pVulkanRenderPass = std::make_unique<VulkanRenderPassForward>();
+				break;
+			case RenderPassType::ImGui:
+				_pVulkanRenderPass = std::make_unique<VulkanRenderPassImGui>();
 				break;
 		}
 	}

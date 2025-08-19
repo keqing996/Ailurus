@@ -22,6 +22,5 @@ namespace Ailurus
 
     private:
         vk::DescriptorPool _descriptorPool;
-        vk::RenderPass _renderPass;
     };
 }

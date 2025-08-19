@@ -71,6 +71,7 @@ namespace Ailurus
 	void RenderSystem::BuildRenderPass()
 	{
 		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
+		_renderPassMap[RenderPassType::ImGui] = std::make_unique<RenderPass>(RenderPassType::ImGui);
 	}
 
 	void RenderSystem::BuildGlobalUniform()
