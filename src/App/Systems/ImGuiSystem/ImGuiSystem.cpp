@@ -1,4 +1,3 @@
-#include <imgui.h>
 #include <SDL3/SDL.h>
 #include <backends/imgui_impl_sdl3.h>
 #include "ImGuiVulkanBackEnd.h"
@@ -6,6 +5,7 @@
 #include "Ailurus/Application/ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Application/ImGuiSystem/Theme/Spectrum.h"
 #include "Ailurus/Application/ImGuiSystem/Font/SansProRegular.h"
+#include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 
 namespace Ailurus
 {
@@ -69,21 +69,11 @@ namespace Ailurus
     	ImGui::NewFrame();
 	}
 
-	void ImGuiSystem::EndFrame()
+	void ImGuiSystem::Render(VulkanCommandBuffer* pCommandBuffer)
 	{
     	ImGui::Render();
 
-    	ImDrawData* draw_data = ImGui::GetDrawData();
-    	const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
-    	if (!is_minimized)
-    	{
-    		wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
-    		wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
-    		wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
-    		wd->ClearValue.color.float32[3] = clear_color.w;
-    		FrameRender(wd, draw_data);
-    		FramePresent(wd);
-    	}
+    	_pVkImpl->Render(pCommandBuffer);
 	}
 
 	ImFont* ImGuiSystem::CreateImGuiFont(void* fontData, int fontDataSize, int fontSize, bool transferDataOwnership, const ImWchar* glyphRanges)

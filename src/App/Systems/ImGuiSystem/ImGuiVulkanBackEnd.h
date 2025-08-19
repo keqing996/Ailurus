@@ -1,9 +1,13 @@
 #pragma once
 
+#include <memory>
 #include <vulkan/vulkan.hpp>
 
 namespace Ailurus
 {
+    class VulkanCommandBuffer;
+    class VulkanRenderPassImGui;
+
     class ImGuiVulkanBackEnd
     {
     public:
@@ -12,6 +16,7 @@ namespace Ailurus
 
     public:
     	void NewFrame();
+        void Render(VulkanCommandBuffer* pCommandBuffer);
         void Init();
         void Shutdown();
 

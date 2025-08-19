@@ -24,6 +24,7 @@
 #include <VulkanContext/Vertex/VulkanVertexLayoutManager.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
 #include <VulkanContext/FrameBuffer/VulkanFrameBufferManager.h>
+#include "Ailurus/Application/ImGuiSystem/ImGuiSystem.h"
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -251,5 +252,11 @@ namespace Ailurus
 		}
 
 		pCommandBuffer->EndRenderPass();
+	}
+
+	void RenderSystem::RenderImGuiPass(VulkanCommandBuffer* pCommandBuffer)
+	{
+		auto pImGui = Application::Get<ImGuiSystem>();
+		pImGui->Render(pCommandBuffer);
 	}
 } // namespace Ailurus

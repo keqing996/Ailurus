@@ -1,12 +1,12 @@
 #pragma once
 
 #include <memory>
-#include <functional>
-#include "Ailurus/PlatformDefine.h"
+#include <imgui.h>
 
 namespace Ailurus
 {
     class ImGuiVulkanBackEnd;
+    class VulkanCommandBuffer;
 
     class ImGuiSystem
     {
@@ -16,7 +16,7 @@ namespace Ailurus
 
     public:
     	void NewFrame();
-    	void EndFrame();
+    	void Render(VulkanCommandBuffer* pCommandBuffer);
     	ImFont* CreateImGuiFont(void* fontData, int fontDataSize, int fontSize = -1, bool transferDataOwnership = true, const ImWchar* glyphRanges = nullptr);
     	ImFont* CreateImGuiFont(const std::string& ttfPath, int fontSize = -1, const ImWchar* glyphRanges = nullptr);
 

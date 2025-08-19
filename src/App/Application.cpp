@@ -409,7 +409,7 @@ namespace Ailurus
 			case SDL_EVENT_WINDOW_RESIZED:
 			{
 				if (_pRenderSystem)
-					_pRenderSystem->NeedRecreateSwapChain();
+					_pRenderSystem->RequestRebuildSwapChain();
 
 				if (windowId == pSDLEvent->window.windowID && _onWindowResize != nullptr)
 					_onWindowResize(Vector2i(pSDLEvent->window.data1, pSDLEvent->window.data2));

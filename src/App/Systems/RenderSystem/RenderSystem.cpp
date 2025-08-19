@@ -27,7 +27,7 @@ namespace Ailurus
 	{
 	}
 
-	void RenderSystem::NeedRecreateSwapChain()
+	void RenderSystem::RequestRebuildSwapChain()
 	{
 		_needRebuildSwapChain = true;
 	}

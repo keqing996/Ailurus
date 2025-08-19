@@ -27,7 +27,7 @@ namespace Ailurus
 		~RenderSystem();
 
 	public:
-		void NeedRecreateSwapChain();
+		void RequestRebuildSwapChain();
 
 		auto GetRenderPass(RenderPassType pass) const -> RenderPass*;
 		auto GetGlobalUniformSet() const -> UniformSet*;
@@ -60,6 +60,7 @@ namespace Ailurus
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
 		void RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
+		void RenderImGuiPass(VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
 		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;
