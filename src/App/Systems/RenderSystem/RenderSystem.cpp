@@ -6,6 +6,7 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
+#include "Ailurus/Utility/Logger.h"
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -50,6 +51,32 @@ namespace Ailurus
 		return _pMainCamera;
 	}
 
+	void RenderSystem::AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback)
+	{
+		if (_preSwapChainRebuildCallbacks.contains(key))
+			Logger::LogWarn("RenderSystem: PreSwapChainRebuild callback already exists, key = {}", key);
+
+		_preSwapChainRebuildCallbacks[key] = callback;
+	}
+
+	void RenderSystem::AddCallbackPostSwapChainRebuild(void* key, const PostSwapChainRebuild& callback)
+	{
+		if (_postSwapChainRebuildCallbacks.contains(key))
+			Logger::LogWarn("RenderSystem: PostSwapChainRebuild callback already exists, key = {}", key);
+
+		_postSwapChainRebuildCallbacks[key] = callback;
+	}
+
+	void RenderSystem::RemoveCallbackPreSwapChainRebuild(void* key)
+	{
+		_preSwapChainRebuildCallbacks.erase(key);
+	}
+
+	void RenderSystem::RemoveCallbackPostSwapChainRebuild(void* key)
+	{
+		_postSwapChainRebuildCallbacks.erase(key);
+	}
+
 	void RenderSystem::GraphicsWaitIdle() const
 	{
 		VulkanContext::WaitDeviceIdle();
@@ -59,6 +86,12 @@ namespace Ailurus
 	{
 		GraphicsWaitIdle();
 
+		for (const auto& [key, preRebuildCallback] : _preSwapChainRebuildCallbacks)
+		{
+			if (preRebuildCallback)
+				preRebuildCallback();
+		}
+
 		_renderPassMap.clear();
 
 		VulkanContext::RebuildSwapChain();
@@ -66,6 +99,12 @@ namespace Ailurus
 		BuildRenderPass();
 
 		_needRebuildSwapChain = false;
+
+		for (const auto& [key, postRebuildCallback] : _postSwapChainRebuildCallbacks)
+		{
+			if (postRebuildCallback)
+				postRebuildCallback();
+		}
 	}
 
 	void RenderSystem::BuildRenderPass()
@@ -83,20 +122,19 @@ namespace Ailurus
 
 		// Add view projection matrix
 		pGlobalUniformStructure->AddMember(
-			"viewProjectionMatrix", 
+			"viewProjectionMatrix",
 			std::make_unique<UniformVariableNumeric>(UniformValueType::Mat4));
-		
+
 		// Add camera position
 		pGlobalUniformStructure->AddMember(
-			"cameraPosition", 
+			"cameraPosition",
 			std::make_unique<UniformVariableNumeric>(UniformValueType::Vector3));
 
 		auto pBindingPoint = std::make_unique<UniformBindingPoint>(
 			0,
 			std::vector<ShaderStage>{ ShaderStage::Vertex },
 			"globalUniform",
-			std::move(pGlobalUniformStructure)
-		);
+			std::move(pGlobalUniformStructure));
 
 		_pGlobalUniformSet->AddBindingPoint(std::move(pBindingPoint));
 		_pGlobalUniformSet->InitUniformBufferInfo();

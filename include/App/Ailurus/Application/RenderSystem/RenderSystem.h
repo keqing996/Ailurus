@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <unordered_map>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
@@ -24,6 +25,11 @@ namespace Ailurus
 	class RenderSystem : public NonCopyable, public NonMovable
 	{
 	public:
+		using PreSwapChainRebuild = std::function<void()>;
+		using PostSwapChainRebuild = std::function<void()>;
+		
+	public:
+		RenderSystem();
 		~RenderSystem();
 
 	public:
@@ -39,13 +45,15 @@ namespace Ailurus
 		void SetMainCamera(CompCamera* pCamera);
 		CompCamera* GetMainCamera() const;
 
+		// Callbacks
+		void AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback);
+		void AddCallbackPostSwapChainRebuild(void* key, const PostSwapChainRebuild& callback);
+		void RemoveCallbackPreSwapChainRebuild(void* key);
+		void RemoveCallbackPostSwapChainRebuild(void* key);
+
 		// Draw
 		void RenderScene();
-		void GraphicsWaitIdle() const;
-
-	private:
-		friend class Application;
-		RenderSystem();
+		void GraphicsWaitIdle() const;	
 
 	private:
 		// Create
@@ -85,5 +93,9 @@ namespace Ailurus
 		static const char* GLOBAL_UNIFORM_ACCESS_CAMERA_POS;
 		std::unique_ptr<UniformSet> _pGlobalUniformSet;
 		std::unique_ptr<UniformSetMemory> _pGlobalUniformMemory;
+
+		// Callback functions map
+		std::unordered_map<void*, PreSwapChainRebuild> _preSwapChainRebuildCallbacks;
+		std::unordered_map<void*, PostSwapChainRebuild> _postSwapChainRebuildCallbacks;
 	};
 } // namespace Ailurus

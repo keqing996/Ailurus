@@ -1,12 +1,11 @@
 #pragma once
 
-#include <memory>
 #include <vulkan/vulkan.hpp>
 
 namespace Ailurus
 {
     class VulkanCommandBuffer;
-    class VulkanRenderPassImGui;
+    class RenderPass;
 
     class ImGuiVulkanBackEnd
     {
@@ -19,6 +18,10 @@ namespace Ailurus
         void Render(VulkanCommandBuffer* pCommandBuffer);
         void Init();
         void Shutdown();
+
+    private:
+        void PreRebuildSwapChain();
+        void PostRebuildSwapChain();
 
     private:
         vk::DescriptorPool _descriptorPool;

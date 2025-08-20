@@ -7,6 +7,7 @@ namespace Ailurus
 {
     class ImGuiVulkanBackEnd;
     class VulkanCommandBuffer;
+    class RenderPass;
 
     class ImGuiSystem
     {
