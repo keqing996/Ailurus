@@ -1,26 +1,48 @@
 #pragma once
 
+#include <vector>
 #include <vulkan/vulkan.hpp>
+#include <Ailurus/Application/RenderSystem/Enum/MultiSampling.h>
+#include <Ailurus/Application/RenderSystem/Enum/StencilOperation.h>
+#include <Ailurus/Application/RenderSystem/FrameBuffer/FrameBufferUsage.h>
+
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
+#include <VulkanContext/Helper/VulkanHelper.h>
 
 namespace Ailurus
 {
 	struct VulkanRenderPassConfig
 	{
+		struct FrameBufferOperation
+		{
+			// Usage
+			FrameBufferUsage usage;
 
+			// MSAA config
+			MultiSamplingType multiSampling = MultiSamplingType::None;
 
+			// Attachment
+			bool clearAttachment = true;
+			bool writeAttachment = true;
+
+			// Stencil
+			StencilLoadType stencilLoad = StencilLoadType::None;
+			StencilWriteType stencilWrite = StencilWriteType::None;
+		};
+
+		
 
 
 		vk::RenderPassCreateInfo GetVulkanRenderPassCreateInfo()
 		{
 			vk::AttachmentDescription colorAttachment;
 			colorAttachment.setFormat(VulkanContext::GetSwapChain()->GetConfig().surfaceFormat.format)
-				.setSamples(vk::SampleCountFlagBits::e1)
-				.setLoadOp(vk::AttachmentLoadOp::eClear)
-				.setStoreOp(vk::AttachmentStoreOp::eStore)
-				.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-				.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+				.setSamples(VulkanHelper::ConvertToVkEnum(multiSampling))
+				.setLoadOp(clearAttachment ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
+				.setStoreOp(writeAttachment ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare)
+				.setStencilLoadOp(VulkanHelper::ConvertToVkEnum(stencilLoad))
+				.setStencilStoreOp(VulkanHelper::ConvertToVkEnum(stencilWrite))
 				.setInitialLayout(vk::ImageLayout::eUndefined)
 				.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 

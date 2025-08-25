@@ -155,4 +155,62 @@ namespace Ailurus
 			EnumReflection<IndexBufferFormat>::ToString(type));
 		return 0;
 	}
+
+	auto VulkanHelper::ConvertToVkEnum(MultiSamplingType t) -> vk::SampleCountFlagBits
+	{
+		switch (t)
+		{
+			case MultiSamplingType::None:
+				return vk::SampleCountFlagBits::e1;
+			case MultiSamplingType::MSAAx2:
+				return vk::SampleCountFlagBits::e2;
+			case MultiSamplingType::MSAAx4:
+				return vk::SampleCountFlagBits::e4;
+			case MultiSamplingType::MSAAx8:
+				return vk::SampleCountFlagBits::e8;
+			case MultiSamplingType::MSAAx16:
+				return vk::SampleCountFlagBits::e16;
+			case MultiSamplingType::MSAAx32:
+				return vk::SampleCountFlagBits::e32;
+			case MultiSamplingType::MSAAx64:
+				return vk::SampleCountFlagBits::e64;
+		}
+
+		Logger::LogError("Fail to convert multi sampling type to vk enum, multi sampling type = {}",
+			EnumReflection<MultiSamplingType>::ToString(t));
+		return vk::SampleCountFlagBits::e1;
+	}
+
+	auto VulkanHelper::ConvertToVkEnum(StencilLoadType t) -> vk::AttachmentLoadOp
+	{
+		switch (t)
+		{
+			case StencilLoadType::None:
+				return vk::AttachmentLoadOp::eDontCare;
+			case StencilLoadType::Clear:
+				return vk::AttachmentLoadOp::eClear;
+			case StencilLoadType::Load:
+				return vk::AttachmentLoadOp::eLoad;
+		}
+
+		Logger::LogError("Fail to convert stencil load type to vk enum, stencil load type = {}",
+			EnumReflection<StencilLoadType>::ToString(t));
+		return vk::AttachmentLoadOp::eDontCare;
+	}
+
+	auto VulkanHelper::ConvertToVkEnum(StencilWriteType t) -> vk::AttachmentStoreOp
+	{
+		switch (t)
+		{
+			case StencilWriteType::None:
+				return vk::AttachmentStoreOp::eDontCare;
+			case StencilWriteType::Write:
+				return vk::AttachmentStoreOp::eStore;
+		}
+
+		Logger::LogError("Fail to convert stencil write type to vk enum, stencil write type = {}",
+			EnumReflection<StencilWriteType>::ToString(t));
+		return vk::AttachmentStoreOp::eDontCare;
+	}
+
 } // namespace Ailurus
