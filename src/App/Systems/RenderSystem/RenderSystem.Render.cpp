@@ -5,7 +5,6 @@
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
-#include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
@@ -175,11 +174,14 @@ namespace Ailurus
 		if (_pIntermediateVariable->renderingMeshes.empty())
 			return;
 
-		const auto pRenderPass = GetRenderPass(pass);
-		if (pRenderPass == nullptr)
+		auto itrPass = _renderPassMap.find(pass);
+		if (itrPass == _renderPassMap.end())
+		{
+			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(pass));
 			return;
+		}
 
-		const auto pVkRenderPass = pRenderPass->GetRHIRenderPass();
+		const auto pVkRenderPass = itrPass->second.get();
 		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pVkRenderPass, swapChainImageIndex);
 		pCommandBuffer->BeginRenderPass(pVkRenderPass, pBackBuffer);
 
@@ -257,9 +259,11 @@ namespace Ailurus
 
 	void RenderSystem::RenderImGuiPass(VulkanCommandBuffer* pCommandBuffer)
 	{
-		const auto pRenderPass = GetRenderPass(RenderPassType::ImGui);
-		if (pRenderPass == nullptr)
+		auto itrPass = _renderPassMap.find(RenderPassType::ImGui);
+		if (itrPass == _renderPassMap.end())
 			return;
+
+		const auto pVkRenderPass = itrPass->second.get();
 
 		auto pImGui = Application::Get<ImGuiSystem>();
 		pImGui->Render(pCommandBuffer);

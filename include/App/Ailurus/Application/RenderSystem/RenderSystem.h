@@ -13,8 +13,8 @@ namespace Ailurus
 {
 	class MaterialInstance;
 	class Mesh;
-	class RenderPass;
 	class CompStaticMeshRender;
+	class VulkanRenderPass;
 	class VulkanCommandBuffer;
 	class VulkanDescriptorAllocator;
 	class VulkanUniformBuffer;
@@ -34,8 +34,6 @@ namespace Ailurus
 
 	public:
 		void RequestRebuildSwapChain();
-
-		auto GetRenderPass(RenderPassType pass) const -> RenderPass*;
 		auto GetGlobalUniformSet() const -> UniformSet*;
 
 		// Shader library
@@ -76,7 +74,7 @@ namespace Ailurus
 
 	private:
 		bool _needRebuildSwapChain = false;
-		std::unordered_map<RenderPassType, std::unique_ptr<RenderPass>> _renderPassMap;
+		std::unordered_map<RenderPassType, std::unique_ptr<VulkanRenderPass>> _renderPassMap;
 
 		// Current main camera
 		CompCamera* _pMainCamera = nullptr;

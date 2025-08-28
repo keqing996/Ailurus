@@ -1,10 +1,10 @@
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
 #include <Ailurus/Application/Application.h>
-#include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformVariable.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <VulkanContext/VulkanContext.h>
+#include <VulkanContext/RenderPass/VulkanRenderPass.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include "Ailurus/Utility/Logger.h"
 #include "Detail/RenderIntermediateVariable.h"
@@ -109,8 +109,30 @@ namespace Ailurus
 
 	void RenderSystem::BuildRenderPass()
 	{
-		_renderPassMap[RenderPassType::Forward] = std::make_unique<RenderPass>(RenderPassType::Forward);
-		_renderPassMap[RenderPassType::ImGui] = std::make_unique<RenderPass>(RenderPassType::ImGui);
+		// Forward RenderPass
+		{
+			Ailurus::VulkanRenderPassConfig config;
+			Ailurus::VulkanRenderPassConfig::FrameBufferOperation fbOp;
+			fbOp.usage = FrameBufferUsage::PresentBackBuffer;
+			fbOp.multiSampling = MultiSamplingType::None;
+			fbOp.clearAttachment = true;
+			fbOp.writeAttachment = true;
+			config.frameBufferOperations.push_back(fbOp);
+			std::vector<vk::ClearValue> clearValues = { vk::ClearValue{ std::array<float,4>{0.0f, 0.0f, 0.0f, 1.0f} } };
+			_renderPassMap[RenderPassType::Forward] = std::make_unique<VulkanRenderPass>(config, RenderPassType::Forward, clearValues);
+		}
+		// ImGui RenderPass
+		{
+			Ailurus::VulkanRenderPassConfig config;
+			Ailurus::VulkanRenderPassConfig::FrameBufferOperation fbOp;
+			fbOp.usage = FrameBufferUsage::PresentBackBuffer;
+			fbOp.multiSampling = MultiSamplingType::None;
+			fbOp.clearAttachment = false;
+			fbOp.writeAttachment = true;
+			config.frameBufferOperations.push_back(fbOp);
+			std::vector<vk::ClearValue> clearValues = { vk::ClearValue{ std::array<float,4>{0.45f, 0.55f, 0.60f, 1.0f} } };
+			_renderPassMap[RenderPassType::ImGui] = std::make_unique<VulkanRenderPass>(config, RenderPassType::ImGui, clearValues);
+		}
 	}
 
 	void RenderSystem::BuildGlobalUniform()
@@ -141,15 +163,6 @@ namespace Ailurus
 		_pGlobalUniformSet->InitDescriptorSetLayout();
 
 		_pGlobalUniformMemory = std::make_unique<UniformSetMemory>(_pGlobalUniformSet.get());
-	}
-
-	auto RenderSystem::GetRenderPass(RenderPassType pass) const -> RenderPass*
-	{
-		const auto itr = _renderPassMap.find(pass);
-		if (itr == _renderPassMap.end())
-			return nullptr;
-
-		return itr->second.get();
 	}
 
 	auto RenderSystem::GetGlobalUniformSet() const -> UniformSet*

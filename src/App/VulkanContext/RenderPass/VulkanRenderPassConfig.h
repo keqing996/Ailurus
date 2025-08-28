@@ -5,7 +5,6 @@
 #include <Ailurus/Application/RenderSystem/Enum/MultiSampling.h>
 #include <Ailurus/Application/RenderSystem/Enum/StencilOperation.h>
 #include <Ailurus/Application/RenderSystem/FrameBuffer/FrameBufferUsage.h>
-
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/Helper/VulkanHelper.h>
@@ -31,29 +30,44 @@ namespace Ailurus
 			StencilWriteType stencilWrite = StencilWriteType::None;
 		};
 
-		
+		std::vector<FrameBufferOperation> frameBufferOperations;
 
 
-		vk::RenderPassCreateInfo GetVulkanRenderPassCreateInfo()
+		vk::RenderPassCreateInfo GetVulkanRenderPassCreateInfo() const
 		{
-			vk::AttachmentDescription colorAttachment;
-			colorAttachment.setFormat(VulkanContext::GetSwapChain()->GetConfig().surfaceFormat.format)
-				.setSamples(VulkanHelper::ConvertToVkEnum(multiSampling))
-				.setLoadOp(clearAttachment ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
-				.setStoreOp(writeAttachment ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare)
-				.setStencilLoadOp(VulkanHelper::ConvertToVkEnum(stencilLoad))
-				.setStencilStoreOp(VulkanHelper::ConvertToVkEnum(stencilWrite))
-				.setInitialLayout(vk::ImageLayout::eUndefined)
-				.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+			// 1. Build all attachments
+			std::vector<vk::AttachmentDescription> attachments;
+			std::vector<vk::AttachmentReference> colorAttachmentRefs;
+			for (size_t i = 0; i < frameBufferOperations.size(); ++i)
+			{
+				const auto& fbOp = frameBufferOperations[i];
+				vk::AttachmentDescription attachment;
+				attachment.setFormat(VulkanContext::GetSwapChain()->GetConfig().surfaceFormat.format)
+					.setSamples(VulkanHelper::ConvertToVkEnum(fbOp.multiSampling))
+					.setLoadOp(fbOp.clearAttachment ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
+					.setStoreOp(fbOp.writeAttachment ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare)
+					.setStencilLoadOp(VulkanHelper::ConvertToVkEnum(fbOp.stencilLoad))
+					.setStencilStoreOp(VulkanHelper::ConvertToVkEnum(fbOp.stencilWrite))
+					.setInitialLayout(VulkanHelper::GetFrameBufferInitLayoutForRenderPass(fbOp.usage))
+					.setFinalLayout(VulkanHelper::GetFrameBufferFinalLayoutForRenderPass(fbOp.usage));
+				attachments.push_back(attachment);
 
-			vk::AttachmentReference colorAttachmentRef;
-			colorAttachmentRef.setAttachment(0)
-				.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+				// Assume all are color attachments for now; extend as needed for depth/stencil
+				vk::AttachmentReference colorRef;
+				colorRef.setAttachment(static_cast<uint32_t>(i))
+					.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+				colorAttachmentRefs.push_back(colorRef);
+			}
 
+			// 2. Support multiple subpasses if needed (here, single subpass for all color attachments)
+			std::vector<vk::SubpassDescription> subpasses;
 			vk::SubpassDescription subpass;
 			subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-				.setColorAttachments(colorAttachmentRef);
+				.setColorAttachments(colorAttachmentRefs);
+			subpasses.push_back(subpass);
 
+			// 3. Support multiple dependencies if needed (here, single dependency for all subpasses)
+			std::vector<vk::SubpassDependency> dependencies;
 			vk::SubpassDependency dependency;
 			dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
 				.setDstSubpass(0)
@@ -61,11 +75,14 @@ namespace Ailurus
 				.setSrcAccessMask(vk::AccessFlagBits::eNone)
 				.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
 				.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
+			dependencies.push_back(dependency);
 
 			vk::RenderPassCreateInfo renderPassInfo;
-			renderPassInfo.setAttachments(colorAttachment)
-				.setSubpasses(subpass)
-				.setDependencies(dependency);
+			renderPassInfo.setAttachments(attachments)
+				.setSubpasses(subpasses)
+				.setDependencies(dependencies);
+
+			return renderPassInfo;
 		}
 	};
 }

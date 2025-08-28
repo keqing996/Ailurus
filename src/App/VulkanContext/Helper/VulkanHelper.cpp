@@ -213,4 +213,40 @@ namespace Ailurus
 		return vk::AttachmentStoreOp::eDontCare;
 	}
 
+	auto VulkanHelper::GetFrameBufferInitLayoutForRenderPass(FrameBufferUsage usage) -> vk::ImageLayout
+	{
+		switch (usage) 
+		{
+			case FrameBufferUsage::PresentBackBuffer:
+				return vk::ImageLayout::eUndefined;
+			case FrameBufferUsage::GBuffer:
+				return vk::ImageLayout::eUndefined;
+			case FrameBufferUsage::ShadowMap:
+				return vk::ImageLayout::eUndefined;
+		}
+
+		Logger::LogError("Fail to get framebuffer initial layout for render pass, framebuffer usage = {}",
+			EnumReflection<FrameBufferUsage>::ToString(usage));
+
+		return vk::ImageLayout::eUndefined;
+	}
+
+	auto VulkanHelper::GetFrameBufferFinalLayoutForRenderPass(FrameBufferUsage usage) -> vk::ImageLayout
+	{
+		switch (usage) 
+		{
+			case FrameBufferUsage::PresentBackBuffer:
+				return vk::ImageLayout::ePresentSrcKHR;
+			case FrameBufferUsage::GBuffer:
+				return vk::ImageLayout::eShaderReadOnlyOptimal;
+			case FrameBufferUsage::ShadowMap:
+				return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+		}
+
+		Logger::LogError("Fail to get framebuffer final layout for render pass, framebuffer usage = {}",
+			EnumReflection<FrameBufferUsage>::ToString(usage));
+
+		return vk::ImageLayout::eUndefined;
+	}
+
 } // namespace Ailurus
