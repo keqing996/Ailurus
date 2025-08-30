@@ -43,6 +43,9 @@ namespace Ailurus
 		void SetMainCamera(CompCamera* pCamera);
 		CompCamera* GetMainCamera() const;
 
+		// Render pass access
+		auto GetRenderPass(RenderPassType pass) const -> VulkanRenderPass*;
+
 		// Callbacks
 		void AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback);
 		void AddCallbackPostSwapChainRebuild(void* key, const PostSwapChainRebuild& callback);

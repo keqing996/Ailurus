@@ -1,7 +1,6 @@
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
-#include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include "VulkanPipelineManager.h"

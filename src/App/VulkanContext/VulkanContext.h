@@ -67,12 +67,12 @@ namespace Ailurus
 	private:
 		// Init functions
 		static void PrepareDispatcher();
-		static void CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation);
-		static void CreatDebugUtilsMessenger();
-		static void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
+		static bool CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation);
+		static bool CreatDebugUtilsMessenger();
+		static bool CreateSurface(const WindowCreateSurfaceCallback& createSurface);
 		static void ChoosePhysicsDevice();
 		static bool CreateLogicalDevice();
-		static void CreateCommandPool();
+		static bool CreateCommandPool();
 
 		// Frame context
 		static bool WaitFrameFinish(uint32_t index);

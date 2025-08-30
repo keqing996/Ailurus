@@ -55,12 +55,29 @@ namespace Ailurus
 		VulkanHelper::LogInstanceLayerProperties();
 		VulkanHelper::LogInstanceExtensionProperties();
 
-		CreateInstance(getWindowRequiredExtension, enableValidation);
+		if (!CreateInstance(getWindowRequiredExtension, enableValidation))
+		{
+			Logger::LogError("VulkanContext::Initialize - CreateInstance failed");
+			Destroy([](const vk::Instance&, const vk::SurfaceKHR&){ });
+			return;
+		}
 
 		if (enableValidation)
-			CreatDebugUtilsMessenger();
+		{
+			if (!CreatDebugUtilsMessenger())
+			{
+				Logger::LogError("VulkanContext::Initialize - CreateDebugUtilsMessenger failed");
+				Destroy([](const vk::Instance&, const vk::SurfaceKHR&){ });
+				return;
+			}
+		}
 
-		CreateSurface(createSurface);
+		if (!CreateSurface(createSurface))
+		{
+			Logger::LogError("VulkanContext::Initialize - CreateSurface failed");
+			Destroy([](const vk::Instance&, const vk::SurfaceKHR&){ });
+			return;
+		}
 
 		VulkanHelper::LogPhysicalCards(_vkInstance);
 
@@ -71,7 +88,12 @@ namespace Ailurus
 		if (!CreateLogicalDevice())
 			return;
 
-		CreateCommandPool();
+		if (!CreateCommandPool())
+		{
+			Logger::LogError("VulkanContext::Initialize - CreateCommandPool failed");
+			Destroy([](const vk::Instance&, const vk::SurfaceKHR&){ });
+			return;
+		}
 
 		// Create swap chain
 		_pSwapChain = std::make_unique<VulkanSwapChain>();
@@ -386,7 +408,7 @@ namespace Ailurus
 		VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 	}
 
-	void VulkanContext::CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation)
+	bool VulkanContext::CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation)
 	{
 		// Validation layers
 		static const char* VALIDATION_LAYER_NAME = "VK_LAYER_KHRONOS_validation";
@@ -429,28 +451,60 @@ namespace Ailurus
 		instanceCreateInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
 #endif
 
-		_vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
+		try
+		{
+			_vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
+			VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkInstance);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("vk::createInstance failed: {}", e.what());
+			return false;
+		}
 
-		VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkInstance);
+		return true;
 	}
 
-	void VulkanContext::CreatDebugUtilsMessenger()
+	bool VulkanContext::CreatDebugUtilsMessenger()
 	{
-		vk::DebugUtilsMessengerCreateInfoEXT createInfo;
-		createInfo.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
-					  | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
-			.setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
-				| vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
-				| vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
-			.setPUserData(nullptr)
-			.setPfnUserCallback(VulkanHelper::DebugCallback);
+		try
+		{
+			vk::DebugUtilsMessengerCreateInfoEXT createInfo;
+			createInfo.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
+						  | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+				.setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
+					| vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+					| vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
+				.setPUserData(nullptr)
+				.setPfnUserCallback(VulkanHelper::DebugCallback);
 
-		_vkDebugUtilsMessenger = _vkInstance.createDebugUtilsMessengerEXT(createInfo);
+			_vkDebugUtilsMessenger = _vkInstance.createDebugUtilsMessengerEXT(createInfo);
+			return true;
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("createDebugUtilsMessengerEXT failed: {}", e.what());
+			return false;
+		}
 	}
 
-	void VulkanContext::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
+	bool VulkanContext::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
 	{
-		_vkSurface = createSurface(_vkInstance);
+		try
+		{
+			_vkSurface = createSurface(_vkInstance);
+			return true;
+		}
+		catch (const std::exception& e)
+		{
+			Logger::LogError("CreateSurface callback failed: {}", e.what());
+			return false;
+		}
+		catch (...)
+		{
+			Logger::LogError("CreateSurface callback failed: unknown exception");
+			return false;
+		}
 	}
 
 	void VulkanContext::ChoosePhysicsDevice()
@@ -572,13 +626,22 @@ namespace Ailurus
 		return true;
 	}
 
-	void VulkanContext::CreateCommandPool()
+	bool VulkanContext::CreateCommandPool()
 	{
-		vk::CommandPoolCreateInfo poolInfo;
-		poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-			.setQueueFamilyIndex(GetGraphicQueueIndex());
+		try
+		{
+			vk::CommandPoolCreateInfo poolInfo;
+			poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+				.setQueueFamilyIndex(GetGraphicQueueIndex());
 
-		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
+			_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
+			return true;
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("createCommandPool failed: {}", e.what());
+			return false;
+		}
 	}
 
 	bool VulkanContext::WaitFrameFinish(uint32_t index)

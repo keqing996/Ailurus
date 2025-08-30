@@ -1,6 +1,5 @@
 #include "VulkanCommandBuffer.h"
 #include "Ailurus/Utility/Logger.h"
-#include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/RenderPass/VulkanRenderPass.h"
 #include "VulkanContext/Pipeline/VulkanPipeline.h"

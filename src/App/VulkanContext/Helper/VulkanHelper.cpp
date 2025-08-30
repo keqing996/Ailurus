@@ -10,7 +10,17 @@ namespace Ailurus
 		const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData)
 	{
-		Logger::LogError(pCallbackData->pMessage);
+		// Log based on severity
+		const char* msg = pCallbackData && pCallbackData->pMessage ? pCallbackData->pMessage : "(null)";
+		if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+			Logger::LogError("Vulkan Debug: {}", msg);
+		else if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning)
+			Logger::LogWarn("Vulkan Warning: {}", msg);
+		else if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo)
+			Logger::LogInfo("Vulkan Info: {}", msg);
+		else
+			Logger::LogInfo("Vulkan: {}", msg);
+
 		return VK_FALSE;
 	}
 

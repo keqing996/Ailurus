@@ -1,7 +1,6 @@
 #include <backends/imgui_impl_vulkan.h>
 #include "ImGuiVulkanBackEnd.h"
 #include "Ailurus/Application/Application.h"
-#include "Ailurus/Application/RenderSystem/RenderPass/RenderPass.h"
 #include "Ailurus/Application/RenderSystem/RenderSystem.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
