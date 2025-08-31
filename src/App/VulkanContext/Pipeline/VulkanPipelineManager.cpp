@@ -52,7 +52,7 @@ namespace Ailurus
 		uniformSets.push_back(refMaterial->GetUniformSet(entry.renderPass));
 
 		const auto pPipeline = new VulkanPipeline(
-			pRenderPass->GetRHIRenderPass(), 
+			pRenderPass,
 			*pShaderArray,
 			pVertexLayout, 
 			uniformSets);

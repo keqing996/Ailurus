@@ -182,12 +182,12 @@ namespace Ailurus
 		return value;
 	}
 
-auto RenderSystem::GetRenderPass(RenderPassType pass) const -> VulkanRenderPass*
-{
-	auto it = _renderPassMap.find(pass);
-	if (it == _renderPassMap.end())
-		return nullptr;
-	return it->second.get();
-}
+	auto RenderSystem::GetRenderPass(RenderPassType pass) const -> VulkanRenderPass*
+	{
+		auto it = _renderPassMap.find(pass);
+		if (it == _renderPassMap.end())
+			return nullptr;
+		return it->second.get();
+	}
 
 } // namespace Ailurus

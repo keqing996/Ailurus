@@ -73,7 +73,7 @@ namespace Ailurus
 		imGuiVkInitInfo.QueueFamily = VulkanContext::GetGraphicQueueIndex();
 		imGuiVkInitInfo.Queue = VulkanContext::GetGraphicQueue();
 		imGuiVkInitInfo.DescriptorPool = _descriptorPool;
-		imGuiVkInitInfo.RenderPass = pRenderPass->GetRHIRenderPass()->GetRenderPass();
+		imGuiVkInitInfo.RenderPass = pRenderPass->GetRenderPass();
 		imGuiVkInitInfo.Subpass = 0;
 		imGuiVkInitInfo.MinImageCount = 2;
 		imGuiVkInitInfo.ImageCount = VulkanContext::GetSwapChain()->GetConfig().imageCount;
