@@ -47,6 +47,7 @@ namespace Ailurus
 	std::unique_ptr<RenderSystem> 	Application::_pRenderSystem = nullptr;
 	std::unique_ptr<AssetsSystem> 	Application::_pAssetsSystem = nullptr;
 	std::unique_ptr<SceneSystem> 	Application::_pSceneManager = nullptr;
+	std::unique_ptr<ImGuiSystem> 	Application::_pImGuiSystem = nullptr;
 
 	bool Application::Create(int width, int height, const std::string& title, Style style)
 	{
@@ -340,6 +341,12 @@ namespace Ailurus
 	AssetsSystem* Application::Get<AssetsSystem>()
 	{
 		return _pAssetsSystem.get();
+	}
+
+	template<>
+	ImGuiSystem* Application::Get<ImGuiSystem>()
+	{
+		return _pImGuiSystem.get();
 	}
 
 	void Application::EventLoop(bool* quitLoop)

@@ -168,5 +168,6 @@ namespace Ailurus
         static std::unique_ptr<RenderSystem> _pRenderSystem;
     	static std::unique_ptr<AssetsSystem> _pAssetsSystem;
         static std::unique_ptr<SceneSystem> _pSceneManager;
+    	static std::unique_ptr<ImGuiSystem> _pImGuiSystem;
     };
 }
