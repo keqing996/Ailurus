@@ -5,6 +5,7 @@
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include "VulkanPipelineManager.h"
 #include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/RenderPass/VulkanRenderPass.h"
 #include "VulkanContext/Vertex/VulkanVertexLayoutManager.h"
 
 namespace Ailurus
@@ -52,7 +53,7 @@ namespace Ailurus
 		uniformSets.push_back(refMaterial->GetUniformSet(entry.renderPass));
 
 		const auto pPipeline = new VulkanPipeline(
-			pRenderPass->GetRHIRenderPass(), 
+			pRenderPass,
 			*pShaderArray,
 			pVertexLayout, 
 			uniformSets);
