@@ -51,13 +51,7 @@ namespace Ailurus
 
 	void ImGuiVulkanBackEnd::Render(VulkanCommandBuffer* pCommandBuffer)
 	{
-		ImDrawData* draw_data = ImGui::GetDrawData();
-		const bool minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
-		if (!minimized)
-		{
-			//pCommandBuffer->BeginRenderPass(, VulkanFrameBuffer * pTargetFrameBuffer)
-			ImGui_ImplVulkan_RenderDrawData(draw_data, pCommandBuffer->GetBuffer());
-		}
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), pCommandBuffer->GetBuffer());
 	}
 
 	void ImGuiVulkanBackEnd::Init()
