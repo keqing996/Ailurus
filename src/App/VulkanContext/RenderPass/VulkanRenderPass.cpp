@@ -8,7 +8,11 @@ namespace Ailurus
 	VulkanRenderPass::VulkanRenderPass(const VulkanRenderPassConfig& config, RenderPassType type, const std::vector<vk::ClearValue>& clearValues)
 		: _type(type), _clearValues(clearValues)
 	{
-		auto renderPassInfo = config.GetVulkanRenderPassCreateInfo();
+		std::vector<vk::AttachmentDescription> attachments;
+		std::vector<vk::AttachmentReference> colorAttachmentRefs;
+		std::vector<vk::SubpassDescription> subpasses;
+		std::vector<vk::SubpassDependency> dependencies;
+		const auto renderPassInfo = config.GetVulkanRenderPassCreateInfo(attachments, colorAttachmentRefs, subpasses, dependencies);
 		_vkRenderPass = VulkanContext::GetDevice().createRenderPass(renderPassInfo);
 	}
 

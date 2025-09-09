@@ -33,11 +33,11 @@ namespace Ailurus
 		std::vector<FrameBufferOperation> frameBufferOperations;
 
 
-		vk::RenderPassCreateInfo GetVulkanRenderPassCreateInfo() const
+		vk::RenderPassCreateInfo GetVulkanRenderPassCreateInfo(std::vector<vk::AttachmentDescription>& attachments,
+			std::vector<vk::AttachmentReference>& colorAttachmentRefs, std::vector<vk::SubpassDescription>& subpasses,
+			std::vector<vk::SubpassDependency>& dependencies) const
 		{
 			// 1. Build all attachments
-			std::vector<vk::AttachmentDescription> attachments;
-			std::vector<vk::AttachmentReference> colorAttachmentRefs;
 			for (size_t i = 0; i < frameBufferOperations.size(); ++i)
 			{
 				const auto& fbOp = frameBufferOperations[i];
@@ -60,14 +60,12 @@ namespace Ailurus
 			}
 
 			// 2. Support multiple subpasses if needed (here, single subpass for all color attachments)
-			std::vector<vk::SubpassDescription> subpasses;
 			vk::SubpassDescription subpass;
 			subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
 				.setColorAttachments(colorAttachmentRefs);
 			subpasses.push_back(subpass);
 
 			// 3. Support multiple dependencies if needed (here, single dependency for all subpasses)
-			std::vector<vk::SubpassDependency> dependencies;
 			vk::SubpassDependency dependency;
 			dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
 				.setDstSubpass(0)
