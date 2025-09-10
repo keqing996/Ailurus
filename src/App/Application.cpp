@@ -82,6 +82,7 @@ namespace Ailurus
 		_pRenderSystem.reset(new RenderSystem());
 		_pAssetsSystem.reset(new AssetsSystem());
 		_pSceneManager.reset(new SceneSystem());
+		_pImGuiSystem.reset(new ImGuiSystem());
 
 		if (_onWindowCreated != nullptr)
 			_onWindowCreated();
@@ -96,6 +97,7 @@ namespace Ailurus
 			if (_onWindowPreDestroyed)
 				_onWindowPreDestroyed();
 
+			_pImGuiSystem = nullptr;
 			_pSceneManager = nullptr;
 			_pAssetsSystem = nullptr;
 			_pRenderSystem = nullptr;
@@ -121,6 +123,7 @@ namespace Ailurus
 		while (true)
 		{
 			_pTimeSystem->Update();
+			_pImGuiSystem->NewFrame();
 			
 			bool shouldBreakLoop = false;
 			EventLoop(&shouldBreakLoop);
