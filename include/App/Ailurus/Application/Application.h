@@ -92,6 +92,8 @@ namespace Ailurus
         /// Get is cursor inside window now (frame not included).
         static bool IsCursorInsideWindow();
 
+    	static float GetWindowScale();
+
         /// Called when window is created.
         static void SetCallbackOnWindowCreated(const std::function<void()>& callback);
 

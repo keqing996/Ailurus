@@ -1,8 +1,13 @@
-#include "Ailurus/Application/Application.h"
-#include "VulkanContext/VulkanContext.h"
+#include <memory>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-#include <memory>
+#include "Ailurus/PlatformDefine.h"
+#include "Ailurus/Application/Application.h"
+#include "VulkanContext/VulkanContext.h"
+
+#if AILURUS_PLATFORM_WINDOWS
+#include "Ailurus/Platform/Windows/Window.h"
+#endif
 
 namespace Ailurus
 {
@@ -51,6 +56,10 @@ namespace Ailurus
 
 	bool Application::Create(int width, int height, const std::string& title, Style style)
 	{
+#if AILURUS_PLATFORM_WINDOWS
+		NativeWindowUtility::FixProcessDpi();
+#endif
+
 		if (!SDL_Init(SDL_INIT_VIDEO))
 			return false;
 
@@ -259,6 +268,11 @@ namespace Ailurus
 		SDL_GetGlobalMouseState(&mouseX, &mouseY);
 
 		return (mouseX >= windowX && mouseX <= windowX + windowWidth && mouseY >= windowY && mouseY <= windowY + windowHeight);
+	}
+
+	float Application::GetWindowScale()
+	{
+		return SDL_GetWindowDisplayScale(static_cast<SDL_Window*>(_pWindow));
 	}
 
 	void Application::SetCallbackOnWindowCreated(const std::function<void()>& callback)
