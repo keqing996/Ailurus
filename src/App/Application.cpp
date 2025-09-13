@@ -366,6 +366,9 @@ namespace Ailurus
 			bool closeWindow = false;
 			HandleEvent(&event, &closeWindow);
 
+			if (_pImGuiSystem != nullptr)
+				_pImGuiSystem->HandleEvent(&event);
+
 			if (_pInputManager != nullptr)
 				_pInputManager->HandleEvent(_pWindow, &event);
 

@@ -62,6 +62,12 @@ namespace Ailurus
 		_pVkImpl.reset();
 	}
 
+	void ImGuiSystem::HandleEvent(const void* evt)
+	{
+		const SDL_Event* sdlEvent = static_cast<const SDL_Event*>(evt);
+		ImGui_ImplSDL3_ProcessEvent(sdlEvent);
+	}
+
 	void ImGuiSystem::NewFrame()
 	{
 		_pVkImpl->NewFrame();
