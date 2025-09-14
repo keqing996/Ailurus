@@ -18,7 +18,7 @@ namespace Ailurus
 			.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 			.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
 			.setInitialLayout(vk::ImageLayout::eUndefined)
-			.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+			.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
 		// Attachment ref
 		vk::AttachmentReference colorRef;
