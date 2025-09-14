@@ -23,7 +23,7 @@ int Main(int argc, char* argv[])
 	*/
 
 	// Create the application instance
-	Application::Create(1200, 1200, "Test", Application::Style{ .enableRender3D = false });
+	Application::Create(1200, 1200, "Test", Application::Style{ });
 
 	// Load assets and set up the scene
 	auto modelRef = Application::Get<AssetsSystem>()->LoadModel("./Assets/Model/Cube.fbx");

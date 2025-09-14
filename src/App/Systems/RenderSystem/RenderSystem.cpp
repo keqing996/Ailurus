@@ -4,7 +4,8 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformVariable.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <VulkanContext/VulkanContext.h>
-#include <VulkanContext/RenderPass/VulkanRenderPass.h>
+#include <VulkanContext/RenderPass/VulkanRenderPassForward.h>
+#include <VulkanContext/RenderPass/VulkanRenderPassImGui.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include "Ailurus/Utility/Logger.h"
 #include "Detail/RenderIntermediateVariable.h"
@@ -114,29 +115,14 @@ namespace Ailurus
 		// Forward RenderPass
 		if (_enable3D)
 		{
-			Ailurus::VulkanRenderPassConfig config;
-			Ailurus::VulkanRenderPassConfig::FrameBufferOperation fbOp;
-			fbOp.usage = FrameBufferUsage::PresentBackBuffer;
-			fbOp.multiSampling = MultiSamplingType::None;
-			fbOp.clearAttachment = true;
-			fbOp.writeAttachment = true;
-			config.frameBufferOperations.push_back(fbOp);
 			std::vector<vk::ClearValue> clearValues = { vk::ClearValue{ std::array<float,4>{0.0f, 0.0f, 0.0f, 1.0f} } };
-			_renderPassMap[RenderPassType::Forward] = std::make_unique<VulkanRenderPass>(config, RenderPassType::Forward, clearValues);
+			_renderPassMap[RenderPassType::Forward] = std::make_unique<VulkanRenderPassForward>(clearValues);
 		}
 
 		// ImGui RenderPass
 		if (_enableImGui)
 		{
-			Ailurus::VulkanRenderPassConfig config;
-			Ailurus::VulkanRenderPassConfig::FrameBufferOperation fbOp;
-			fbOp.usage = FrameBufferUsage::PresentBackBuffer;
-			fbOp.multiSampling = MultiSamplingType::None;
-			fbOp.clearAttachment = false;
-			fbOp.writeAttachment = true;
-			config.frameBufferOperations.push_back(fbOp);
-			std::vector<vk::ClearValue> clearValues = { vk::ClearValue{ std::array<float,4>{0.45f, 0.55f, 0.60f, 1.0f} } };
-			_renderPassMap[RenderPassType::ImGui] = std::make_unique<VulkanRenderPass>(config, RenderPassType::ImGui, clearValues);
+			_renderPassMap[RenderPassType::ImGui] = std::make_unique<VulkanRenderPassImGui>();
 		}
 	}
 

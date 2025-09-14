@@ -5,25 +5,14 @@
 
 namespace Ailurus
 {
-	VulkanRenderPass::VulkanRenderPass(const VulkanRenderPassConfig& config, RenderPassType type, const std::vector<vk::ClearValue>& clearValues)
-		: _type(type), _clearValues(clearValues)
+	VulkanRenderPass::VulkanRenderPass()
 	{
-		std::vector<vk::AttachmentDescription> attachments;
-		std::vector<vk::AttachmentReference> colorAttachmentRefs;
-		std::vector<vk::SubpassDescription> subpasses;
-		std::vector<vk::SubpassDependency> dependencies;
-		const auto renderPassInfo = config.GetVulkanRenderPassCreateInfo(attachments, colorAttachmentRefs, subpasses, dependencies);
-		_vkRenderPass = VulkanContext::GetDevice().createRenderPass(renderPassInfo);
 	}
 
 	VulkanRenderPass::~VulkanRenderPass()
 	{
-		VulkanContext::GetDevice().destroyRenderPass(_vkRenderPass);
-	}
-
-	RenderPassType VulkanRenderPass::GetRenderPassType() const
-	{
-		return _type;
+		if (_vkRenderPass)
+			VulkanContext::GetDevice().destroyRenderPass(_vkRenderPass);
 	}
 
 	vk::RenderPass VulkanRenderPass::GetRenderPass() const
@@ -31,15 +20,8 @@ namespace Ailurus
 		return _vkRenderPass;
 	}
 
-	vk::RenderPassBeginInfo VulkanRenderPass::GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const
+	void VulkanRenderPass::CreateRenderPass(const vk::RenderPassCreateInfo& createInfo)
 	{
-		vk::RenderPassBeginInfo renderPassInfo;
-		renderPassInfo.setRenderPass(_vkRenderPass)
-			.setFramebuffer(pTargetFrameBuffer->GetBuffer())
-			.setRenderArea(vk::Rect2D{
-				vk::Offset2D{ 0, 0 },
-				VulkanContext::GetSwapChain()->GetConfig().extent })
-			.setClearValues(_clearValues);
-		return renderPassInfo;
+		_vkRenderPass = VulkanContext::GetDevice().createRenderPass(createInfo);
 	}
 } // namespace Ailurus
