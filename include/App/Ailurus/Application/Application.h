@@ -23,6 +23,8 @@ namespace Ailurus
         {
             bool canResize = true;
             bool haveBorder = true;
+        	bool enableRenderImGui = true;
+        	bool enableRender3D = true;
         };
 
     public:
@@ -92,6 +94,7 @@ namespace Ailurus
         /// Get is cursor inside window now (frame not included).
         static bool IsCursorInsideWindow();
 
+    	/// Get dpi scale.
     	static float GetWindowScale();
 
         /// Called when window is created.
@@ -135,8 +138,10 @@ namespace Ailurus
         /// Called when cursor's visibility changes, true for shown and false for hided.
         static void SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback);
 
+    	/// Get native window handle (SDL_Window*).
         static void* GetSDLWindowPtr();
 
+    	/// Get systems.
         template <typename System>
         static System* Get();
 

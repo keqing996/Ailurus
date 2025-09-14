@@ -15,7 +15,9 @@ namespace Ailurus
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_VIEW_PROJ_MAT = "viewProjectionMatrix";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_CAMERA_POS = "cameraPosition";
 
-	RenderSystem::RenderSystem()
+	RenderSystem::RenderSystem(bool enableImGui, bool enable3D)
+		: _enable3D(enable3D)
+		, _enableImGui(enableImGui)
 	{
 		_pShaderLibrary.reset(new ShaderLibrary());
 
@@ -110,6 +112,7 @@ namespace Ailurus
 	void RenderSystem::BuildRenderPass()
 	{
 		// Forward RenderPass
+		if (_enable3D)
 		{
 			Ailurus::VulkanRenderPassConfig config;
 			Ailurus::VulkanRenderPassConfig::FrameBufferOperation fbOp;
@@ -121,7 +124,9 @@ namespace Ailurus
 			std::vector<vk::ClearValue> clearValues = { vk::ClearValue{ std::array<float,4>{0.0f, 0.0f, 0.0f, 1.0f} } };
 			_renderPassMap[RenderPassType::Forward] = std::make_unique<VulkanRenderPass>(config, RenderPassType::Forward, clearValues);
 		}
+
 		// ImGui RenderPass
+		if (_enableImGui)
 		{
 			Ailurus::VulkanRenderPassConfig config;
 			Ailurus::VulkanRenderPassConfig::FrameBufferOperation fbOp;

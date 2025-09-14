@@ -88,10 +88,12 @@ namespace Ailurus
 
 		_pTimeSystem.reset(new TimeSystem());
 		_pInputManager.reset(new InputSystem());
-		_pRenderSystem.reset(new RenderSystem());
+		_pRenderSystem.reset(new RenderSystem(style.enableRenderImGui, style.enableRender3D));
 		_pAssetsSystem.reset(new AssetsSystem());
 		_pSceneManager.reset(new SceneSystem());
-		_pImGuiSystem.reset(new ImGuiSystem());
+
+		if (style.enableRenderImGui)
+			_pImGuiSystem.reset(new ImGuiSystem());
 
 		if (_onWindowCreated != nullptr)
 			_onWindowCreated();
@@ -132,8 +134,10 @@ namespace Ailurus
 		while (true)
 		{
 			_pTimeSystem->Update();
-			_pImGuiSystem->NewFrame();
-			
+
+			if (_pImGuiSystem != nullptr)
+				_pImGuiSystem->NewFrame();
+
 			bool shouldBreakLoop = false;
 			EventLoop(&shouldBreakLoop);
 
