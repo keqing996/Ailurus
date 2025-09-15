@@ -135,14 +135,16 @@ namespace Ailurus
 		{
 			_pTimeSystem->Update();
 
-			if (_pImGuiSystem != nullptr)
-				_pImGuiSystem->NewFrame();
-
 			bool shouldBreakLoop = false;
 			EventLoop(&shouldBreakLoop);
 
 			if (shouldBreakLoop)
 				break;
+
+			_pRenderSystem->CheckRebuildSwapChain();
+
+			if (_pImGuiSystem != nullptr)
+				_pImGuiSystem->NewFrame();
 
 			if (loopFunction != nullptr)
 				loopFunction();
