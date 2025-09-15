@@ -6,6 +6,7 @@
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/RenderPass/VulkanRenderPassForward.h>
 #include <VulkanContext/RenderPass/VulkanRenderPassImGui.h>
+#include <VulkanContext/RenderPass/VulkanRenderPassPresent.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include "Ailurus/Utility/Logger.h"
 #include "Detail/RenderIntermediateVariable.h"
@@ -124,6 +125,9 @@ namespace Ailurus
 		{
 			_renderPassMap[RenderPassType::ImGui] = std::make_unique<VulkanRenderPassImGui>();
 		}
+
+		// Present pass
+		_renderPassMap[RenderPassType::Present] = std::make_unique<VulkanRenderPassPresent>();
 	}
 
 	void RenderSystem::BuildGlobalUniform()

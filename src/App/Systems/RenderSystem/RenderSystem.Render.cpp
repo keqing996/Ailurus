@@ -272,4 +272,15 @@ namespace Ailurus
 		pImGui->Render(pCommandBuffer);
 		pCommandBuffer->EndRenderPass();
 	}
+
+	void RenderSystem::RenderPresentPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
+	{
+		auto* pPresentPass = GetRenderPass(RenderPassType::Present);
+		if (pPresentPass == nullptr)
+			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(RenderPassType::Present));
+
+		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pPresentPass, swapChainImageIndex);
+		pCommandBuffer->BeginRenderPass(pPresentPass, pBackBuffer);
+		pCommandBuffer->EndRenderPass();
+	}
 } // namespace Ailurus

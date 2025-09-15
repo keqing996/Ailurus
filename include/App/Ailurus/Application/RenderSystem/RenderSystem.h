@@ -70,6 +70,7 @@ namespace Ailurus
 		void RebuildSwapChain();
 		void RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 		void RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
+		void RenderPresentPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
 		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;

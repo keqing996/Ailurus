@@ -51,6 +51,11 @@ namespace Ailurus
 	{
 	}
 
+	RenderPassType VulkanRenderPassImGui::GetRenderPassType() const
+	{
+		return RenderPassType::ImGui;
+	}
+
 	vk::RenderPassBeginInfo VulkanRenderPassImGui::GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const
 	{
 		vk::RenderPassBeginInfo renderPassInfo;

@@ -11,6 +11,7 @@ namespace Ailurus
 		~VulkanRenderPassForward() override;
 
 	public:
+		RenderPassType GetRenderPassType() const override;
 		vk::RenderPassBeginInfo GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const override;
 
 	private:

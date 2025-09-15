@@ -4,11 +4,11 @@
 
 namespace Ailurus
 {
-	class VulkanRenderPassImGui : public VulkanRenderPass
+    class VulkanRenderPassPresent : public VulkanRenderPass
 	{
 	public:
-		VulkanRenderPassImGui();
-		~VulkanRenderPassImGui() override;
+		VulkanRenderPassPresent();
+		~VulkanRenderPassPresent() override;
 
 	public:
 		RenderPassType GetRenderPassType() const override;

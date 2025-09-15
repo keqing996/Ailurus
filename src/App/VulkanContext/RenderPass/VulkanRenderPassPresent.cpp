@@ -1,24 +1,23 @@
-#include "VulkanRenderPassForward.h"
+#include "VulkanRenderPassPresent.h"
 #include "VulkanContext/FrameBuffer/VulkanFrameBuffer.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
 
 namespace Ailurus
 {
-
-	VulkanRenderPassForward::VulkanRenderPassForward(const std::vector<vk::ClearValue>& clearValues)
-		: _clearValues(clearValues)
-	{
-		// Attachment
+    
+    VulkanRenderPassPresent::VulkanRenderPassPresent()
+    {
+        // Attachment
 		vk::AttachmentDescription attachment;
 		attachment.setFormat(VulkanContext::GetSwapChain()->GetConfig().surfaceFormat.format)
 			.setSamples(vk::SampleCountFlagBits::e1)
-			.setLoadOp(vk::AttachmentLoadOp::eClear)
+			.setLoadOp(vk::AttachmentLoadOp::eLoad)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
 			.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 			.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-			.setInitialLayout(vk::ImageLayout::eUndefined)
-			.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+			.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
+			.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 
 		// Attachment ref
 		vk::AttachmentReference colorRef;
@@ -46,27 +45,26 @@ namespace Ailurus
 			.setDependencies(dependency);
 
 		CreateRenderPass(renderPassInfo);
-	}
-
-	VulkanRenderPassForward::~VulkanRenderPassForward()
-	{
-	}
-
-	RenderPassType VulkanRenderPassForward::GetRenderPassType() const
-	{
-		return RenderPassType::Forward;
-	}
-
-	vk::RenderPassBeginInfo VulkanRenderPassForward::GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const
-	{
-		vk::RenderPassBeginInfo renderPassInfo;
+    }
+    
+    VulkanRenderPassPresent::~VulkanRenderPassPresent()
+    {
+    }
+    
+    RenderPassType VulkanRenderPassPresent::GetRenderPassType() const
+    {
+        return RenderPassType::Present;
+    }
+    
+    vk::RenderPassBeginInfo VulkanRenderPassPresent::GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const
+    {
+        vk::RenderPassBeginInfo renderPassInfo;
 		renderPassInfo.setRenderPass(GetRenderPass())
 			.setFramebuffer(pTargetFrameBuffer->GetBuffer())
 			.setRenderArea(vk::Rect2D{
 				vk::Offset2D{ 0, 0 },
-				VulkanContext::GetSwapChain()->GetConfig().extent })
-			.setClearValues(_clearValues);
+				VulkanContext::GetSwapChain()->GetConfig().extent });
 
 		return renderPassInfo;
-	}
-} // namespace Ailurus
+    }
+}
