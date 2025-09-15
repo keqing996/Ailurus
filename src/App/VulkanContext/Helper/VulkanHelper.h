@@ -4,9 +4,6 @@
 #include <Ailurus/Application/RenderSystem/Shader/ShaderStage.h>
 #include <Ailurus/Application/RenderSystem/Vertex/VertexAttributeType.h>
 #include <Ailurus/Application/RenderSystem/Vertex/IndexBufferFormat.h>
-#include <Ailurus/Application/RenderSystem/Enum/MultiSampling.h>
-#include <Ailurus/Application/RenderSystem/Enum/StencilOperation.h>
-#include <Ailurus/Application/RenderSystem/FrameBuffer/FrameBufferUsage.h>
 
 namespace Ailurus
 {
@@ -39,11 +36,5 @@ namespace Ailurus
 		static vk::Format GetFormat(AttributeType type);
 
 		static uint32_t CalculateVertexLayoutStride(const std::vector<AttributeType>& attributes);
-
-		static auto ConvertToVkEnum(MultiSamplingType t) -> vk::SampleCountFlagBits;
-		static auto ConvertToVkEnum(StencilLoadType t) -> vk::AttachmentLoadOp;
-		static auto ConvertToVkEnum(StencilWriteType t) -> vk::AttachmentStoreOp;
-		static auto GetFrameBufferInitLayoutForRenderPass(FrameBufferUsage usage) -> vk::ImageLayout;
-		static auto GetFrameBufferFinalLayoutForRenderPass(FrameBufferUsage usage) -> vk::ImageLayout;
 	};
 } // namespace Ailurus

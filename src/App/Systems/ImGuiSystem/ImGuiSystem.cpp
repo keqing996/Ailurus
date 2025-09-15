@@ -44,7 +44,7 @@ namespace Ailurus
 		Spectrum::LoadStyle(false);
 
 		// Dpi scale
-		// ImGui::GetStyle().ScaleAllSizes(dpiScale);
+		ImGui::GetStyle().ScaleAllSizes(Application::GetWindowScale());
 	}
 
 	ImGuiSystem::~ImGuiSystem()
@@ -60,6 +60,12 @@ namespace Ailurus
 
 		// Clear backend
 		_pVkImpl.reset();
+	}
+
+	void ImGuiSystem::HandleEvent(const void* evt)
+	{
+		const SDL_Event* sdlEvent = static_cast<const SDL_Event*>(evt);
+		ImGui_ImplSDL3_ProcessEvent(sdlEvent);
 	}
 
 	void ImGuiSystem::NewFrame()
@@ -85,6 +91,8 @@ namespace Ailurus
 		if (fontSize <= 0)
 			fontSize = DEFAULT_FONT_SIZE;
 
+		fontSize *= Application::GetWindowScale();
+
 		const auto pFonts = ImGui::GetIO().Fonts;
 		return pFonts->AddFontFromMemoryTTF(
 			fontData,
@@ -98,6 +106,8 @@ namespace Ailurus
 	{
 		if (fontSize <= 0)
 			fontSize = DEFAULT_FONT_SIZE;
+
+		fontSize *= Application::GetWindowScale();
 
 		const auto pFonts = ImGui::GetIO().Fonts;
 		return pFonts->AddFontFromFileTTF(

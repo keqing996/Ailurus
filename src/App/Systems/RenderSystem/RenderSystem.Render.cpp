@@ -109,16 +109,20 @@ namespace Ailurus
 		if (_needRebuildSwapChain)
 			RebuildSwapChain();
 
-		VulkanContext::RenderFrame(&_needRebuildSwapChain, 
-			[this](uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void
-		{
-			RenderPrepare();
+		VulkanContext::RenderFrame(&_needRebuildSwapChain,
+			[this](uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void {
+				RenderPrepare();
 
-			CollectRenderingContext();
-			UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
-			UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
-			RenderSpecificPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
-		});
+				CollectRenderingContext();
+				UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
+				UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
+
+				// Forward pass
+				RenderSpecificPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
+
+				// ImGui pass
+				RenderImGuiPass(swapChainImageIndex, pCommandBuffer);
+			});
 	}
 
 	void RenderSystem::UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator)
@@ -174,14 +178,13 @@ namespace Ailurus
 		if (_pIntermediateVariable->renderingMeshes.empty())
 			return;
 
-		auto itrPass = _renderPassMap.find(pass);
-		if (itrPass == _renderPassMap.end())
+		const auto pVkRenderPass = GetRenderPass(pass);
+		if (pVkRenderPass == nullptr)
 		{
 			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(pass));
 			return;
 		}
 
-		const auto pVkRenderPass = itrPass->second.get();
 		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pVkRenderPass, swapChainImageIndex);
 		pCommandBuffer->BeginRenderPass(pVkRenderPass, pBackBuffer);
 
@@ -257,15 +260,16 @@ namespace Ailurus
 		pCommandBuffer->EndRenderPass();
 	}
 
-	void RenderSystem::RenderImGuiPass(VulkanCommandBuffer* pCommandBuffer)
+	void RenderSystem::RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
 	{
-		auto itrPass = _renderPassMap.find(RenderPassType::ImGui);
-		if (itrPass == _renderPassMap.end())
-			return;
-
-		const auto pVkRenderPass = itrPass->second.get();
-
 		auto pImGui = Application::Get<ImGuiSystem>();
+		auto* pImGuiPass = GetRenderPass(RenderPassType::ImGui);
+		if (pImGuiPass == nullptr)
+			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(RenderPassType::ImGui));
+
+		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pImGuiPass, swapChainImageIndex);
+		pCommandBuffer->BeginRenderPass(pImGuiPass, pBackBuffer);
 		pImGui->Render(pCommandBuffer);
+		pCommandBuffer->EndRenderPass();
 	}
 } // namespace Ailurus

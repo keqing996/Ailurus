@@ -16,6 +16,7 @@ namespace Ailurus
         ~ImGuiSystem();
 
     public:
+    	void HandleEvent(const void* evt);
     	void NewFrame();
     	void Render(VulkanCommandBuffer* pCommandBuffer);
     	ImFont* CreateImGuiFont(void* fontData, int fontDataSize, int fontSize = -1, bool transferDataOwnership = true, const ImWchar* glyphRanges = nullptr);

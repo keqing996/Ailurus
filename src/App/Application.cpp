@@ -1,8 +1,13 @@
-#include "Ailurus/Application/Application.h"
-#include "VulkanContext/VulkanContext.h"
+#include <memory>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-#include <memory>
+#include "Ailurus/PlatformDefine.h"
+#include "Ailurus/Application/Application.h"
+#include "VulkanContext/VulkanContext.h"
+
+#if AILURUS_PLATFORM_WINDOWS
+#include "Ailurus/Platform/Windows/Window.h"
+#endif
 
 namespace Ailurus
 {
@@ -47,9 +52,14 @@ namespace Ailurus
 	std::unique_ptr<RenderSystem> 	Application::_pRenderSystem = nullptr;
 	std::unique_ptr<AssetsSystem> 	Application::_pAssetsSystem = nullptr;
 	std::unique_ptr<SceneSystem> 	Application::_pSceneManager = nullptr;
+	std::unique_ptr<ImGuiSystem> 	Application::_pImGuiSystem = nullptr;
 
 	bool Application::Create(int width, int height, const std::string& title, Style style)
 	{
+#if AILURUS_PLATFORM_WINDOWS
+		NativeWindowUtility::FixProcessDpi();
+#endif
+
 		if (!SDL_Init(SDL_INIT_VIDEO))
 			return false;
 
@@ -78,9 +88,12 @@ namespace Ailurus
 
 		_pTimeSystem.reset(new TimeSystem());
 		_pInputManager.reset(new InputSystem());
-		_pRenderSystem.reset(new RenderSystem());
+		_pRenderSystem.reset(new RenderSystem(style.enableRenderImGui, style.enableRender3D));
 		_pAssetsSystem.reset(new AssetsSystem());
 		_pSceneManager.reset(new SceneSystem());
+
+		if (style.enableRenderImGui)
+			_pImGuiSystem.reset(new ImGuiSystem());
 
 		if (_onWindowCreated != nullptr)
 			_onWindowCreated();
@@ -95,6 +108,7 @@ namespace Ailurus
 			if (_onWindowPreDestroyed)
 				_onWindowPreDestroyed();
 
+			_pImGuiSystem = nullptr;
 			_pSceneManager = nullptr;
 			_pAssetsSystem = nullptr;
 			_pRenderSystem = nullptr;
@@ -120,7 +134,10 @@ namespace Ailurus
 		while (true)
 		{
 			_pTimeSystem->Update();
-			
+
+			if (_pImGuiSystem != nullptr)
+				_pImGuiSystem->NewFrame();
+
 			bool shouldBreakLoop = false;
 			EventLoop(&shouldBreakLoop);
 
@@ -257,6 +274,11 @@ namespace Ailurus
 		return (mouseX >= windowX && mouseX <= windowX + windowWidth && mouseY >= windowY && mouseY <= windowY + windowHeight);
 	}
 
+	float Application::GetWindowScale()
+	{
+		return SDL_GetWindowDisplayScale(static_cast<SDL_Window*>(_pWindow));
+	}
+
 	void Application::SetCallbackOnWindowCreated(const std::function<void()>& callback)
 	{
 		_onWindowCreated = callback;
@@ -342,6 +364,12 @@ namespace Ailurus
 		return _pAssetsSystem.get();
 	}
 
+	template<>
+	ImGuiSystem* Application::Get<ImGuiSystem>()
+	{
+		return _pImGuiSystem.get();
+	}
+
 	void Application::EventLoop(bool* quitLoop)
 	{
 		if (_pInputManager != nullptr)
@@ -355,6 +383,9 @@ namespace Ailurus
 
 			bool closeWindow = false;
 			HandleEvent(&event, &closeWindow);
+
+			if (_pImGuiSystem != nullptr)
+				_pImGuiSystem->HandleEvent(&event);
 
 			if (_pInputManager != nullptr)
 				_pInputManager->HandleEvent(_pWindow, &event);

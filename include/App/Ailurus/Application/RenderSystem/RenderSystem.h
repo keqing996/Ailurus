@@ -29,7 +29,7 @@ namespace Ailurus
 		using PostSwapChainRebuild = std::function<void()>;
 		
 	public:
-		RenderSystem();
+		RenderSystem(bool enableImGui, bool enable3D);
 		~RenderSystem();
 
 	public:
@@ -69,7 +69,7 @@ namespace Ailurus
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
 		void RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
-		void RenderImGuiPass(VulkanCommandBuffer* pCommandBuffer);
+		void RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
 		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;
@@ -77,6 +77,8 @@ namespace Ailurus
 
 	private:
 		bool _needRebuildSwapChain = false;
+		bool _enable3D = false;
+		bool _enableImGui = false;
 		std::unordered_map<RenderPassType, std::unique_ptr<VulkanRenderPass>> _renderPassMap;
 
 		// Current main camera
