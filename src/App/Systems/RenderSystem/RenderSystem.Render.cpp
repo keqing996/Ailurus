@@ -104,11 +104,14 @@ namespace Ailurus
 		_pIntermediateVariable = std::make_unique<RenderIntermediateVariable>();
 	}
 
-	void RenderSystem::RenderScene()
+	void RenderSystem::CheckRebuildSwapChain()
 	{
 		if (_needRebuildSwapChain)
 			RebuildSwapChain();
+	}
 
+	void RenderSystem::RenderScene()
+	{
 		VulkanContext::RenderFrame(&_needRebuildSwapChain,
 			[this](uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void {
 				RenderPrepare();

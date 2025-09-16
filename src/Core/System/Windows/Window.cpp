@@ -67,8 +67,6 @@ namespace Ailurus
 
 	bool NativeWindowUtility::FixProcessDpi()
 	{
-		SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-
 		// Try SetProcessDpiAwareness first
 		if (FixProcessDpiBySetProcessDpiAwareness())
 			return true;

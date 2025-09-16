@@ -53,6 +53,7 @@ namespace Ailurus
 		void RemoveCallbackPostSwapChainRebuild(void* key);
 
 		// Draw
+		void CheckRebuildSwapChain();
 		void RenderScene();
 		void GraphicsWaitIdle() const;	
 
