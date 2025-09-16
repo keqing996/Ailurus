@@ -342,7 +342,15 @@ namespace Ailurus
 		submitInfo.setWaitDstStageMask(waitStages);
 
 		// Submit
-		_vkGraphicQueue.submit(submitInfo, frameContext.renderFinishFence->GetFence());
+		try
+		{
+			_vkGraphicQueue.submit(submitInfo, frameContext.renderFinishFence->GetFence());
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Fail to submit, error = {}", e.what());
+			return false;
+		}
 
 		// Set this frame on air
 		frameContext.onAirInfo = OnAirInfo{
@@ -390,8 +398,15 @@ namespace Ailurus
 		for (auto i = 0; i < _frameContext.size(); i++)
 			WaitFrameFinish(i);
 
-		// Wait gpu end
-		_vkDevice.waitIdle();
+		try
+		{
+			// Wait gpu end
+			_vkDevice.waitIdle();
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("waitIdle failed: {}", e.what());
+		}
 	}
 
 	VulkanSwapChain* VulkanContext::GetSwapChain()
@@ -616,8 +631,16 @@ namespace Ailurus
 			.setQueueCreateInfos(queueCreateInfoList)
 			.setPEnabledFeatures(&physicalDeviceFeatures);
 
-		_vkDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
-		VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkDevice);
+		try
+		{
+			_vkDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
+			VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkDevice);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("createDevice failed: {}", e.what());
+			return false;
+		}
 
 		_vkPresentQueue = _vkDevice.getQueue(_presentQueueIndex, 0);
 		_vkGraphicQueue = _vkDevice.getQueue(_graphicQueueIndex, 0);

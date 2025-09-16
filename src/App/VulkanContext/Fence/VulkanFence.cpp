@@ -1,5 +1,6 @@
 #include "VulkanFence.h"
 #include <VulkanContext/VulkanContext.h>
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -10,12 +11,26 @@ namespace Ailurus
         if (initSignaled)
             fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
-        _vkFence = VulkanContext::GetDevice().createFence(fenceInfo);
+        try
+        {
+            _vkFence = VulkanContext::GetDevice().createFence(fenceInfo);
+        }
+        catch (const vk::SystemError& e)
+        {
+            Logger::LogError("Failed to create fence: {}", e.what());
+        }
     }
 
     VulkanFence::~VulkanFence()
     {
-        VulkanContext::GetDevice().destroyFence(_vkFence);
+        try
+        {
+            VulkanContext::GetDevice().destroyFence(_vkFence);
+        }
+        catch (const vk::SystemError& e)
+        {
+            Logger::LogError("Failed to destroy fence: {}", e.what());
+        }
     }
 
     const vk::Fence& VulkanFence::GetFence() const
@@ -25,6 +40,13 @@ namespace Ailurus
 
 	void VulkanFence::Reset()
 	{
-    	VulkanContext::GetDevice().resetFences(_vkFence);
+        try
+        {
+    	    VulkanContext::GetDevice().resetFences(_vkFence);
+        }
+        catch (const vk::SystemError& e)
+        {
+            Logger::LogError("Failed to reset fence: {}", e.what());
+        }
 	}
 } // namespace Ailurus

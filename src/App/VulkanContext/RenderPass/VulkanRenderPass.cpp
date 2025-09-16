@@ -2,6 +2,7 @@
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/FrameBuffer/VulkanFrameBuffer.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -11,8 +12,15 @@ namespace Ailurus
 
 	VulkanRenderPass::~VulkanRenderPass()
 	{
-		if (_vkRenderPass)
-			VulkanContext::GetDevice().destroyRenderPass(_vkRenderPass);
+		try
+		{
+			if (_vkRenderPass)
+				VulkanContext::GetDevice().destroyRenderPass(_vkRenderPass);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to destroy render pass: {}", e.what());
+		}
 	}
 
 	vk::RenderPass VulkanRenderPass::GetRenderPass() const
@@ -22,6 +30,13 @@ namespace Ailurus
 
 	void VulkanRenderPass::CreateRenderPass(const vk::RenderPassCreateInfo& createInfo)
 	{
-		_vkRenderPass = VulkanContext::GetDevice().createRenderPass(createInfo);
+		try
+		{
+			_vkRenderPass = VulkanContext::GetDevice().createRenderPass(createInfo);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create render pass: {}", e.what());
+		}
 	}
 } // namespace Ailurus

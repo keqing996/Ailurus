@@ -23,19 +23,33 @@ namespace Ailurus
 			.setLevel(level)
 			.setCommandBufferCount(1);
 
-		const std::vector<vk::CommandBuffer> tempBuffers = VulkanContext::GetDevice().allocateCommandBuffers(allocInfo);
-		_buffer = tempBuffers[0];
+		try
+		{
+			const std::vector<vk::CommandBuffer> tempBuffers = VulkanContext::GetDevice().allocateCommandBuffers(allocInfo);
+			_buffer = tempBuffers[0];
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to allocate command buffers: {}", e.what());
+		}
 	}
 
 	VulkanCommandBuffer::~VulkanCommandBuffer()
 	{
-		_buffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
+		try
+		{
+			_buffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
 
-		// Release resources
-		ClearResourceReferences();
+			// Release resources
+			ClearResourceReferences();
 
-		// Recycle command buffer
-		VulkanContext::GetDevice().freeCommandBuffers(VulkanContext::GetCommandPool(), _buffer);
+			// Recycle command buffer
+			VulkanContext::GetDevice().freeCommandBuffers(VulkanContext::GetCommandPool(), _buffer);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to free command buffers: {}", e.what());
+		}
 	}
 
 	const vk::CommandBuffer& VulkanCommandBuffer::GetBuffer() const
@@ -67,14 +81,28 @@ namespace Ailurus
 			beginInfo.setPInheritanceInfo(&inheritanceInfo);
 		}
 
-		_buffer.begin(beginInfo);
+		try
+		{
+			_buffer.begin(beginInfo);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to begin command buffer: {}", e.what());
+		}
 
 		_isRecording = true;
 	}
 
 	void VulkanCommandBuffer::End()
 	{
-		_buffer.end();
+		try
+		{
+			_buffer.end();
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to end command buffer: {}", e.what());
+		}
 
 		_isRecording = false;
 	}

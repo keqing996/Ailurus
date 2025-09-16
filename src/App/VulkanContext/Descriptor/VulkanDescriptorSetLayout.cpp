@@ -3,6 +3,7 @@
 #include "VulkanContext/Helper/VulkanHelper.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanDescriptorSetLayout.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -33,12 +34,26 @@ namespace Ailurus
 		vk::DescriptorSetLayoutCreateInfo layoutInfo;
 		layoutInfo.setBindings(layoutBindings);
 
-		_descriptorSetLayout = VulkanContext::GetDevice().createDescriptorSetLayout(layoutInfo);
+		try
+		{
+			_descriptorSetLayout = VulkanContext::GetDevice().createDescriptorSetLayout(layoutInfo);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create descriptor set layout: {}", e.what());
+		}
 	}
 
 	VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
 	{
-		VulkanContext::GetDevice().destroyDescriptorSetLayout(_descriptorSetLayout);
+		try
+		{
+			VulkanContext::GetDevice().destroyDescriptorSetLayout(_descriptorSetLayout);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to destroy descriptor set layout: {}", e.what());
+		}
 	}
 
 	vk::DescriptorSetLayout VulkanDescriptorSetLayout::GetDescriptorSetLayout() const

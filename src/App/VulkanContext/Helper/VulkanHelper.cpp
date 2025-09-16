@@ -26,29 +26,50 @@ namespace Ailurus
 
 	void VulkanHelper::LogInstanceLayerProperties()
 	{
-		auto allLayerProperties = vk::enumerateInstanceLayerProperties();
+		try
+		{
+			auto allLayerProperties = vk::enumerateInstanceLayerProperties();
 
-		Logger::LogInfo("Instance layer properties:");
-		for (auto layerProperty : allLayerProperties)
-			Logger::LogInfo("    {}", layerProperty.layerName.data());
+			Logger::LogInfo("Instance layer properties:");
+			for (auto layerProperty : allLayerProperties)
+				Logger::LogInfo("    {}", layerProperty.layerName.data());
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to enumerate instance layer properties: {}", e.what());
+		}
 	}
 
 	void VulkanHelper::LogInstanceExtensionProperties()
 	{
-		auto allExt = vk::enumerateInstanceExtensionProperties();
-		Logger::LogInfo("Instance extensions:");
-		for (auto ext : allExt)
-			Logger::LogInfo("    {}", ext.extensionName.data());
+		try
+		{
+			auto allExt = vk::enumerateInstanceExtensionProperties();
+			Logger::LogInfo("Instance extensions:");
+			for (auto ext : allExt)
+				Logger::LogInfo("    {}", ext.extensionName.data());
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to enumerate instance extension properties: {}", e.what());
+		}
 	}
 
 	void VulkanHelper::LogPhysicalCards(vk::Instance vkInstance)
 	{
-		auto graphicCards = vkInstance.enumeratePhysicalDevices();
-		Logger::LogInfo("All graphic cards:");
-		for (auto& graphicCard : graphicCards)
+		try
 		{
-			auto property = graphicCard.getProperties();
-			Logger::LogInfo("    {}", property.deviceName.data());
+			auto graphicCards = vkInstance.enumeratePhysicalDevices();
+			Logger::LogInfo("All graphic cards:");
+			for (auto& graphicCard : graphicCards)
+			{
+				auto property = graphicCard.getProperties();
+				Logger::LogInfo("    {}", property.deviceName.data());
+			}
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to enumerate physical devices: {}", e.what());
 		}
 	}
 

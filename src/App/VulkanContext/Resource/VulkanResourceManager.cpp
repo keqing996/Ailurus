@@ -55,26 +55,34 @@ namespace Ailurus
 			.setUsage(usageFlag)
 			.setSharingMode(vk::SharingMode::eExclusive);
 
-		const vk::Buffer buffer = device.createBuffer(bufferInfo);
-
-		// Get gpu memory requirement
-		const std::optional<BufferMemoryRequirement> memoryRequirement = GetBufferMemoryRequirement(buffer, propertyFlag);
-		if (!memoryRequirement.has_value())
+		try
 		{
-			device.destroyBuffer(buffer);
-			Logger::LogError("Failed to get buffer memory requirement when creating buffer.");
+			const vk::Buffer buffer = device.createBuffer(bufferInfo);
+
+			// Get gpu memory requirement
+			const std::optional<BufferMemoryRequirement> memoryRequirement = GetBufferMemoryRequirement(buffer, propertyFlag);
+			if (!memoryRequirement.has_value())
+			{
+				device.destroyBuffer(buffer);
+				Logger::LogError("Failed to get buffer memory requirement when creating buffer.");
+				return std::nullopt;
+			}
+
+			// Alloc memory
+			vk::MemoryAllocateInfo allocInfo;
+			allocInfo.setAllocationSize(memoryRequirement->requirements.size)
+				.setMemoryTypeIndex(memoryRequirement->memTypeIndex);
+
+			const vk::DeviceMemory deviceMem = device.allocateMemory(allocInfo);
+			device.bindBufferMemory(buffer, deviceMem, 0);
+
+			return CreatedBuffer{ memoryRequirement->requirements.size, buffer, deviceMem };
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create buffer: {}", e.what());
 			return std::nullopt;
 		}
-
-		// Alloc memory
-		vk::MemoryAllocateInfo allocInfo;
-		allocInfo.setAllocationSize(memoryRequirement->requirements.size)
-			.setMemoryTypeIndex(memoryRequirement->memTypeIndex);
-
-		const vk::DeviceMemory deviceMem = device.allocateMemory(allocInfo);
-		device.bindBufferMemory(buffer, deviceMem, 0);
-
-		return CreatedBuffer{ memoryRequirement->requirements.size, buffer, deviceMem };
 	}
 
 	template <typename T>
@@ -86,15 +94,22 @@ namespace Ailurus
 		auto ptr = static_cast<VulkanHostBuffer*>(pResource);
 		const auto device = VulkanContext::GetDevice();
 
-		if (ptr->mappedAddr != nullptr)
-			device.unmapMemory(ptr->deviceMemory);
+		try
+		{
+			if (ptr->mappedAddr != nullptr)
+				device.unmapMemory(ptr->deviceMemory);
 
-		// Destroy buffer first, then device memory.
-		if (ptr->buffer != nullptr)
-			device.destroyBuffer(ptr->buffer);
+			// Destroy buffer first, then device memory.
+			if (ptr->buffer != nullptr)
+				device.destroyBuffer(ptr->buffer);
 
-		if (ptr->deviceMemory != nullptr)
-			device.freeMemory(ptr->deviceMemory);
+			if (ptr->deviceMemory != nullptr)
+				device.freeMemory(ptr->deviceMemory);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to delete host buffer resource: {}", e.what());
+		}
 
 		delete ptr;
 	}
@@ -105,12 +120,19 @@ namespace Ailurus
 		auto ptr = static_cast<VulkanDeviceBuffer*>(pResource);
 		const auto device = VulkanContext::GetDevice();
 
-		// Destroy buffer first, then device memory.
-		if (ptr->buffer != nullptr)
-			device.destroyBuffer(ptr->buffer);
+		try
+		{
+			// Destroy buffer first, then device memory.
+			if (ptr->buffer != nullptr)
+				device.destroyBuffer(ptr->buffer);
 
-		if (ptr->deviceMemory != nullptr)
-			device.freeMemory(ptr->deviceMemory);
+			if (ptr->deviceMemory != nullptr)
+				device.freeMemory(ptr->deviceMemory);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to delete device buffer resource: {}", e.what());
+		}
 
 		delete ptr;
 	}
@@ -172,12 +194,18 @@ namespace Ailurus
 			return nullptr;
 
 		// Map memory
-		void* mappedAddr = VulkanContext::GetDevice().mapMemory(bufferRet->deviceMem, 0, size, {});
-
-		VulkanHostBuffer* pBufferRaw = new VulkanHostBuffer(bufferRet->realSize, bufferRet->buffer, bufferRet->deviceMem, mappedAddr);
-		_resources.push_back(ResourcePtr(pBufferRaw, &DeleteVulkanResource<VulkanHostBuffer>));
-
-		return pBufferRaw;
+		try
+		{
+			void* mappedAddr = VulkanContext::GetDevice().mapMemory(bufferRet->deviceMem, 0, size, {});
+			VulkanHostBuffer* pBufferRaw = new VulkanHostBuffer(bufferRet->realSize, bufferRet->buffer, bufferRet->deviceMem, mappedAddr);
+			_resources.push_back(ResourcePtr(pBufferRaw, &DeleteVulkanResource<VulkanHostBuffer>));
+			return pBufferRaw;
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to map memory: {}", e.what());
+			return nullptr;
+		}
 	}
 
 	void VulkanResourceManager::GarbageCollect()
