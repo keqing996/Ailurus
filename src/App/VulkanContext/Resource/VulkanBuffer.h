@@ -1,7 +1,7 @@
 #pragma once
 
+#include "VulkanContext/VulkanPch.h"
 #include <cstdint>
-#include <vulkan/vulkan.hpp>
 #include "VulkanResource.h"
 #include "Ailurus/Utility/EnumReflection.h"
 

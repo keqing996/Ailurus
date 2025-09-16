@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include "VulkanContext/VulkanPch.h"
 #include <Ailurus/Application/RenderSystem/Vertex/IndexBufferFormat.h>
 
 namespace Ailurus

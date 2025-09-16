@@ -28,6 +28,8 @@ target_include_directories  (ailurus-app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
 target_link_libraries       (ailurus-app PUBLIC imgui ailurus-core nlohmann_json assimp)
 target_link_libraries       (ailurus-app PRIVATE SDL3-static vulkan_hpp)
 
+target_precompile_headers   (ailurus-app PRIVATE "src/App/VulkanContext/VulkanPch.h")
+
 # Test code
 option (AILURUS_ENABLE_TEST OFF)
 
