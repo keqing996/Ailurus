@@ -194,35 +194,21 @@ namespace Ailurus
 	{
 		try
 		{
-			auto acquireImage = VulkanContext::GetDevice().acquireNextImageKHR(
+			vk::ResultValue<uint32_t> acquireResult = VulkanContext::GetDevice().acquireNextImageKHR(
 				_vkSwapChain,
 				std::numeric_limits<uint64_t>::max(),
 				imageReadySem->GetSemaphore());
 
-			bool success = true;
-			switch (acquireImage.result)
-			{
-				// Success
-			case vk::Result::eSuccess:
-				break;
-				// Swap chain can still work but is not perfect, rebuild swap chain next frame.
-			case vk::Result::eSuboptimalKHR:
+			if (acquireResult.result == vk::Result::eSuboptimalKHR)
 				*needRebuildSwapChain = true;
-				break;
-				// Swap chain is not fit for current surface, must be rebuilt right now.
-			case vk::Result::eErrorOutOfDateKHR:
-				*needRebuildSwapChain = true;
-				success = false;
-				// Other errors
-			default:
-				Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
-				success = false;
-			}
 
-			if (!success)
-				return std::nullopt;
-
-			return acquireImage.value;
+			return acquireResult.value;
+		}
+		catch (const vk::OutOfDateKHRError& e)
+		{
+			Logger::LogError("Swap chain out of date: {}", e.what());
+			*needRebuildSwapChain = true;
+			return std::nullopt;
 		}
 		catch (const vk::SystemError& e)
 		{

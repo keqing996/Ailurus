@@ -61,7 +61,7 @@ namespace Ailurus
 
 		// Render
 		static void RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction);
-		static bool RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc);
+		static void RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc);
 		static void WaitDeviceIdle();
 
 	private:

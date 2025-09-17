@@ -303,7 +303,7 @@ namespace Ailurus
 		return _pipelineManager.get();
 	}
 
-	bool VulkanContext::RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc)
+	void VulkanContext::RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc)
 	{
 		// Fence frame context
 		WaitFrameFinish(_currentFrameIndex);
@@ -314,7 +314,7 @@ namespace Ailurus
 		//    or eSuboptimalKHR, so it is safe to recycle the semaphore.
 		const auto opImageIndex = _pSwapChain->AcquireNextImage(frameContext.imageReadySemaphore.get(), needRebuildSwapChain);
 		if (!opImageIndex.has_value())
-			return false;
+			return;
 
 		const auto imageIndex = opImageIndex.value();
 
@@ -349,7 +349,7 @@ namespace Ailurus
 		catch (const vk::SystemError& e)
 		{
 			Logger::LogError("Fail to submit, error = {}", e.what());
-			return false;
+			return;
 		}
 
 		// Set this frame on air
@@ -364,31 +364,27 @@ namespace Ailurus
 			.setSwapchains(_pSwapChain->GetSwapChain())
 			.setImageIndices(imageIndex);
 
-		bool presentResult = false;
-		switch (const auto present = _vkPresentQueue.presentKHR(presentInfo))
+		try
 		{
-			case vk::Result::eSuccess:
-				presentResult = true;
-				break;
-			case vk::Result::eSuboptimalKHR:
+			const vk::Result result = _vkPresentQueue.presentKHR(presentInfo);
+			if (result == vk::Result::eSuboptimalKHR)
+			{
 				*needRebuildSwapChain = true;
-				presentResult = true;
-				break;
-			case vk::Result::eErrorOutOfDateKHR:
-				Logger::LogError("Fail to present, error out of date");
-				*needRebuildSwapChain = true;
-				presentResult = false;
-				break;
-			default:
-				Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
-				presentResult = false;
-				break;
+			}
+		}
+		catch (const vk::OutOfDateKHRError& e)
+		{
+			Logger::LogInfo("Fail to present, error out of date: {}", e.what());
+			*needRebuildSwapChain = true;
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Fail to present: {}", e.what());
+			return;
 		}
 
 		// Update frame index
 		_currentFrameIndex = (_currentFrameIndex + 1) % _parallelFrameCount;
-
-		return presentResult;
 	}
 
 	void VulkanContext::WaitDeviceIdle()
