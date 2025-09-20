@@ -52,6 +52,9 @@ namespace Ailurus
         /// Get native window's size(client area, without borders, caption bar, etc.).
         static Vector2i GetSize();
 
+        /// Get native window's drawable size in pixels.
+        static Vector2i GetDrawableSize();
+
         /// Set native window's size.
         static void SetSize(int width, int height);
 

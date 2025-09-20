@@ -42,9 +42,6 @@ namespace Ailurus
 
 		// Style
 		Spectrum::LoadStyle(false);
-
-		// Dpi scale
-		ImGui::GetStyle().ScaleAllSizes(Application::GetWindowScale());
 	}
 
 	ImGuiSystem::~ImGuiSystem()
@@ -72,6 +69,17 @@ namespace Ailurus
 	{
 		_pVkImpl->NewFrame();
 		ImGui_ImplSDL3_NewFrame();
+
+		// Manually update display size and scale for HiDPI displays like Retina
+		ImGuiIO& io = ImGui::GetIO();
+		int window_width, window_height;
+		int display_width, display_height;
+		SDL_GetWindowSize(static_cast<SDL_Window*>(Application::GetSDLWindowPtr()), &window_width, &window_height);
+		SDL_GetWindowSizeInPixels(static_cast<SDL_Window*>(Application::GetSDLWindowPtr()), &display_width, &display_height);
+		io.DisplaySize = ImVec2((float)window_width, (float)window_height);
+		if (window_width > 0 && window_height > 0)
+			io.DisplayFramebufferScale = ImVec2((float)display_width / window_width, (float)display_height / window_height);
+
 		ImGui::NewFrame();
 	}
 
@@ -91,8 +99,6 @@ namespace Ailurus
 		if (fontSize <= 0)
 			fontSize = DEFAULT_FONT_SIZE;
 
-		fontSize *= Application::GetWindowScale();
-
 		const auto pFonts = ImGui::GetIO().Fonts;
 		return pFonts->AddFontFromMemoryTTF(
 			fontData,
@@ -106,8 +112,6 @@ namespace Ailurus
 	{
 		if (fontSize <= 0)
 			fontSize = DEFAULT_FONT_SIZE;
-
-		fontSize *= Application::GetWindowScale();
 
 		const auto pFonts = ImGui::GetIO().Fonts;
 		return pFonts->AddFontFromFileTTF(

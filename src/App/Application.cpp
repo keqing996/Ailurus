@@ -169,6 +169,18 @@ namespace Ailurus
 		return {0, 0};
 	}
 
+	Vector2i Application::GetDrawableSize()
+	{
+		if (_pWindow != nullptr)
+		{
+			int w, h;
+			SDL_GetWindowSizeInPixels(static_cast<SDL_Window*>(_pWindow), &w, &h);
+			return {w, h};
+		}
+
+		return {0, 0};
+	}
+
 	void Application::SetSize(int width, int height)
 	{
 		if (_pWindow != nullptr)

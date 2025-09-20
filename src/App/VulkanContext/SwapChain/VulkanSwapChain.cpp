@@ -55,7 +55,7 @@ namespace Ailurus
 			Logger::LogError("No suitable surface format (format R8G8B8SRGB & colorspace SRGB non-linear)");
 
 		// Swap chain image count & size
-		Vector2i windowSize = Application::GetSize();
+		Vector2i windowSize = Application::GetDrawableSize();
 		try
 		{
 			vk::SurfaceCapabilitiesKHR surfaceCapabilities = VulkanContext::GetPhysicalDevice().getSurfaceCapabilitiesKHR(VulkanContext::GetSurface());
