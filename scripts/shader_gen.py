@@ -4,7 +4,7 @@ import subprocess
 from tools.miscs import path_miscs
 from tools.miscs import log
 
-def compile_to_spv(src_path: str, dst_path: str):
+def compile_to_spv(src_path: str, dst_path: str, glslc_path: str):
     for root, dirs, files in os.walk(src_path):
         for file in files:
             if file.endswith(".vert") or file.endswith(".frag"):
@@ -16,19 +16,33 @@ def compile_to_spv(src_path: str, dst_path: str):
 
                 try:
                     subprocess.run(
-                        ["glslc", src_file, "-o", dst_file],
+                        [glslc_path, src_file, "-o", dst_file],
                         check=True
                     )
                     log.green(f"Compiled: {src_file} -> {dst_file}")
                 except subprocess.CalledProcessError as e:
                     log.red(f"Error compiling {src_file}: {e}")
                 except FileNotFoundError:
-                    log.red("Error: glslc not found. Make sure it is installed and added to PATH.")
+                    log.red(f"Error: {glslc_path} not found. Make sure Vulkan SDK is installed correctly.")
                     sys.exit(1)
 
 def main():
     if len(sys.argv) != 3:
         log.red("Usage: python script.py <src_directory> <dst_directory>")
+        sys.exit(1)
+
+    vulkan_sdk_path = os.environ.get("VULKAN_SDK")
+    if not vulkan_sdk_path:
+        log.red("Error: VULKAN_SDK environment variable not set.")
+        sys.exit(1)
+
+    if sys.platform == "win32":
+        glslc_path = os.path.join(vulkan_sdk_path, "Bin", "glslc.exe")
+    else:
+        glslc_path = os.path.join(vulkan_sdk_path, "bin", "glslc")
+
+    if not os.path.exists(glslc_path):
+        log.red(f"Error: glslc not found at {glslc_path}")
         sys.exit(1)
 
     src_path = sys.argv[1]
@@ -51,7 +65,7 @@ def main():
 
     # Compile
     log.white(f"Shader compile: {src_path}")
-    compile_to_spv(src_path, dst_path)
+    compile_to_spv(src_path, dst_path, glslc_path)
 
 if __name__ == "__main__":
     main()
