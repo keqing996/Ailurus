@@ -1,6 +1,7 @@
 #include <memory>
 #include <optional>
 #include <array>
+#include "Ailurus/PlatformDefine.h"
 #include "VulkanContext.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
