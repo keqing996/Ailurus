@@ -99,6 +99,8 @@ namespace Ailurus
 		if (fontSize <= 0)
 			fontSize = DEFAULT_FONT_SIZE;
 
+		fontSize *= Application::GetWindowScale();
+
 		const auto pFonts = ImGui::GetIO().Fonts;
 		return pFonts->AddFontFromMemoryTTF(
 			fontData,
@@ -112,6 +114,8 @@ namespace Ailurus
 	{
 		if (fontSize <= 0)
 			fontSize = DEFAULT_FONT_SIZE;
+
+		fontSize *= Application::GetWindowScale();
 
 		const auto pFonts = ImGui::GetIO().Fonts;
 		return pFonts->AddFontFromFileTTF(
