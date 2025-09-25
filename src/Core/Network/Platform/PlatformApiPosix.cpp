@@ -25,18 +25,22 @@ namespace Ailurus
     {
         int sock = ToNativeHandle(handle);
         const int status = ::fcntl(sock, F_GETFL);
+        if (status == -1)
+            return false;
+
+        int desiredFlags = status;
+        
         if (block)
-        {
-            int ret = ::fcntl(sock, F_SETFL, status & ~O_NONBLOCK);
-            if (ret == -1)
-                return false;
-        }
+            desiredFlags &= ~O_NONBLOCK;
         else
-        {
-            int ret = ::fcntl(sock, F_SETFL, status | O_NONBLOCK);
-            if (ret == -1)
-                return false;
-        }
+            desiredFlags |= O_NONBLOCK;
+
+        if (desiredFlags == status)
+            return true;
+
+        int ret = ::fcntl(sock, F_SETFL, desiredFlags);
+        if (ret == -1)
+            return false;
 
         return true;
     }
