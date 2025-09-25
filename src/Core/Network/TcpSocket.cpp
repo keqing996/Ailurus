@@ -20,7 +20,27 @@ namespace Ailurus
         if (::connect(Npi::ToNativeHandle(pSocket->GetNativeHandle()), pSockAddr, structLen) >= 0)
             return SocketState::Success;
 
-        return Socket::SelectWrite(pSocket, timeOutInMs);
+        SocketState selectResult = Socket::SelectWrite(pSocket, timeOutInMs);
+        if (selectResult != SocketState::Success)
+            return selectResult;
+
+        // `select` only tells us the socket is writeable; SO_ERROR reveals whether the
+        // non-blocking connect actually succeeded or completed with an error such as ECONNREFUSED.
+        int socketError = 0;
+        SockLen optLen = sizeof(socketError);
+        if (::getsockopt(Npi::ToNativeHandle(pSocket->GetNativeHandle()), SOL_SOCKET, SO_ERROR,
+                reinterpret_cast<char*>(&socketError), &optLen) < 0)
+        {
+            return Npi::GetErrorState();
+        }
+
+        if (socketError != 0)
+        {
+            Npi::SetLastSocketError(socketError);
+            return Npi::GetErrorState();
+        }
+
+        return SocketState::Success;
     }
 
     std::optional<TcpSocket> TcpSocket::Create(IpAddress::Family af, bool blocking)
@@ -29,12 +49,16 @@ namespace Ailurus
         auto [wsaProtocol, wsaSocketType] = SocketUtil::GetTcpProtocol();
 
         const SocketHandle handle = ::socket(addressFamily, wsaSocketType, wsaProtocol);
+        if (handle == Npi::GetInvalidSocket())
+            return std::nullopt;
+
         return Create(af, Npi::ToGeneralHandle(handle), blocking);
     }
 
     std::optional<TcpSocket> TcpSocket::Create(IpAddress::Family af, int64_t nativeHandle, bool blocking)
     {
-        if (nativeHandle == Npi::GetInvalidSocket())
+        const int64_t invalidHandle = Npi::ToGeneralHandle(Npi::GetInvalidSocket());
+        if (nativeHandle == invalidHandle)
             return std::nullopt;
 
         TcpSocket socket(af, nativeHandle, blocking);
@@ -103,11 +127,34 @@ namespace Ailurus
         if (pData == nullptr || size == 0)
             return { SocketState::Error, 0 };
 
-        int result = ::send(Npi::ToNativeHandle(_handle), static_cast<const char*>(pData), size, 0);
-        if (result < 0)
-            return { Npi::GetErrorState(), 0 };
+        const char* buffer = static_cast<const char*>(pData);
+        const size_t maxChunk = Npi::GetMaxSendLength();
 
-        return { SocketState::Success, result };
+        // may include MSG_NOSIGNAL on POSIX to suppress SIGPIPE
+        const int sendFlags = Npi::GetSendFlags(); 
+
+        size_t bytesSent = 0;
+        while (bytesSent < size)
+        {
+            size_t remaining = size - bytesSent;
+            if (maxChunk > 0 && remaining > maxChunk)
+                remaining = maxChunk;
+
+            int64_t result = Npi::Send(_handle, buffer + bytesSent, remaining, sendFlags);
+
+            if (result == 0)
+                return { SocketState::Disconnect, bytesSent };
+
+            if (result < 0)
+                return { Npi::GetErrorState(), bytesSent };
+
+            bytesSent += static_cast<size_t>(result);
+
+            if (static_cast<size_t>(result) < remaining)
+                break;
+        }
+
+        return { SocketState::Success, bytesSent };
     }
 
     std::pair<SocketState, size_t> TcpSocket::Receive(void* pBuffer, size_t size) const
@@ -118,14 +165,21 @@ namespace Ailurus
         if (pBuffer == nullptr || size == 0)
             return { SocketState::Error, 0 };
 
-        int result = ::recv(Npi::ToNativeHandle(_handle), static_cast<char*>(pBuffer), size, 0);
+        char* buffer = static_cast<char*>(pBuffer);
+        const size_t maxChunk = Npi::GetMaxReceiveLength();
+
+        size_t requested = size;
+        if (maxChunk > 0 && requested > maxChunk)
+            requested = maxChunk;
+
+        int64_t result = Npi::Receive(_handle, buffer, requested, 0);
         if (result == 0)
             return { SocketState::Disconnect, 0 };
 
         if (result < 0)
             return { Npi::GetErrorState(), 0 };
 
-        return { SocketState::Success, result };
+        return { SocketState::Success, static_cast<size_t>(result) };
     }
 
     SocketState TcpSocket::Connect(const std::string& ip, uint16_t port, int timeOutInMs)
@@ -213,14 +267,15 @@ namespace Ailurus
         if (!IsValid())
             return { SocketState::InvalidSocket, InvalidSocket(_addressFamily) };
 
-        sockaddr_in address {};
+        sockaddr_storage address {};
         SockLen length = sizeof(address);
         SocketHandle result = ::accept(Npi::ToNativeHandle(_handle), reinterpret_cast<sockaddr*>(&address), &length);
 
         if (result == Npi::GetInvalidSocket())
             return { Npi::GetErrorState(), InvalidSocket(_addressFamily) };
 
-        TcpSocket resultSocket(_addressFamily, Npi::ToGeneralHandle(result), true);
+        TcpSocket resultSocket(_addressFamily, Npi::ToGeneralHandle(result), _isBlocking);
+        resultSocket.SetBlocking(_isBlocking, true);
 
         return { SocketState::Success, resultSocket };
     }

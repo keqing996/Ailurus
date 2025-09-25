@@ -2,6 +2,8 @@
 
 #if AILURUS_PLATFORM_SUPPORT_POSIX
 
+#include <cerrno>
+
 namespace Ailurus
 {
     void Npi::GlobalInit()
@@ -63,6 +65,40 @@ namespace Ailurus
             default:
                 return SocketState::Error;
         }
+    }
+
+    void Npi::SetLastSocketError(int errorCode)
+    {
+        errno = errorCode;
+    }
+
+    size_t Npi::GetMaxSendLength()
+    {
+        return 0;
+    }
+
+    size_t Npi::GetMaxReceiveLength()
+    {
+        return 0;
+    }
+
+    int Npi::GetSendFlags()
+    {
+#ifdef MSG_NOSIGNAL
+        return MSG_NOSIGNAL;
+#else
+        return 0;
+#endif
+    }
+
+    int64_t Npi::Send(int64_t handle, const void* buffer, size_t length, int flags)
+    {
+        return ::send(ToNativeHandle(handle), buffer, length, flags);
+    }
+
+    int64_t Npi::Receive(int64_t handle, void* buffer, size_t length, int flags)
+    {
+        return ::recv(ToNativeHandle(handle), buffer, length, flags);
     }
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include "Ailurus/PlatformDefine.h"
 #include "Ailurus/Network/SocketState.h"
@@ -59,6 +60,14 @@ namespace Ailurus
         static bool SetSocketBlocking(int64_t handle, bool block);
 
         static SocketState GetErrorState();
+
+        static void SetLastSocketError(int errorCode);
+
+        static size_t GetMaxSendLength();
+        static size_t GetMaxReceiveLength();
+        static int GetSendFlags();
+        static int64_t Send(int64_t handle, const void* buffer, size_t length, int flags);
+        static int64_t Receive(int64_t handle, void* buffer, size_t length, int flags);
     };
 }
 

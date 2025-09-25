@@ -1,7 +1,9 @@
-#include <memory>
 #include "PlatformApi.h"
 
 #if AILURUS_PLATFORM_WINDOWS
+
+#include <memory>
+#include <limits>
 
 struct WinSocketGuard
 {
@@ -77,6 +79,40 @@ namespace Ailurus
             default:
                 return SocketState::Error;
         }
+    }
+
+    void Npi::SetLastSocketError(int errorCode)
+    {
+        ::WSASetLastError(errorCode);
+    }
+
+    size_t Npi::GetMaxSendLength()
+    {
+        return static_cast<size_t>(std::numeric_limits<int>::max());
+    }
+
+    size_t Npi::GetMaxReceiveLength()
+    {
+        return static_cast<size_t>(std::numeric_limits<int>::max());
+    }
+
+    int Npi::GetSendFlags()
+    {
+        return 0;
+    }
+
+    int64_t Npi::Send(int64_t handle, const void* buffer, size_t length, int flags)
+    {
+        const size_t maxLength = GetMaxSendLength();
+        int sendLength = length > maxLength ? static_cast<int>(maxLength) : static_cast<int>(length);
+        return ::send(ToNativeHandle(handle), static_cast<const char*>(buffer), sendLength, flags);
+    }
+
+    int64_t Npi::Receive(int64_t handle, void* buffer, size_t length, int flags)
+    {
+        const size_t maxLength = GetMaxReceiveLength();
+        int recvLength = length > maxLength ? static_cast<int>(maxLength) : static_cast<int>(length);
+        return ::recv(ToNativeHandle(handle), static_cast<char*>(buffer), recvLength, flags);
     }
 }
 
