@@ -12,6 +12,15 @@ namespace Ailurus
 
 		const int64_t handle = pSocket->GetNativeHandle();
 		const SocketHandle nativeHandle = Npi::ToNativeHandle(handle);
+		const auto nativeHandleAsInt = static_cast<int64_t>(nativeHandle);
+
+#if defined(FD_SETSIZE)
+		// select() requires file descriptors/SOCKET values to be less than FD_SETSIZE.
+		// Returning early avoids invoking FD_SET with an out-of-range handle, which is
+		// undefined on POSIX and maps to WSAEINVAL on Windows.
+		if (nativeHandleAsInt < 0 || nativeHandleAsInt >= FD_SETSIZE)
+			return SocketState::Error;
+#endif
 
 		const bool hasTimeout = timeoutInMs >= 0;
 		std::chrono::steady_clock::time_point deadline;
@@ -61,7 +70,7 @@ namespace Ailurus
 			// Socket is ready for the requested operation.
 			if (selectResult > 0)
 				return SocketState::Success;
-            
+
 			// Timed out without any activity.
 			if (selectResult == 0)
 				return SocketState::Busy;

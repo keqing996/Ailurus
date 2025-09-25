@@ -6,7 +6,7 @@
 
 namespace Ailurus
 {
-    static SocketState ConnectNoSelect(int64_t handle, sockaddr* pSockAddr, int structLen)
+    static SocketState ConnectNoSelect(int64_t handle, const sockaddr* pSockAddr, SockLen structLen)
     {
         if (::connect(Npi::ToNativeHandle(handle), pSockAddr, structLen) == -1)
             return Npi::GetErrorState();
@@ -14,7 +14,7 @@ namespace Ailurus
         return SocketState::Success;
     }
 
-    static SocketState ConnectWithSelect(const Socket* pSocket, sockaddr* pSockAddr, int structLen, int timeOutInMs)
+    static SocketState ConnectWithSelect(const Socket* pSocket, const sockaddr* pSockAddr, SockLen structLen, int timeOutInMs)
     {
         // Connect once, if connection is success, no need to select.
         if (::connect(Npi::ToNativeHandle(pSocket->GetNativeHandle()), pSockAddr, structLen) >= 0)
@@ -64,19 +64,32 @@ namespace Ailurus
         TcpSocket socket(af, nativeHandle, blocking);
 
         // Set blocking
-        socket.SetBlocking(socket._isBlocking, true);
+        if (!socket.SetBlocking(socket._isBlocking, true))
+        {
+            // If we fail to configure the socket mode, close it to avoid leaking an unusable descriptor.
+            socket.Close();
+            return std::nullopt;
+        }
 
         // Disable Nagle optimization by default.
         int flagDisableNagle = 1;
-        ::setsockopt(Npi::ToNativeHandle(socket._handle), SOL_SOCKET, TCP_NODELAY,
-            reinterpret_cast<char*>(&flagDisableNagle), sizeof(flagDisableNagle));
+        if (::setsockopt(Npi::ToNativeHandle(socket._handle), SOL_SOCKET, TCP_NODELAY,
+                reinterpret_cast<char*>(&flagDisableNagle), sizeof(flagDisableNagle)) != 0)
+        {
+            socket.Close();
+            return std::nullopt;
+        }
 
 #if AILURUS_PLATFORM_MAC
         // Ignore SigPipe on macos.
         // https://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
         int flagDisableSigPipe = 1;
-        ::setsockopt(Npi::ToNativeHandle(socket._handle), SOL_SOCKET, SO_NOSIGPIPE,
-            reinterpret_cast<char*>(&flagDisableSigPipe), sizeof(flagDisableSigPipe));
+        if (::setsockopt(Npi::ToNativeHandle(socket._handle), SOL_SOCKET, SO_NOSIGPIPE,
+                reinterpret_cast<char*>(&flagDisableSigPipe), sizeof(flagDisableSigPipe)) != 0)
+        {
+            socket.Close();
+            return std::nullopt;
+        }
 #endif
 
         return socket;
@@ -119,7 +132,7 @@ namespace Ailurus
         return std::nullopt;
     }
 
-    std::pair<SocketState, size_t> TcpSocket::Send(void* pData, size_t size) const
+    std::pair<SocketState, size_t> TcpSocket::Send(const void* pData, size_t size) const
     {
         if (!IsValid())
             return { SocketState::InvalidSocket, 0 };
@@ -146,7 +159,15 @@ namespace Ailurus
                 return { SocketState::Disconnect, bytesSent };
 
             if (result < 0)
-                return { Npi::GetErrorState(), bytesSent };
+            {
+                const SocketState errorState = Npi::GetErrorState();
+                // Surfaces short writes caused by EWOULDBLOCK/WSAEWOULDBLOCK while
+                // still reporting progress to the caller.
+                if (errorState == SocketState::Busy && bytesSent > 0)
+                    return { SocketState::Busy, bytesSent };
+
+                return { errorState, bytesSent };
+            }
 
             bytesSent += static_cast<size_t>(result);
 
@@ -154,7 +175,9 @@ namespace Ailurus
                 break;
         }
 
-        return { SocketState::Success, bytesSent };
+        // If we exit early without sending everything, surface BUSY so callers can retry.
+        const SocketState state = bytesSent == size ? SocketState::Success : SocketState::Busy;
+        return { state, bytesSent };
     }
 
     std::pair<SocketState, size_t> TcpSocket::Receive(void* pBuffer, size_t size) const
@@ -205,24 +228,24 @@ namespace Ailurus
         if (endpoint.GetAddressFamily() != _addressFamily)
             return SocketState::AddressFamilyNotMatch;
 
-        sockaddr sockAddr {};
-        SockLen structLen;
-        if (!SocketUtil::CreateSocketAddress(endpoint, &sockAddr, &structLen))
+        sockaddr_storage sockAddr {};
+        SockLen structLen = 0;
+        if (!SocketUtil::CreateSocketAddress(endpoint, reinterpret_cast<sockaddr*>(&sockAddr), &structLen))
             return SocketState::Error;
 
         // [NonTimeout + Blocking/NonBlocking] -> just connect
         if (timeOutInMs <= 0)
-            return ConnectNoSelect(_handle, &sockAddr, structLen);
+            return ConnectNoSelect(_handle, reinterpret_cast<const sockaddr*>(&sockAddr), structLen);
 
         // [Timeout + NonBlocking] -> just connect
         if (!IsBlocking())
-            return ConnectNoSelect(_handle, &sockAddr, structLen);
+            return ConnectNoSelect(_handle, reinterpret_cast<const sockaddr*>(&sockAddr), structLen);
 
         // [Timeout + Blocking] -> set nonblocking and select
         SetBlocking(false);
         ScopeGuard guard([this]()->void { SetBlocking(true); });
 
-        return ConnectWithSelect(this, &sockAddr, structLen, timeOutInMs);
+        return ConnectWithSelect(this, reinterpret_cast<const sockaddr*>(&sockAddr), structLen, timeOutInMs);
     }
 
     SocketState TcpSocket::Listen(const std::string &ip, uint16_t port)
@@ -248,12 +271,12 @@ namespace Ailurus
         if (endpoint.GetAddressFamily() != _addressFamily)
             return SocketState::AddressFamilyNotMatch;
 
-        sockaddr sockAddr {};
-        SockLen structLen;
-        if (!SocketUtil::CreateSocketAddress(endpoint, &sockAddr, &structLen))
+        sockaddr_storage sockAddr {};
+        SockLen structLen = 0;
+        if (!SocketUtil::CreateSocketAddress(endpoint, reinterpret_cast<sockaddr*>(&sockAddr), &structLen))
             return SocketState::Error;
 
-        if (::bind(Npi::ToNativeHandle(_handle), &sockAddr, structLen) == -1)
+        if (::bind(Npi::ToNativeHandle(_handle), reinterpret_cast<const sockaddr*>(&sockAddr), structLen) == -1)
             return Npi::GetErrorState();
 
         if (::listen(Npi::ToNativeHandle(_handle), SOMAXCONN) == -1)
