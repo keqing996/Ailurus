@@ -25,12 +25,37 @@ namespace Ailurus
 {
     void Npi::GlobalInit()
     {
-        pWinSocketGuard = std::make_unique<WinSocketGuard>();
+        if (!pWinSocketGuard)
+        {
+            pWinSocketGuard = std::make_unique<WinSocketGuard>();
+        }
+    }
+
+    void Npi::GlobalShutdown()
+    {
+        pWinSocketGuard.reset();
     }
 
     SocketHandle Npi::GetInvalidSocket()
     {
         return INVALID_SOCKET;
+    }
+
+    SocketState Npi::ConfigureListenerSocket(int64_t handle)
+    {
+        // Windows prefers SO_EXCLUSIVEADDRUSE so servers can reclaim ports without
+        // accidentally sharing the listener with other processes, matching the intent
+        // of the POSIX reuse flags in a platform-specific way.
+        const SocketHandle nativeHandle = ToNativeHandle(handle);
+
+        BOOL exclusiveAddrUse = TRUE;
+        if (::setsockopt(nativeHandle, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
+                reinterpret_cast<const char*>(&exclusiveAddrUse), sizeof(exclusiveAddrUse)) != 0)
+        {
+            return GetErrorState();
+        }
+
+        return SocketState::Success;
     }
 
     void Npi::CloseSocket(int64_t handle)

@@ -6,7 +6,7 @@ namespace Ailurus
     EndPoint::EndPoint(const IpAddress& ip, uint16_t port)
         : _ip(ip)
         , _port(port)
-        , _v6ScopeId(0)
+        , _v6ScopeId(ip.GetFamily() == IpAddress::Family::IpV6 ? ip.GetV6ScopeId() : 0)
     {
     }
 

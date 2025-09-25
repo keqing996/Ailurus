@@ -51,7 +51,8 @@ namespace Ailurus
         }
 
     public:
-        static void GlobalInit();
+    static void GlobalInit();
+    static void GlobalShutdown();
 
         static SocketHandle GetInvalidSocket();
 
@@ -62,6 +63,8 @@ namespace Ailurus
         static SocketState GetErrorState();
 
         static void SetLastSocketError(int errorCode);
+
+    static SocketState ConfigureListenerSocket(int64_t handle);
 
         static size_t GetMaxSendLength();
         static size_t GetMaxReceiveLength();

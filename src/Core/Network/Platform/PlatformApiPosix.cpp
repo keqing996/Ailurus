@@ -11,9 +11,40 @@ namespace Ailurus
         // do nothing
     }
 
+    void Npi::GlobalShutdown()
+    {
+        // nothing to tear down on POSIX platforms
+    }
+
     SocketHandle Npi::GetInvalidSocket()
     {
         return static_cast<SocketHandle>(-1);
+    }
+
+    SocketState Npi::ConfigureListenerSocket(int64_t handle)
+    {
+        // Ensure server sockets can be rebound quickly after shutdown by enabling the
+        // standard POSIX reuse flags before bind() is attempted.
+        const SocketHandle nativeHandle = ToNativeHandle(handle);
+
+        int reuseAddr = 1;
+        if (::setsockopt(nativeHandle, SOL_SOCKET, SO_REUSEADDR,
+                reinterpret_cast<const char*>(&reuseAddr), sizeof(reuseAddr)) != 0)
+        {
+            return GetErrorState();
+        }
+
+#if defined(SO_REUSEPORT)
+        if (::setsockopt(nativeHandle, SOL_SOCKET, SO_REUSEPORT,
+                reinterpret_cast<const char*>(&reuseAddr), sizeof(reuseAddr)) != 0)
+        {
+            // Some platforms (e.g. older macOS) may not support SO_REUSEPORT; treat those cases as success.
+            if (errno != ENOPROTOOPT && errno != EINVAL)
+                return GetErrorState();
+        }
+#endif
+
+        return SocketState::Success;
     }
 
     void Npi::CloseSocket(int64_t handle)
