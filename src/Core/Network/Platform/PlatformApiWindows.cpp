@@ -114,6 +114,11 @@ namespace Ailurus
         int recvLength = length > maxLength ? static_cast<int>(maxLength) : static_cast<int>(length);
         return ::recv(ToNativeHandle(handle), static_cast<char*>(buffer), recvLength, flags);
     }
+
+    bool Npi::CheckErrorInterrupted()
+    {
+        return false;
+    }
 }
 
 

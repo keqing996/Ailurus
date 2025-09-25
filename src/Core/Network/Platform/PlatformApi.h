@@ -68,6 +68,8 @@ namespace Ailurus
         static int GetSendFlags();
         static int64_t Send(int64_t handle, const void* buffer, size_t length, int flags);
         static int64_t Receive(int64_t handle, void* buffer, size_t length, int flags);
+
+        static bool CheckErrorInterrupted();
     };
 }
 

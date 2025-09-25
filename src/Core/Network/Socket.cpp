@@ -1,4 +1,5 @@
 
+#include <chrono>
 #include "Ailurus/Network/Socket.h"
 #include "Platform/PlatformApi.h"
 
@@ -45,32 +46,57 @@ namespace Ailurus
         if (pSocket == nullptr)
             return SocketState::Error;
 
-        if (timeoutInMs < -1)
-            return SocketState::Error;
-
         int64_t handle = pSocket->GetNativeHandle();
+        SocketHandle nativeHandle = Npi::ToNativeHandle(handle);
 
-        fd_set selector;
-        FD_ZERO(&selector);
-        FD_SET(Npi::ToNativeHandle(handle), &selector);
+        const bool hasTimeout = timeoutInMs >= 0;
+        std::chrono::steady_clock::time_point deadline;
+        if (hasTimeout)
+            deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutInMs);
 
-        timeval time{};
-        timeval* pTimeout = nullptr;
-        if (timeoutInMs >= 0)
+        while (true)
         {
-            time.tv_sec = static_cast<long>(timeoutInMs / 1000);
-            time.tv_usec = static_cast<long>((timeoutInMs % 1000) * 1000);
-            pTimeout = &time;
+            if (hasTimeout)
+            {
+                auto now = std::chrono::steady_clock::now();
+                if (now >= deadline)
+                    return SocketState::Busy;
+            }
+
+            fd_set selector;
+            FD_ZERO(&selector);
+            FD_SET(nativeHandle, &selector);
+
+            timeval timeoutValue{};
+            timeval* pTimeout = nullptr;
+            if (hasTimeout)
+            {
+                auto remaining = std::chrono::duration_cast<std::chrono::microseconds>(deadline - std::chrono::steady_clock::now());
+                if (remaining.count() <= 0)
+                    return SocketState::Busy;
+
+                timeoutValue.tv_sec = static_cast<long>(remaining.count() / 1000000);
+                timeoutValue.tv_usec = static_cast<long>(remaining.count() % 1000000);
+                pTimeout = &timeoutValue;
+            }
+
+            // Block until the socket is readable, an error occurs, or the timeout expires.
+            int selectResult = ::select(static_cast<int>(nativeHandle + 1), &selector, nullptr, nullptr, pTimeout);
+            
+            // Data is ready to be read.
+            if (selectResult > 0)
+                return SocketState::Success;
+
+            // Timed out without any activity.
+            if (selectResult == 0)
+                return SocketState::Busy;
+
+            // Retry after EINTR on POSIX.
+            if (Npi::CheckErrorInterrupted())
+                continue;
+
+            return Npi::GetErrorState();
         }
-
-        int selectResult = ::select(static_cast<int>(Npi::ToNativeHandle(handle) + 1), &selector, nullptr, nullptr, pTimeout);
-        if (selectResult > 0)
-            return SocketState::Success;
-
-        if (selectResult == 0)
-            return SocketState::Busy;
-
-        return Npi::GetErrorState();
     }
 
     SocketState Socket::SelectWrite(const Socket* pSocket, int timeoutInMs)
@@ -78,32 +104,57 @@ namespace Ailurus
         if (pSocket == nullptr)
             return SocketState::Error;
 
-        if (timeoutInMs < -1)
-            return SocketState::Error;
-
         int64_t handle = pSocket->GetNativeHandle();
+        SocketHandle nativeHandle = Npi::ToNativeHandle(handle);
 
-        fd_set selector;
-        FD_ZERO(&selector);
-        FD_SET(Npi::ToNativeHandle(handle), &selector);
+        const bool hasTimeout = timeoutInMs >= 0;
+        std::chrono::steady_clock::time_point deadline;
+        if (hasTimeout)
+            deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutInMs);
 
-        timeval time{};
-        timeval* pTimeout = nullptr;
-        if (timeoutInMs >= 0)
+        while (true)
         {
-            time.tv_sec = static_cast<long>(timeoutInMs / 1000);
-            time.tv_usec = static_cast<long>((timeoutInMs % 1000) * 1000);
-            pTimeout = &time;
+            if (hasTimeout)
+            {
+                auto now = std::chrono::steady_clock::now();
+                if (now >= deadline)
+                    return SocketState::Busy;
+            }
+
+            fd_set selector;
+            FD_ZERO(&selector);
+            FD_SET(nativeHandle, &selector);
+
+            timeval timeoutValue{};
+            timeval* pTimeout = nullptr;
+            if (hasTimeout)
+            {
+                auto remaining = std::chrono::duration_cast<std::chrono::microseconds>(deadline - std::chrono::steady_clock::now());
+                if (remaining.count() <= 0)
+                    return SocketState::Busy;
+
+                timeoutValue.tv_sec = static_cast<long>(remaining.count() / 1000000);
+                timeoutValue.tv_usec = static_cast<long>(remaining.count() % 1000000);
+                pTimeout = &timeoutValue;
+            }
+
+            // Wait for the descriptor to become writable or fail.
+            int selectResult = ::select(static_cast<int>(nativeHandle + 1), nullptr, &selector, nullptr, pTimeout);
+            
+            // Socket is ready for sending data.
+            if (selectResult > 0)
+                return SocketState::Success;
+
+            // Timeout elapsed without the socket becoming writable.
+            if (selectResult == 0)
+                return SocketState::Busy;
+
+            // Retry after EINTR on POSIX.
+            if (Npi::CheckErrorInterrupted())
+                continue;
+
+            return Npi::GetErrorState();
         }
-
-        int selectResult = ::select(static_cast<int>(Npi::ToNativeHandle(handle) + 1), nullptr, &selector, nullptr, pTimeout);
-        if (selectResult > 0)
-            return SocketState::Success;
-
-        if (selectResult == 0)
-            return SocketState::Busy;
-
-        return Npi::GetErrorState();
     }
 
     SocketState Socket::SelectRead(int timeoutInMs)

@@ -104,6 +104,11 @@ namespace Ailurus
     {
         return ::recv(ToNativeHandle(handle), buffer, length, flags);
     }
+
+    bool Npi::CheckErrorInterrupted()
+    {
+        return errno == EINTR;
+    }
 }
 
 #endif
