@@ -24,20 +24,28 @@ namespace Ailurus
         if (!force && block == IsBlocking())
             return true;
 
-        return Npi::SetSocketBlocking(_handle, block);
+        bool result = Npi::SetSocketBlocking(_handle, block);
+        if (result)
+            _isBlocking = block;
+
+        return result;
     }
 
     void Socket::Close()
     {
+        if (!IsValid())
+            return;
+
         Npi::CloseSocket(_handle);
+        _handle = Npi::ToGeneralHandle(Npi::GetInvalidSocket());
     }
 
     SocketState Socket::SelectRead(const Socket* pSocket, int timeoutInMs)
     {
-        if (timeoutInMs <= 0)
+        if (pSocket == nullptr)
             return SocketState::Error;
 
-        if (pSocket == nullptr)
+        if (timeoutInMs < -1)
             return SocketState::Error;
 
         int64_t handle = pSocket->GetNativeHandle();
@@ -47,21 +55,30 @@ namespace Ailurus
         FD_SET(Npi::ToNativeHandle(handle), &selector);
 
         timeval time{};
-        time.tv_sec  = static_cast<long>(timeoutInMs / 1000);
-        time.tv_usec = timeoutInMs % 1000 * 1000;
+        timeval* pTimeout = nullptr;
+        if (timeoutInMs >= 0)
+        {
+            time.tv_sec = static_cast<long>(timeoutInMs / 1000);
+            time.tv_usec = static_cast<long>((timeoutInMs % 1000) * 1000);
+            pTimeout = &time;
+        }
 
-        if (::select(static_cast<int>(Npi::ToNativeHandle(handle) + 1), &selector, nullptr, nullptr, &time) > 0)
+        int selectResult = ::select(static_cast<int>(Npi::ToNativeHandle(handle) + 1), &selector, nullptr, nullptr, pTimeout);
+        if (selectResult > 0)
             return SocketState::Success;
+
+        if (selectResult == 0)
+            return SocketState::Busy;
 
         return Npi::GetErrorState();
     }
 
     SocketState Socket::SelectWrite(const Socket* pSocket, int timeoutInMs)
     {
-        if (timeoutInMs <= 0)
+        if (pSocket == nullptr)
             return SocketState::Error;
 
-        if (pSocket == nullptr)
+        if (timeoutInMs < -1)
             return SocketState::Error;
 
         int64_t handle = pSocket->GetNativeHandle();
@@ -71,11 +88,20 @@ namespace Ailurus
         FD_SET(Npi::ToNativeHandle(handle), &selector);
 
         timeval time{};
-        time.tv_sec  = static_cast<long>(timeoutInMs / 1000);
-        time.tv_usec = timeoutInMs % 1000 * 1000;
+        timeval* pTimeout = nullptr;
+        if (timeoutInMs >= 0)
+        {
+            time.tv_sec = static_cast<long>(timeoutInMs / 1000);
+            time.tv_usec = static_cast<long>((timeoutInMs % 1000) * 1000);
+            pTimeout = &time;
+        }
 
-        if (::select(static_cast<int>(Npi::ToNativeHandle(handle) + 1), nullptr, &selector, nullptr, &time) > 0)
+        int selectResult = ::select(static_cast<int>(Npi::ToNativeHandle(handle) + 1), nullptr, &selector, nullptr, pTimeout);
+        if (selectResult > 0)
             return SocketState::Success;
+
+        if (selectResult == 0)
+            return SocketState::Busy;
 
         return Npi::GetErrorState();
     }

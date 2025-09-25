@@ -11,7 +11,7 @@ namespace Ailurus
 
     SocketHandle Npi::GetInvalidSocket()
     {
-        return 0;
+        return static_cast<SocketHandle>(-1);
     }
 
     void Npi::CloseSocket(int64_t handle)
