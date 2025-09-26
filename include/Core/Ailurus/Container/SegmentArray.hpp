@@ -4,6 +4,38 @@
 
 namespace Ailurus
 {
+    /**
+     * @brief A segmented array container that provides cache-friendly memory layout
+     * 
+     * SegmentArray is a fixed-size container template that organizes elements in segments
+     * to optimize memory access patterns. Unlike standard arrays, it maps logical indices
+     * to a segmented physical layout, which can improve cache locality for certain access
+     * patterns, particularly beneficial in scenarios with interleaved data access.
+     * 
+     * Key Features:
+     * - Compile-time fixed size with automatic padding for segment alignment
+     * - Cache-optimized memory layout through segmentation
+     * - Full iterator support (forward, reverse, const variants)
+     * - Optimized operations for power-of-2 segment sizes using bit operations
+     * - STL-compatible interface with random access semantics
+     * 
+     * Memory Layout:
+     * The container internally uses a std::array with size padded up to the nearest
+     * multiple of SegmentSize. Elements are accessed through a mapping function that
+     * converts linear indices to segmented positions.
+     * 
+     * Use Cases:
+     * - Matrix operations with block-wise access patterns
+     * - Cache-sensitive algorithms requiring spatial locality
+     * - Data structures benefiting from segment-based memory organization
+     * 
+     * @tparam T Element type
+     * @tparam Size Number of logical elements in the array
+     * @tparam SegmentSize Size of each memory segment (must be > 0)
+     * 
+     * @note For best performance, use power-of-2 segment sizes to enable
+     *       bit manipulation optimizations
+     */
     template<typename T, size_t Size, size_t SegmentSize>
     class SegmentArray
     {
@@ -30,11 +62,31 @@ namespace Ailurus
         static constexpr size_t SegmentCountPowerOfTwo = SegmentCount > 0 && (SegmentCount & (SegmentCount - 1)) == 0;
 
     public:
+        /**
+         * @brief Default constructor - creates an empty segmented array
+         * 
+         * Initializes all elements with their default constructor.
+         * For primitive types, elements are zero-initialized.
+         */
         SegmentArray()
             : _array()
         {
         }
 
+        /**
+         * @brief Initializer list constructor
+         * 
+         * Constructs the segmented array with elements from an initializer list.
+         * If the initializer list has fewer elements than Size, remaining elements
+         * are default-initialized. Extra elements beyond Size are ignored.
+         * 
+         * @param init Initializer list containing initial values
+         * 
+         * Example:
+         * @code
+         * SegmentArray<int, 5, 2> arr{1, 2, 3, 4, 5};
+         * @endcode
+         */
         SegmentArray(std::initializer_list<T> init)
         {
             size_t index = 0;
@@ -49,11 +101,28 @@ namespace Ailurus
             }
         }
 
+        /**
+         * @brief Copy constructor
+         * 
+         * Creates a new SegmentArray as a copy of another SegmentArray.
+         * Performs deep copy of all elements.
+         * 
+         * @param other The SegmentArray to copy from
+         */
         SegmentArray(const SegmentArray& other)
             : _array(other._array)
         {
         }
 
+        /**
+         * @brief Copy assignment operator
+         * 
+         * Assigns the contents of another SegmentArray to this one.
+         * Performs deep copy with self-assignment protection.
+         * 
+         * @param other The SegmentArray to copy from
+         * @return Reference to this SegmentArray
+         */
         SegmentArray& operator=(const SegmentArray& other)
         {
             if (this != &other)
@@ -62,11 +131,28 @@ namespace Ailurus
             return *this;
         }
 
+        /**
+         * @brief Move constructor
+         * 
+         * Constructs the SegmentArray by moving from another SegmentArray.
+         * The source object is left in a valid but unspecified state.
+         * 
+         * @param other The SegmentArray to move from
+         */
         SegmentArray(SegmentArray&& other) noexcept
             : _array(std::move(other._array))
         {
         }
 
+        /**
+         * @brief Move assignment operator
+         * 
+         * Moves the contents of another SegmentArray to this one.
+         * The source object is left in a valid but unspecified state.
+         * 
+         * @param other The SegmentArray to move from
+         * @return Reference to this SegmentArray
+         */
         SegmentArray& operator=(SegmentArray&& other) noexcept
         {
             if (this != &other)
@@ -76,11 +162,31 @@ namespace Ailurus
         }
 
     public:
+        /**
+         * @brief Returns the number of elements in the array
+         * 
+         * @return The logical size of the array (template parameter Size)
+         * 
+         * @note This returns the logical size, not the internal padded array size.
+         *       Use GetInternalArraySize() to get the actual allocated size.
+         */
         size_t size() const
         {
             return Size;
         }
 
+        /**
+         * @brief Access element at specified index (non-const version)
+         * 
+         * Provides direct access to the element at the given logical index.
+         * The index is automatically mapped to the appropriate segment position.
+         * 
+         * @param index Logical index of the element (0-based)
+         * @return Reference to the element at the specified index
+         * 
+         * @warning No bounds checking is performed. Accessing out-of-bounds
+         *          indices results in undefined behavior.
+         */
         T& operator[](uint32_t index)
         {
             return _array[MappingIndexToSegment(index)];
