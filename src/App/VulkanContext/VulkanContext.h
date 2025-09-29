@@ -65,8 +65,8 @@ namespace Ailurus
 		static void WaitDeviceIdle();
 
 	private:
+		private:
 		// Init functions
-		static void PrepareDispatcher();
 		static bool CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation);
 		static bool CreatDebugUtilsMessenger();
 		static bool CreateSurface(const WindowCreateSurfaceCallback& createSurface);
@@ -99,7 +99,6 @@ namespace Ailurus
 		static uint32_t _apiVersion;
 
 		// Init
-		static bool _globalDispatcherLoaded;
 		static bool _initialized;
 
 		// Static context

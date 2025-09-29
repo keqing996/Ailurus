@@ -4,6 +4,7 @@
 #include "Ailurus/PlatformDefine.h"
 #include "Ailurus/Application/Application.h"
 #include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/VulkanFunctionLoader.h"
 #include "Ailurus/Utility/Logger.h"
 
 #if AILURUS_PLATFORM_WINDOWS
@@ -60,6 +61,8 @@ namespace Ailurus
 #if AILURUS_PLATFORM_WINDOWS
 		NativeWindowUtility::FixProcessDpi();
 #endif
+		// Set SDL Vulkan library hint to use our loaded library
+		SDL_SetHint(SDL_HINT_VULKAN_LIBRARY, VulkanFunctionLoader::GetLoadedLibraryPath().c_str());
 
 		if (!SDL_Init(SDL_INIT_VIDEO))
 		{

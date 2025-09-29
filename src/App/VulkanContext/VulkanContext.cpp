@@ -1,8 +1,10 @@
+#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <array>
 #include "Ailurus/PlatformDefine.h"
 #include "VulkanContext.h"
+#include "VulkanFunctionLoader.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "SwapChain/VulkanSwapChain.h"
@@ -51,7 +53,8 @@ namespace Ailurus
 	void VulkanContext::Initialize(const GetWindowInstanceExtension& getWindowRequiredExtension,
 		const WindowCreateSurfaceCallback& createSurface, bool enableValidation)
 	{
-		PrepareDispatcher();
+		auto vkGetInstanceProcAddr = VulkanFunctionLoader::GetDynamicLoader()->getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
 		VulkanHelper::LogInstanceLayerProperties();
 		VulkanHelper::LogInstanceExtensionProperties();
@@ -392,8 +395,8 @@ namespace Ailurus
 	{
 		// Fence all flinging frame -> Make sure tash all command buffers, semaphores
 		// and fences are recycled.
-		for (auto i = 0; i < _frameContext.size(); i++)
-			WaitFrameFinish(i);
+		for (size_t i = 0; i < _frameContext.size(); i++)
+			WaitFrameFinish(static_cast<uint32_t>(i));
 
 		try
 		{
@@ -409,15 +412,6 @@ namespace Ailurus
 	VulkanSwapChain* VulkanContext::GetSwapChain()
 	{
 		return _pSwapChain.get();
-	}
-
-	void VulkanContext::PrepareDispatcher()
-	{
-		vk::detail::DynamicLoader loader;
-		auto vkGetInstanceProcAddr =
-			loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-
-		VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 	}
 
 	bool VulkanContext::CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation)
@@ -690,7 +684,7 @@ namespace Ailurus
 		if (!context.onAirInfo->secondaryCommandBuffers.empty())
 		{
 			auto& vec = context.onAirInfo->secondaryCommandBuffers;
-			for (auto i = 0; i < vec.size(); i++)
+			for (size_t i = 0; i < vec.size(); i++)
 			{
 				vec[i]->ClearResourceReferences();
 				_secondaryCommandBufferPool.push_back(std::move(vec[i]));
