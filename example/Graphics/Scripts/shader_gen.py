@@ -1,7 +1,7 @@
 """Compile GLSL shaders to SPIR-V binaries using the Vulkan SDK.
 
 Usage:
-    python shader_gen.py <vulkan_sdk_path> <src_directory> <dst_directory> [--keep-output]
+    python shader_gen.py --vulkan_sdk <vulkan_sdk_path> --src_directory <src_directory> --dst_directory <dst_directory>
 """
 
 import argparse
@@ -41,15 +41,18 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         description="Compile GLSL shaders to SPIR-V using Vulkan SDK's glslc executable."
     )
     parser.add_argument(
-        "vulkan_sdk",
+        "--vulkan_sdk",
+        required=True,
         help="Path to the Vulkan SDK root directory."
     )
     parser.add_argument(
-        "src_directory",
+        "--src_directory",
+        required=True,
         help="Directory containing source shader files (.vert/.frag)."
     )
     parser.add_argument(
-        "dst_directory",
+        "--dst_directory", 
+        required=True,
         help="Directory where compiled SPIR-V binaries will be written."
     )
     return parser.parse_args(argv)

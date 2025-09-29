@@ -4,6 +4,7 @@
 #include "Ailurus/PlatformDefine.h"
 #include "Ailurus/Application/Application.h"
 #include "VulkanContext/VulkanContext.h"
+#include "Ailurus/Utility/Logger.h"
 
 #if AILURUS_PLATFORM_WINDOWS
 #include "Ailurus/Platform/Windows/Window.h"
@@ -61,7 +62,10 @@ namespace Ailurus
 #endif
 
 		if (!SDL_Init(SDL_INIT_VIDEO))
+		{
+			Logger::LogError("SDL_Init failed: {}", SDL_GetError());
 			return false;
+		}
 
 		SDL_WindowFlags flags = 0;
 		if (!style.haveBorder)
@@ -75,7 +79,10 @@ namespace Ailurus
 
 		_pWindow = SDL_CreateWindow(title.c_str(), width, height, flags);
 		if (_pWindow == nullptr)
-			return false;
+        {
+            Logger::LogError("SDL_CreateWindow failed: {}", SDL_GetError());
+            return false;
+        }
 
 		SetWindowVisible(true);
 

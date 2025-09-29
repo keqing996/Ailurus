@@ -99,6 +99,7 @@ namespace Ailurus
 		static uint32_t _apiVersion;
 
 		// Init
+		static bool _globalDispatcherLoaded;
 		static bool _initialized;
 
 		// Static context

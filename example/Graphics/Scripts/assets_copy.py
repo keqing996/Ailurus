@@ -1,6 +1,14 @@
+"""Copy assets directory to build output directory.
+
+Usage:
+    python assets_copy.py --src_directory <src_directory> --dst_directory <dst_directory>
+"""
+
+import argparse
 import os
 import shutil
 import sys
+from typing import Sequence
 from tools.miscs import log
 
 def copy_directory(src, dst):
@@ -30,19 +38,33 @@ def copy_directory(src, dst):
         log.red(f"Error: Failed to copy '{src}' to '{dst}'. {e}")
         sys.exit(1)
 
-def main():
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Copy assets directory to build output directory."
+    )
+    parser.add_argument(
+        "--src_directory",
+        required=True,
+        help="Source directory to copy from."
+    )
+    parser.add_argument(
+        "--dst_directory",
+        required=True,
+        help="Destination directory to copy to."
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = None) -> None:
     """
     Main function for the script.
     It expects the source directory and destination directory as command-line arguments.
     """
-    # Ensure the correct number of command-line arguments
-    if len(sys.argv) != 3:
-        log.red("Usage: python script.py <src_directory> <dst_directory>")
-        sys.exit(1)
-
-    # Get the source and destination paths from the command-line arguments
-    src_path = sys.argv[1]
-    dst_path = sys.argv[2]
+    args = parse_args(argv)
+    
+    # Get the source and destination paths from the parsed arguments
+    src_path = os.path.abspath(args.src_directory)
+    dst_path = os.path.abspath(args.dst_directory)
 
     # Call the function to perform the directory copy
     log.white(f"Copy: {src_path} -> {dst_path}")
