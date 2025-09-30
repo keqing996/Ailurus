@@ -44,6 +44,11 @@ if(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$ENV{VULKAN_SDK}/lib/libvulkan.dylib" "$<TARGET_BUNDLE_CONTENT_DIR:ailurus_example_render>/Frameworks/"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$ENV{VULKAN_SDK}/lib/libvulkan.1.dylib" "$<TARGET_BUNDLE_CONTENT_DIR:ailurus_example_render>/Frameworks/"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$ENV{VULKAN_SDK}/lib/libMoltenVK.dylib" "$<TARGET_BUNDLE_CONTENT_DIR:ailurus_example_render>/Frameworks/"
+        # ICD file
+        COMMAND ${CMAKE_COMMAND} -E echo "[Render] Copy Vulkan ICD files for standalone distribution"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_CONTENT_DIR:ailurus_example_render>/Resources/vulkan/icd.d"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "$ENV{VULKAN_SDK}/share/vulkan/icd.d" "$<TARGET_BUNDLE_CONTENT_DIR:ailurus_example_render>/Resources/vulkan/icd.d"
+        COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/Scripts/fix_icd_paths.py" --icd_dir "$<TARGET_BUNDLE_CONTENT_DIR:ailurus_example_render>/Resources/vulkan/icd.d"
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         VERBATIM
     )

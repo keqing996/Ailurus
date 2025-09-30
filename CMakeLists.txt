@@ -26,7 +26,7 @@ add_library                 (ailurus-app STATIC ${AILURUS_APP_SRC})
 target_include_directories  (ailurus-app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/App/)
 target_include_directories  (ailurus-app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/App/)
 target_link_libraries       (ailurus-app PUBLIC imgui ailurus-core nlohmann_json assimp)
-target_link_libraries       (ailurus-app PRIVATE SDL3-static vulkan_hpp)
+target_link_libraries       (ailurus-app PRIVATE SDL3-static vulkan_custom)
 
 target_precompile_headers   (ailurus-app PRIVATE "src/App/VulkanContext/VulkanPch.h")
 
