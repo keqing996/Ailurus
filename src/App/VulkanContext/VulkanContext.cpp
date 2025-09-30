@@ -67,6 +67,8 @@ namespace Ailurus
 			return;
 		}
 
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkInstance);
+
 		if (enableValidation)
 		{
 			if (!CreatDebugUtilsMessenger())
@@ -92,6 +94,10 @@ namespace Ailurus
 
 		if (!CreateLogicalDevice())
 			return;
+
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkDevice);
+
+		GetQueueFromDevice();
 
 		if (!CreateCommandPool())
 		{
@@ -455,7 +461,6 @@ namespace Ailurus
 		try
 		{
 			_vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
-			VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkInstance);
 		}
 		catch (const vk::SystemError& e)
 		{
@@ -612,7 +617,6 @@ namespace Ailurus
 		try
 		{
 			_vkDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
-			VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkDevice);
 		}
 		catch (const vk::SystemError& e)
 		{
@@ -620,11 +624,14 @@ namespace Ailurus
 			return false;
 		}
 
+		return true;
+	}
+
+	void VulkanContext::GetQueueFromDevice()
+	{
 		_vkPresentQueue = _vkDevice.getQueue(_presentQueueIndex, 0);
 		_vkGraphicQueue = _vkDevice.getQueue(_graphicQueueIndex, 0);
 		_vkComputeQueue = _vkDevice.getQueue(_computeQueueIndex, 0);
-
-		return true;
 	}
 
 	bool VulkanContext::CreateCommandPool()

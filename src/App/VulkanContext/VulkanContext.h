@@ -72,6 +72,7 @@ namespace Ailurus
 		static bool CreateSurface(const WindowCreateSurfaceCallback& createSurface);
 		static void ChoosePhysicsDevice();
 		static bool CreateLogicalDevice();
+		static void GetQueueFromDevice();
 		static bool CreateCommandPool();
 
 		// Frame context

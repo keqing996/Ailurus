@@ -3,6 +3,7 @@
 #include <optional>
 #include <nlohmann/json.hpp>
 #include <Ailurus/Utility/Logger.h>
+#include <Ailurus/System/Path.h>
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
@@ -373,8 +374,10 @@ namespace Ailurus
 		return std::move(pUniformSet);
 	}
 
-	AssetRef<MaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
+	AssetRef<MaterialInstance> AssetsSystem::LoadMaterial(const std::string& inPath)
 	{
+		auto path = Path::ResolvePath(inPath);
+
 		std::ifstream fileStream(path);
 		if (!fileStream.is_open())
 		{
