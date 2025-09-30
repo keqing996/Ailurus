@@ -44,6 +44,30 @@ namespace Ailurus
         };
     }
 
+    const std::vector<const char*>& VulkanPlatform::GetRequiredInstanceExtensions()
+    {
+        // The VK_KHR_portability_subset extension is required for portability, because
+		// Metal does not fully support all Vulkan features.
+        static const std::vector<const char*> extensions = {
+            VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
+        };
+        return extensions;
+    }
+
+    vk::InstanceCreateFlags VulkanPlatform::GetInstanceCreateFlags()
+    {
+        return vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
+    }
+
+    const std::vector<const char*>& VulkanPlatform::GetRequiredDeviceExtensions()
+    {
+        static const std::vector<const char*> extensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            "VK_KHR_portability_subset"
+        };
+
+        return extensions;
+    }
 }
 
 #endif

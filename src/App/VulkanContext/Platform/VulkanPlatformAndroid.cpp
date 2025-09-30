@@ -77,6 +77,26 @@ namespace Ailurus
             "/vendor/lib/libvulkan.so"
         };
     }
+
+    const std::vector<const char*>& VulkanPlatform::GetRequiredInstanceExtensions()
+    {
+        static const std::vector<const char*> extensions = { };
+        return extensions;
+    }
+
+    vk::InstanceCreateFlags VulkanPlatform::GetInstanceCreateFlags()
+    {
+        return {};
+    }
+
+    const std::vector<const char*>& VulkanPlatform::GetRequiredDeviceExtensions()
+    {
+        static const std::vector<const char*> extensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        };
+        
+        return extensions;
+    }
 }
 
 #endif

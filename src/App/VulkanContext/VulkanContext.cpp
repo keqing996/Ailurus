@@ -5,6 +5,7 @@
 #include "Ailurus/PlatformDefine.h"
 #include "VulkanContext.h"
 #include "VulkanFunctionLoader.h"
+#include "Platform/VulkanPlatform.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "SwapChain/VulkanSwapChain.h"
@@ -434,11 +435,8 @@ namespace Ailurus
 		if (enableValidation)
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-#if AILURUS_PLATFORM_MAC
-		// Under macOS, the VK_KHR_portability_subset extension is required for portability, because
-		// Metal does not fully support all Vulkan features.
-		extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-#endif
+		const auto& platformExtensions = VulkanPlatform::GetRequiredInstanceExtensions();
+		extensions.insert(extensions.end(), platformExtensions.begin(), platformExtensions.end());
 
 		// Create instance
 		vk::ApplicationInfo applicationInfo;
@@ -451,11 +449,8 @@ namespace Ailurus
 		instanceCreateInfo
 			.setPApplicationInfo(&applicationInfo)
 			.setPEnabledLayerNames(validationLayers)
-			.setPEnabledExtensionNames(extensions);
-
-#if AILURUS_PLATFORM_MAC
-		instanceCreateInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
-#endif
+			.setPEnabledExtensionNames(extensions)
+			.setFlags(VulkanPlatform::GetInstanceCreateFlags());
 
 		try
 		{
@@ -607,18 +602,10 @@ namespace Ailurus
 		vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 		physicalDeviceFeatures.setSamplerAnisotropy(true);
 
-		// Extensions
-		std::array extensions = {
-			// Swap chain is required
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-#if AILURUS_PLATFORM_MAC
-			"VK_KHR_portability_subset"
-#endif
-		};
-
+		// Create device
 		vk::DeviceCreateInfo deviceCreateInfo;
 		deviceCreateInfo
-			.setPEnabledExtensionNames(extensions)
+			.setPEnabledExtensionNames(VulkanPlatform::GetRequiredDeviceExtensions())
 			.setQueueCreateInfos(queueCreateInfoList)
 			.setPEnabledFeatures(&physicalDeviceFeatures);
 
