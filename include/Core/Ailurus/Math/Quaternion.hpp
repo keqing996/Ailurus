@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 #include "Vector3.hpp"
 
 namespace Ailurus

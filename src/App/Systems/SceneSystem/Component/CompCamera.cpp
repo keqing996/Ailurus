@@ -4,9 +4,13 @@
 
 /*
  * Before projective transformation, world coordinate is right-hand, so the eye locates
- * at (0, 0, 0), looks towards -z, which means 0 > near > far. After projection, coordinate
- * turns to the Vulkan NDC coordinate, which is a left-hand coordinate. So the near(<0) will
- * be mapped to -1 in Vulkan NDC, and the far(<near<0) will be mapped to the 1.
+ * at (0, 0, 0), looks towards -z, which means 0 > near > far. 
+ * 
+ * After projection, coordinate turns to the Vulkan NDC coordinate:
+ * - X and Y range: [-1, 1] (left-hand coordinate)
+ * - Z depth range: [0, 1] (near plane → 0, far plane → 1)
+ * 
+ * Note: Vulkan uses [0, 1] depth range, different from OpenGL's [-1, 1].
  */
 
 namespace Ailurus
@@ -40,10 +44,13 @@ namespace Ailurus
 	template <typename T>
 	Matrix4x4<T> MakePerspectiveProjectionMatrix(float leftCoord, float rightCoord, float topCoord, float bottomCoord, float nearAbs, float farAbs)
 	{
+		// For right-handed view space (looking towards -Z):
+		// near plane at z = -nearAbs, far plane at z = -farAbs
+		// Maps to Vulkan NDC depth range [0, 1]: near→0, far→1
 		float a11 = 2 * nearAbs / (rightCoord - leftCoord);
 		float a22 = 2 * nearAbs / (topCoord - bottomCoord);
-		float a33 = nearAbs / (farAbs - nearAbs);
-		float a34 = (farAbs * nearAbs) / (farAbs - nearAbs);
+		float a33 = -farAbs / (farAbs - nearAbs);          // Note the negative sign
+		float a34 = -(farAbs * nearAbs) / (farAbs - nearAbs);
 		float a43 = -1;
 
 		Matrix4x4f projMat = Matrix4x4<T>{

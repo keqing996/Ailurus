@@ -109,6 +109,14 @@ namespace Ailurus
 			.setAttachments(colorBlendAttachment)
 			.setBlendConstants(std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
 
+		// Depth and stencil state
+		vk::PipelineDepthStencilStateCreateInfo depthStencil;
+		depthStencil.setDepthTestEnable(true)
+			.setDepthWriteEnable(true)
+			.setDepthCompareOp(vk::CompareOp::eLess)
+			.setDepthBoundsTestEnable(false)
+			.setStencilTestEnable(false);
+
 		// Dynamic state
 		std::array dynamicStates = {
 			vk::DynamicState::eViewport,
@@ -127,6 +135,7 @@ namespace Ailurus
 			.setPRasterizationState(&rasterizer)
 			.setPMultisampleState(&multisampling)
 			.setPColorBlendState(&colorBlending)
+			.setPDepthStencilState(&depthStencil)
 			.setPDynamicState(&dynamicState)
 			.setLayout(_vkPipelineLayout)
 			.setRenderPass(pRenderPass->GetRenderPass())

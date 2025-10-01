@@ -4,6 +4,9 @@
 #include <Ailurus/Application/SceneSystem/Component/CompCamera.h>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include <Ailurus/Application/AssetsSystem/Model/Model.h>
+#include <Ailurus/Application/TimeSystem/TimeSystem.h>
+#include "Ailurus/Math/Math.hpp"
+#include "Ailurus/Utility/Logger.h"
 
 using namespace Ailurus;
 
@@ -34,19 +37,36 @@ int Main(int argc, char* argv[])
 	{
 		pEntity->AddComponent<CompStaticMeshRender>(modelRef, materialRef);
 		pEntity->SetPosition({ 0.0f, 0.0f, 0.0f });
+		pEntity->SetRotation(Math::RotateAxis(Vector3f{ 0.0f, 1.0f, 0.0f }, 45.0f));
 	}
 
 	auto pCamera = Application::Get<SceneSystem>()->CreateEntity();
 	if (auto pCameraEntity = pCamera.lock())
 	{
-		auto pCam = pCameraEntity->AddComponent<CompCamera>(2.0f, 2.0f, 0.1f, 10.0f);
+		// Use a reasonable frustum: smaller near plane size for proper perspective
+		// Width and height at near plane should be small (like 0.2m at 0.1m distance)
+		// This gives ~90 degree FOV which is standard for games
+		auto pCam = pCameraEntity->AddComponent<CompCamera>(0.2f, 0.2f, 0.1f, 10.0f);
 		Application::Get<RenderSystem>()->SetMainCamera(pCam);
 
-		pCameraEntity->SetPosition({ 0.0f, 0.0f, 1.2f });
+		pCameraEntity->SetPosition({ 0.0f, 0.0f, 3.0f });  // Move camera back to see the cube better
 	}
 
 	// Render
-	Application::Loop([]() -> void {
+	Application::Loop([pEntityWeak]() -> void {
+		auto deltaTime = Application::Get<TimeSystem>()->DeltaTime() / 1000.0f;
+		Logger::LogInfo("Frame Time: {} ms", Application::Get<TimeSystem>()->DeltaTime());
+
+		// Rotate the cube
+		if (auto pEntity = pEntityWeak.lock())
+		{
+			static float rotationAngle = 0.0f;
+			rotationAngle += 90.0f * deltaTime;  // 90 degrees per second
+			
+			// Create rotation quaternion around Y axis
+			pEntity->SetRotation(Math::RotateAxis(Vector3f{ 0.0f, 1.0f, 0.0f }, rotationAngle));
+		}
+
 		static float f = 0.0f;
 		static int counter = 0;
 		static bool show_demo_window = true;

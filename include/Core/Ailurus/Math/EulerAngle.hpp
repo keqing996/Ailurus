@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <array>
+#include <utility>
 
 namespace Ailurus
 {
