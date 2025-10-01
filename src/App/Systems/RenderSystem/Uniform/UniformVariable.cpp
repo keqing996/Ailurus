@@ -28,10 +28,10 @@ namespace Ailurus
 
 	void UniformVariableStructure::AddMember(const std::string& name, std::unique_ptr<UniformVariable>&& pUniformVar)
 	{
-		_members[name] = std::move(pUniformVar);
+		_members.push_back({ name, std::move(pUniformVar) });
 	}
 
-	const std::unordered_map<std::string, std::unique_ptr<UniformVariable>>& UniformVariableStructure::GetMembers() const
+	const std::vector<UniformVariableStructure::Member>& UniformVariableStructure::GetMembers() const
 	{
 		return _members;
 	}
