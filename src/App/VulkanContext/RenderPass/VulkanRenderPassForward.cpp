@@ -1,30 +1,36 @@
 #include "VulkanRenderPassForward.h"
-#include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/FrameBuffer/VulkanFrameBuffer.h"
+#include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
 
 namespace Ailurus
 {
-	VulkanRenderPassForward::VulkanRenderPassForward()
+
+	VulkanRenderPassForward::VulkanRenderPassForward(const std::vector<vk::ClearValue>& clearValues)
+		: _clearValues(clearValues)
 	{
-		vk::AttachmentDescription colorAttachment;
-		colorAttachment.setFormat(VulkanContext::GetSwapChain()->GetConfig().surfaceFormat.format)
+		// Attachment
+		vk::AttachmentDescription attachment;
+		attachment.setFormat(VulkanContext::GetSwapChain()->GetConfig().surfaceFormat.format)
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
 			.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 			.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
 			.setInitialLayout(vk::ImageLayout::eUndefined)
-			.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+			.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
-		vk::AttachmentReference colorAttachmentRef;
-		colorAttachmentRef.setAttachment(0)
+		// Attachment ref
+		vk::AttachmentReference colorRef;
+		colorRef.setAttachment(0)
 			.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
+		// Subpass
 		vk::SubpassDescription subpass;
 		subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-			.setColorAttachments(colorAttachmentRef);
+			.setColorAttachments(colorRef);
 
+		// Dependency
 		vk::SubpassDependency dependency;
 		dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
 			.setDstSubpass(0)
@@ -33,40 +39,33 @@ namespace Ailurus
 			.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
 			.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
 
+		// Create info
 		vk::RenderPassCreateInfo renderPassInfo;
-		renderPassInfo.setAttachments(colorAttachment)
+		renderPassInfo.setAttachments(attachment)
 			.setSubpasses(subpass)
 			.setDependencies(dependency);
 
-		_vkRenderPass = VulkanContext::GetDevice().createRenderPass(renderPassInfo);
+		CreateRenderPass(renderPassInfo);
 	}
 
 	VulkanRenderPassForward::~VulkanRenderPassForward()
 	{
-		VulkanContext::GetDevice().destroyRenderPass(_vkRenderPass);
 	}
 
-	RenderPassType VulkanRenderPassForward::GetRenderPassType()
+	RenderPassType VulkanRenderPassForward::GetRenderPassType() const
 	{
 		return RenderPassType::Forward;
 	}
 
-	vk::RenderPass VulkanRenderPassForward::GetRenderPass() const
-	{
-		return _vkRenderPass;
-	}
-
 	vk::RenderPassBeginInfo VulkanRenderPassForward::GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const
 	{
-		static vk::ClearValue clearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
-
 		vk::RenderPassBeginInfo renderPassInfo;
-		renderPassInfo.setRenderPass(_vkRenderPass)
+		renderPassInfo.setRenderPass(GetRenderPass())
 			.setFramebuffer(pTargetFrameBuffer->GetBuffer())
 			.setRenderArea(vk::Rect2D{
 				vk::Offset2D{ 0, 0 },
 				VulkanContext::GetSwapChain()->GetConfig().extent })
-			.setClearValues(clearColor);
+			.setClearValues(_clearValues);
 
 		return renderPassInfo;
 	}

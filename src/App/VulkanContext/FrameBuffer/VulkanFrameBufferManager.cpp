@@ -3,6 +3,7 @@
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
 #include "VulkanContext/RenderPass/VulkanRenderPass.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -47,12 +48,20 @@ namespace Ailurus
 			.setHeight(extent.height)
 			.setLayers(1);
 
-        auto vkFrameBuffer = vkLogicalDevice.createFramebuffer(framebufferInfo);
-        auto pFrameBuffer = std::make_unique<VulkanFrameBuffer>(vkFrameBuffer);
+		try
+		{
+			auto vkFrameBuffer = vkLogicalDevice.createFramebuffer(framebufferInfo);
+			auto pFrameBuffer = std::make_unique<VulkanFrameBuffer>(vkFrameBuffer);
 
-        auto result = pFrameBuffer.get();
-        _vkBackBuffers[key] = std::move(pFrameBuffer);
-        
-        return result;
+			auto result = pFrameBuffer.get();
+			_vkBackBuffers[key] = std::move(pFrameBuffer);
+
+			return result;
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create framebuffer: {}", e.what());
+			return nullptr;
+		}
 	}
 } // namespace Ailurus

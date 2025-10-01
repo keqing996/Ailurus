@@ -10,46 +10,67 @@ namespace Ailurus
 	VulkanSwapChain::VulkanSwapChain()
 	{
 		// Present mode
-		auto allPresentMode = VulkanContext::GetPhysicalDevice().getSurfacePresentModesKHR(VulkanContext::GetSurface());
-		for (const vk::PresentModeKHR& mode : allPresentMode)
+		try
 		{
-			if (mode == vk::PresentModeKHR::eMailbox)
+			auto allPresentMode = VulkanContext::GetPhysicalDevice().getSurfacePresentModesKHR(VulkanContext::GetSurface());
+			for (const vk::PresentModeKHR& mode : allPresentMode)
 			{
-				_swapChainConfig.presentMode = mode;
-				break;
+				if (mode == vk::PresentModeKHR::eMailbox)
+				{
+					_swapChainConfig.presentMode = mode;
+					break;
+				}
 			}
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to get surface present modes: {}", e.what());
 		}
 
 		// Format
-		auto surfaceFormats = VulkanContext::GetPhysicalDevice().getSurfaceFormatsKHR(VulkanContext::GetSurface());
-		for (auto& surfaceFormat : surfaceFormats)
+		try
 		{
-			if (surfaceFormat.format == vk::Format::eR8G8B8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+			auto surfaceFormats = VulkanContext::GetPhysicalDevice().getSurfaceFormatsKHR(VulkanContext::GetSurface());
+			for (auto& surfaceFormat : surfaceFormats)
 			{
-				_swapChainConfig.surfaceFormat = surfaceFormat;
-				break;
-			}
+				if (surfaceFormat.format == vk::Format::eR8G8B8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+				{
+					_swapChainConfig.surfaceFormat = surfaceFormat;
+					break;
+				}
 
-			if (surfaceFormat.format == vk::Format::eB8G8R8A8Unorm && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-			{
-				_swapChainConfig.surfaceFormat = surfaceFormat;
-				break;
+				if (surfaceFormat.format == vk::Format::eB8G8R8A8Unorm && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+				{
+					_swapChainConfig.surfaceFormat = surfaceFormat;
+					break;
+				}
 			}
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to get surface formats: {}", e.what());
 		}
 
 		if (_swapChainConfig.surfaceFormat.format == vk::Format::eUndefined)
 			Logger::LogError("No suitable surface format (format R8G8B8SRGB & colorspace SRGB non-linear)");
 
 		// Swap chain image count & size
-		Vector2i windowSize = Application::GetSize();
-		vk::SurfaceCapabilitiesKHR surfaceCapabilities = VulkanContext::GetPhysicalDevice().getSurfaceCapabilitiesKHR(VulkanContext::GetSurface());
-		_swapChainConfig.imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
-		_swapChainConfig.extent.width = std::clamp(static_cast<uint32_t>(windowSize.x),
-			surfaceCapabilities.minImageExtent.width,
-			surfaceCapabilities.maxImageExtent.width);
-		_swapChainConfig.extent.height = std::clamp(static_cast<uint32_t>(windowSize.y),
-			surfaceCapabilities.minImageExtent.height,
-			surfaceCapabilities.maxImageExtent.height);
+		Vector2i windowSize = Application::GetDrawableSize();
+		try
+		{
+			vk::SurfaceCapabilitiesKHR surfaceCapabilities = VulkanContext::GetPhysicalDevice().getSurfaceCapabilitiesKHR(VulkanContext::GetSurface());
+			_swapChainConfig.imageCount = std::clamp(2u, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
+			_swapChainConfig.extent.width = std::clamp(static_cast<uint32_t>(windowSize.x),
+				surfaceCapabilities.minImageExtent.width,
+				surfaceCapabilities.maxImageExtent.width);
+			_swapChainConfig.extent.height = std::clamp(static_cast<uint32_t>(windowSize.y),
+				surfaceCapabilities.minImageExtent.height,
+				surfaceCapabilities.maxImageExtent.height);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to get surface capabilities: {}", e.what());
+		}
 
 		// Create
 		vk::SwapchainCreateInfoKHR swapChainCreateInfo;
@@ -81,10 +102,24 @@ namespace Ailurus
 				.setQueueFamilyIndices(indices);
 		}
 
-		_vkSwapChain = VulkanContext::GetDevice().createSwapchainKHR(swapChainCreateInfo);
+		try
+		{
+			_vkSwapChain = VulkanContext::GetDevice().createSwapchainKHR(swapChainCreateInfo);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create swapchain: {}", e.what());
+		}
 
 		// Swap chain image & view
-		_vkSwapChainImages = VulkanContext::GetDevice().getSwapchainImagesKHR(_vkSwapChain);
+		try
+		{
+			_vkSwapChainImages = VulkanContext::GetDevice().getSwapchainImagesKHR(_vkSwapChain);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to get swapchain images: {}", e.what());
+		}
 		_vkSwapChainImageViews.resize(_vkSwapChainImages.size());
 		for (auto i = 0; i < _vkSwapChainImages.size(); i++)
 		{
@@ -103,21 +138,35 @@ namespace Ailurus
 				.setComponents(vk::ComponentMapping())
 				.setSubresourceRange(range);
 
-			_vkSwapChainImageViews[i] = VulkanContext::GetDevice().createImageView(imageViewCreateInfo);
+			try
+			{
+				_vkSwapChainImageViews[i] = VulkanContext::GetDevice().createImageView(imageViewCreateInfo);
+			}
+			catch (const vk::SystemError& e)
+			{
+				Logger::LogError("Failed to create image view: {}", e.what());
+			}
 		}
 	}
 
 	VulkanSwapChain::~VulkanSwapChain()
 	{
-		for (const auto& view : _vkSwapChainImageViews)
-			VulkanContext::GetDevice().destroyImageView(view);
-
-		_vkSwapChainImageViews.clear();
-
-		if (_vkSwapChain != nullptr)
+		try
 		{
-			VulkanContext::GetDevice().destroySwapchainKHR(_vkSwapChain);
-			_vkSwapChain = nullptr;
+			for (const auto& view : _vkSwapChainImageViews)
+				VulkanContext::GetDevice().destroyImageView(view);
+
+			_vkSwapChainImageViews.clear();
+
+			if (_vkSwapChain != nullptr)
+			{
+				VulkanContext::GetDevice().destroySwapchainKHR(_vkSwapChain);
+				_vkSwapChain = nullptr;
+			}
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to destroy swapchain or image views: {}", e.what());
 		}
 	}
 
@@ -143,34 +192,28 @@ namespace Ailurus
 
 	std::optional<uint32_t> VulkanSwapChain::AcquireNextImage(VulkanSemaphore* imageReadySem, bool* needRebuildSwapChain)
 	{
-		auto acquireImage = VulkanContext::GetDevice().acquireNextImageKHR(
-			_vkSwapChain,
-			std::numeric_limits<uint64_t>::max(), 
-			imageReadySem->GetSemaphore());
-
-		bool success = true;
-		switch (acquireImage.result)
+		try
 		{
-			// Success
-			case vk::Result::eSuccess:
-				break;
-			// Swap chain can still work but is not perfect, rebuild swap chain next frame.
-			case vk::Result::eSuboptimalKHR:
+			vk::ResultValue<uint32_t> acquireResult = VulkanContext::GetDevice().acquireNextImageKHR(
+				_vkSwapChain,
+				std::numeric_limits<uint64_t>::max(),
+				imageReadySem->GetSemaphore());
+
+			if (acquireResult.result == vk::Result::eSuboptimalKHR)
 				*needRebuildSwapChain = true;
-				break;
-			// Swap chain is not fit for current surface, must be rebuilt right now.
-			case vk::Result::eErrorOutOfDateKHR:
-				*needRebuildSwapChain = true;
-				success = false;
-			// Other errors
-			default:
-				Logger::LogError("Fail to acquire next image, result = {}", static_cast<int>(acquireImage.result));
-				success = false;
+
+			return acquireResult.value;
 		}
-
-		if (!success)
+		catch (const vk::OutOfDateKHRError& e)
+		{
+			Logger::LogError("Swap chain out of date: {}", e.what());
+			*needRebuildSwapChain = true;
 			return std::nullopt;
-
-		return acquireImage.value;
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to acquire next image: {}", e.what());
+			return std::nullopt;
+		}
 	}
 } // namespace Ailurus

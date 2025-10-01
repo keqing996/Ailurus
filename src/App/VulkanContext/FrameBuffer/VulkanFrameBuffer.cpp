@@ -1,5 +1,6 @@
 #include "VulkanFrameBuffer.h"
 #include "VulkanContext/VulkanContext.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -15,6 +16,13 @@ namespace Ailurus
 
 	VulkanFrameBuffer::~VulkanFrameBuffer()
 	{
-        VulkanContext::GetDevice().destroyFramebuffer(_vkFramebuffer);
+		try
+		{
+			VulkanContext::GetDevice().destroyFramebuffer(_vkFramebuffer);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to destroy framebuffer: {}", e.what());
+		}
 	}
 } // namespace Ailurus

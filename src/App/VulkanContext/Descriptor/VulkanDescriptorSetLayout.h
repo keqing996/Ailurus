@@ -1,7 +1,7 @@
 #pragma once
 
+#include "VulkanContext/VulkanPch.h"
 #include <unordered_map>
-#include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
 

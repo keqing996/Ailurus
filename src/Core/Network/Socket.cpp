@@ -1,10 +1,89 @@
 
+#include <chrono>
 #include "Ailurus/Network/Socket.h"
 #include "Platform/PlatformApi.h"
 
 namespace Ailurus
 {
-    int64_t Socket::GetNativeHandle() const
+	static SocketState SelectImpl(const Socket* pSocket, int timeoutInMs, bool waitForRead)
+	{
+		if (pSocket == nullptr)
+			return SocketState::Error;
+
+		const int64_t handle = pSocket->GetNativeHandle();
+		const SocketHandle nativeHandle = Npi::ToNativeHandle(handle);
+		const auto nativeHandleAsInt = static_cast<int64_t>(nativeHandle);
+
+#if defined(FD_SETSIZE)
+		// select() requires file descriptors/SOCKET values to be less than FD_SETSIZE.
+		// Returning early avoids invoking FD_SET with an out-of-range handle, which is
+		// undefined on POSIX and maps to WSAEINVAL on Windows.
+		if (nativeHandleAsInt < 0 || nativeHandleAsInt >= FD_SETSIZE)
+			return SocketState::Error;
+#endif
+
+		const bool hasTimeout = timeoutInMs >= 0;
+		std::chrono::steady_clock::time_point deadline;
+		if (hasTimeout)
+			deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutInMs);
+
+		while (true)
+		{
+			if (hasTimeout)
+			{
+				auto now = std::chrono::steady_clock::now();
+				if (now >= deadline)
+					return SocketState::Busy;
+			}
+
+			fd_set readSet;
+			fd_set writeSet;
+			FD_ZERO(&readSet);
+			FD_ZERO(&writeSet);
+
+			if (waitForRead)
+				FD_SET(nativeHandle, &readSet);
+			else
+				FD_SET(nativeHandle, &writeSet);
+
+			timeval timeoutValue{};
+			timeval* pTimeout = nullptr;
+			if (hasTimeout)
+			{
+				auto remaining = std::chrono::duration_cast<std::chrono::microseconds>(deadline - std::chrono::steady_clock::now());
+				if (remaining.count() <= 0)
+					return SocketState::Busy;
+
+				// Express the remaining time in the timeval format required by select.
+				timeoutValue.tv_sec = static_cast<long>(remaining.count() / 1000000);
+				timeoutValue.tv_usec = static_cast<long>(remaining.count() % 1000000);
+				pTimeout = &timeoutValue;
+			}
+
+			// Block until the socket is ready, an error occurs, or the timeout expires.
+			int selectResult = ::select(static_cast<int>(nativeHandle + 1),
+				waitForRead ? &readSet : nullptr,
+				waitForRead ? nullptr : &writeSet,
+				nullptr,
+				pTimeout);
+
+			// Socket is ready for the requested operation.
+			if (selectResult > 0)
+				return SocketState::Success;
+
+			// Timed out without any activity.
+			if (selectResult == 0)
+				return SocketState::Busy;
+
+			// Retry when select is interrupted by a signal (POSIX) or spurious wakeup.
+			if (Npi::CheckErrorInterrupted())
+				continue;
+
+			return Npi::GetErrorState();
+		}
+	}
+
+	int64_t Socket::GetNativeHandle() const
     {
         return _handle;
     }
@@ -24,60 +103,30 @@ namespace Ailurus
         if (!force && block == IsBlocking())
             return true;
 
-        return Npi::SetSocketBlocking(_handle, block);
+        bool result = Npi::SetSocketBlocking(_handle, block);
+        if (result)
+            _isBlocking = block;
+
+        return result;
     }
 
     void Socket::Close()
     {
+        if (!IsValid())
+            return;
+
         Npi::CloseSocket(_handle);
+        _handle = Npi::ToGeneralHandle(Npi::GetInvalidSocket());
     }
 
     SocketState Socket::SelectRead(const Socket* pSocket, int timeoutInMs)
     {
-        if (timeoutInMs <= 0)
-            return SocketState::Error;
-
-        if (pSocket == nullptr)
-            return SocketState::Error;
-
-        int64_t handle = pSocket->GetNativeHandle();
-
-        fd_set selector;
-        FD_ZERO(&selector);
-        FD_SET(Npi::ToNativeHandle(handle), &selector);
-
-        timeval time{};
-        time.tv_sec  = static_cast<long>(timeoutInMs / 1000);
-        time.tv_usec = timeoutInMs % 1000 * 1000;
-
-        if (::select(static_cast<int>(Npi::ToNativeHandle(handle) + 1), &selector, nullptr, nullptr, &time) > 0)
-            return SocketState::Success;
-
-        return Npi::GetErrorState();
+        return SelectImpl(pSocket, timeoutInMs, true);
     }
 
     SocketState Socket::SelectWrite(const Socket* pSocket, int timeoutInMs)
     {
-        if (timeoutInMs <= 0)
-            return SocketState::Error;
-
-        if (pSocket == nullptr)
-            return SocketState::Error;
-
-        int64_t handle = pSocket->GetNativeHandle();
-
-        fd_set selector;
-        FD_ZERO(&selector);
-        FD_SET(Npi::ToNativeHandle(handle), &selector);
-
-        timeval time{};
-        time.tv_sec  = static_cast<long>(timeoutInMs / 1000);
-        time.tv_usec = timeoutInMs % 1000 * 1000;
-
-        if (::select(static_cast<int>(Npi::ToNativeHandle(handle) + 1), nullptr, &selector, nullptr, &time) > 0)
-            return SocketState::Success;
-
-        return Npi::GetErrorState();
+        return SelectImpl(pSocket, timeoutInMs, false);
     }
 
     SocketState Socket::SelectRead(int timeoutInMs)

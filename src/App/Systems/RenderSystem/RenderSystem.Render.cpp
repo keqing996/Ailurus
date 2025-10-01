@@ -5,7 +5,6 @@
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
-#include <Ailurus/Application/RenderSystem/RenderPass/RenderPass.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
@@ -24,6 +23,8 @@
 #include <VulkanContext/Vertex/VulkanVertexLayoutManager.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
 #include <VulkanContext/FrameBuffer/VulkanFrameBufferManager.h>
+#include "Ailurus/Application/ImGuiSystem/ImGuiSystem.h"
+#include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Detail/RenderIntermediateVariable.h"
 
 namespace Ailurus
@@ -103,21 +104,28 @@ namespace Ailurus
 		_pIntermediateVariable = std::make_unique<RenderIntermediateVariable>();
 	}
 
-	void RenderSystem::RenderScene()
+	void RenderSystem::CheckRebuildSwapChain()
 	{
 		if (_needRebuildSwapChain)
 			RebuildSwapChain();
+	}
 
-		VulkanContext::RenderFrame(&_needRebuildSwapChain, 
-			[this](uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void
-		{
-			RenderPrepare();
+	void RenderSystem::RenderScene()
+	{
+		VulkanContext::RenderFrame(&_needRebuildSwapChain,
+			[this](uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void {
+				RenderPrepare();
 
-			CollectRenderingContext();
-			UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
-			UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
-			RenderSpecificPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
-		});
+				CollectRenderingContext();
+				UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
+				UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
+
+				// Forward pass
+				RenderSpecificPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
+
+				// ImGui pass
+				RenderImGuiPass(swapChainImageIndex, pCommandBuffer);
+			});
 	}
 
 	void RenderSystem::UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator)
@@ -173,11 +181,13 @@ namespace Ailurus
 		if (_pIntermediateVariable->renderingMeshes.empty())
 			return;
 
-		const auto pRenderPass = GetRenderPass(pass);
-		if (pRenderPass == nullptr)
+		const auto pVkRenderPass = GetRenderPass(pass);
+		if (pVkRenderPass == nullptr)
+		{
+			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(pass));
 			return;
+		}
 
-		const auto pVkRenderPass = pRenderPass->GetRHIRenderPass();
 		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pVkRenderPass, swapChainImageIndex);
 		pCommandBuffer->BeginRenderPass(pVkRenderPass, pBackBuffer);
 
@@ -250,6 +260,30 @@ namespace Ailurus
 			}
 		}
 
+		pCommandBuffer->EndRenderPass();
+	}
+
+	void RenderSystem::RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
+	{
+		auto pImGui = Application::Get<ImGuiSystem>();
+		auto* pImGuiPass = GetRenderPass(RenderPassType::ImGui);
+		if (pImGuiPass == nullptr)
+			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(RenderPassType::ImGui));
+
+		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pImGuiPass, swapChainImageIndex);
+		pCommandBuffer->BeginRenderPass(pImGuiPass, pBackBuffer);
+		pImGui->Render(pCommandBuffer);
+		pCommandBuffer->EndRenderPass();
+	}
+
+	void RenderSystem::RenderPresentPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
+	{
+		auto* pPresentPass = GetRenderPass(RenderPassType::Present);
+		if (pPresentPass == nullptr)
+			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(RenderPassType::Present));
+
+		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pPresentPass, swapChainImageIndex);
+		pCommandBuffer->BeginRenderPass(pPresentPass, pBackBuffer);
 		pCommandBuffer->EndRenderPass();
 	}
 } // namespace Ailurus

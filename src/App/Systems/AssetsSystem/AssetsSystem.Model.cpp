@@ -5,6 +5,7 @@
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/AssetsSystem/Model/Model.h>
 #include <Ailurus/Utility/Logger.h>
+#include <Ailurus/System/Path.h>
 #include <Ailurus/Assert.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/Vertex/VulkanVertexLayout.h>
@@ -185,8 +186,9 @@ namespace Ailurus
 			AssimpProcessNode(pAssimpNode->mChildren[i], pAssimpScene, resultMeshVec);
 	}
 
-	AssetRef<Model> AssetsSystem::LoadModel(const std::string& path)
+	AssetRef<Model> AssetsSystem::LoadModel(const std::string& inPath)
 	{
+		auto path = Path::ResolvePath(inPath);
 		auto assidItr = _fileAssetToIdMap.find(path);
 		if (assidItr != _fileAssetToIdMap.end())
 		{

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "VulkanContext/VulkanPch.h"
 #include <vector>
 #include <initializer_list>
-#include <vulkan/vulkan.hpp>
 #include <Ailurus/Application/RenderSystem/Vertex/VertexAttributeType.h>
 
 namespace Ailurus

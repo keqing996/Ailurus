@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <string>
 #include <cstdint>
 #include <optional>
@@ -24,7 +23,7 @@ namespace Ailurus
         IpAddress(uint8_t byte1, uint8_t byte2, uint8_t byte3, uint8_t byte4);
 
         // V6 constructor
-        explicit IpAddress(const uint8_t* pAddr);
+        explicit IpAddress(const uint8_t* pAddr, uint32_t scopeId = 0);
 
         // operator
         friend bool operator==(const IpAddress& left, const IpAddress& right);
@@ -34,6 +33,7 @@ namespace Ailurus
         Family GetFamily() const;
         uint32_t GetV4Addr() const;
         const uint8_t* GetV6Addr() const;
+        uint32_t GetV6ScopeId() const;
         std::string ToString() const;
 
     public:
@@ -52,6 +52,7 @@ namespace Ailurus
 
         Family _addrFamily;
         IpData _data;
+        uint32_t _scopeId;
     };
 
     bool operator==(const IpAddress& left, const IpAddress& right);

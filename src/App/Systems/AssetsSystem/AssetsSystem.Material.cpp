@@ -3,6 +3,7 @@
 #include <optional>
 #include <nlohmann/json.hpp>
 #include <Ailurus/Utility/Logger.h>
+#include <Ailurus/System/Path.h>
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
@@ -72,7 +73,7 @@ namespace Ailurus
 			}
 
 			const std::string& shaderFilePath = shaderConfig["source"].get<std::string>();
-			auto shaderFilePathSpv = String::Replace(shaderFilePath, "/Shader/", "/ShaderBin/") + ".spv";
+			auto shaderFilePathSpv = Path::ResolvePath(String::Replace(shaderFilePath, "/Shader/", "/ShaderBin/") + ".spv");
 			const Shader* pShader = Application::Get<RenderSystem>()->GetShaderLibrary()->GetShader(stage, shaderFilePathSpv);
 			if (pShader == nullptr)
 			{
@@ -373,8 +374,10 @@ namespace Ailurus
 		return std::move(pUniformSet);
 	}
 
-	AssetRef<MaterialInstance> AssetsSystem::LoadMaterial(const std::string& path)
+	AssetRef<MaterialInstance> AssetsSystem::LoadMaterial(const std::string& inPath)
 	{
+		auto path = Path::ResolvePath(inPath);
+
 		std::ifstream fileStream(path);
 		if (!fileStream.is_open())
 		{

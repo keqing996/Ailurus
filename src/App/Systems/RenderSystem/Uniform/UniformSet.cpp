@@ -1,4 +1,5 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformLayoutHelper.h>
 #include <Ailurus/Utility/Logger.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
@@ -34,11 +35,14 @@ namespace Ailurus
 		uint32_t offset = 0;
 		for (const auto& [bindingId, pBindingPoint] : _bindingPoints)
 		{
+			// Align each binding point to 16-byte boundary for std140 compatibility
+			offset = UniformLayoutHelper::AlignOffset(offset, 16);
 			_bindingPointOffsetInUniformBufferMap[bindingId] = offset;
 			offset += pBindingPoint->GetTotalSize();
 		}
 
-		_uniformBufferSize = offset;
+		// Align total size to 16-byte boundary
+		_uniformBufferSize = UniformLayoutHelper::AlignOffset(offset, 16);
 	}
 
 	void UniformSet::InitDescriptorSetLayout()

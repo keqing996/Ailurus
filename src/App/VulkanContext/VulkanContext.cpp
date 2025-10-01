@@ -1,7 +1,11 @@
+#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <array>
+#include "Ailurus/PlatformDefine.h"
 #include "VulkanContext.h"
+#include "VulkanFunctionLoader.h"
+#include "Platform/VulkanPlatform.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "SwapChain/VulkanSwapChain.h"
@@ -17,6 +21,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace Ailurus
 {
+	uint32_t 									VulkanContext::_apiVersion = vk::ApiVersion13;
 	uint32_t									VulkanContext::_parallelFrameCount = 2;
 	bool 										VulkanContext::_initialized = false;
 
@@ -49,17 +54,37 @@ namespace Ailurus
 	void VulkanContext::Initialize(const GetWindowInstanceExtension& getWindowRequiredExtension,
 		const WindowCreateSurfaceCallback& createSurface, bool enableValidation)
 	{
-		PrepareDispatcher();
+		auto vkGetInstanceProcAddr = VulkanFunctionLoader::GetDynamicLoader()->getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
 		VulkanHelper::LogInstanceLayerProperties();
 		VulkanHelper::LogInstanceExtensionProperties();
 
-		CreateInstance(getWindowRequiredExtension, enableValidation);
+		if (!CreateInstance(getWindowRequiredExtension, enableValidation))
+		{
+			Logger::LogError("VulkanContext::Initialize - CreateInstance failed");
+			Destroy([](const vk::Instance&, const vk::SurfaceKHR&){ });
+			return;
+		}
+
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkInstance);
 
 		if (enableValidation)
-			CreatDebugUtilsMessenger();
+		{
+			if (!CreatDebugUtilsMessenger())
+			{
+				Logger::LogError("VulkanContext::Initialize - CreateDebugUtilsMessenger failed");
+				Destroy([](const vk::Instance&, const vk::SurfaceKHR&){ });
+				return;
+			}
+		}
 
-		CreateSurface(createSurface);
+		if (!CreateSurface(createSurface))
+		{
+			Logger::LogError("VulkanContext::Initialize - CreateSurface failed");
+			Destroy([](const vk::Instance&, const vk::SurfaceKHR&){ });
+			return;
+		}
 
 		VulkanHelper::LogPhysicalCards(_vkInstance);
 
@@ -70,7 +95,16 @@ namespace Ailurus
 		if (!CreateLogicalDevice())
 			return;
 
-		CreateCommandPool();
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkDevice);
+
+		GetQueueFromDevice();
+
+		if (!CreateCommandPool())
+		{
+			Logger::LogError("VulkanContext::Initialize - CreateCommandPool failed");
+			Destroy([](const vk::Instance&, const vk::SurfaceKHR&){ });
+			return;
+		}
 
 		// Create swap chain
 		_pSwapChain = std::make_unique<VulkanSwapChain>();
@@ -153,6 +187,16 @@ namespace Ailurus
 		}
 
 		_initialized = false;
+	}
+
+	uint32_t VulkanContext::GetApiVersion()
+	{
+		return _apiVersion;
+	}
+
+	vk::Instance VulkanContext::GetInstance()
+	{
+		return _vkInstance;
 	}
 
 	vk::Device VulkanContext::GetDevice()
@@ -270,7 +314,7 @@ namespace Ailurus
 		return _pipelineManager.get();
 	}
 
-	bool VulkanContext::RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc)
+	void VulkanContext::RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc)
 	{
 		// Fence frame context
 		WaitFrameFinish(_currentFrameIndex);
@@ -281,7 +325,7 @@ namespace Ailurus
 		//    or eSuboptimalKHR, so it is safe to recycle the semaphore.
 		const auto opImageIndex = _pSwapChain->AcquireNextImage(frameContext.imageReadySemaphore.get(), needRebuildSwapChain);
 		if (!opImageIndex.has_value())
-			return false;
+			return;
 
 		const auto imageIndex = opImageIndex.value();
 
@@ -309,7 +353,15 @@ namespace Ailurus
 		submitInfo.setWaitDstStageMask(waitStages);
 
 		// Submit
-		_vkGraphicQueue.submit(submitInfo, frameContext.renderFinishFence->GetFence());
+		try
+		{
+			_vkGraphicQueue.submit(submitInfo, frameContext.renderFinishFence->GetFence());
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Fail to submit, error = {}", e.what());
+			return;
+		}
 
 		// Set this frame on air
 		frameContext.onAirInfo = OnAirInfo{
@@ -323,42 +375,45 @@ namespace Ailurus
 			.setSwapchains(_pSwapChain->GetSwapChain())
 			.setImageIndices(imageIndex);
 
-		bool presentResult = false;
-		switch (const auto present = _vkPresentQueue.presentKHR(presentInfo))
+		try
 		{
-			case vk::Result::eSuccess:
-				presentResult = true;
-				break;
-			case vk::Result::eSuboptimalKHR:
+			const vk::Result result = _vkPresentQueue.presentKHR(presentInfo);
+			if (result == vk::Result::eSuboptimalKHR)
+			{
 				*needRebuildSwapChain = true;
-				presentResult = true;
-				break;
-			case vk::Result::eErrorOutOfDateKHR:
-				Logger::LogError("Fail to present, error out of date");
-				*needRebuildSwapChain = true;
-				presentResult = false;
-				break;
-			default:
-				Logger::LogError("Fail to present, result = {}", static_cast<int>(present));
-				presentResult = false;
-				break;
+			}
+		}
+		catch (const vk::OutOfDateKHRError& e)
+		{
+			Logger::LogInfo("Fail to present, error out of date: {}", e.what());
+			*needRebuildSwapChain = true;
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Fail to present: {}", e.what());
+			return;
 		}
 
 		// Update frame index
 		_currentFrameIndex = (_currentFrameIndex + 1) % _parallelFrameCount;
-
-		return presentResult;
 	}
 
 	void VulkanContext::WaitDeviceIdle()
 	{
 		// Fence all flinging frame -> Make sure tash all command buffers, semaphores
 		// and fences are recycled.
-		for (auto i = 0; i < _frameContext.size(); i++)
-			WaitFrameFinish(i);
+		for (size_t i = 0; i < _frameContext.size(); i++)
+			WaitFrameFinish(static_cast<uint32_t>(i));
 
-		// Wait gpu end
-		_vkDevice.waitIdle();
+		try
+		{
+			// Wait gpu end
+			_vkDevice.waitIdle();
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("waitIdle failed: {}", e.what());
+		}
 	}
 
 	VulkanSwapChain* VulkanContext::GetSwapChain()
@@ -366,16 +421,7 @@ namespace Ailurus
 		return _pSwapChain.get();
 	}
 
-	void VulkanContext::PrepareDispatcher()
-	{
-		vk::detail::DynamicLoader loader;
-		auto vkGetInstanceProcAddr =
-			loader.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-
-		VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-	}
-
-	void VulkanContext::CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation)
+	bool VulkanContext::CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation)
 	{
 		// Validation layers
 		static const char* VALIDATION_LAYER_NAME = "VK_LAYER_KHRONOS_validation";
@@ -395,51 +441,76 @@ namespace Ailurus
 		if (enableValidation)
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-#if AILURUS_PLATFORM_MAC
-		// Under macOS, the VK_KHR_portability_subset extension is required for portability, because
-		// Metal does not fully support all Vulkan features.
-		extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-#endif
+		const auto& platformExtensions = VulkanPlatform::GetRequiredInstanceExtensions();
+		extensions.insert(extensions.end(), platformExtensions.begin(), platformExtensions.end());
 
 		// Create instance
 		vk::ApplicationInfo applicationInfo;
 		applicationInfo
 			.setPApplicationName("Ailurus")
-			.setApiVersion(VK_API_VERSION_1_3)
+			.setApiVersion(_apiVersion)
 			.setPEngineName("No Engine");
 
 		vk::InstanceCreateInfo instanceCreateInfo;
 		instanceCreateInfo
 			.setPApplicationInfo(&applicationInfo)
 			.setPEnabledLayerNames(validationLayers)
-			.setPEnabledExtensionNames(extensions);
+			.setPEnabledExtensionNames(extensions)
+			.setFlags(VulkanPlatform::GetInstanceCreateFlags());
 
-#if AILURUS_PLATFORM_MAC
-		instanceCreateInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
-#endif
+		try
+		{
+			_vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("vk::createInstance failed: {}", e.what());
+			return false;
+		}
 
-		_vkInstance = vk::createInstance(instanceCreateInfo, nullptr);
-
-		VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkInstance);
+		return true;
 	}
 
-	void VulkanContext::CreatDebugUtilsMessenger()
+	bool VulkanContext::CreatDebugUtilsMessenger()
 	{
-		vk::DebugUtilsMessengerCreateInfoEXT createInfo;
-		createInfo.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
-					  | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
-			.setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
-				| vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
-				| vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
-			.setPUserData(nullptr)
-			.setPfnUserCallback(VulkanHelper::DebugCallback);
+		try
+		{
+			vk::DebugUtilsMessengerCreateInfoEXT createInfo;
+			createInfo.setMessageSeverity(vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
+						  | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+				.setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
+					| vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+					| vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral)
+				.setPUserData(nullptr)
+				.setPfnUserCallback(VulkanHelper::DebugCallback);
 
-		_vkDebugUtilsMessenger = _vkInstance.createDebugUtilsMessengerEXT(createInfo);
+			_vkDebugUtilsMessenger = _vkInstance.createDebugUtilsMessengerEXT(createInfo);
+			return true;
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("createDebugUtilsMessengerEXT failed: {}", e.what());
+			return false;
+		}
 	}
 
-	void VulkanContext::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
+	bool VulkanContext::CreateSurface(const WindowCreateSurfaceCallback& createSurface)
 	{
-		_vkSurface = createSurface(_vkInstance);
+		try
+		{
+			_vkSurface = createSurface(_vkInstance);
+			return true;
+		}
+		catch (const std::exception& e)
+		{
+			Logger::LogError("CreateSurface callback failed: {}", e.what());
+			return false;
+		}
+		catch (...)
+		{
+			Logger::LogError("CreateSurface callback failed: unknown exception");
+			return false;
+		}
 	}
 
 	void VulkanContext::ChoosePhysicsDevice()
@@ -536,38 +607,49 @@ namespace Ailurus
 		vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 		physicalDeviceFeatures.setSamplerAnisotropy(true);
 
-		// Extensions
-		std::array extensions = {
-			// Swap chain is required
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-#if AILURUS_PLATFORM_MAC
-			"VK_KHR_portability_subset"
-#endif
-		};
-
+		// Create device
 		vk::DeviceCreateInfo deviceCreateInfo;
 		deviceCreateInfo
-			.setPEnabledExtensionNames(extensions)
+			.setPEnabledExtensionNames(VulkanPlatform::GetRequiredDeviceExtensions())
 			.setQueueCreateInfos(queueCreateInfoList)
 			.setPEnabledFeatures(&physicalDeviceFeatures);
 
-		_vkDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
-		VULKAN_HPP_DEFAULT_DISPATCHER.init(_vkDevice);
-
-		_vkPresentQueue = _vkDevice.getQueue(_presentQueueIndex, 0);
-		_vkGraphicQueue = _vkDevice.getQueue(_graphicQueueIndex, 0);
-		_vkComputeQueue = _vkDevice.getQueue(_computeQueueIndex, 0);
+		try
+		{
+			_vkDevice = _vkPhysicalDevice.createDevice(deviceCreateInfo);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("createDevice failed: {}", e.what());
+			return false;
+		}
 
 		return true;
 	}
 
-	void VulkanContext::CreateCommandPool()
+	void VulkanContext::GetQueueFromDevice()
 	{
-		vk::CommandPoolCreateInfo poolInfo;
-		poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-			.setQueueFamilyIndex(GetGraphicQueueIndex());
+		_vkPresentQueue = _vkDevice.getQueue(_presentQueueIndex, 0);
+		_vkGraphicQueue = _vkDevice.getQueue(_graphicQueueIndex, 0);
+		_vkComputeQueue = _vkDevice.getQueue(_computeQueueIndex, 0);
+	}
 
-		_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
+	bool VulkanContext::CreateCommandPool()
+	{
+		try
+		{
+			vk::CommandPoolCreateInfo poolInfo;
+			poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+				.setQueueFamilyIndex(GetGraphicQueueIndex());
+
+			_vkGraphicCommandPool = _vkDevice.createCommandPool(poolInfo);
+			return true;
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("createCommandPool failed: {}", e.what());
+			return false;
+		}
 	}
 
 	bool VulkanContext::WaitFrameFinish(uint32_t index)
@@ -596,7 +678,7 @@ namespace Ailurus
 		if (!context.onAirInfo->secondaryCommandBuffers.empty())
 		{
 			auto& vec = context.onAirInfo->secondaryCommandBuffers;
-			for (auto i = 0; i < vec.size(); i++)
+			for (size_t i = 0; i < vec.size(); i++)
 			{
 				vec[i]->ClearResourceReferences();
 				_secondaryCommandBufferPool.push_back(std::move(vec[i]));

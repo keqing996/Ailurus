@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 #include "VulkanRenderPass.h"
 
 namespace Ailurus
@@ -8,15 +7,14 @@ namespace Ailurus
 	class VulkanRenderPassForward : public VulkanRenderPass
 	{
 	public:
-		VulkanRenderPassForward();
+		VulkanRenderPassForward(const std::vector<vk::ClearValue>& clearValues);
 		~VulkanRenderPassForward() override;
 
 	public:
-		RenderPassType GetRenderPassType() override;
-		vk::RenderPass GetRenderPass() const override;
+		RenderPassType GetRenderPassType() const override;
 		vk::RenderPassBeginInfo GetRenderPassBeginInfo(VulkanFrameBuffer* pTargetFrameBuffer) const override;
 
 	private:
-		vk::RenderPass _vkRenderPass;
+		std::vector<vk::ClearValue> _clearValues;
 	};
-} // namespace Ailurus
+}

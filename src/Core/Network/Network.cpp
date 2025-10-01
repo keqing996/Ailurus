@@ -9,5 +9,10 @@ namespace Ailurus
         {
             Npi::GlobalInit();
         }
+
+        void Shutdown()
+        {
+            Npi::GlobalShutdown();
+        }
     }
 }

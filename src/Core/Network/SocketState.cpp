@@ -1,25 +1,30 @@
 #include "Ailurus/Network/SocketState.h"
-#include <unordered_map>
+#include <array>
 
 namespace Ailurus
 {
-    static std::unordered_map<SocketState, std::string> gSocketEnumStringMap = {
-        {SocketState::Success, "Success"},
-        {SocketState::InvalidSocket, "InvalidSocket"},
-        {SocketState::Busy, "Busy"},
-        {SocketState::Disconnect, "Disconnect"},
-        {SocketState::AddressFamilyNotMatch, "AddressFamilyNotMatch"},
-        {SocketState::Error, "Error"},
-    };
+    namespace
+    {
+        // Ordered lookup table avoids the static allocator churn of an unordered_map
+        // while keeping the API surface untouched.
+        static const std::array<std::string, 6> gSocketEnumStringMap = {
+            "Success",
+            "InvalidSocket",
+            "Busy",
+            "Disconnect",
+            "AddressFamilyNotMatch",
+            "Error",
+        };
 
-    static std::string UnknownSocketState = "Unknown";
+        static const std::string UnknownSocketState = "Unknown";
+    }
 
     const std::string& SocketStateUtil::GetName(SocketState state)
     {
-        auto itr = gSocketEnumStringMap.find(state);
-        if (itr == gSocketEnumStringMap.end())
-            return UnknownSocketState;
+        const auto index = static_cast<size_t>(state);
+        if (index < gSocketEnumStringMap.size())
+            return gSocketEnumStringMap[index];
 
-        return itr->second;
+        return UnknownSocketState;
     }
 }

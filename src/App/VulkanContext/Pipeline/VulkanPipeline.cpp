@@ -47,7 +47,14 @@ namespace Ailurus
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setSetLayouts(descriptorSetLayouts)
 			.setPushConstantRanges(pushConstantRange);
-		_vkPipelineLayout = VulkanContext::GetDevice().createPipelineLayout(pipelineLayoutInfo);
+		try
+		{
+			_vkPipelineLayout = VulkanContext::GetDevice().createPipelineLayout(pipelineLayoutInfo);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create pipeline layout: {}", e.what());
+		}
 
 		// Vertex input description
 		vk::VertexInputBindingDescription vertexInputDesc;
@@ -126,17 +133,31 @@ namespace Ailurus
 			.setSubpass(0)
 			.setBasePipelineHandle(nullptr);
 
-		auto pipelineCreateResult = VulkanContext::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
-		if (pipelineCreateResult.result == vk::Result::eSuccess)
-			_vkPipeline = pipelineCreateResult.value;
-		else
-			Logger::LogError("Failed to create graphics pipeline");
+		try
+		{
+			auto pipelineCreateResult = VulkanContext::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
+			if (pipelineCreateResult.result == vk::Result::eSuccess)
+				_vkPipeline = pipelineCreateResult.value;
+			else
+				Logger::LogError("Failed to create graphics pipeline");
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create graphics pipeline: {}", e.what());
+		}
 	}
 
 	VulkanPipeline::~VulkanPipeline()
 	{
-		VulkanContext::GetDevice().destroyPipeline(_vkPipeline);
-		VulkanContext::GetDevice().destroyPipelineLayout(_vkPipelineLayout);
+		try
+		{
+			VulkanContext::GetDevice().destroyPipeline(_vkPipeline);
+			VulkanContext::GetDevice().destroyPipelineLayout(_vkPipelineLayout);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to destroy pipeline: {}", e.what());
+		}
 	}
 
 	vk::Pipeline VulkanPipeline::GetPipeline() const

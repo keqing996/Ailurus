@@ -29,11 +29,15 @@ namespace Ailurus
 
     bool SocketUtil::CreateSocketAddress(const EndPoint& endpoint, sockaddr* pResult, SockLen* structLen)
     {
+        if (pResult == nullptr || structLen == nullptr)
+            return false;
+
         switch (endpoint.GetAddressFamily())
         {
             case IpAddress::Family::IpV4:
             {
                 auto* pAddr = reinterpret_cast<sockaddr_in*>(pResult);
+                std::memset(pAddr, 0, sizeof(sockaddr_in));
                 pAddr->sin_addr.s_addr = htonl(endpoint.GetIp().GetV4Addr());
                 pAddr->sin_family = AF_INET;
                 pAddr->sin_port = htons(endpoint.GetPort());
@@ -43,6 +47,7 @@ namespace Ailurus
             case IpAddress::Family::IpV6:
             {
                 auto* pAddr = reinterpret_cast<sockaddr_in6*>(pResult);
+                std::memset(pAddr, 0, sizeof(sockaddr_in6));
                 ::memcpy(&pAddr->sin6_addr, endpoint.GetIp().GetV6Addr(), IpAddress::IPV6_ADDR_SIZE_BYTE);
                 pAddr->sin6_family = AF_INET6;
                 pAddr->sin6_scope_id = endpoint.GetV6ScopeId();

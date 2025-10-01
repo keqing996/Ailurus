@@ -1,10 +1,10 @@
 #pragma once
 
+#include "VulkanContext/VulkanPch.h"
 #include <vector>
 #include <memory>
 #include <functional>
 #include <optional>
-#include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
 
@@ -37,6 +37,8 @@ namespace Ailurus
 		static void Destroy(const WindowDestroySurfaceCallback& destroySurface);
 
 		// Getter
+		static auto GetApiVersion() -> uint32_t;
+		static auto GetInstance() -> vk::Instance;
 		static auto GetDevice() -> vk::Device;
 		static auto GetPhysicalDevice() -> vk::PhysicalDevice;
 		static auto GetSurface() -> vk::SurfaceKHR;
@@ -59,18 +61,19 @@ namespace Ailurus
 
 		// Render
 		static void RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction);
-		static bool RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc);
+		static void RenderFrame(bool* needRebuildSwapChain, const RenderFunction& recordCmdBufFunc);
 		static void WaitDeviceIdle();
 
 	private:
+		private:
 		// Init functions
-		static void PrepareDispatcher();
-		static void CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation);
-		static void CreatDebugUtilsMessenger();
-		static void CreateSurface(const WindowCreateSurfaceCallback& createSurface);
+		static bool CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation);
+		static bool CreatDebugUtilsMessenger();
+		static bool CreateSurface(const WindowCreateSurfaceCallback& createSurface);
 		static void ChoosePhysicsDevice();
 		static bool CreateLogicalDevice();
-		static void CreateCommandPool();
+		static void GetQueueFromDevice();
+		static bool CreateCommandPool();
 
 		// Frame context
 		static bool WaitFrameFinish(uint32_t index);
@@ -94,6 +97,7 @@ namespace Ailurus
 
 	private:
 		static uint32_t _parallelFrameCount;
+		static uint32_t _apiVersion;
 
 		// Init
 		static bool _initialized;

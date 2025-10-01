@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <unordered_map>
 #include <memory>
 #include "Ailurus/Utility/NonCopyable.h"
@@ -12,8 +13,8 @@ namespace Ailurus
 {
 	class MaterialInstance;
 	class Mesh;
-	class RenderPass;
 	class CompStaticMeshRender;
+	class VulkanRenderPass;
 	class VulkanCommandBuffer;
 	class VulkanDescriptorAllocator;
 	class VulkanUniformBuffer;
@@ -24,12 +25,15 @@ namespace Ailurus
 	class RenderSystem : public NonCopyable, public NonMovable
 	{
 	public:
+		using PreSwapChainRebuild = std::function<void()>;
+		using PostSwapChainRebuild = std::function<void()>;
+		
+	public:
+		RenderSystem(bool enableImGui, bool enable3D);
 		~RenderSystem();
 
 	public:
-		void NeedRecreateSwapChain();
-
-		auto GetRenderPass(RenderPassType pass) const -> RenderPass*;
+		void RequestRebuildSwapChain();
 		auto GetGlobalUniformSet() const -> UniformSet*;
 
 		// Shader library
@@ -39,13 +43,19 @@ namespace Ailurus
 		void SetMainCamera(CompCamera* pCamera);
 		CompCamera* GetMainCamera() const;
 
-		// Draw
-		void RenderScene();
-		void GraphicsWaitIdle() const;
+		// Render pass access
+		auto GetRenderPass(RenderPassType pass) const -> VulkanRenderPass*;
 
-	private:
-		friend class Application;
-		RenderSystem();
+		// Callbacks
+		void AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback);
+		void AddCallbackPostSwapChainRebuild(void* key, const PostSwapChainRebuild& callback);
+		void RemoveCallbackPreSwapChainRebuild(void* key);
+		void RemoveCallbackPostSwapChainRebuild(void* key);
+
+		// Draw
+		void CheckRebuildSwapChain();
+		void RenderScene();
+		void GraphicsWaitIdle() const;	
 
 	private:
 		// Create
@@ -60,6 +70,8 @@ namespace Ailurus
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
 		void RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
+		void RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
+		void RenderPresentPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
 		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;
@@ -67,7 +79,9 @@ namespace Ailurus
 
 	private:
 		bool _needRebuildSwapChain = false;
-		std::unordered_map<RenderPassType, std::unique_ptr<RenderPass>> _renderPassMap;
+		bool _enable3D = false;
+		bool _enableImGui = false;
+		std::unordered_map<RenderPassType, std::unique_ptr<VulkanRenderPass>> _renderPassMap;
 
 		// Current main camera
 		CompCamera* _pMainCamera = nullptr;
@@ -84,5 +98,9 @@ namespace Ailurus
 		static const char* GLOBAL_UNIFORM_ACCESS_CAMERA_POS;
 		std::unique_ptr<UniformSet> _pGlobalUniformSet;
 		std::unique_ptr<UniformSetMemory> _pGlobalUniformMemory;
+
+		// Callback functions map
+		std::unordered_map<void*, PreSwapChainRebuild> _preSwapChainRebuildCallbacks;
+		std::unordered_map<void*, PostSwapChainRebuild> _postSwapChainRebuildCallbacks;
 	};
 } // namespace Ailurus

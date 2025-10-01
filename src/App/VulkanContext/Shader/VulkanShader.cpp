@@ -3,6 +3,7 @@
 #include "Ailurus/Application/Application.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/Helper/VulkanHelper.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -20,7 +21,14 @@ namespace Ailurus
 
     VulkanShader::~VulkanShader()
     {
-        VulkanContext::GetDevice().destroyShaderModule(_vkShaderModule);
+        try
+        {
+            VulkanContext::GetDevice().destroyShaderModule(_vkShaderModule);
+        }
+        catch (const vk::SystemError& e)
+        {
+            Logger::LogError("Failed to destroy shader module: {}", e.what());
+        }
     }
 
     vk::ShaderModule VulkanShader::GetShaderModule() const
@@ -44,6 +52,13 @@ namespace Ailurus
         createInfo.setPCode(reinterpret_cast<const uint32_t*>(binaryData))
                 .setCodeSize(size);
 
-        _vkShaderModule = VulkanContext::GetDevice().createShaderModule(createInfo);
+        try
+        {
+            _vkShaderModule = VulkanContext::GetDevice().createShaderModule(createInfo);
+        }
+        catch (const vk::SystemError& e)
+        {
+            Logger::LogError("Failed to create shader module: {}", e.what());
+        }
     }
 }

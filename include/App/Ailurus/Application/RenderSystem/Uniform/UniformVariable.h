@@ -40,15 +40,22 @@ namespace Ailurus
 	class UniformVariableStructure : public UniformVariable
 	{
 	public:
+		struct Member
+		{
+			std::string name;
+			std::unique_ptr<UniformVariable> pVariable;
+		};
+
+	public:
 		~UniformVariableStructure() override;
 
 	public:
 		auto AddMember(const std::string& name, std::unique_ptr<UniformVariable>&& pUniformVar) -> void;
-		auto GetMembers() const -> const std::unordered_map<std::string, std::unique_ptr<UniformVariable>>&;
+		auto GetMembers() const -> const std::vector<Member>&;
 		auto VaribleType() const -> UniformVaribleType override;
 
 	private:
-		std::unordered_map<std::string, std::unique_ptr<UniformVariable>> _members;
+		std::vector<Member> _members;
 	};
 
 	class UniformVariableArray : public UniformVariable

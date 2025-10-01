@@ -1,6 +1,7 @@
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanDescriptorSetLayout.h"
 #include "VulkanDescriptorAllocator.h"
+#include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
@@ -19,16 +20,30 @@ namespace Ailurus
 
 	VulkanDescriptorAllocator::~VulkanDescriptorAllocator()
 	{
-		for (auto& poolItem : _pools)
-			VulkanContext::GetDevice().destroyDescriptorPool(poolItem.pool);
+		try
+		{
+			for (auto& poolItem : _pools)
+				VulkanContext::GetDevice().destroyDescriptorPool(poolItem.pool);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to destroy descriptor pool: {}", e.what());
+		}
 	}
 
 	void VulkanDescriptorAllocator::ResetPool()
 	{
-		for (auto& poolItem : _pools)
+		try
 		{
-			VulkanContext::GetDevice().resetDescriptorPool(poolItem.pool);
-			poolItem.currentCapacity = poolItem.originalCapacity;
+			for (auto& poolItem : _pools)
+			{
+				VulkanContext::GetDevice().resetDescriptorPool(poolItem.pool);
+				poolItem.currentCapacity = poolItem.originalCapacity;
+			}
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to reset descriptor pool: {}", e.what());
 		}
 	}
 

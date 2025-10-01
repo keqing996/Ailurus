@@ -13,6 +13,7 @@ namespace Ailurus
     IpAddress::IpAddress(uint32_t hostOrderIp)
         : _addrFamily(Family::IpV4)
         , _data()
+        , _scopeId(0)
     {
         _data.ipV4Data = htonl(hostOrderIp);
     }
@@ -20,6 +21,7 @@ namespace Ailurus
     IpAddress::IpAddress(uint8_t byte1, uint8_t byte2, uint8_t byte3, uint8_t byte4)
         : _addrFamily(Family::IpV4)
         , _data()
+        , _scopeId(0)
     {
         uint32_t hostOrderIp = static_cast<uint32_t>(byte1) << 24;
         hostOrderIp |= static_cast<uint32_t>(byte2) << 16;
@@ -28,9 +30,10 @@ namespace Ailurus
         _data.ipV4Data = htonl(hostOrderIp);
     }
 
-    IpAddress::IpAddress(const uint8_t* pAddr)
+    IpAddress::IpAddress(const uint8_t* pAddr, uint32_t scopeId)
         : _addrFamily(Family::IpV6)
         , _data()
+        , _scopeId(scopeId)
     {
         ::memcpy(_data.ipV6Data, pAddr, IPV6_ADDR_SIZE_BYTE);
     }
@@ -48,6 +51,11 @@ namespace Ailurus
     const uint8_t* IpAddress::GetV6Addr() const
     {
         return _data.ipV6Data;
+    }
+
+    uint32_t IpAddress::GetV6ScopeId() const
+    {
+        return _addrFamily == Family::IpV6 ? _scopeId : 0;
     }
 
     std::string IpAddress::ToString() const
@@ -75,7 +83,14 @@ namespace Ailurus
 
                 ::inet_ntop(AF_INET6, &address, resultBuffer, INET6_ADDRSTRLEN);
 
-                return resultBuffer;
+                std::string result(resultBuffer);
+                if (_scopeId != 0)
+                {
+                    result.push_back('%');
+                    result += std::to_string(_scopeId);
+                }
+
+                return result;
             }
         }
 
@@ -90,7 +105,7 @@ namespace Ailurus
 
         in6_addr destinationV6 {};
         if (::inet_pton(AF_INET6, str.c_str(), &destinationV6) == 1)
-            return IpAddress{ reinterpret_cast<const uint8_t*>(&destinationV6.s6_addr) };
+            return IpAddress{ reinterpret_cast<const uint8_t*>(&destinationV6.s6_addr), 0 };
 
         return std::nullopt;
     }
@@ -110,7 +125,7 @@ namespace Ailurus
             {
                 const auto* leftData = reinterpret_cast<const uint64_t*>(left._data.ipV6Data);
                 const auto* rightData = reinterpret_cast<const uint64_t*>(right._data.ipV6Data);
-                return leftData[0] == rightData[0] && leftData[1] == rightData[1];
+                return leftData[0] == rightData[0] && leftData[1] == rightData[1] && left._scopeId == right._scopeId;
             }
         }
 

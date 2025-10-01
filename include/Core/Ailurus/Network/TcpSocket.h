@@ -17,7 +17,7 @@ namespace Ailurus
         std::optional<EndPoint> TryGetRemoteEndpoint() const;
 
         // [Client] Send & Recv
-        std::pair<SocketState, size_t> Send(void* pData, size_t size) const;
+        std::pair<SocketState, size_t> Send(const void* pData, size_t size) const;
         std::pair<SocketState, size_t> Receive(void* pBuffer, size_t size) const;
 
         // [Client] Connect an endpoint.
