@@ -62,16 +62,6 @@ namespace Ailurus
             std::vector<uint32_t>& elementOffsets);
 
         /**
-         * @brief Validate if a buffer layout matches std140 requirements
-         * @param memberTypes List of member types
-         * @param actualOffsets Actual offsets used in the buffer
-         * @return True if layout is valid, false otherwise
-         */
-        static bool ValidateStd140Layout(
-            const std::vector<UniformValueType>& memberTypes,
-            const std::vector<uint32_t>& actualOffsets);
-
-        /**
          * @brief Get detailed layout information for debugging
          * @param memberTypes List of member types
          * @param memberNames Optional names for members

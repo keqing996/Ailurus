@@ -14,8 +14,8 @@ jobs:
         compiler: [msvc, clang]
         include:
           - compiler: msvc
-            c_compiler: cl.exe
-            cpp_compiler: cl.exe
+            c_compiler: cl
+            cpp_compiler: cl
           - compiler: clang
             c_compiler: clang
             cpp_compiler: clang++
@@ -30,17 +30,18 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Enable Developer Command Prompt
-        uses: jakoch/install-vulkan-sdk-action@v1.2.3
+      - name: Setup MSVC Environment
+        if: matrix.compiler == 'msvc'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.2
 
       - name: Set reusable strings
         id: strings
         shell: bash
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-
-      - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.2
 
       - name: Configure CMake
         run: >

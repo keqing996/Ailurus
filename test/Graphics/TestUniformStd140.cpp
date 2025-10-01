@@ -211,33 +211,6 @@ TEST_SUITE("Std140LayoutRules")
         }
     }
 
-    TEST_CASE("Layout Validation")
-    {
-        SUBCASE("Valid layout")
-        {
-            std::vector<UniformValueType> types = {
-                UniformValueType::Float,
-                UniformValueType::Vector3,
-                UniformValueType::Float
-            };
-            
-            std::vector<uint32_t> correctOffsets = { 0, 16, 28 };
-            CHECK(UniformLayoutHelper::ValidateStd140Layout(types, correctOffsets));
-        }
-
-        SUBCASE("Invalid layout")
-        {
-            std::vector<UniformValueType> types = {
-                UniformValueType::Float,
-                UniformValueType::Vector3,
-                UniformValueType::Float
-            };
-            
-            std::vector<uint32_t> incorrectOffsets = { 0, 4, 16 }; // vec3 not properly aligned
-            CHECK_FALSE(UniformLayoutHelper::ValidateStd140Layout(types, incorrectOffsets));
-        }
-    }
-
     TEST_CASE("Real World Examples")
     {
         SUBCASE("Camera UBO layout")

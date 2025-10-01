@@ -89,32 +89,6 @@ namespace Ailurus
         return elementCount * arrayStride;
     }
 
-    bool UniformLayoutHelper::ValidateStd140Layout(
-        const std::vector<UniformValueType>& memberTypes,
-        const std::vector<uint32_t>& actualOffsets)
-    {
-        if (memberTypes.size() != actualOffsets.size())
-        {
-            Logger::LogError("UniformLayoutHelper: Member types and offsets size mismatch.");
-            return false;
-        }
-
-        std::vector<uint32_t> expectedOffsets;
-        CalculateStructureLayout(memberTypes, expectedOffsets);
-
-        for (size_t i = 0; i < memberTypes.size(); ++i)
-        {
-            if (actualOffsets[i] != expectedOffsets[i])
-            {
-                Logger::LogError("UniformLayoutHelper: Offset mismatch at index {}: expected {}, got {}",
-                    i, expectedOffsets[i], actualOffsets[i]);
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     std::string UniformLayoutHelper::GetLayoutDescription(
         const std::vector<UniformValueType>& memberTypes,
         const std::vector<std::string>& memberNames)
