@@ -56,6 +56,9 @@ namespace Ailurus
 	std::unique_ptr<SceneSystem> 	Application::_pSceneManager = nullptr;
 	std::unique_ptr<ImGuiSystem> 	Application::_pImGuiSystem = nullptr;
 
+	uint32_t						Application::_targetFrameRate = 60;
+	double							Application::_targetFrameTime = 1.0 / 60.0;
+
 	bool Application::Create(int width, int height, const std::string& title, Style style)
 	{
 #if AILURUS_PLATFORM_WINDOWS
@@ -143,6 +146,8 @@ namespace Ailurus
 	{
 		while (true)
 		{
+			double frameStartTime = _pTimeSystem->GetElapsedTime();
+			
 			_pTimeSystem->Update();
 
 			bool shouldBreakLoop = false;
@@ -160,6 +165,20 @@ namespace Ailurus
 				loopFunction();
 
 			_pRenderSystem->RenderScene();
+
+			// Frame rate limiting
+			if (_targetFrameRate > 0)
+			{
+				double frameEndTime = _pTimeSystem->GetElapsedTime();
+				double frameTime = frameEndTime - frameStartTime;
+				double sleepTime = _targetFrameTime - frameTime;
+				
+				if (sleepTime > 0.0)
+				{
+					uint64_t sleepNanoseconds = static_cast<uint64_t>(sleepTime * 1000000000.0);
+					SDL_DelayNS(sleepNanoseconds);
+				}
+			}
 		}
 
 		VulkanContext::WaitDeviceIdle();
@@ -502,5 +521,19 @@ namespace Ailurus
 			default:
 				break;
 		}
+	}
+
+	void Application::SetTargetFrameRate(uint32_t fps)
+	{
+		_targetFrameRate = fps;
+		if (fps > 0)
+			_targetFrameTime = 1.0 / static_cast<double>(fps);
+		else
+			_targetFrameTime = 0.0;
+	}
+
+	uint32_t Application::GetTargetFrameRate()
+	{
+		return _targetFrameRate;
 	}
 } // namespace Ailurus

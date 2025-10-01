@@ -18,6 +18,7 @@ namespace Ailurus
 	public:
 		uint64_t FrameCount() const;
 		double DeltaTime() const;
+		double GetElapsedTime() const;
 
 	private:
 		void Update();
@@ -26,5 +27,6 @@ namespace Ailurus
 		uint64_t _frameCount;
 		Timer<> _frameTimer;
 		double _deltaTime;
+		Timer<TimePrecision::Nanoseconds> _elapsedTimer;
 	};
 } // namespace Ailurus

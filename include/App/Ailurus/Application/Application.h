@@ -148,6 +148,13 @@ namespace Ailurus
         template <typename System>
         static System* Get();
 
+    	/// Set target frame rate (FPS limit).
+    	/// @param fps Target FPS, 0 means no limit.
+    	static void SetTargetFrameRate(uint32_t fps);
+
+    	/// Get current target frame rate.
+    	static uint32_t GetTargetFrameRate();
+
     private:
         static void EventLoop(bool* quitLoop);
 
@@ -179,5 +186,9 @@ namespace Ailurus
     	static std::unique_ptr<AssetsSystem> _pAssetsSystem;
         static std::unique_ptr<SceneSystem> _pSceneManager;
     	static std::unique_ptr<ImGuiSystem> _pImGuiSystem;
+
+    	// Frame rate limit
+    	static uint32_t _targetFrameRate;
+    	static double _targetFrameTime;
     };
 }
