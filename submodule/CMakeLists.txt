@@ -17,6 +17,12 @@ set (SDL_SHARED OFF)
 add_subdirectory(sdl)
 
 # assimp
+set (ASSIMP_NO_EXPORT ON) # strip out export functionality to reduce binary size
+set (ASSIMP_BUILD_TESTS OFF) # don't need the test programs
+set (ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF) # only build the importers we need
+set (ASSIMP_BUILD_OBJ_IMPORTER ON)
+set (ASSIMP_BUILD_FBX_IMPORTER ON)
+set (USE_STATIC_CRT ON) # use the static c++ runtime on windows
 add_subdirectory(assimp)
 
 # imgui

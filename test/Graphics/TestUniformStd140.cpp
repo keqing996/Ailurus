@@ -421,8 +421,411 @@ TEST_SUITE("Std140LayoutRules")
             CHECK_EQ(offsetB.value(), 16);  // vec3 should be aligned to 16-byte boundary
             CHECK_EQ(offsetC.value(), 28);  // float after vec3 (12 bytes + offset 16)
             
-            // Total size should be properly aligned
-            CHECK_GE(bindingPoint.GetTotalSize(), 32);  // At least 32 bytes for proper alignment
+            // Total size should be properly aligned to the largest member alignment (16)
+            CHECK_EQ(bindingPoint.GetTotalSize(), 32);  // 32 bytes (28 + 4 aligned to 16)
+        }
+    }
+
+    TEST_CASE("Std140 Edge Cases and Boundary Conditions")
+    {
+        SUBCASE("Consecutive scalars packing")
+        {
+            // struct { float a; float b; float c; float d; }
+            // Should pack tightly without unnecessary padding
+            std::vector<UniformValueType> types = {
+                UniformValueType::Float,
+                UniformValueType::Float,
+                UniformValueType::Float,
+                UniformValueType::Float
+            };
+            
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateStructureLayout(types, offsets);
+            
+            CHECK_EQ(offsets[0], 0);
+            CHECK_EQ(offsets[1], 4);
+            CHECK_EQ(offsets[2], 8);
+            CHECK_EQ(offsets[3], 12);
+            CHECK_EQ(totalSize, 16);  // Aligned to 4 bytes
+        }
+
+        SUBCASE("Vec2 followed by vec2")
+        {
+            // struct { vec2 a; vec2 b; }
+            // Both should align to 8 bytes
+            std::vector<UniformValueType> types = {
+                UniformValueType::Vector2,
+                UniformValueType::Vector2
+            };
+            
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateStructureLayout(types, offsets);
+            
+            CHECK_EQ(offsets[0], 0);   // vec2 a at 0
+            CHECK_EQ(offsets[1], 8);   // vec2 b at 8
+            CHECK_EQ(totalSize, 16);   // Total aligned to 8
+        }
+
+        SUBCASE("Vec3 followed by float - critical padding test")
+        {
+            // struct { vec3 a; float b; }
+            // vec3 at 0 (size 12), float at 12 (no extra alignment needed)
+            std::vector<UniformValueType> types = {
+                UniformValueType::Vector3,
+                UniformValueType::Float
+            };
+            
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateStructureLayout(types, offsets);
+            
+            CHECK_EQ(offsets[0], 0);   // vec3 at 0
+            CHECK_EQ(offsets[1], 12);  // float at 12 (can fit in vec3's padding)
+            CHECK_EQ(totalSize, 16);   // Total aligned to 16
+        }
+
+        SUBCASE("Float followed by vec3 - requires alignment")
+        {
+            // struct { float a; vec3 b; }
+            // float at 0 (size 4), vec3 must align to 16
+            std::vector<UniformValueType> types = {
+                UniformValueType::Float,
+                UniformValueType::Vector3
+            };
+            
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateStructureLayout(types, offsets);
+            
+            CHECK_EQ(offsets[0], 0);   // float at 0
+            CHECK_EQ(offsets[1], 16);  // vec3 must align to 16
+            CHECK_EQ(totalSize, 32);   // Total: 16 + 12 aligned to 16 = 32
+        }
+
+        SUBCASE("Multiple vec3s")
+        {
+            // struct { vec3 a; vec3 b; vec3 c; }
+            std::vector<UniformValueType> types = {
+                UniformValueType::Vector3,
+                UniformValueType::Vector3,
+                UniformValueType::Vector3
+            };
+            
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateStructureLayout(types, offsets);
+            
+            CHECK_EQ(offsets[0], 0);   // vec3 a at 0
+            CHECK_EQ(offsets[1], 16);  // vec3 b at 16 (aligned)
+            CHECK_EQ(offsets[2], 32);  // vec3 c at 32 (aligned)
+            CHECK_EQ(totalSize, 48);   // Total: 32 + 12 aligned to 16 = 48
+        }
+
+        SUBCASE("Vec4 alignment is natural")
+        {
+            // struct { float a; vec4 b; }
+            std::vector<UniformValueType> types = {
+                UniformValueType::Float,
+                UniformValueType::Vector4
+            };
+            
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateStructureLayout(types, offsets);
+            
+            CHECK_EQ(offsets[0], 0);   // float at 0
+            CHECK_EQ(offsets[1], 16);  // vec4 must align to 16
+            CHECK_EQ(totalSize, 32);   // Total: 16 + 16 = 32
+        }
+
+        SUBCASE("Matrix followed by scalar")
+        {
+            // struct { mat4 m; float f; }
+            std::vector<UniformValueType> types = {
+                UniformValueType::Mat4,
+                UniformValueType::Float
+            };
+            
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateStructureLayout(types, offsets);
+            
+            CHECK_EQ(offsets[0], 0);   // mat4 at 0
+            CHECK_EQ(offsets[1], 64);  // float at 64 (after matrix)
+            CHECK_EQ(totalSize, 80);   // Total: 64 + 4 aligned to 16 = 80
+        }
+
+        SUBCASE("Complex interleaved structure")
+        {
+            // struct { float a; vec2 b; float c; vec3 d; vec4 e; }
+            std::vector<UniformValueType> types = {
+                UniformValueType::Float,   // 0
+                UniformValueType::Vector2, // aligned to 8
+                UniformValueType::Float,   // after vec2
+                UniformValueType::Vector3, // aligned to 16
+                UniformValueType::Vector4  // aligned to 16
+            };
+            
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateStructureLayout(types, offsets);
+            
+            CHECK_EQ(offsets[0], 0);   // float a at 0
+            CHECK_EQ(offsets[1], 8);   // vec2 b at 8 (aligned to 8)
+            CHECK_EQ(offsets[2], 16);  // float c at 16 (8 + 8)
+            CHECK_EQ(offsets[3], 32);  // vec3 d at 32 (aligned to 16 from 20)
+            CHECK_EQ(offsets[4], 48);  // vec4 e at 48 (aligned to 16 from 44)
+            CHECK_EQ(totalSize, 64);   // Total: 48 + 16 = 64
+        }
+    }
+
+    TEST_CASE("Array Edge Cases")
+    {
+        SUBCASE("Single element arrays")
+        {
+            // Arrays still follow stride rules even with 1 element
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateArrayLayout(
+                UniformValueType::Float, 1, offsets);
+            
+            CHECK_EQ(offsets.size(), 1);
+            CHECK_EQ(offsets[0], 0);
+            CHECK_EQ(totalSize, 16);  // Single float still takes 16 bytes in array
+        }
+
+        SUBCASE("Large float arrays")
+        {
+            // Test array with many elements
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateArrayLayout(
+                UniformValueType::Float, 10, offsets);
+            
+            CHECK_EQ(offsets.size(), 10);
+            for (uint32_t i = 0; i < 10; ++i)
+            {
+                CHECK_EQ(offsets[i], i * 16);
+            }
+            CHECK_EQ(totalSize, 160);  // 10 * 16
+        }
+
+        SUBCASE("Vec2 array stride")
+        {
+            // vec2 arrays use 16-byte stride
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateArrayLayout(
+                UniformValueType::Vector2, 4, offsets);
+            
+            CHECK_EQ(offsets.size(), 4);
+            CHECK_EQ(offsets[0], 0);
+            CHECK_EQ(offsets[1], 16);
+            CHECK_EQ(offsets[2], 32);
+            CHECK_EQ(offsets[3], 48);
+            CHECK_EQ(totalSize, 64);
+        }
+
+        SUBCASE("Matrix array stride")
+        {
+            // mat4 arrays use 64-byte stride
+            std::vector<uint32_t> offsets;
+            uint32_t totalSize = UniformLayoutHelper::CalculateArrayLayout(
+                UniformValueType::Mat4, 3, offsets);
+            
+            CHECK_EQ(offsets.size(), 3);
+            CHECK_EQ(offsets[0], 0);
+            CHECK_EQ(offsets[1], 64);
+            CHECK_EQ(offsets[2], 128);
+            CHECK_EQ(totalSize, 192);
+        }
+    }
+
+    TEST_CASE("Integration Tests - Complex Scenarios")
+    {
+        SUBCASE("Nested structure simulation")
+        {
+            // Outer struct { float a; Inner inner; float b; }
+            // Inner struct { vec3 pos; float intensity; }
+            
+            // First calculate inner structure
+            std::vector<UniformValueType> innerTypes = {
+                UniformValueType::Vector3,
+                UniformValueType::Float
+            };
+            std::vector<uint32_t> innerOffsets;
+            uint32_t innerSize = UniformLayoutHelper::CalculateStructureLayout(innerTypes, innerOffsets);
+            
+            // Inner structure: vec3 at 0, float at 12, total 16
+            CHECK_EQ(innerOffsets[0], 0);
+            CHECK_EQ(innerOffsets[1], 12);
+            CHECK_EQ(innerSize, 16);
+        }
+
+        SUBCASE("Array of structures with UniformBindingPoint")
+        {
+            // Test array of vec4 to ensure proper spacing
+            auto arrayUniform = std::make_unique<UniformVariableArray>();
+            
+            for (int i = 0; i < 4; ++i)
+            {
+                arrayUniform->AddMember(std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4));
+            }
+            
+            std::vector<ShaderStage> stages = { ShaderStage::Fragment };
+            UniformBindingPoint bindingPoint(1, stages, "vec4Array", std::move(arrayUniform));
+            
+            // Check each element
+            for (int i = 0; i < 4; ++i)
+            {
+                auto offset = bindingPoint.GetAccessOffset("vec4Array[" + std::to_string(i) + "]");
+                CHECK(offset.has_value());
+                CHECK_EQ(offset.value(), i * 16);
+            }
+            
+            CHECK_EQ(bindingPoint.GetTotalSize(), 64);
+        }
+
+        SUBCASE("Mixed types in UniformBindingPoint")
+        {
+            // struct { vec2 a; int b; int c; vec4 d; }
+            auto structUniform = std::make_unique<UniformVariableStructure>();
+            
+            structUniform->AddMember("a", std::make_unique<UniformVariableNumeric>(UniformValueType::Vector2));
+            structUniform->AddMember("b", std::make_unique<UniformVariableNumeric>(UniformValueType::Int));
+            structUniform->AddMember("c", std::make_unique<UniformVariableNumeric>(UniformValueType::Int));
+            structUniform->AddMember("d", std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4));
+            
+            std::vector<ShaderStage> stages = { ShaderStage::Vertex };
+            UniformBindingPoint bindingPoint(0, stages, "mixedStruct", std::move(structUniform));
+            
+            auto offsetA = bindingPoint.GetAccessOffset("mixedStruct.a");
+            auto offsetB = bindingPoint.GetAccessOffset("mixedStruct.b");
+            auto offsetC = bindingPoint.GetAccessOffset("mixedStruct.c");
+            auto offsetD = bindingPoint.GetAccessOffset("mixedStruct.d");
+            
+            CHECK(offsetA.has_value());
+            CHECK(offsetB.has_value());
+            CHECK(offsetC.has_value());
+            CHECK(offsetD.has_value());
+            
+            CHECK_EQ(offsetA.value(), 0);   // vec2 at 0
+            CHECK_EQ(offsetB.value(), 8);   // int at 8
+            CHECK_EQ(offsetC.value(), 12);  // int at 12
+            CHECK_EQ(offsetD.value(), 16);  // vec4 at 16 (aligned)
+            CHECK_EQ(bindingPoint.GetTotalSize(), 32);
+        }
+
+        SUBCASE("All scalar types together")
+        {
+            // struct { int i; float f; int j; float g; }
+            auto structUniform = std::make_unique<UniformVariableStructure>();
+            
+            structUniform->AddMember("i", std::make_unique<UniformVariableNumeric>(UniformValueType::Int));
+            structUniform->AddMember("f", std::make_unique<UniformVariableNumeric>(UniformValueType::Float));
+            structUniform->AddMember("j", std::make_unique<UniformVariableNumeric>(UniformValueType::Int));
+            structUniform->AddMember("g", std::make_unique<UniformVariableNumeric>(UniformValueType::Float));
+            
+            std::vector<ShaderStage> stages = { ShaderStage::Vertex };
+            UniformBindingPoint bindingPoint(0, stages, "scalarStruct", std::move(structUniform));
+            
+            // All should pack tightly
+            CHECK_EQ(bindingPoint.GetAccessOffset("scalarStruct.i").value(), 0);
+            CHECK_EQ(bindingPoint.GetAccessOffset("scalarStruct.f").value(), 4);
+            CHECK_EQ(bindingPoint.GetAccessOffset("scalarStruct.j").value(), 8);
+            CHECK_EQ(bindingPoint.GetAccessOffset("scalarStruct.g").value(), 12);
+            CHECK_EQ(bindingPoint.GetTotalSize(), 16);
+        }
+
+        SUBCASE("Worst case padding scenario")
+        {
+            // struct { float a; vec3 b; float c; vec3 d; float e; }
+            // Maximum padding waste
+            auto structUniform = std::make_unique<UniformVariableStructure>();
+            
+            structUniform->AddMember("a", std::make_unique<UniformVariableNumeric>(UniformValueType::Float));
+            structUniform->AddMember("b", std::make_unique<UniformVariableNumeric>(UniformValueType::Vector3));
+            structUniform->AddMember("c", std::make_unique<UniformVariableNumeric>(UniformValueType::Float));
+            structUniform->AddMember("d", std::make_unique<UniformVariableNumeric>(UniformValueType::Vector3));
+            structUniform->AddMember("e", std::make_unique<UniformVariableNumeric>(UniformValueType::Float));
+            
+            std::vector<ShaderStage> stages = { ShaderStage::Vertex };
+            UniformBindingPoint bindingPoint(0, stages, "paddedStruct", std::move(structUniform));
+            
+            CHECK_EQ(bindingPoint.GetAccessOffset("paddedStruct.a").value(), 0);
+            CHECK_EQ(bindingPoint.GetAccessOffset("paddedStruct.b").value(), 16);  // vec3 aligns to 16
+            CHECK_EQ(bindingPoint.GetAccessOffset("paddedStruct.c").value(), 28);  // float after vec3
+            CHECK_EQ(bindingPoint.GetAccessOffset("paddedStruct.d").value(), 32);  // vec3 aligns to 16 from 32
+            CHECK_EQ(bindingPoint.GetAccessOffset("paddedStruct.e").value(), 44);  // float after vec3
+            CHECK_EQ(bindingPoint.GetTotalSize(), 48);  // 44 + 4 aligned to 16
+        }
+
+        SUBCASE("Array of vec3 with multiple elements")
+        {
+            // This is a common issue - vec3 arrays have 16-byte stride
+            auto arrayUniform = std::make_unique<UniformVariableArray>();
+            
+            for (int i = 0; i < 5; ++i)
+            {
+                arrayUniform->AddMember(std::make_unique<UniformVariableNumeric>(UniformValueType::Vector3));
+            }
+            
+            std::vector<ShaderStage> stages = { ShaderStage::Vertex };
+            UniformBindingPoint bindingPoint(0, stages, "vec3Array", std::move(arrayUniform));
+            
+            // Each vec3 should be at 16-byte intervals
+            for (int i = 0; i < 5; ++i)
+            {
+                auto offset = bindingPoint.GetAccessOffset("vec3Array[" + std::to_string(i) + "]");
+                CHECK(offset.has_value());
+                CHECK_EQ(offset.value(), i * 16);
+            }
+            
+            CHECK_EQ(bindingPoint.GetTotalSize(), 80);  // 5 * 16
+        }
+
+        SUBCASE("Matrix and vectors combination")
+        {
+            // struct { mat4 transform; vec3 position; vec4 color; }
+            auto structUniform = std::make_unique<UniformVariableStructure>();
+            
+            structUniform->AddMember("transform", std::make_unique<UniformVariableNumeric>(UniformValueType::Mat4));
+            structUniform->AddMember("position", std::make_unique<UniformVariableNumeric>(UniformValueType::Vector3));
+            structUniform->AddMember("color", std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4));
+            
+            std::vector<ShaderStage> stages = { ShaderStage::Vertex };
+            UniformBindingPoint bindingPoint(0, stages, "transformStruct", std::move(structUniform));
+            
+            CHECK_EQ(bindingPoint.GetAccessOffset("transformStruct.transform").value(), 0);
+            CHECK_EQ(bindingPoint.GetAccessOffset("transformStruct.position").value(), 64);
+            CHECK_EQ(bindingPoint.GetAccessOffset("transformStruct.color").value(), 80);
+            CHECK_EQ(bindingPoint.GetTotalSize(), 96);  // 64 + 12 + 16 = 92, aligned to 16 = 96
+        }
+    }
+
+    TEST_CASE("Alignment Rule Verification")
+    {
+        SUBCASE("Scalar types have 4-byte alignment")
+        {
+            CHECK_EQ(UniformLayoutHelper::GetStd140BaseAlignment(UniformValueType::Int), 4);
+            CHECK_EQ(UniformLayoutHelper::GetStd140BaseAlignment(UniformValueType::Float), 4);
+        }
+
+        SUBCASE("Vector2 has 8-byte alignment")
+        {
+            CHECK_EQ(UniformLayoutHelper::GetStd140BaseAlignment(UniformValueType::Vector2), 8);
+        }
+
+        SUBCASE("Vector3 and Vector4 have 16-byte alignment")
+        {
+            CHECK_EQ(UniformLayoutHelper::GetStd140BaseAlignment(UniformValueType::Vector3), 16);
+            CHECK_EQ(UniformLayoutHelper::GetStd140BaseAlignment(UniformValueType::Vector4), 16);
+        }
+
+        SUBCASE("Matrix4x4 has 16-byte alignment")
+        {
+            CHECK_EQ(UniformLayoutHelper::GetStd140BaseAlignment(UniformValueType::Mat4), 16);
+        }
+
+        SUBCASE("All array strides are at least 16 bytes")
+        {
+            CHECK_EQ(UniformLayoutHelper::GetStd140ArrayStride(UniformValueType::Int), 16);
+            CHECK_EQ(UniformLayoutHelper::GetStd140ArrayStride(UniformValueType::Float), 16);
+            CHECK_EQ(UniformLayoutHelper::GetStd140ArrayStride(UniformValueType::Vector2), 16);
+            CHECK_EQ(UniformLayoutHelper::GetStd140ArrayStride(UniformValueType::Vector3), 16);
+            CHECK_EQ(UniformLayoutHelper::GetStd140ArrayStride(UniformValueType::Vector4), 16);
+            CHECK_EQ(UniformLayoutHelper::GetStd140ArrayStride(UniformValueType::Mat4), 64);
         }
     }
 }

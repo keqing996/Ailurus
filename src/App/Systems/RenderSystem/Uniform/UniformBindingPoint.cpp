@@ -35,7 +35,7 @@ namespace Ailurus
 	}
 
 	static void PopulateUniformOffsets(UniformVariable* pUniform, const std::string& prefix,
-		uint32_t& currentOffset, std::unordered_map<std::string, uint32_t>& offsetMap)
+		uint32_t& currentOffset, std::unordered_map<std::string, uint32_t>& offsetMap, bool isTopLevel = true)
 	{
 		switch (pUniform->VaribleType())
 		{
@@ -53,10 +53,24 @@ namespace Ailurus
 			case UniformVaribleType::Structure:
 			{
 				const auto pStructureUniform = static_cast<const UniformVariableStructure*>(pUniform);
+				// Align structure to its base alignment before starting
+				if (isTopLevel)
+				{
+					uint32_t structAlignment = GetStd140BaseAlignment(pUniform);
+					currentOffset = UniformLayoutHelper::AlignOffset(currentOffset, structAlignment);
+				}
+				
 				for (const auto& [name, pChildUniform] : pStructureUniform->GetMembers())
 				{
 					std::string memberName = prefix + "." + name;
-					PopulateUniformOffsets(pChildUniform.get(), memberName, currentOffset, offsetMap);
+					PopulateUniformOffsets(pChildUniform.get(), memberName, currentOffset, offsetMap, false);
+				}
+				
+				// Align structure size to its base alignment at the end
+				if (isTopLevel)
+				{
+					uint32_t structAlignment = GetStd140BaseAlignment(pUniform);
+					currentOffset = UniformLayoutHelper::AlignOffset(currentOffset, structAlignment);
 				}
 				break;
 			}
@@ -93,9 +107,6 @@ namespace Ailurus
 			default:
 				Logger::LogError("Unknown variable type encountered during offset population.");
 		}
-
-		uint32_t baseAlignment = GetStd140BaseAlignment(pUniform);
-		currentOffset = UniformLayoutHelper::AlignOffset(currentOffset, baseAlignment);
 	}
 
 	UniformBindingPoint::UniformBindingPoint(uint32_t bindingPoint, const std::vector<ShaderStage>& shaderStage, 
