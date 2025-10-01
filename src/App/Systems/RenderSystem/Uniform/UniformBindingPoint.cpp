@@ -1,14 +1,10 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
+#include <Ailurus/Application/RenderSystem/Uniform/UniformLayoutHelper.h>
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Utility/String.h>
 
 namespace Ailurus
 {
-	static uint32_t AlignOffset(uint32_t offset, uint32_t alignment)
-	{
-		return (offset + alignment - 1) & ~(alignment - 1);
-	}
-
 	static uint32_t GetStd140BaseAlignment(const UniformVariable* pUniform)
 	{
 		switch (pUniform->VaribleType())
@@ -16,22 +12,7 @@ namespace Ailurus
 			case UniformVaribleType::Numeric:
 			{
 				const auto pNumericUniform = static_cast<const UniformVariableNumeric*>(pUniform);
-				switch (pNumericUniform->ValueType())
-				{
-					case UniformValueType::Int:
-					case UniformValueType::Float:
-						return 4;
-					case UniformValueType::Vector2:
-						return 8;
-					case UniformValueType::Vector3:
-					case UniformValueType::Vector4:
-						return 16;
-					case UniformValueType::Mat4:
-						return 16;
-					default:
-						Logger::LogError("UniformVariableNumeric: Unsupported UniformValueType for alignment calculation.");
-						return 0;
-				}
+				return UniformLayoutHelper::GetStd140BaseAlignment(pNumericUniform->ValueType());
 			}
 			case UniformVaribleType::Structure:
 			{
@@ -39,14 +20,14 @@ namespace Ailurus
 				const auto pStructureUniform = static_cast<const UniformVariableStructure*>(pUniform);
 				for (const auto& [_, member] : pStructureUniform->GetMembers())
 					maxAlignment = std::max(maxAlignment, GetStd140BaseAlignment(member.get()));
-				return AlignOffset(maxAlignment, 16);
+				return UniformLayoutHelper::AlignOffset(maxAlignment, 16);
 			}
 			case UniformVaribleType::Array:
 			{
 				const auto pArrayUniform = static_cast<const UniformVariableArray*>(pUniform);
 				const auto& members = pArrayUniform->GetMembers();
 				auto firstElementAlignment = members.empty() ? 16 : GetStd140BaseAlignment(members.front().get());
-				return AlignOffset(firstElementAlignment, 16);
+				return UniformLayoutHelper::AlignOffset(firstElementAlignment, 16);
 			}
 		}
 
@@ -60,9 +41,12 @@ namespace Ailurus
 		{
 			case UniformVaribleType::Numeric:
 			{
-				offsetMap[prefix] = currentOffset;
-
+				// Align to the proper boundary before placing the value
 				const auto pNumericUniform = static_cast<const UniformVariableNumeric*>(pUniform);
+				uint32_t alignment = UniformLayoutHelper::GetStd140BaseAlignment(pNumericUniform->ValueType());
+				currentOffset = UniformLayoutHelper::AlignOffset(currentOffset, alignment);
+				
+				offsetMap[prefix] = currentOffset;
 				currentOffset += UniformValue::GetSize(pNumericUniform->ValueType());
 				break;
 			}
@@ -80,12 +64,29 @@ namespace Ailurus
 			{
 				const auto pArrayUniform = static_cast<const UniformVariableArray*>(pUniform);
 				const auto& members = pArrayUniform->GetMembers();
-				for (auto i = 0; i < members.size(); ++i)
+				
+				if (!members.empty())
 				{
-					std::string elementName = prefix + "[" + std::to_string(i) + "]";
-					UniformVariable* pMemberUniform = members[i].get();
-					PopulateUniformOffsets(pMemberUniform, elementName, currentOffset, offsetMap);
-					currentOffset = AlignOffset(currentOffset, GetStd140BaseAlignment(pMemberUniform));
+					// Get the array stride according to std140 rules
+					UniformValueType elementType = UniformValueType::Int; // Default, will be overridden
+					if (members.front()->VaribleType() == UniformVaribleType::Numeric)
+					{
+						const auto pFirstElement = static_cast<const UniformVariableNumeric*>(members.front().get());
+						elementType = pFirstElement->ValueType();
+					}
+					
+					// Calculate array stride using UniformLayoutHelper
+					uint32_t arrayStride = UniformLayoutHelper::GetStd140ArrayStride(elementType);
+					
+					for (auto i = 0; i < members.size(); ++i)
+					{
+						std::string elementName = prefix + "[" + std::to_string(i) + "]";
+						uint32_t elementOffset = currentOffset + (i * arrayStride);
+						offsetMap[elementName] = elementOffset;
+					}
+					
+					// Move past the entire array
+					currentOffset += members.size() * arrayStride;
 				}
 				break;
 			}
@@ -94,7 +95,7 @@ namespace Ailurus
 		}
 
 		uint32_t baseAlignment = GetStd140BaseAlignment(pUniform);
-		currentOffset = AlignOffset(currentOffset, baseAlignment);
+		currentOffset = UniformLayoutHelper::AlignOffset(currentOffset, baseAlignment);
 	}
 
 	UniformBindingPoint::UniformBindingPoint(uint32_t bindingPoint, const std::vector<ShaderStage>& shaderStage, 

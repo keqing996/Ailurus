@@ -4,7 +4,7 @@ layout(push_constant) uniform PushConstants {
     mat4 modelMatrix;
 } pushConstants;
 
-layout(set = 0, binding = 0) uniform GlobalUniform {
+layout(std140, set = 0, binding = 0) uniform GlobalUniform {
     mat4 viewProjectionMatrix;
     vec3 cameraPosition;
 } globalUniform;

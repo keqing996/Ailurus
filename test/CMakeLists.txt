@@ -4,6 +4,12 @@ function(create_ailurus_core_test test_name source_file)
     add_test                (NAME ${test_name} COMMAND ${test_name})
 endfunction()
 
+function(create_ailurus_app_test test_name source_file)
+    add_executable          (${test_name} ${source_file})
+    target_link_libraries   (${test_name} PUBLIC ailurus-core ailurus-app doctest glm)
+    add_test                (NAME ${test_name} COMMAND ${test_name})
+endfunction()
+
 create_ailurus_core_test (ailurus_test_container_segment_array  Container/TestSegmentArray.cpp)
 create_ailurus_core_test (ailurus_test_lock_free_queue          Container/TestLockFreeQueue.cpp)
 create_ailurus_core_test (ailurus_test_math_vector2             Math/TestVector2.cpp)
@@ -26,3 +32,4 @@ create_ailurus_core_test (ailurus_test_memory_free_list_allocator   Memory/TestF
 create_ailurus_core_test (ailurus_test_memory_pool_allocator        Memory/TestPoolAllocator.cpp)
 create_ailurus_core_test (ailurus_test_memory_stack_allocator       Memory/TestStackAllocator.cpp)
 
+create_ailurus_app_test (ailurus_test_uniform_std140           Graphics/TestUniformStd140.cpp)
