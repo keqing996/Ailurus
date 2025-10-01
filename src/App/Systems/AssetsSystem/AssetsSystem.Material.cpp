@@ -73,7 +73,7 @@ namespace Ailurus
 			}
 
 			const std::string& shaderFilePath = shaderConfig["source"].get<std::string>();
-			auto shaderFilePathSpv = String::Replace(shaderFilePath, "/Shader/", "/ShaderBin/") + ".spv";
+			auto shaderFilePathSpv = Path::ResolvePath(String::Replace(shaderFilePath, "/Shader/", "/ShaderBin/") + ".spv");
 			const Shader* pShader = Application::Get<RenderSystem>()->GetShaderLibrary()->GetShader(stage, shaderFilePathSpv);
 			if (pShader == nullptr)
 			{
