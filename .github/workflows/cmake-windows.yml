@@ -34,8 +34,8 @@ jobs:
         if: matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.2
+      - name: Enable Developer Command Prompt
+        uses: jakoch/install-vulkan-sdk-action@v1.2.6
 
       - name: Set reusable strings
         id: strings
