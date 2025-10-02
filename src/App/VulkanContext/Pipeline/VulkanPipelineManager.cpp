@@ -5,8 +5,8 @@
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include "VulkanPipelineManager.h"
 #include "VulkanContext/VulkanContext.h"
-#include "VulkanContext/RenderPass/VulkanRenderPass.h"
 #include "VulkanContext/Vertex/VulkanVertexLayoutManager.h"
+#include "VulkanContext/SwapChain/VulkanSwapChain.h"
 
 namespace Ailurus
 {
@@ -16,14 +16,16 @@ namespace Ailurus
 		if (it != _pipelinesMap.end())
 			return it->second.get();
 
-		// Prepare to create a new pipeline
-		auto pRenderPass = Application::Get<RenderSystem>()->GetRenderPass(entry.renderPass);
-		if (pRenderPass == nullptr)
+		// Get formats from swap chain
+		auto pSwapChain = VulkanContext::GetSwapChain();
+		if (pSwapChain == nullptr)
 		{
-			Logger::LogError("VulkanPipelineManager::GetPipeline: Render pass not found for entry: {}",
-				EnumReflection<RenderPassType>::ToString(entry.renderPass));
+			Logger::LogError("VulkanPipelineManager::GetPipeline: SwapChain not found");
 			return nullptr;
 		}
+
+		const vk::Format colorFormat = pSwapChain->GetConfig().surfaceFormat.format;
+		const vk::Format depthFormat = vk::Format::eD32Sfloat; // Standard depth format
 
 		auto refMaterial = Application::Get<AssetsSystem>()->GetAsset<Material>(entry.materialAssetId);
 		if (!refMaterial)
@@ -53,7 +55,8 @@ namespace Ailurus
 		uniformSets.push_back(refMaterial->GetUniformSet(entry.renderPass));
 
 		const auto pPipeline = new VulkanPipeline(
-			pRenderPass,
+			colorFormat,
+			depthFormat,
 			*pShaderArray,
 			pVertexLayout, 
 			uniformSets);

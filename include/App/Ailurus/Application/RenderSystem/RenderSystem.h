@@ -14,7 +14,6 @@ namespace Ailurus
 	class MaterialInstance;
 	class Mesh;
 	class CompStaticMeshRender;
-	class VulkanRenderPass;
 	class VulkanCommandBuffer;
 	class VulkanDescriptorAllocator;
 	class VulkanUniformBuffer;
@@ -43,8 +42,9 @@ namespace Ailurus
 		void SetMainCamera(CompCamera* pCamera);
 		CompCamera* GetMainCamera() const;
 
-		// Render pass access
-		auto GetRenderPass(RenderPassType pass) const -> VulkanRenderPass*;
+		// VSync
+		void SetVSyncEnabled(bool enabled);
+		bool IsVSyncEnabled() const;
 
 		// Callbacks
 		void AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback);
@@ -60,7 +60,6 @@ namespace Ailurus
 	private:
 		// Create
 		void CreateIntermediateVariable();
-		void BuildRenderPass();
 		void BuildGlobalUniform();
 
 		// Render
@@ -69,9 +68,8 @@ namespace Ailurus
 		void UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator);
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
-		void RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
+		void RenderPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 		void RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
-		void RenderPresentPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
 		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;
@@ -81,7 +79,6 @@ namespace Ailurus
 		bool _needRebuildSwapChain = false;
 		bool _enable3D = false;
 		bool _enableImGui = false;
-		std::unordered_map<RenderPassType, std::unique_ptr<VulkanRenderPass>> _renderPassMap;
 
 		// Current main camera
 		CompCamera* _pMainCamera = nullptr;

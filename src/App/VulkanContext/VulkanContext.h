@@ -17,7 +17,6 @@ namespace Ailurus
 	class VulkanPipelineManager;
 	class VulkanResourceManager;
 	class VulkanFlightManager;
-	class VulkanFrameBufferManager;
 	class VulkanSemaphore;
 	class VulkanFence;
 	
@@ -53,11 +52,14 @@ namespace Ailurus
 		static auto GetPipelineManager() -> VulkanPipelineManager*;
 		static auto GetResourceManager() -> VulkanResourceManager*;
 		static auto GetVertexLayoutManager() -> VulkanVertexLayoutManager*;
-		static auto GetFrameBufferManager() -> VulkanFrameBufferManager*;
 		static auto GetParallelFrameCount() -> uint32_t;
 
 		// Swap chain
 		static void RebuildSwapChain();
+		
+		// VSync
+		static void SetVSyncEnabled(bool enabled);
+		static bool IsVSyncEnabled();
 
 		// Render
 		static void RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction);
@@ -118,12 +120,12 @@ namespace Ailurus
 
 		// Swap chain
 		static std::unique_ptr<VulkanSwapChain> _pSwapChain;
+		static bool _vsyncEnabled;
 
 		// Managers
 		static std::unique_ptr<VulkanResourceManager> _resourceManager;
 		static std::unique_ptr<VulkanVertexLayoutManager> _vertexLayoutManager;
 		static std::unique_ptr<VulkanPipelineManager> _pipelineManager;
-		static std::unique_ptr<VulkanFrameBufferManager> _frameBufferManager;
 
 		// Flight
 		static uint32_t _currentFrameIndex;

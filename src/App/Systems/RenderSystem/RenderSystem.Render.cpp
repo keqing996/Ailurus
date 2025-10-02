@@ -16,13 +16,11 @@
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/CommandBuffer/VulkanCommandBuffer.h>
 #include <VulkanContext/Pipeline/VulkanPipelineManager.h>
-#include <VulkanContext/RenderPass/VulkanRenderPass.h>
 #include <VulkanContext/DataBuffer/VulkanVertexBuffer.h>
 #include <VulkanContext/DataBuffer/VulkanIndexBuffer.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include <VulkanContext/Vertex/VulkanVertexLayoutManager.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
-#include <VulkanContext/FrameBuffer/VulkanFrameBufferManager.h>
 #include "Ailurus/Application/ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Detail/RenderIntermediateVariable.h"
@@ -120,11 +118,38 @@ namespace Ailurus
 				UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 				UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 
+				// Get swap chain for image layout transitions
+				auto pSwapChain = VulkanContext::GetSwapChain();
+				const auto& swapChainImages = pSwapChain->GetSwapChainImages();
+				vk::Image currentImage = swapChainImages[swapChainImageIndex];
+
+				// Transition image to color attachment optimal before rendering
+				pCommandBuffer->ImageMemoryBarrier(
+					currentImage,
+					vk::ImageLayout::eUndefined,
+					vk::ImageLayout::eColorAttachmentOptimal,
+					vk::AccessFlags{},
+					vk::AccessFlagBits::eColorAttachmentWrite,
+					vk::PipelineStageFlagBits::eTopOfPipe,
+					vk::PipelineStageFlagBits::eColorAttachmentOutput);
+
 				// Forward pass
-				RenderSpecificPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
+				if (_enable3D)
+					RenderPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
 
 				// ImGui pass
-				RenderImGuiPass(swapChainImageIndex, pCommandBuffer);
+				if (_enableImGui)
+					RenderImGuiPass(swapChainImageIndex, pCommandBuffer);
+
+				// Transition image to present layout after rendering
+				pCommandBuffer->ImageMemoryBarrier(
+					currentImage,
+					vk::ImageLayout::eColorAttachmentOptimal,
+					vk::ImageLayout::ePresentSrcKHR,
+					vk::AccessFlagBits::eColorAttachmentWrite,
+					vk::AccessFlags{},
+					vk::PipelineStageFlagBits::eColorAttachmentOutput,
+					vk::PipelineStageFlagBits::eBottomOfPipe);
 			});
 	}
 
@@ -176,20 +201,31 @@ namespace Ailurus
 		}
 	}
 
-	void RenderSystem::RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
+	void RenderSystem::RenderPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
 	{
 		if (_pIntermediateVariable->renderingMeshes.empty())
 			return;
 
-		const auto pVkRenderPass = GetRenderPass(pass);
-		if (pVkRenderPass == nullptr)
+		// Get swap chain image view and depth image view
+		auto pSwapChain = VulkanContext::GetSwapChain();
+		if (pSwapChain == nullptr)
 		{
-			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(pass));
+			Logger::LogError("SwapChain not found");
 			return;
 		}
 
-		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pVkRenderPass, swapChainImageIndex);
-		pCommandBuffer->BeginRenderPass(pVkRenderPass, pBackBuffer);
+		const auto& imageViews = pSwapChain->GetSwapChainImageViews();
+		if (swapChainImageIndex >= imageViews.size())
+		{
+			Logger::LogError("Invalid swap chain image index");
+			return;
+		}
+
+		vk::ImageView colorImageView = imageViews[swapChainImageIndex];
+		vk::ImageView depthImageView = pSwapChain->GetDepthImageView();
+		vk::Extent2D extent = pSwapChain->GetConfig().extent;
+
+		pCommandBuffer->BeginRendering(colorImageView, depthImageView, extent, true, true);
 
 		// Intermediate variables
 		const Material* pCurrentMaterial = nullptr;
@@ -260,30 +296,34 @@ namespace Ailurus
 			}
 		}
 
-		pCommandBuffer->EndRenderPass();
+		pCommandBuffer->EndRendering();
 	}
 
 	void RenderSystem::RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
 	{
 		auto pImGui = Application::Get<ImGuiSystem>();
-		auto* pImGuiPass = GetRenderPass(RenderPassType::ImGui);
-		if (pImGuiPass == nullptr)
-			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(RenderPassType::ImGui));
 
-		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pImGuiPass, swapChainImageIndex);
-		pCommandBuffer->BeginRenderPass(pImGuiPass, pBackBuffer);
+		// Get swap chain image view and depth image view
+		auto pSwapChain = VulkanContext::GetSwapChain();
+		if (pSwapChain == nullptr)
+		{
+			Logger::LogError("SwapChain not found");
+			return;
+		}
+
+		const auto& imageViews = pSwapChain->GetSwapChainImageViews();
+		if (swapChainImageIndex >= imageViews.size())
+		{
+			Logger::LogError("Invalid swap chain image index");
+			return;
+		}
+
+		vk::ImageView colorImageView = imageViews[swapChainImageIndex];
+		vk::Extent2D extent = pSwapChain->GetConfig().extent;
+
+		// ImGui doesn't need depth, and should load existing content (clearColor=false)
+		pCommandBuffer->BeginRendering(colorImageView, nullptr, extent, false, false);
 		pImGui->Render(pCommandBuffer);
-		pCommandBuffer->EndRenderPass();
-	}
-
-	void RenderSystem::RenderPresentPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
-	{
-		auto* pPresentPass = GetRenderPass(RenderPassType::Present);
-		if (pPresentPass == nullptr)
-			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(RenderPassType::Present));
-
-		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pPresentPass, swapChainImageIndex);
-		pCommandBuffer->BeginRenderPass(pPresentPass, pBackBuffer);
-		pCommandBuffer->EndRenderPass();
+		pCommandBuffer->EndRendering();
 	}
 } // namespace Ailurus

@@ -6,7 +6,6 @@ namespace Ailurus
 {
     REFLECTION_ENUM(RenderPassType,
         Forward,
-        ImGui,
-        Present,
+        ImGui
     );
 }

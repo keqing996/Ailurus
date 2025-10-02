@@ -55,7 +55,6 @@ int Main(int argc, char* argv[])
 	// Render
 	Application::Loop([pEntityWeak]() -> void {
 		auto deltaTime = Application::Get<TimeSystem>()->DeltaTime() / 1000.0f;
-		Logger::LogInfo("Frame Time: {} ms", Application::Get<TimeSystem>()->DeltaTime());
 
 		// Rotate the cube
 		if (auto pEntity = pEntityWeak.lock())

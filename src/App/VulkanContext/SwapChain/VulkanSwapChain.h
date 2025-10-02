@@ -14,7 +14,7 @@ namespace Ailurus
 	class VulkanSwapChain: public NonCopyable, public NonMovable
 	{
     public:
-        VulkanSwapChain();
+        explicit VulkanSwapChain(bool vsyncEnabled);
         ~VulkanSwapChain();
 
 	public:
@@ -22,12 +22,21 @@ namespace Ailurus
 		auto GetSwapChain() const -> const vk::SwapchainKHR&;
 		auto GetSwapChainImages() const -> const std::vector<vk::Image>&;
 		auto GetSwapChainImageViews() const -> const std::vector<vk::ImageView>&;
+		auto GetDepthImageView() const -> vk::ImageView;
 		auto AcquireNextImage(VulkanSemaphore* imageReadySem, bool* needRebuildSwapChain) -> std::optional<uint32_t>;
+
+	private:
+		void CreateDepthResources();
 
 	private:
 		SwapChainConfig _swapChainConfig{};
 		vk::SwapchainKHR _vkSwapChain = nullptr;
 		std::vector<vk::Image> _vkSwapChainImages{};
 		std::vector<vk::ImageView> _vkSwapChainImageViews{};
+		
+		// Depth resources
+		vk::Image _depthImage = nullptr;
+		vk::ImageView _depthImageView = nullptr;
+		vk::DeviceMemory _depthImageMemory = nullptr;
 	};
 } // namespace Ailurus
