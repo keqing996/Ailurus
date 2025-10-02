@@ -6,6 +6,51 @@
 
 namespace Ailurus
 {
+    /**
+     * @brief Stack Allocator (also known as LIFO Allocator or Double-Ended Stack Allocator)
+     * 
+     * @section strategy
+     * - Allocates memory in a stack-like (LIFO - Last In First Out) manner
+     * - Maintains a stack top pointer that moves up on allocation and down on deallocation
+     * - Deallocations must occur in reverse order of allocations (like a stack)
+     * - Uses linked headers to track allocation boundaries
+     * 
+     * @section advantages
+     * - Fast allocation: O(1) time complexity, only pointer adjustment
+     * - Fast deallocation: O(1) when following LIFO order
+     * - Zero fragmentation: Stack-based allocation eliminates fragmentation
+     * - Low overhead: Minimal metadata (stack pointer and block headers)
+     * - Cache friendly: Sequential memory access improves cache performance
+     * - Natural scoping: Matches nested function call patterns well
+     * - Deterministic: Predictable performance for real-time systems
+     * 
+     * @section disadvantages
+     * - LIFO constraint: Must deallocate in reverse order of allocation
+     * - Inflexible: Cannot free middle allocations without freeing everything above
+     * - Scope dependency: Requires strict discipline to maintain LIFO order
+     * - Error prone: Breaking LIFO order leads to undefined behavior
+     * - No random access deallocation: Limited flexibility compared to heap allocators
+     * - Wasted space: Memory above the stack top cannot be used until deallocated
+     * 
+     * @section use_cases
+     * - Function call stacks and local variable allocation
+     * - Nested scope allocations (naturally LIFO)
+     * - Temporary allocations during algorithm execution
+     * - Recursive algorithms with predictable memory patterns
+     * - Expression evaluation and parser temporary storage
+     * - Render frame allocations (per-frame rendering data)
+     * - Hierarchical scene graph traversal temporary data
+     * 
+     * @section not_recommended
+     * - Random-order deallocation requirements
+     * - Long-lived objects with unpredictable lifetimes
+     * - Objects that need to outlive their allocation scope
+     * - Scenarios where allocation order doesn't match deallocation order
+     * - General-purpose heap replacement
+     * 
+     * @note Current implementation is single-threaded; external synchronization required for multi-threading
+     * @warning Breaking the LIFO deallocation order will lead to memory corruption and undefined behavior
+     */
     template <size_t DefaultAlignment = 4>
     class StackAllocator
     {

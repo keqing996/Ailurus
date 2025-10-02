@@ -5,6 +5,46 @@
 
 namespace Ailurus
 {
+    /**
+     * @brief Linear Allocator (also known as Bump Allocator or Arena Allocator)
+     * 
+     * @section strategy
+     * - Maintains a pointer that moves linearly forward from the start of the memory pool
+     * - Allocation only requires pointer advancement with O(1) time complexity
+     * - Does not support individual object deallocation; only bulk reset via Reset()
+     * - Designed for frame-based or phase-based temporary memory allocations
+     * 
+     * @section advantages
+     * - Excellent performance: Fastest allocation speed, only pointer movement and bounds check
+     * - Zero fragmentation: Linear allocation guarantees contiguous memory with no external fragmentation
+     * - Cache friendly: Sequential memory access pattern ensures high CPU cache hit rate
+     * - Simple and reliable: Straightforward implementation with minimal error potential
+     * - Low metadata overhead: Only requires maintaining an offset pointer
+     * - Deterministic: Fixed allocation time, suitable for real-time systems
+     * 
+     * @section disadvantages
+     * - No individual deallocation: Cannot free individual objects, only bulk reset
+     * - Memory waste: If object lifetimes vary significantly, memory remains locked until reset
+     * - Inflexible: Requires all allocations to be freed together
+     * - Dangling pointers: All pointers become invalid after Reset()
+     * - Not suitable for long-lived objects with unpredictable lifetimes
+     * 
+     * @section use_cases
+     * - Frame-based allocations in game engines (cleared every frame)
+     * - Temporary scratch buffers for calculations
+     * - Parser/compiler temporary data during single pass
+     * - Level loading: allocate all resources, use during gameplay, reset on level change
+     * - String formatting and temporary string operations
+     * - Batch processing where all data is processed then discarded
+     * 
+     * @section not_recommended
+     * - Objects with varying and unpredictable lifetimes
+     * - Long-running applications without clear reset points
+     * - Scenarios requiring individual object deallocation
+     * - Memory pools shared across multiple subsystems with different lifecycles
+     * 
+     * @note Current implementation is single-threaded; external synchronization required for multi-threading
+     */
     template <size_t DefaultAlignment = 4>
     class LinearAllocator
     {

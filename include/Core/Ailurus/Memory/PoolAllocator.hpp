@@ -5,6 +5,50 @@
 
 namespace Ailurus
 {
+    /**
+     * @brief Pool Allocator (also known as Fixed-Size Block Allocator)
+     * 
+     * @section strategy
+     * - Pre-allocates a fixed number of equal-sized memory blocks
+     * - Maintains a free list of available blocks
+     * - Allocation/deallocation simply removes/adds blocks from/to the free list
+     * - All blocks are the same size, determined at construction time
+     * 
+     * @section advantages
+     * - Constant time O(1) allocation and deallocation
+     * - Zero fragmentation: All blocks are the same size
+     * - Predictable performance: Allocation time is deterministic
+     * - Low overhead: Minimal metadata per block (just a next pointer)
+     * - Cache friendly: Objects of same type allocated close together
+     * - Excellent for same-sized object pools (particles, bullets, entities)
+     * - No coalescing needed: Freed blocks directly reusable
+     * 
+     * @section disadvantages
+     * - Fixed block size: Can only allocate objects of predetermined size
+     * - Memory waste: Small objects waste space if block size is large
+     * - Fixed capacity: Pool exhaustion if more objects needed than pre-allocated
+     * - Upfront cost: All memory allocated at construction time
+     * - No automatic expansion: Cannot grow pool dynamically
+     * - Less flexible than general-purpose allocators
+     * 
+     * @section use_cases
+     * - Game entity systems (same-sized game objects)
+     * - Particle systems (thousands of identical particle objects)
+     * - Object pools for networking (message objects, packet buffers)
+     * - Event systems (event objects of known size)
+     * - Memory pools for specific data structures (nodes in linked lists, trees)
+     * - Real-time systems requiring predictable allocation times
+     * - Frequently created/destroyed objects of the same type
+     * 
+     * @section not_recommended
+     * - Objects with highly variable sizes
+     * - Scenarios where object count cannot be predicted
+     * - Applications with strict memory constraints (cannot pre-allocate)
+     * - General-purpose memory allocation
+     * - Mixed-size allocations
+     * 
+     * @note Current implementation is single-threaded; external synchronization required for multi-threading
+     */
     template <size_t DefaultAlignment = 4>
     class PoolAllocator
     {
@@ -38,7 +82,11 @@ namespace Ailurus
         : _blockSize(blockSize)
         , _blockNum(blockNum)
     {
-        size_t blockRequiredSize = MemoryAllocatorUtil::UpAlignment(blockSize + sizeof(Node), DefaultAlignment);
+        // Ensure Node size is aligned to maintain user data alignment
+        size_t alignedNodeSize = MemoryAllocatorUtil::UpAlignment(sizeof(Node), DefaultAlignment);
+        size_t blockRequiredSize = alignedNodeSize + blockSize;
+        // Align total block size to ensure next block starts at aligned address
+        blockRequiredSize = MemoryAllocatorUtil::UpAlignment(blockRequiredSize, DefaultAlignment);
         size_t needSize = blockRequiredSize * blockNum;
 
         _pData = ::malloc(needSize);
@@ -72,13 +120,18 @@ namespace Ailurus
 
         Node* pResult = _pFreeBlockList;
         _pFreeBlockList = _pFreeBlockList->pNext;
-        return MemoryAllocatorUtil::PtrOffsetBytes(pResult, sizeof(Node));
+        
+        // User data starts after aligned Node header
+        size_t alignedNodeSize = MemoryAllocatorUtil::UpAlignment(sizeof(Node), DefaultAlignment);
+        return MemoryAllocatorUtil::PtrOffsetBytes(pResult, alignedNodeSize);
     }
 
     template<size_t DefaultAlignment>
     void PoolAllocator<DefaultAlignment>::Deallocate(void* p)
     {
-        Node* pNode = static_cast<Node*>(MemoryAllocatorUtil::PtrOffsetBytes(p, -sizeof(Node)));
+        // Node header is before user data, at aligned offset
+        size_t alignedNodeSize = MemoryAllocatorUtil::UpAlignment(sizeof(Node), DefaultAlignment);
+        Node* pNode = static_cast<Node*>(MemoryAllocatorUtil::PtrOffsetBytes(p, -static_cast<ptrdiff_t>(alignedNodeSize)));
         pNode->pNext = _pFreeBlockList;
         _pFreeBlockList = pNode;
     }

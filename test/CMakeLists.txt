@@ -31,5 +31,6 @@ create_ailurus_core_test (ailurus_test_memory_linear_allocator      Memory/TestL
 create_ailurus_core_test (ailurus_test_memory_free_list_allocator   Memory/TestFreeListAllocator.cpp)
 create_ailurus_core_test (ailurus_test_memory_pool_allocator        Memory/TestPoolAllocator.cpp)
 create_ailurus_core_test (ailurus_test_memory_stack_allocator       Memory/TestStackAllocator.cpp)
+create_ailurus_core_test (ailurus_test_memory_tlsf_allocator        Memory/TestTLSFAllocator.cpp)
 
 create_ailurus_app_test (ailurus_test_uniform_std140           Graphics/TestUniformStd140.cpp)

@@ -6,6 +6,43 @@
 
 namespace Ailurus
 {
+    /**
+     * @brief Free List Allocator
+     * 
+     * @section strategy Allocation Strategy
+     * - Maintains a linked list of free memory blocks
+     * - Uses First Fit strategy to find suitable free blocks
+     * - Supports arbitrary size and alignment requirements
+     * - Returns blocks to the free list on deallocation and attempts to merge adjacent blocks
+     * 
+     * @section advantages
+     * - High flexibility: Supports arbitrary-sized allocations and deallocations
+     * - Memory reuse: Individual blocks can be freed independently for reuse
+     * - Reduces system calls: Pre-allocates large chunks to minimize malloc/free overhead
+     * - Alignment support: Can specify memory alignment requirements
+     * 
+     * @section disadvantages
+     * - Memory fragmentation: Long-term use leads to external fragmentation, reducing utilization
+     * - Performance overhead: Allocation/deallocation requires list traversal with O(n) complexity
+     * - Metadata overhead: Each block requires header information for size and linking
+     * - Cache unfriendly: Scattered memory blocks may result in poor cache locality
+     * - Non-deterministic: Allocation time depends on list length, unsuitable for real-time systems
+     * 
+     * @section use_cases
+     * - Scenarios with varying object lifetimes (need to free objects independently)
+     * - Allocations with widely varying sizes
+     * - Long-running applications requiring memory reuse
+     * - Foundation for general-purpose memory managers
+     * - Game resource managers (textures, audio, etc.)
+     * 
+     * @section not_recommended
+     * - Real-time systems requiring deterministic allocation times
+     * - High-frequency small object allocations (consider PoolAllocator instead)
+     * - Performance-critical hot paths
+     * - LIFO memory usage patterns (use StackAllocator instead)
+     * 
+     * @note Current implementation is single-threaded; external synchronization required for multi-threading
+     */
     template <size_t DefaultAlignment = 4>
     class FreeListAllocator
     {
