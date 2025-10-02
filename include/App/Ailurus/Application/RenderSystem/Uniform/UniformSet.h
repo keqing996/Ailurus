@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <unordered_map>
+#include <vector>
 #include "Ailurus/Utility/EnumReflection.h"
 #include "UniformBindingPoint.h"
 #include "Ailurus/Utility/NonCopyable.h"
@@ -12,6 +12,7 @@ namespace Ailurus
 {
 	class VulkanUniformBuffer;
 	class VulkanDescriptorSetLayout;
+	struct TextureBindingInfo;
 
 	REFLECTION_ENUM(UniformSetUsage,
 		General,
@@ -29,7 +30,8 @@ namespace Ailurus
 		// When reading from json
 		void AddBindingPoint(std::unique_ptr<UniformBindingPoint>&& pBindingPoint);
 		void InitUniformBufferInfo();
-		void InitDescriptorSetLayout();
+		void InitDescriptorSetLayout(); // For uniform sets without textures
+		void InitDescriptorSetLayout(const std::vector<TextureBindingInfo>& textureBindings); // For uniform sets with textures
 
 		// Getter
 		auto GetAllBindingPoints() const -> const BindingPointMap&;

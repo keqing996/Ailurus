@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
+#include <Ailurus/Application/AssetsSystem/Texture/Texture.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
@@ -43,5 +44,18 @@ namespace Ailurus
 		}
 
 		_renderPassInfoMap[pass].pUniformSet = std::move(pUniformSet);
+	}
+
+	void Material::SetPassTexture(RenderPassType pass, const std::string& uniformVarName, const AssetRef<Texture>& texture)
+	{
+		_renderPassInfoMap[pass].textures.emplace(uniformVarName, texture);
+	}
+
+	auto Material::GetTextures(RenderPassType pass) const -> const std::unordered_map<std::string, AssetRef<Texture>>*
+	{
+		const auto itr = _renderPassInfoMap.find(pass);
+		if (itr != _renderPassInfoMap.end())
+			return &itr->second.textures;
+		return nullptr;
 	}
 } // namespace Ailurus

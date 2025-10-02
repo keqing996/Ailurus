@@ -10,6 +10,9 @@
 namespace Ailurus
 {
 	class VulkanDescriptorAllocator;
+	class VulkanImage;
+	class VulkanSampler;
+	class Image;
 
 	class VulkanResourceManager : public NonCopyable, public NonMovable
 	{
@@ -20,6 +23,8 @@ namespace Ailurus
 	public:
 		VulkanDeviceBuffer* CreateDeviceBuffer(vk::DeviceSize size, DeviceBufferUsage usage);
 		VulkanHostBuffer* CreateHostBuffer(vk::DeviceSize size, HostBufferUsage usage, bool coherentWithGpu = true);
+		VulkanImage* CreateImage(const Image& image);
+		VulkanSampler* CreateSampler();
 		void GarbageCollect();
 
 	private:

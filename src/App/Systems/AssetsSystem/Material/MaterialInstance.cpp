@@ -70,4 +70,13 @@ namespace Ailurus
 
 		return nullptr;
 	}
+
+	auto MaterialInstance::GetTextures(RenderPassType pass) const -> const std::unordered_map<std::string, AssetRef<Texture>>*
+	{
+		const auto* pMaterial = _targetMaterial.Get();
+		if (pMaterial == nullptr)
+			return nullptr;
+
+		return pMaterial->GetTextures(pass);
+	}
 } // namespace Ailurus

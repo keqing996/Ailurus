@@ -3,12 +3,20 @@
 #include <optional>
 #include <nlohmann/json.hpp>
 #include <Ailurus/Utility/Logger.h>
+#include <Ailurus/Utility/Image.h>
 #include <Ailurus/System/Path.h>
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
+#include <Ailurus/Application/AssetsSystem/Texture/Texture.h>
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/AssetsSystem/Material/MaterialInstance.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
+#include <Ailurus/Application/RenderSystem/RenderSystem.h>
+#include <VulkanContext/VulkanContext.h>
+#include <VulkanContext/Resource/VulkanResourceManager.h>
+#include <VulkanContext/Resource/VulkanImage.h>
+#include <VulkanContext/Resource/VulkanSampler.h>
+#include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
 
 namespace Ailurus
 {
@@ -360,18 +368,87 @@ namespace Ailurus
 			// Add binding point to a uniform set
 			pUniformSet->AddBindingPoint(std::move(pBindingPoint));
 
-			// Update access values
-			for (const auto& [accessName, value] : defaultAccessValues)
-			{
-				auto unifromAccess = UniformAccess{ *bindingIdOpt, accessName };
-				outAccessValues[renderPass][unifromAccess] = value;
-			}
+		// Update access values
+		for (const auto& [accessName, value] : defaultAccessValues)
+		{
+			auto unifromAccess = UniformAccess{ *bindingIdOpt, accessName };
+			outAccessValues[renderPass][unifromAccess] = value;
+		}
+	}
+
+	pUniformSet->InitUniformBufferInfo();
+	// Note: InitDescriptorSetLayout() is called later after textures are loaded
+
+	return std::move(pUniformSet);
+}	static std::unordered_map<std::string, AssetRef<Texture>> JsonReadTextures(
+		AssetsSystem* pAssetsSystem,
+		const std::string& path,
+		const nlohmann::basic_json<>& renderPassConfig)
+	{
+		std::unordered_map<std::string, AssetRef<Texture>> result;
+
+		if (!renderPassConfig.contains("textures"))
+			return result;
+
+		const auto& texturesConfig = renderPassConfig["textures"];
+		if (!texturesConfig.is_array())
+		{
+			Logger::LogError("Material render pass textures config error, {}, {}", path, texturesConfig.dump());
+			return result;
 		}
 
-		pUniformSet->InitUniformBufferInfo();
-		pUniformSet->InitDescriptorSetLayout();
+		auto* pResourceManager = VulkanContext::GetResourceManager();
 
-		return std::move(pUniformSet);
+		for (const auto& textureConfig : texturesConfig)
+		{
+			if (!textureConfig.contains("binding") || !textureConfig.contains("uniformVarName") || !textureConfig.contains("path"))
+			{
+				Logger::LogError("Material texture config missing binding, uniformVarName or path, {}, {}", path, textureConfig.dump());
+				continue;
+			}
+
+			const uint32_t binding = textureConfig["binding"].get<uint32_t>();
+			const std::string& uniformVarName = textureConfig["uniformVarName"].get<std::string>();
+			const std::string& texturePath = textureConfig["path"].get<std::string>();
+			const std::string& textureFullPath = Path::ResolvePath(texturePath);
+
+			// Load image
+			Image image(textureFullPath);
+			if (image.GetPixelSize().first == 0 || image.GetPixelSize().second == 0)
+			{
+				Logger::LogError("Failed to load texture image: {}", textureFullPath);
+				continue;
+			}
+
+			// Create Vulkan image
+			VulkanImage* pVulkanImage = pResourceManager->CreateImage(image);
+			if (pVulkanImage == nullptr)
+			{
+				Logger::LogError("Failed to create vulkan image for texture: {}", textureFullPath);
+				continue;
+			}
+
+			// Create Vulkan sampler
+			VulkanSampler* pVulkanSampler = pResourceManager->CreateSampler();
+			if (pVulkanSampler == nullptr)
+			{
+				Logger::LogError("Failed to create vulkan sampler for texture: {}", textureFullPath);
+				continue;
+			}
+
+			// Create texture asset
+			uint64_t textureAssetId = pAssetsSystem->AllocateAssetId();
+			auto* pTextureRaw = new Texture(textureAssetId);
+			pTextureRaw->SetImage(std::unique_ptr<VulkanImage>(pVulkanImage));
+			pTextureRaw->SetSampler(std::unique_ptr<VulkanSampler>(pVulkanSampler));
+			pTextureRaw->SetBindingId(binding);
+
+			pAssetsSystem->RegisterAsset(textureAssetId, std::unique_ptr<Texture>(pTextureRaw));
+
+			result.emplace(uniformVarName, AssetRef<Texture>(pTextureRaw));
+		}
+
+		return result;
 	}
 
 	AssetRef<MaterialInstance> AssetsSystem::LoadMaterial(const std::string& inPath)
@@ -406,25 +483,48 @@ namespace Ailurus
 		// Load
 		std::unordered_map<RenderPassType, UniformValueMap> accessValues;
 		for (const auto& renderPassConfig : json)
+	{
+		// Read render pass
+		auto passOpt = JsonReadRenderPass(path, renderPassConfig);
+		if (!passOpt.has_value())
+			continue;
+
+		// Read shader config
+		auto shaders = JsonReadShader(path, renderPassConfig);
+
+		// Read the uniform set
+		auto pUniformSet = JsonReadUniformSet(path, *passOpt, renderPassConfig, accessValues);
+		if (pUniformSet == nullptr)
+			continue;
+
+		// Read and load textures
+		auto textures = JsonReadTextures(this, path, renderPassConfig);
+		
+		// Build texture binding information for descriptor set layout
+		std::vector<TextureBindingInfo> textureBindings;
+		for (const auto& [uniformVarName, textureRef] : textures)
 		{
-			// Read render pass
-			auto passOpt = JsonReadRenderPass(path, renderPassConfig);
-			if (!passOpt.has_value())
-				continue;
-
-			// Read shader config
-			auto shaders = JsonReadShader(path, renderPassConfig);
-
-			// Read the uniform set
-			auto pUniformSet = JsonReadUniformSet(path, *passOpt, renderPassConfig, accessValues);
-			if (pUniformSet == nullptr)
-				continue;
-
-			// Set shader and uniform
-			pMaterialRaw->SetPassShaderAndUniform(*passOpt, shaders, std::move(pUniformSet));
+			if (auto* pTexture = textureRef.Get())
+			{
+				TextureBindingInfo bindingInfo;
+				bindingInfo.bindingId = pTexture->GetBindingId();
+				bindingInfo.shaderStages = vk::ShaderStageFlagBits::eFragment; // Textures typically used in fragment shader
+				textureBindings.push_back(bindingInfo);
+			}
 		}
 
-		// Create material instance
+		// Initialize descriptor set layout with both uniform buffers and textures
+		pUniformSet->InitDescriptorSetLayout(textureBindings);
+
+		// Set shader and uniform
+		pMaterialRaw->SetPassShaderAndUniform(*passOpt, shaders, std::move(pUniformSet));
+
+		// Set textures
+		for (const auto& [uniformVarName, textureRef] : textures)
+		{
+			pMaterialRaw->SetPassTexture(*passOpt, uniformVarName, textureRef);
+		}
+	}		// Create material instance
 		auto pMaterialInstanceRaw = new MaterialInstance(NextAssetId(), materialRef);
 
 		// Update material instance uniform values

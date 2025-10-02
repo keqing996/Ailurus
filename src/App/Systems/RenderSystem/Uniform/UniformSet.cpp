@@ -41,16 +41,20 @@ namespace Ailurus
 			offset += pBindingPoint->GetTotalSize();
 		}
 
-		// Align total size to 16-byte boundary
-		_uniformBufferSize = UniformLayoutHelper::AlignOffset(offset, 16);
-	}
+	// Align total size to 16-byte boundary
+	_uniformBufferSize = UniformLayoutHelper::AlignOffset(offset, 16);
+}
 
-	void UniformSet::InitDescriptorSetLayout()
-	{
-		_pDescriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(this);
-	}
+void UniformSet::InitDescriptorSetLayout()
+{
+	std::vector<TextureBindingInfo> emptyTextureBindings;
+	_pDescriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(this, emptyTextureBindings);
+}
 
-	const UniformSet::BindingPointMap& UniformSet::GetAllBindingPoints() const
+void UniformSet::InitDescriptorSetLayout(const std::vector<TextureBindingInfo>& textureBindings)
+{
+	_pDescriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(this, textureBindings);
+}	const UniformSet::BindingPointMap& UniformSet::GetAllBindingPoints() const
 	{
 		return _bindingPoints;
 	}

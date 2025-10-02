@@ -22,6 +22,7 @@
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include <VulkanContext/Vertex/VulkanVertexLayoutManager.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
+#include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
 #include "Ailurus/Application/ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Detail/RenderIntermediateVariable.h"
@@ -35,7 +36,7 @@ namespace Ailurus
 		_pIntermediateVariable->viewProjectionMatrix = projMat * viewMat;
 		_pIntermediateVariable->renderingMeshes.clear();
 		_pIntermediateVariable->materialInstanceDescriptorsMap.clear();
-		_pIntermediateVariable->renderingDescriptorSets.fill(VulkanDescriptorSet{});
+		_pIntermediateVariable->renderingDescriptorSets.fill(vk::DescriptorSet{});
 	}
 
 	void RenderSystem::CollectRenderingContext()
@@ -164,14 +165,20 @@ namespace Ailurus
 			{ 0, GetGlobalUniformAccessNameCameraPos() },
 			_pMainCamera->GetEntity()->GetPosition());
 
-		// Allocate descriptor set
+		// Use cache to get or allocate descriptor set
+		// Key: layout only (global uniform always uses same layout)
 		auto globalUniformSetLayout = _pGlobalUniformSet->GetDescriptorSetLayout();
-		auto globalDescriptorSet = pDescriptorAllocator->AllocateDescriptorSet(globalUniformSetLayout);
+		
+		VulkanDescriptorAllocator::CacheKey key;
+		key.layout = globalUniformSetLayout->GetDescriptorSetLayout();
+		key.bindingHash = 1; // Fixed hash for global uniform (to distinguish from material)
+		
+		auto globalDescriptorSet = pDescriptorAllocator->AllocateDescriptorSet(globalUniformSetLayout, &key);
 
 		// Save set
 		_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::General)] = globalDescriptorSet;
 
-		// Write the descriptor set
+		// IMPORTANT: Always update descriptor set data (buffer content changes each frame)
 		_pGlobalUniformMemory->UpdateToDescriptorSet(pCommandBuffer, globalDescriptorSet);
 	}
 
@@ -189,12 +196,18 @@ namespace Ailurus
 				if (mapInstDescriptorSetMap.contains(pMaterialInstance))
 					continue;
 
-				// Allocate a set by layout.
+				// Use cache to get or allocate descriptor set
 				auto* pDescriptorLayout = pMaterial->GetUniformSet(pass)->GetDescriptorSetLayout();
-				auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(pDescriptorLayout);
+				
+				// Create cache key based on layout and material instance
+				VulkanDescriptorAllocator::CacheKey key;
+				key.layout = pDescriptorLayout->GetDescriptorSetLayout();
+				key.bindingHash = reinterpret_cast<size_t>(pMaterialInstance); // Use material instance pointer as hash
+				
+				auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(pDescriptorLayout, &key);
 
-				// Update material data to descriptor set
-				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(pCommandBuffer, descriptorSet);
+				// Update material data to descriptor set (pass material instance for texture binding)
+				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(pCommandBuffer, descriptorSet, pMaterialInstance);
 
 				// Record material instance descriptor set
 				mapInstDescriptorSetMap[pMaterialInstance] = descriptorSet;
@@ -291,9 +304,8 @@ namespace Ailurus
 				pCommandBuffer->BindPipeline(pCurrentVkPipeline);
 				pCommandBuffer->SetViewportAndScissor();
 
-				std::vector<vk::DescriptorSet> descriptorSets;
-				for (const auto& descriptorSet : _pIntermediateVariable->renderingDescriptorSets)
-					descriptorSets.push_back(descriptorSet.descriptorSet);
+				std::vector<vk::DescriptorSet> descriptorSets(_pIntermediateVariable->renderingDescriptorSets.begin(),
+				                                               _pIntermediateVariable->renderingDescriptorSets.end());
 
 				pCommandBuffer->BindDescriptorSet(pCurrentVkPipeline->GetPipelineLayout(), descriptorSets);
 			}

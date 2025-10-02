@@ -35,4 +35,9 @@ namespace Ailurus
 
 		return pAsset;
 	}
+
+	void AssetsSystem::RegisterAsset(uint64_t assetId, std::unique_ptr<Asset>&& pAsset)
+	{
+		_assetsMap[assetId] = std::move(pAsset);
+	}
 } // namespace Ailurus

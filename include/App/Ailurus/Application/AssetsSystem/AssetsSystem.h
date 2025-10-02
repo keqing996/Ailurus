@@ -27,6 +27,10 @@ namespace Ailurus
 		template <typename AssetType>
 		AssetRef<AssetType> GetAsset(uint64_t assetId) const;
 
+		// For texture loading in Material.cpp
+		uint64_t AllocateAssetId() { return NextAssetId(); }
+		void RegisterAsset(uint64_t assetId, std::unique_ptr<Asset>&& pAsset);
+
 	private:
 		friend class Application;
 		AssetsSystem();

@@ -37,9 +37,9 @@
 		],
 		"textures": [
 			{
-				"uniformVarName": "u_mainTexture",
-				"slot": 0,
-				"path": "Assets/Texture/wall.jpg"
+				"binding": 1,
+				"uniformVarName": "mainTexture",
+				"path": "./Assets/Texture/wall.jpg"
 			}
 		]
 	}

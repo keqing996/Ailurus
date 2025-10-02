@@ -1,6 +1,13 @@
-#include <Ailurus/Utility/Logger.h>
-#include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
-#include <VulkanContext/VulkanContext.h>
+#include "Ailurus/Application/Application.h"
+#include "Ailurus/Application/RenderSystem/RenderSystem.h"
+#include "Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h"
+#include "Ailurus/Application/AssetsSystem/Material/MaterialInstance.h"
+#include "Ailurus/Application/AssetsSystem/Texture/Texture.h"
+#include "VulkanContext/VulkanContext.h"
+#include "VulkanContext/Descriptor/VulkanDescriptorWriter.h"
+#include "VulkanContext/Resource/VulkanImage.h"
+#include "VulkanContext/Resource/VulkanSampler.h"
+#include "Ailurus/Utility/Logger.h"
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include <VulkanContext/Resource/VulkanBuffer.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorSet.h>
@@ -67,35 +74,49 @@ namespace Ailurus
 		_uniformValueMap[entry] = value;
 	}
 
-	void UniformSetMemory::UpdateToDescriptorSet(VulkanCommandBuffer* pCommandBuffer, const VulkanDescriptorSet& descriptorSet) const
+	void UniformSetMemory::UpdateToDescriptorSet(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorSet descriptorSet,
+		const MaterialInstance* pMaterialInstance) const
 	{
 		TransitionDataToGpu(pCommandBuffer);
 
-		std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+		VulkanDescriptorWriter writer;
 
 		auto& allBindingPoints = _pTargetUniformSet->GetAllBindingPoints();
 		for (auto& [bindingId, pBindingPoint] : allBindingPoints)
 		{
 			auto offset = _pTargetUniformSet->GetBindingPointOffsetInUniformBuffer(bindingId);
 			auto range = pBindingPoint->GetTotalSize();
+			auto buffer = _pUniformBuffer->GetThisFrameDeviceBuffer()->buffer;
 
-			vk::DescriptorBufferInfo descriptorBufferInfo;
-			descriptorBufferInfo.setBuffer(_pUniformBuffer->GetThisFrameDeviceBuffer()->buffer)
-				.setOffset(offset)
-				.setRange(range);
-
-			vk::WriteDescriptorSet writeDescriptorSet;
-			writeDescriptorSet.setDstSet(descriptorSet.descriptorSet)
-				.setDstBinding(bindingId)
-				.setDstArrayElement(0)
-				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-				.setDescriptorCount(1)
-				.setBufferInfo(descriptorBufferInfo);
-
-			writeDescriptorSets.push_back(writeDescriptorSet);
+			// Chain buffer writes using the builder pattern
+			writer.WriteBuffer(bindingId, buffer, offset, range);
 		}
 
-		VulkanContext::GetDevice().updateDescriptorSets(writeDescriptorSets, {});
+		// Add texture bindings if material instance is provided
+		if (pMaterialInstance != nullptr)
+		{
+			auto* pTexturesMap = pMaterialInstance->GetTextures(RenderPassType::Forward); // Assuming Forward pass
+			if (pTexturesMap != nullptr)
+			{
+				for (const auto& [uniformVarName, textureRef] : *pTexturesMap)
+				{
+					auto* pTexture = textureRef.Get();
+					if (pTexture == nullptr)
+						continue;
+
+					auto* pImage = pTexture->GetImage();
+					auto* pSampler = pTexture->GetSampler();
+					if (pImage == nullptr || pSampler == nullptr)
+						continue;
+
+					uint32_t bindingId = pTexture->GetBindingId();
+					writer.WriteImage(bindingId, pImage->GetImageView(), pSampler->GetSampler());
+				}
+			}
+		}
+
+		// Single batched update for all bindings
+		writer.UpdateSet(descriptorSet);
 	}
 
 	auto UniformSetMemory::TransitionDataToGpu(VulkanCommandBuffer* pCommandBuffer) const -> void

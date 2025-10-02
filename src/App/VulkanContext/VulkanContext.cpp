@@ -716,7 +716,9 @@ namespace Ailurus
 		// Reset frame resource
 		context.renderFinishFence->Reset();
 		context.pRenderingCommandBuffer->ClearResourceReferences();
-		context.pFrameDescriptorAllocator->ResetPool();
+		
+		// Reset pools
+		context.pFrameDescriptorAllocator->ResetPools();
 
 		// Recycle secondary command buffers
 		if (!context.onAirInfo->secondaryCommandBuffers.empty())
