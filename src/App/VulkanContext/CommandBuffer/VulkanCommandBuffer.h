@@ -65,12 +65,13 @@ namespace Ailurus
 		void ImageMemoryBarrier(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask);
 		
 		/// @brief Begin dynamic rendering (VK_KHR_dynamic_rendering)
-		/// @param colorImageView Color attachment image view
+		/// @param colorImageView Color attachment image view (MSAA or swapchain image)
 		/// @param depthImageView Depth attachment image view (can be null if useDepth is false)
+		/// @param resolveImageView Resolve target image view for MSAA (can be null if no MSAA)
 		/// @param extent Rendering area extent
 		/// @param clearColor If true, clear color attachment; if false, load existing content
 		/// @param useDepth If true, use depth attachment; if false, render without depth
-		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true);
+		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true);
 		
 		/// @brief End dynamic rendering
 		void EndRendering();

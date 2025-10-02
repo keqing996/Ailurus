@@ -159,113 +159,12 @@ namespace Ailurus
 				Logger::LogError("Failed to create image view: {}", e.what());
 			}
 		}
-
-		// Create depth resources
-		CreateDepthResources();
-	}
-
-	void VulkanSwapChain::CreateDepthResources()
-	{
-		const vk::Format depthFormat = vk::Format::eD32Sfloat;
-
-		// Create depth image
-		vk::ImageCreateInfo imageInfo;
-		imageInfo.setImageType(vk::ImageType::e2D)
-			.setExtent(vk::Extent3D(_swapChainConfig.extent.width, _swapChainConfig.extent.height, 1))
-			.setMipLevels(1)
-			.setArrayLayers(1)
-			.setFormat(depthFormat)
-			.setTiling(vk::ImageTiling::eOptimal)
-			.setInitialLayout(vk::ImageLayout::eUndefined)
-			.setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment)
-			.setSharingMode(vk::SharingMode::eExclusive)
-			.setSamples(vk::SampleCountFlagBits::e1);
-
-		try
-		{
-			_depthImage = VulkanContext::GetDevice().createImage(imageInfo);
-		}
-		catch (const vk::SystemError& e)
-		{
-			Logger::LogError("Failed to create depth image: {}", e.what());
-			return;
-		}
-
-		// Allocate depth image memory
-		vk::MemoryRequirements memRequirements = VulkanContext::GetDevice().getImageMemoryRequirements(_depthImage);
-		
-		vk::PhysicalDeviceMemoryProperties memProperties = VulkanContext::GetPhysicalDevice().getMemoryProperties();
-		uint32_t memoryTypeIndex = 0;
-		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-		{
-			if ((memRequirements.memoryTypeBits & (1 << i)) &&
-				(memProperties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal))
-			{
-				memoryTypeIndex = i;
-				break;
-			}
-		}
-
-		vk::MemoryAllocateInfo allocInfo;
-		allocInfo.setAllocationSize(memRequirements.size)
-			.setMemoryTypeIndex(memoryTypeIndex);
-
-		try
-		{
-			_depthImageMemory = VulkanContext::GetDevice().allocateMemory(allocInfo);
-			VulkanContext::GetDevice().bindImageMemory(_depthImage, _depthImageMemory, 0);
-		}
-		catch (const vk::SystemError& e)
-		{
-			Logger::LogError("Failed to allocate depth image memory: {}", e.what());
-			return;
-		}
-
-		// Create depth image view
-		vk::ImageViewCreateInfo viewInfo;
-		viewInfo.setImage(_depthImage)
-			.setViewType(vk::ImageViewType::e2D)
-			.setFormat(depthFormat)
-			.setSubresourceRange(vk::ImageSubresourceRange()
-				.setAspectMask(vk::ImageAspectFlagBits::eDepth)
-				.setBaseMipLevel(0)
-				.setLevelCount(1)
-				.setBaseArrayLayer(0)
-				.setLayerCount(1));
-
-		try
-		{
-			_depthImageView = VulkanContext::GetDevice().createImageView(viewInfo);
-		}
-		catch (const vk::SystemError& e)
-		{
-			Logger::LogError("Failed to create depth image view: {}", e.what());
-		}
 	}
 
 	VulkanSwapChain::~VulkanSwapChain()
 	{
 		try
 		{
-			// Destroy depth resources
-			if (_depthImageView != nullptr)
-			{
-				VulkanContext::GetDevice().destroyImageView(_depthImageView);
-				_depthImageView = nullptr;
-			}
-
-			if (_depthImage != nullptr)
-			{
-				VulkanContext::GetDevice().destroyImage(_depthImage);
-				_depthImage = nullptr;
-			}
-
-			if (_depthImageMemory != nullptr)
-			{
-				VulkanContext::GetDevice().freeMemory(_depthImageMemory);
-				_depthImageMemory = nullptr;
-			}
-
 			// Destroy swap chain image views
 			for (const auto& view : _vkSwapChainImageViews)
 				VulkanContext::GetDevice().destroyImageView(view);
@@ -302,11 +201,6 @@ namespace Ailurus
 	const std::vector<vk::ImageView>& VulkanSwapChain::GetSwapChainImageViews() const
 	{
 		return _vkSwapChainImageViews;
-	}
-
-	vk::ImageView VulkanSwapChain::GetDepthImageView() const
-	{
-		return _depthImageView;
 	}
 
 	std::optional<uint32_t> VulkanSwapChain::AcquireNextImage(VulkanSemaphore* imageReadySem, bool* needRebuildSwapChain)

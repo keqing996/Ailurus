@@ -65,6 +65,21 @@ namespace Ailurus
 		return VulkanContext::IsVSyncEnabled();
 	}
 
+	void RenderSystem::SetMSAAEnabled(bool enabled)
+	{
+		const bool isCurrentlyEnabled = IsMSAAEnabled();
+		if (isCurrentlyEnabled == enabled)
+			return;
+
+		VulkanContext::SetMSAASamples(enabled ? vk::SampleCountFlagBits::e4 : vk::SampleCountFlagBits::e1);
+		RequestRebuildSwapChain();
+	}
+
+	bool RenderSystem::IsMSAAEnabled() const
+	{
+		return VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1;
+	}
+
 	void RenderSystem::AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback)
 	{
 		if (_preSwapChainRebuildCallbacks.contains(key))

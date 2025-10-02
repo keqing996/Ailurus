@@ -19,6 +19,7 @@ namespace Ailurus
 	class VulkanFlightManager;
 	class VulkanSemaphore;
 	class VulkanFence;
+	class RenderTargetManager;
 	
 	class VulkanContext : public NonCopyable, public NonMovable
 	{
@@ -49,6 +50,7 @@ namespace Ailurus
 		static auto GetComputeQueue() -> vk::Queue;
 		static auto GetCommandPool() -> vk::CommandPool;
 		static auto GetSwapChain() -> VulkanSwapChain*;
+		static auto GetRenderTargetManager() -> RenderTargetManager*;
 		static auto GetPipelineManager() -> VulkanPipelineManager*;
 		static auto GetResourceManager() -> VulkanResourceManager*;
 		static auto GetVertexLayoutManager() -> VulkanVertexLayoutManager*;
@@ -60,6 +62,10 @@ namespace Ailurus
 		// VSync
 		static void SetVSyncEnabled(bool enabled);
 		static bool IsVSyncEnabled();
+
+		// MSAA
+		static void SetMSAASamples(vk::SampleCountFlagBits samples);
+		static vk::SampleCountFlagBits GetMSAASamples();
 
 		// Render
 		static void RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction);
@@ -121,8 +127,10 @@ namespace Ailurus
 		// Swap chain
 		static std::unique_ptr<VulkanSwapChain> _pSwapChain;
 		static bool _vsyncEnabled;
+		static vk::SampleCountFlagBits _msaaSamples;
 
 		// Managers
+		static std::unique_ptr<RenderTargetManager> _pRenderTargetManager;
 		static std::unique_ptr<VulkanResourceManager> _resourceManager;
 		static std::unique_ptr<VulkanVertexLayoutManager> _vertexLayoutManager;
 		static std::unique_ptr<VulkanPipelineManager> _pipelineManager;

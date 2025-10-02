@@ -14,6 +14,7 @@
 #include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
+#include <VulkanContext/RenderTarget/RenderTargetManager.h>
 #include <VulkanContext/CommandBuffer/VulkanCommandBuffer.h>
 #include <VulkanContext/Pipeline/VulkanPipelineManager.h>
 #include <VulkanContext/DataBuffer/VulkanVertexBuffer.h>
@@ -221,11 +222,32 @@ namespace Ailurus
 			return;
 		}
 
-		vk::ImageView colorImageView = imageViews[swapChainImageIndex];
-		vk::ImageView depthImageView = pSwapChain->GetDepthImageView();
 		vk::Extent2D extent = pSwapChain->GetConfig().extent;
 
-		pCommandBuffer->BeginRendering(colorImageView, depthImageView, extent, true, true);
+		// Check if MSAA is enabled
+		bool useMSAA = VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1;
+		auto* pRenderTargetManager = VulkanContext::GetRenderTargetManager();
+
+		if (useMSAA)
+		{
+			// With MSAA: render to MSAA attachments and resolve to swapchain image
+			vk::ImageView msaaColorView = pRenderTargetManager->GetMSAAColorImageView();
+			vk::ImageView msaaDepthView = pRenderTargetManager->GetMSAADepthImageView();
+			vk::ImageView resolveView = imageViews[swapChainImageIndex];
+			
+			// For Forward pass, clear and use depth
+			bool clearColor = (pass == RenderPassType::Forward);
+			pCommandBuffer->BeginRendering(msaaColorView, msaaDepthView, resolveView, extent, clearColor, true);
+		}
+		else
+		{
+			// Without MSAA: render directly to swapchain image
+			vk::ImageView colorImageView = imageViews[swapChainImageIndex];
+			vk::ImageView depthImageView = pRenderTargetManager->GetDepthImageView();
+			
+			bool clearColor = (pass == RenderPassType::Forward);
+			pCommandBuffer->BeginRendering(colorImageView, depthImageView, nullptr, extent, clearColor, true);
+		}
 
 		// Intermediate variables
 		const Material* pCurrentMaterial = nullptr;
@@ -321,8 +343,9 @@ namespace Ailurus
 		vk::ImageView colorImageView = imageViews[swapChainImageIndex];
 		vk::Extent2D extent = pSwapChain->GetConfig().extent;
 
-		// ImGui doesn't need depth, and should load existing content (clearColor=false)
-		pCommandBuffer->BeginRendering(colorImageView, nullptr, extent, false, false);
+		// ImGui doesn't need depth or MSAA, and should load existing content (clearColor=false)
+		// Always render directly to swapchain image (no resolve needed)
+		pCommandBuffer->BeginRendering(colorImageView, nullptr, nullptr, extent, false, false);
 		pImGui->Render(pCommandBuffer);
 		pCommandBuffer->EndRendering();
 	}

@@ -7,6 +7,7 @@
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "SwapChain/VulkanSwapChain.h"
+#include "RenderTarget/RenderTargetManager.h"
 #include "Helper/VulkanHelper.h"
 #include "Resource/VulkanResourceManager.h"
 #include "Vertex/VulkanVertexLayoutManager.h"
@@ -37,7 +38,9 @@ namespace Ailurus
 
 	std::unique_ptr<VulkanSwapChain> 			VulkanContext::_pSwapChain = nullptr;
 	bool 										VulkanContext::_vsyncEnabled = true;
+	vk::SampleCountFlagBits 					VulkanContext::_msaaSamples = vk::SampleCountFlagBits::e4;
 
+	std::unique_ptr<RenderTargetManager>		VulkanContext::_pRenderTargetManager = nullptr;
 	std::unique_ptr<VulkanResourceManager> 		VulkanContext::_resourceManager = nullptr;
 	std::unique_ptr<VulkanVertexLayoutManager> 	VulkanContext::_vertexLayoutManager = nullptr;
 	std::unique_ptr<VulkanPipelineManager> 		VulkanContext::_pipelineManager = nullptr;
@@ -109,6 +112,7 @@ namespace Ailurus
 		// Create managers
 		_resourceManager = std::make_unique<VulkanResourceManager>();
 		_vertexLayoutManager = std::make_unique<VulkanVertexLayoutManager>();
+		_pRenderTargetManager = std::make_unique<RenderTargetManager>();
 		_pipelineManager = std::make_unique<VulkanPipelineManager>();
 
 		// Create frame context
@@ -148,6 +152,7 @@ namespace Ailurus
 
 		// Destroy managers
 		_pipelineManager.reset();
+		_pRenderTargetManager.reset();
 		_vertexLayoutManager.reset();
 		_resourceManager.reset();
 
@@ -272,6 +277,9 @@ namespace Ailurus
 
 		// Create a new swap chain with current VSync setting
 		_pSwapChain = std::make_unique<VulkanSwapChain>(_vsyncEnabled);
+		
+		// Rebuild render targets with new swapchain dimensions
+		_pRenderTargetManager->Rebuild();
 	}
 
 	void VulkanContext::SetVSyncEnabled(bool enabled)
@@ -284,6 +292,18 @@ namespace Ailurus
 	bool VulkanContext::IsVSyncEnabled()
 	{
 		return _vsyncEnabled;
+	}
+
+	void VulkanContext::SetMSAASamples(vk::SampleCountFlagBits samples)
+	{
+		// Must be called by RenderSystem, which will rebuild the swap chain
+		// to apply the new MSAA setting
+		_msaaSamples = samples;
+	}
+
+	vk::SampleCountFlagBits VulkanContext::GetMSAASamples()
+	{
+		return _msaaSamples;
 	}
 
 	void VulkanContext::RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction)
@@ -418,6 +438,11 @@ namespace Ailurus
 	VulkanSwapChain* VulkanContext::GetSwapChain()
 	{
 		return _pSwapChain.get();
+	}
+
+	RenderTargetManager* VulkanContext::GetRenderTargetManager()
+	{
+		return _pRenderTargetManager.get();
 	}
 
 	bool VulkanContext::CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation)

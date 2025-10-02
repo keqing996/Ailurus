@@ -173,7 +173,7 @@ namespace Ailurus
 		_buffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, nullptr, barrier);
 	}
 
-	void VulkanCommandBuffer::BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::Extent2D extent, bool clearColor, bool useDepth)
+	void VulkanCommandBuffer::BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor, bool useDepth)
 	{
 		// Color attachment
 		vk::RenderingAttachmentInfo colorAttachment;
@@ -182,6 +182,14 @@ namespace Ailurus
 			.setLoadOp(clearColor ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
 			.setClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
+
+		// If resolve image is provided, set up MSAA resolve
+		if (resolveImageView)
+		{
+			colorAttachment.setResolveMode(vk::ResolveModeFlagBits::eAverage)
+				.setResolveImageView(resolveImageView)
+				.setResolveImageLayout(vk::ImageLayout::eColorAttachmentOptimal);
+		}
 
 		// Rendering info
 		vk::RenderingInfo renderingInfo;

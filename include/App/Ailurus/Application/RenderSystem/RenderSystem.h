@@ -46,6 +46,10 @@ namespace Ailurus
 		void SetVSyncEnabled(bool enabled);
 		bool IsVSyncEnabled() const;
 
+		// MSAA
+		void SetMSAAEnabled(bool enabled);
+		bool IsMSAAEnabled() const;
+
 		// Callbacks
 		void AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback);
 		void AddCallbackPostSwapChainRebuild(void* key, const PostSwapChainRebuild& callback);
