@@ -5,11 +5,11 @@
 #include "Ailurus/Application/AssetsSystem/Texture/Texture.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/Descriptor/VulkanDescriptorWriter.h"
-#include "VulkanContext/Resource/VulkanImage.h"
-#include "VulkanContext/Resource/VulkanSampler.h"
+#include "VulkanContext/Resource/Image/VulkanImage.h"
+#include "VulkanContext/Resource/Image/VulkanSampler.h"
 #include "Ailurus/Utility/Logger.h"
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
-#include <VulkanContext/Resource/VulkanBuffer.h>
+#include <VulkanContext/Resource/DataBuffer/VulkanDeviceBuffer.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorSet.h>
 
 namespace Ailurus

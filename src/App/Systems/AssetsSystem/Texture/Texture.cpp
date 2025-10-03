@@ -1,6 +1,6 @@
 #include "Ailurus/Application/AssetsSystem/Texture/Texture.h"
-#include "VulkanContext/Resource/VulkanImage.h"
-#include "VulkanContext/Resource/VulkanSampler.h"
+#include "VulkanContext/Resource/Image/VulkanImage.h"
+#include "VulkanContext/Resource/Image/VulkanSampler.h"
 
 namespace Ailurus
 {

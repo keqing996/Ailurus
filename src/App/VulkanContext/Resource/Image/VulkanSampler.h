@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VulkanContext/VulkanPch.h"
-#include "VulkanResource.h"
+#include "VulkanContext/Resource/VulkanResource.h"
 
 namespace Ailurus
 {
@@ -11,12 +11,15 @@ namespace Ailurus
 
 	public:
 		explicit VulkanSampler(vk::Sampler sampler);
-		~VulkanSampler() override;
 
 	public:
 		auto GetSampler() const -> vk::Sampler { return _sampler; }
 
 	private:
 		vk::Sampler _sampler;
+
+	private:
+		friend class VulkanResourceManager;
+		static VulkanResourcePtr Create();
 	};
 } // namespace Ailurus

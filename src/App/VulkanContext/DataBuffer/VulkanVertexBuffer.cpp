@@ -2,6 +2,8 @@
 #include "Ailurus/Application/Application.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
+#include "VulkanContext/Resource/DataBuffer/VulkanDeviceBuffer.h"
+#include "VulkanContext/Resource/DataBuffer/VulkanHostBuffer.h"
 #include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 
 namespace Ailurus

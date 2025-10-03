@@ -5,7 +5,9 @@
 #include <functional>
 #include <Ailurus/Utility/NonCopyable.h>
 #include <Ailurus/Utility/NonMovable.h>
-#include "VulkanBuffer.h"
+#include "VulkanResource.h"
+#include "DataBuffer/HostBufferUsage.h"
+#include "DataBuffer/DeviceBufferUsage.h"
 
 namespace Ailurus
 {
@@ -13,10 +15,11 @@ namespace Ailurus
 	class VulkanImage;
 	class VulkanSampler;
 	class Image;
+	class VulkanDeviceBuffer;
+	class VulkanHostBuffer;
 
 	class VulkanResourceManager : public NonCopyable, public NonMovable
 	{
-		using ResourcePtr = std::unique_ptr<VulkanResource, std::function<void(VulkanResource*)>>;
 	public:
 		~VulkanResourceManager();
 
@@ -29,6 +32,6 @@ namespace Ailurus
 
 	private:
 		// Command buffer resources
-		std::vector<ResourcePtr> _resources;
+		std::vector<VulkanResourcePtr> _resources;
 	};
 } // namespace Ailurus

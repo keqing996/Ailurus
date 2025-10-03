@@ -4,7 +4,8 @@
 #include "VulkanContext/Pipeline/VulkanPipeline.h"
 #include "VulkanContext/DataBuffer/VulkanVertexBuffer.h"
 #include "VulkanContext/DataBuffer/VulkanIndexBuffer.h"
-#include "VulkanContext/Resource/VulkanResourceManager.h"
+#include "VulkanContext/Resource/DataBuffer/VulkanDataBuffer.h"
+#include "VulkanContext/Resource/DataBuffer/VulkanDeviceBuffer.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
 #include "VulkanContext/Descriptor/VulkanDescriptorAllocator.h"
 

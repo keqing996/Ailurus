@@ -14,8 +14,8 @@
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/Resource/VulkanResourceManager.h>
-#include <VulkanContext/Resource/VulkanImage.h>
-#include <VulkanContext/Resource/VulkanSampler.h>
+#include <VulkanContext/Resource/Image/VulkanImage.h>
+#include <VulkanContext/Resource/Image/VulkanSampler.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
 
 namespace Ailurus

@@ -11,8 +11,8 @@ namespace Ailurus
 {
 	class VulkanResource: public NonCopyable, public NonMovable
 	{
-		friend class VulkanResourceManager;
 	public:
+		VulkanResource();
 		virtual ~VulkanResource();
 
 	public:
@@ -22,11 +22,10 @@ namespace Ailurus
 		void MarkDelete();
 		bool IsMarkDeleted() const;
 
-	protected:
-		VulkanResource();
-
 	private:
 		bool _markDeleted = false;
 		VkObjectSet<vk::CommandBuffer> _referencedCommandBuffer;
 	};
+
+	using VulkanResourcePtr = std::unique_ptr<VulkanResource, std::function<void(VulkanResource*)>>;
 } // namespace Ailurus
