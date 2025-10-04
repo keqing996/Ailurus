@@ -3,6 +3,7 @@
 #include "VulkanContext/VulkanPch.h"
 #include <cstdint>
 #include <unordered_set>
+#include <functional>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "VulkanContext/Helper/HashHelper.hpp"
