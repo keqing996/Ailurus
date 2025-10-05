@@ -19,13 +19,13 @@ namespace Ailurus
 		auto GetImage() const -> VulkanImage*;
 		auto GetSampler() const -> VulkanSampler*;
 		auto GetBindingId() const -> uint32_t;
-		void SetImage(std::unique_ptr<VulkanImage>&& pImage);
-		void SetSampler(std::unique_ptr<VulkanSampler>&& pSampler);
+		void SetImage(VulkanImage* pImage);
+		void SetSampler(VulkanSampler* pSampler);
 		void SetBindingId(uint32_t bindingId);
 
 	private:
-		std::unique_ptr<VulkanImage> _pImage;
-		std::unique_ptr<VulkanSampler> _pSampler;
+		VulkanImage* _pImage;
+		VulkanSampler* _pSampler;
 		uint32_t _bindingId = 0;
 	};
 } // namespace Ailurus

@@ -11,16 +11,20 @@ namespace Ailurus
 
 	Texture::~Texture()
 	{
+		if (_pImage)
+			_pImage->MarkDelete();
+		if (_pSampler)
+			_pSampler->MarkDelete();
 	}
 
 	auto Texture::GetImage() const -> VulkanImage*
 	{
-		return _pImage.get();
+		return _pImage;
 	}
 
 	auto Texture::GetSampler() const -> VulkanSampler*
 	{
-		return _pSampler.get();
+		return _pSampler;
 	}
 
 	auto Texture::GetBindingId() const -> uint32_t
@@ -28,14 +32,14 @@ namespace Ailurus
 		return _bindingId;
 	}
 
-	void Texture::SetImage(std::unique_ptr<VulkanImage>&& pImage)
+	void Texture::SetImage(VulkanImage* pImage)
 	{
-		_pImage = std::move(pImage);
+		_pImage = pImage;
 	}
 
-	void Texture::SetSampler(std::unique_ptr<VulkanSampler>&& pSampler)
+	void Texture::SetSampler(VulkanSampler* pSampler)
 	{
-		_pSampler = std::move(pSampler);
+		_pSampler = pSampler;
 	}
 
 	void Texture::SetBindingId(uint32_t bindingId)

@@ -439,8 +439,8 @@ namespace Ailurus
 			// Create texture asset
 			uint64_t textureAssetId = pAssetsSystem->AllocateAssetId();
 			auto* pTextureRaw = new Texture(textureAssetId);
-			pTextureRaw->SetImage(std::unique_ptr<VulkanImage>(pVulkanImage));
-			pTextureRaw->SetSampler(std::unique_ptr<VulkanSampler>(pVulkanSampler));
+			pTextureRaw->SetImage(pVulkanImage);
+			pTextureRaw->SetSampler(pVulkanSampler);
 			pTextureRaw->SetBindingId(binding);
 
 			pAssetsSystem->RegisterAsset(textureAssetId, std::unique_ptr<Texture>(pTextureRaw));
