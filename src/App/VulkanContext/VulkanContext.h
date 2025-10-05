@@ -58,14 +58,6 @@ namespace Ailurus
 
 		// Swap chain
 		static void RebuildSwapChain();
-		
-		// VSync
-		static void SetVSyncEnabled(bool enabled);
-		static bool IsVSyncEnabled();
-
-		// MSAA
-		static void SetMSAASamples(vk::SampleCountFlagBits samples);
-		static vk::SampleCountFlagBits GetMSAASamples();
 
 		// Render
 		static void RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction);
@@ -126,8 +118,6 @@ namespace Ailurus
 
 		// Swap chain
 		static std::unique_ptr<VulkanSwapChain> _pSwapChain;
-		static bool _vsyncEnabled;
-		static vk::SampleCountFlagBits _msaaSamples;
 
 		// Managers
 		static std::unique_ptr<RenderTargetManager> _pRenderTargetManager;

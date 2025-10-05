@@ -16,6 +16,7 @@ namespace Ailurus
             VulkanPipelineEntryHash, VulkanPipelineEntryEqual>;
     public:
 		auto GetPipeline(const VulkanPipelineEntry& entry) -> VulkanPipeline*;
+        auto ClearPipelines() -> void;
 
     private:
         PipelineMap _pipelinesMap;

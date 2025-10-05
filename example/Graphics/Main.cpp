@@ -7,6 +7,7 @@
 #include <Ailurus/Application/TimeSystem/TimeSystem.h>
 #include "Ailurus/Math/Math.hpp"
 #include "Ailurus/Utility/Logger.h"
+#include "imgui.h"
 
 using namespace Ailurus;
 
@@ -28,9 +29,7 @@ int Main(int argc, char* argv[])
 	// Create the application instance
 	Application::Create(800, 800, "Test", Application::Style{ 
 		.canResize = true,
-		.haveBorder = true,
-		.enableRenderImGui = true,
-		.enableRender3D = true
+		.haveBorder = true
 	});
 
 	// Load assets and set up the scene
@@ -72,26 +71,44 @@ int Main(int argc, char* argv[])
 			pEntity->SetRotation(Math::RotateAxis(Vector3f{ 0.0f, 1.0f, 0.0f }, rotationAngle));
 		}
 
-		static float f = 0.0f;
-		static int counter = 0;
-		static bool show_demo_window = true;
-		static bool show_another_window = false;
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 		ImGuiIO& io = ImGui::GetIO();
-		ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-		ImGui::Checkbox("Another Window", &show_another_window);
+		ImGui::Begin("Settings");
+		
+		ImGui::ColorEdit3("clear color", (float*)&clear_color);
 
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+		bool enable3D = Application::GraphicsSetting::IsEnable3D();
+		if (ImGui::Checkbox("Enable 3D", &enable3D))
+		{
+			Application::GraphicsSetting::SetEnable3D(enable3D);
+		}
 
-		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-			counter++;
-		ImGui::SameLine();
-		ImGui::Text("counter = %d", counter);
+		int frameRate = static_cast<int>(Application::GraphicsSetting::GetTargetFrameRate());
+		if (ImGui::SliderInt("FrameRate", &frameRate, 20, 240))
+		{
+			Application::GraphicsSetting::SetTargetFrameRate(static_cast<uint32_t>(frameRate));
+		}
+
+		bool msaa = Application::GraphicsSetting::IsMSAAEnabled();
+		if (ImGui::Checkbox("MSAA", &msaa))
+		{
+			Application::GraphicsSetting::SetMSAAEnabled(msaa);
+		}
+
+		bool vSync = Application::GraphicsSetting::IsVSyncEnabled();
+		if (ImGui::Checkbox("VSync", &vSync))
+		{
+			Application::GraphicsSetting::SetVSyncEnabled(vSync);
+		}
+
+		if (ImGui::Button("Rebuild Swap Chain"))
+		{
+			auto pRenderSystem = Application::Get<RenderSystem>();
+			if (pRenderSystem)
+				pRenderSystem->RequestRebuildSwapChain();
+		}
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 		ImGui::End();

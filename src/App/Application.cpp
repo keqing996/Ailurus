@@ -56,9 +56,6 @@ namespace Ailurus
 	std::unique_ptr<SceneSystem> 	Application::_pSceneManager = nullptr;
 	std::unique_ptr<ImGuiSystem> 	Application::_pImGuiSystem = nullptr;
 
-	uint32_t						Application::_targetFrameRate = 60;
-	double							Application::_targetFrameTime = 1.0 / 60.0;
-
 	bool Application::Create(int width, int height, const std::string& title, Style style)
 	{
 #if AILURUS_PLATFORM_WINDOWS
@@ -101,12 +98,10 @@ namespace Ailurus
 
 		_pTimeSystem.reset(new TimeSystem());
 		_pInputManager.reset(new InputSystem());
-		_pRenderSystem.reset(new RenderSystem(style.enableRenderImGui, style.enableRender3D));
+		_pRenderSystem.reset(new RenderSystem());
 		_pAssetsSystem.reset(new AssetsSystem());
 		_pSceneManager.reset(new SceneSystem());
-
-		if (style.enableRenderImGui)
-			_pImGuiSystem.reset(new ImGuiSystem());
+		_pImGuiSystem.reset(new ImGuiSystem());
 
 		if (_onWindowCreated != nullptr)
 			_onWindowCreated();
@@ -156,6 +151,8 @@ namespace Ailurus
 			if (shouldBreakLoop)
 				break;
 
+			GraphicsSetting::ProcessSettingChange();
+
 			_pRenderSystem->CheckRebuildSwapChain();
 
 			if (_pImGuiSystem != nullptr)
@@ -167,11 +164,11 @@ namespace Ailurus
 			_pRenderSystem->RenderScene();
 
 			// Frame rate limiting
-			if (_targetFrameRate > 0)
+			if (GraphicsSetting::GetTargetFrameRate() > 0)
 			{
 				double frameEndTime = _pTimeSystem->GetElapsedTime();
 				double frameTime = frameEndTime - frameStartTime;
-				double sleepTime = _targetFrameTime - frameTime;
+				double sleepTime = GraphicsSetting::GetTargetFrameTime() - frameTime;
 				
 				if (sleepTime > 0.0)
 				{
@@ -523,17 +520,8 @@ namespace Ailurus
 		}
 	}
 
-	void Application::SetTargetFrameRate(uint32_t fps)
+	double Application::GraphicsSetting::GetTargetFrameTime()
 	{
-		_targetFrameRate = fps;
-		if (fps > 0)
-			_targetFrameTime = 1.0 / static_cast<double>(fps);
-		else
-			_targetFrameTime = 0.0;
-	}
-
-	uint32_t Application::GetTargetFrameRate()
-	{
-		return _targetFrameRate;
+		return _targetFrameTime;
 	}
 } // namespace Ailurus

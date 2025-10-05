@@ -1,4 +1,5 @@
 #include "RenderTargetManager.h"
+#include "Ailurus/Application/Application.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
 #include "Ailurus/Utility/Logger.h"
@@ -28,8 +29,7 @@ namespace Ailurus
 		CreateDepthTarget(width, height);
 
 		// Create MSAA targets if MSAA is enabled
-		if (VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1)
-		    CreateMSAATargets(width, height, colorFormat);
+		CreateMSAATargets(width, height, colorFormat);
     }
 
 	vk::ImageView RenderTargetManager::GetDepthImageView() const
@@ -78,7 +78,11 @@ namespace Ailurus
 
 	void RenderTargetManager::CreateMSAATargets(uint32_t width, uint32_t height, vk::Format colorFormat)
 	{
-		const vk::SampleCountFlagBits msaaSamples = VulkanContext::GetMSAASamples();
+		bool enabled = Application::GraphicsSetting::IsMSAAEnabled();
+		if (!enabled)
+			return;
+
+		const vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e4;
 
 		// Create MSAA color target
 		{

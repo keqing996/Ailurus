@@ -23,8 +23,6 @@ namespace Ailurus
         {
             bool canResize = true;
             bool haveBorder = true;
-        	bool enableRenderImGui = true;
-        	bool enableRender3D = true;
         };
 
     public:
@@ -148,13 +146,6 @@ namespace Ailurus
         template <typename System>
         static System* Get();
 
-    	/// Set target frame rate (FPS limit).
-    	/// @param fps Target FPS, 0 means no limit.
-    	static void SetTargetFrameRate(uint32_t fps);
-
-    	/// Get current target frame rate.
-    	static uint32_t GetTargetFrameRate();
-
     private:
         static void EventLoop(bool* quitLoop);
 
@@ -187,8 +178,35 @@ namespace Ailurus
         static std::unique_ptr<SceneSystem> _pSceneManager;
     	static std::unique_ptr<ImGuiSystem> _pImGuiSystem;
 
-    	// Frame rate limit
-    	static uint32_t _targetFrameRate;
-    	static double _targetFrameTime;
+    public:
+        class GraphicsSetting
+        {
+        public:
+            static bool IsEnable3D();
+            static void SetEnable3D(bool enable);
+
+            static bool IsEnableImGui();
+            static void SetEnableImGui(bool enable);
+
+    	    static void SetTargetFrameRate(uint32_t fps);
+    	    static uint32_t GetTargetFrameRate();
+			static double GetTargetFrameTime();
+
+			static bool IsVSyncEnabled();
+            static void SetVSyncEnabled(bool enable);
+
+            static bool IsMSAAEnabled();
+            static void SetMSAAEnabled(bool enable);
+
+            static void ProcessSettingChange();
+
+        private:
+            static bool _enableRender3D;
+            static bool _enableRenderImGui;
+            static uint32_t _targetFrameRate;
+            static double _targetFrameTime;
+            static bool _enableVSync;
+            static bool _enableMSAA;
+        };
     };
 }

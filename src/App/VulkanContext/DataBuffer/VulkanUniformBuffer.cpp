@@ -49,8 +49,9 @@ namespace Ailurus
 	VulkanUniformBuffer::BufferPair VulkanUniformBuffer::CreateBufferPair() const
 	{
 		auto pVkResMgr = VulkanContext::GetResourceManager();
-		auto cpuBuffer = pVkResMgr->CreateHostBuffer(_bufferSize, HostBufferUsage::TransferSrc);
-		auto gpuBuffer = pVkResMgr->CreateDeviceBuffer(_bufferSize, DeviceBufferUsage::Uniform);
+		auto cpuBuffer = pVkResMgr->CreateHostBuffer(_bufferSize, HostBufferUsage::TransferSrc, "Uniform cpu buffer");
+		auto gpuBuffer = pVkResMgr->CreateDeviceBuffer(_bufferSize, DeviceBufferUsage::Uniform, "Uniform gpu buffer");
+
 		return { cpuBuffer, gpuBuffer };
 	}
 

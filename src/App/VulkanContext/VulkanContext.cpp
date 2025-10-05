@@ -37,8 +37,6 @@ namespace Ailurus
 	vk::CommandPool 							VulkanContext::_vkGraphicCommandPool = nullptr;
 
 	std::unique_ptr<VulkanSwapChain> 			VulkanContext::_pSwapChain = nullptr;
-	bool 										VulkanContext::_vsyncEnabled = true;
-	vk::SampleCountFlagBits 					VulkanContext::_msaaSamples = vk::SampleCountFlagBits::e4;
 
 	std::unique_ptr<RenderTargetManager>		VulkanContext::_pRenderTargetManager = nullptr;
 	std::unique_ptr<VulkanResourceManager> 		VulkanContext::_resourceManager = nullptr;
@@ -107,7 +105,7 @@ namespace Ailurus
 		}
 
 		// Create swap chain
-		_pSwapChain = std::make_unique<VulkanSwapChain>(_vsyncEnabled);
+		_pSwapChain = std::make_unique<VulkanSwapChain>();
 
 		// Create managers
 		_resourceManager = std::make_unique<VulkanResourceManager>();
@@ -276,34 +274,10 @@ namespace Ailurus
 		_pSwapChain = nullptr;
 
 		// Create a new swap chain with current VSync setting
-		_pSwapChain = std::make_unique<VulkanSwapChain>(_vsyncEnabled);
+		_pSwapChain = std::make_unique<VulkanSwapChain>();
 		
 		// Rebuild render targets with new swapchain dimensions
 		_pRenderTargetManager->Rebuild();
-	}
-
-	void VulkanContext::SetVSyncEnabled(bool enabled)
-	{
-		// Must be called by RenderSystem, which will rebuild the swap chain
-		// to apply the new VSync setting
-		_vsyncEnabled = enabled;
-	}
-
-	bool VulkanContext::IsVSyncEnabled()
-	{
-		return _vsyncEnabled;
-	}
-
-	void VulkanContext::SetMSAASamples(vk::SampleCountFlagBits samples)
-	{
-		// Must be called by RenderSystem, which will rebuild the swap chain
-		// to apply the new MSAA setting
-		_msaaSamples = samples;
-	}
-
-	vk::SampleCountFlagBits VulkanContext::GetMSAASamples()
-	{
-		return _msaaSamples;
 	}
 
 	void VulkanContext::RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction)

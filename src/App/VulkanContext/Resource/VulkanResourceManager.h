@@ -24,11 +24,21 @@ namespace Ailurus
 		~VulkanResourceManager();
 
 	public:
-		VulkanDeviceBuffer* CreateDeviceBuffer(vk::DeviceSize size, DeviceBufferUsage usage);
-		VulkanHostBuffer* CreateHostBuffer(vk::DeviceSize size, HostBufferUsage usage, bool coherentWithGpu = true);
-		VulkanImage* CreateImage(const Image& image);
-		VulkanSampler* CreateSampler();
-		void GarbageCollect();
+		auto CreateDeviceBuffer(vk::DeviceSize size, 
+			DeviceBufferUsage usage, 
+			const std::string& debugName = "Unnamed resource") -> VulkanDeviceBuffer*;
+
+		auto CreateHostBuffer(vk::DeviceSize size, 
+			HostBufferUsage usage, 
+			bool coherentWithGpu = true, 
+			const std::string& debugName = "Unnamed resource") -> VulkanHostBuffer*;
+
+		auto CreateImage(const Image& image, 
+			const std::string& debugName = "Unnamed resource") -> VulkanImage*;
+
+		auto CreateSampler(const std::string& debugName = "Unnamed resource") -> VulkanSampler*;
+		
+		auto GarbageCollect() -> void;
 
 	private:
 		// Command buffer resources

@@ -28,7 +28,7 @@ namespace Ailurus
 		using PostSwapChainRebuild = std::function<void()>;
 		
 	public:
-		RenderSystem(bool enableImGui, bool enable3D);
+		RenderSystem();
 		~RenderSystem();
 
 	public:
@@ -41,14 +41,6 @@ namespace Ailurus
 		// Camera
 		void SetMainCamera(CompCamera* pCamera);
 		CompCamera* GetMainCamera() const;
-
-		// VSync
-		void SetVSyncEnabled(bool enabled);
-		bool IsVSyncEnabled() const;
-
-		// MSAA
-		void SetMSAAEnabled(bool enabled);
-		bool IsMSAAEnabled() const;
 
 		// Callbacks
 		void AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback);
@@ -81,8 +73,6 @@ namespace Ailurus
 
 	private:
 		bool _needRebuildSwapChain = false;
-		bool _enable3D = false;
-		bool _enableImGui = false;
 
 		// Current main camera
 		CompCamera* _pMainCamera = nullptr;

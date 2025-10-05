@@ -421,7 +421,7 @@ namespace Ailurus
 			}
 
 			// Create Vulkan image
-			VulkanImage* pVulkanImage = pResourceManager->CreateImage(image);
+			VulkanImage* pVulkanImage = pResourceManager->CreateImage(image, textureFullPath);
 			if (pVulkanImage == nullptr)
 			{
 				Logger::LogError("Failed to create vulkan image for texture: {}", textureFullPath);
@@ -429,7 +429,7 @@ namespace Ailurus
 			}
 
 			// Create Vulkan sampler
-			VulkanSampler* pVulkanSampler = pResourceManager->CreateSampler();
+			VulkanSampler* pVulkanSampler = pResourceManager->CreateSampler(textureFullPath);
 			if (pVulkanSampler == nullptr)
 			{
 				Logger::LogError("Failed to create vulkan sampler for texture: {}", textureFullPath);

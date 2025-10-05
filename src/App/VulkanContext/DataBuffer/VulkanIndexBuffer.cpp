@@ -37,12 +37,12 @@ namespace Ailurus
 		const auto pVulkanResManager = VulkanContext::GetResourceManager();
 
 		// Create gpu buffer
-		_buffer = pVulkanResManager->CreateDeviceBuffer(sizeInBytes, DeviceBufferUsage::Index);
+		_buffer = pVulkanResManager->CreateDeviceBuffer(sizeInBytes, DeviceBufferUsage::Index, "Index gpu buffer");
     	if (_buffer == nullptr)
     		return;
 
 		// Create cpu stage buffer
-		auto stageBuffer = pVulkanResManager->CreateHostBuffer(sizeInBytes, HostBufferUsage::TransferSrc);
+		auto stageBuffer = pVulkanResManager->CreateHostBuffer(sizeInBytes, HostBufferUsage::TransferSrc, "[Temp] Index staging buffer");
     	if (stageBuffer == nullptr)
 			return;
 

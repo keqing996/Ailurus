@@ -7,8 +7,9 @@
 
 namespace Ailurus
 {
-	VulkanSwapChain::VulkanSwapChain(bool vsyncEnabled)
+	VulkanSwapChain::VulkanSwapChain()
 	{
+		bool vsyncEnabled = Application::GraphicsSetting::IsVSyncEnabled();
 		// Present mode
 		// VSync: eFifo (always available, guaranteed VSync)
 		// No VSync: eMailbox (triple buffering) or eImmediate (no buffering)

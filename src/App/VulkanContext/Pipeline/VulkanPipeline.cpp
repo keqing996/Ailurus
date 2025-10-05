@@ -93,7 +93,9 @@ namespace Ailurus
 			.setAlphaToOneEnable(false)
 			.setPSampleMask(nullptr)
 			.setAlphaToCoverageEnable(false) // todo may true ?
-			.setRasterizationSamples(VulkanContext::GetMSAASamples());
+			.setRasterizationSamples(Application::GraphicsSetting::IsMSAAEnabled() 
+				? vk::SampleCountFlagBits::e4 
+				: vk::SampleCountFlagBits::e1);
 
 		// Color blend
 		vk::PipelineColorBlendAttachmentState colorBlendAttachment;

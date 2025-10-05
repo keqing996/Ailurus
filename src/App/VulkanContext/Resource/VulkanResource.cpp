@@ -27,7 +27,6 @@ namespace Ailurus
 
 	void VulkanResource::MarkDelete()
 	{
-
 		_markDeleted = true;
 	}
 
@@ -39,5 +38,15 @@ namespace Ailurus
 	size_t VulkanResource::GetRefCount() const
 	{
 		return _referencedCommandBuffer.size();
+	}
+
+	const std::string& VulkanResource::GetDebugName() const
+	{
+		return _debugName;
+	}
+
+	void VulkanResource::SetDebugName(const std::string& name)
+	{
+		_debugName = name;
 	}
 } // namespace Ailurus

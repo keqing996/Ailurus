@@ -13,11 +13,13 @@ namespace Ailurus
 	{
 	}
 
-	VulkanDeviceBuffer* VulkanResourceManager::CreateDeviceBuffer(vk::DeviceSize size, DeviceBufferUsage usage)
+	VulkanDeviceBuffer* VulkanResourceManager::CreateDeviceBuffer(vk::DeviceSize size, DeviceBufferUsage usage, const std::string& debugName)
 	{
 		auto ptr = VulkanDeviceBuffer::Create(size, usage);
 		if (ptr == nullptr)
 			return nullptr;
+
+		ptr->SetDebugName(debugName);
 
 		VulkanDeviceBuffer* pBufferRaw = static_cast<VulkanDeviceBuffer*>(ptr.get());
 		_resources.push_back(std::move(ptr));
@@ -25,11 +27,13 @@ namespace Ailurus
 		return pBufferRaw;
 	}
 
-	VulkanHostBuffer* VulkanResourceManager::CreateHostBuffer(vk::DeviceSize size, HostBufferUsage usage, bool coherentWithGpu)
+	VulkanHostBuffer* VulkanResourceManager::CreateHostBuffer(vk::DeviceSize size, HostBufferUsage usage, bool coherentWithGpu, const std::string& debugName)
 	{
 		auto ptr = VulkanHostBuffer::Create(size, usage, coherentWithGpu);
 		if (ptr == nullptr)
 			return nullptr;
+
+		ptr->SetDebugName(debugName);
 
 		VulkanHostBuffer* pBufferRaw = static_cast<VulkanHostBuffer*>(ptr.get());
 		_resources.push_back(std::move(ptr));
@@ -37,24 +41,28 @@ namespace Ailurus
 		return pBufferRaw;
 	}
 
-	VulkanImage* VulkanResourceManager::CreateImage(const Image& image)
+	VulkanImage* VulkanResourceManager::CreateImage(const Image& image, const std::string& debugName)
 	{
 		auto ptr = VulkanImage::Create(image);
 		if (ptr == nullptr)
 			return nullptr;
 
+		ptr->SetDebugName(debugName);
+		
 		VulkanImage* pImageRaw = static_cast<VulkanImage*>(ptr.get());
 		_resources.push_back(std::move(ptr));
 
 		return pImageRaw;
 	}
 
-	VulkanSampler* VulkanResourceManager::CreateSampler()
+	VulkanSampler* VulkanResourceManager::CreateSampler(const std::string& debugName)
 	{
 		auto ptr = VulkanSampler::Create();
 		if (ptr == nullptr)
 			return nullptr;
 
+		ptr->SetDebugName(debugName);
+		
 		VulkanSampler* pSamplerRaw = static_cast<VulkanSampler*>(ptr.get());
 		_resources.push_back(std::move(ptr));
 

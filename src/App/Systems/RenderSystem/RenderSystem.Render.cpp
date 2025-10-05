@@ -130,7 +130,7 @@ namespace Ailurus
 					vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
 				// Forward pass
-				if (_enable3D)
+				if (Application::GraphicsSetting::IsEnable3D())
 				{
 					RenderPrepare();
 
@@ -142,7 +142,7 @@ namespace Ailurus
 				}
 
 				// ImGui pass
-				if (_enableImGui)
+				if (Application::GraphicsSetting::IsEnableImGui())
 					RenderImGuiPass(swapChainImageIndex, pCommandBuffer);
 
 				// Transition image to present layout after rendering
@@ -240,7 +240,7 @@ namespace Ailurus
 		vk::Extent2D extent = pSwapChain->GetConfig().extent;
 
 		// Check if MSAA is enabled
-		bool useMSAA = VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1;
+		bool useMSAA = Application::GraphicsSetting::IsMSAAEnabled();
 		auto* pRenderTargetManager = VulkanContext::GetRenderTargetManager();
 
 		if (useMSAA)

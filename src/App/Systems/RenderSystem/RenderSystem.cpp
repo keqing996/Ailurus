@@ -14,9 +14,7 @@ namespace Ailurus
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_VIEW_PROJ_MAT = "viewProjectionMatrix";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_CAMERA_POS = "cameraPosition";
 
-	RenderSystem::RenderSystem(bool enableImGui, bool enable3D)
-		: _enable3D(enable3D)
-		, _enableImGui(enableImGui)
+	RenderSystem::RenderSystem()
 	{
 		_pShaderLibrary.reset(new ShaderLibrary());
 
@@ -49,35 +47,6 @@ namespace Ailurus
 	CompCamera* RenderSystem::GetMainCamera() const
 	{
 		return _pMainCamera;
-	}
-
-	void RenderSystem::SetVSyncEnabled(bool enabled)
-	{
-		if (IsVSyncEnabled() == enabled)
-			return;
-
-		VulkanContext::SetVSyncEnabled(enabled);
-		RequestRebuildSwapChain();
-	}
-
-	bool RenderSystem::IsVSyncEnabled() const
-	{
-		return VulkanContext::IsVSyncEnabled();
-	}
-
-	void RenderSystem::SetMSAAEnabled(bool enabled)
-	{
-		const bool isCurrentlyEnabled = IsMSAAEnabled();
-		if (isCurrentlyEnabled == enabled)
-			return;
-
-		VulkanContext::SetMSAASamples(enabled ? vk::SampleCountFlagBits::e4 : vk::SampleCountFlagBits::e1);
-		RequestRebuildSwapChain();
-	}
-
-	bool RenderSystem::IsMSAAEnabled() const
-	{
-		return VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1;
 	}
 
 	void RenderSystem::AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback)

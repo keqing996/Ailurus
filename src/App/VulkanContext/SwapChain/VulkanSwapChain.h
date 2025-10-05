@@ -14,7 +14,7 @@ namespace Ailurus
 	class VulkanSwapChain: public NonCopyable, public NonMovable
 	{
     public:
-        explicit VulkanSwapChain(bool vsyncEnabled);
+        VulkanSwapChain();
         ~VulkanSwapChain();
 
 	public:

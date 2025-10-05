@@ -10,6 +10,11 @@
 
 namespace Ailurus
 {
+	auto VulkanPipelineManager::ClearPipelines() -> void
+	{
+		_pipelinesMap.clear();
+	}
+
 	auto VulkanPipelineManager::GetPipeline(const VulkanPipelineEntry& entry) -> VulkanPipeline*
 	{
 		const auto it = _pipelinesMap.find(entry);
