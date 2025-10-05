@@ -97,7 +97,7 @@ namespace Ailurus
 
 	float CompCamera::GetHorizontalFOV() const
 	{
-		return Math::RadianToDegree(_fovHorizontal);
+		return Math::RadianToDegree(_fovHorizontal * 2);
 	}
 
 	float CompCamera::GetAspectRatio() const
@@ -140,7 +140,7 @@ namespace Ailurus
 
 		_right = n * std::tan(_fovHorizontal);
 		_left = -_right;
-		_top = _aspect * _right;
+		_top = _right / _aspect;
 		_bottom = -_top;
 	}
 }
