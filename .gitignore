@@ -56,5 +56,3 @@ intermediates
 .DS_Store
 
 *.spv
-compile_commands.json
-update_compile_commands.sh

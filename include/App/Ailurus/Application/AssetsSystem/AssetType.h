@@ -7,6 +7,7 @@ namespace Ailurus
     REFLECTION_ENUM(AssetType,
         Model,
         Material,
-        MaterialInstance
+        MaterialInstance,
+        Texture
     );
 } // namespace Ailurus

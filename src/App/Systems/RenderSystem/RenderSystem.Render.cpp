@@ -14,15 +14,15 @@
 #include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
+#include <VulkanContext/RenderTarget/RenderTargetManager.h>
 #include <VulkanContext/CommandBuffer/VulkanCommandBuffer.h>
 #include <VulkanContext/Pipeline/VulkanPipelineManager.h>
-#include <VulkanContext/RenderPass/VulkanRenderPass.h>
 #include <VulkanContext/DataBuffer/VulkanVertexBuffer.h>
 #include <VulkanContext/DataBuffer/VulkanIndexBuffer.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include <VulkanContext/Vertex/VulkanVertexLayoutManager.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
-#include <VulkanContext/FrameBuffer/VulkanFrameBufferManager.h>
+#include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
 #include "Ailurus/Application/ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Detail/RenderIntermediateVariable.h"
@@ -36,7 +36,7 @@ namespace Ailurus
 		_pIntermediateVariable->viewProjectionMatrix = projMat * viewMat;
 		_pIntermediateVariable->renderingMeshes.clear();
 		_pIntermediateVariable->materialInstanceDescriptorsMap.clear();
-		_pIntermediateVariable->renderingDescriptorSets.fill(VulkanDescriptorSet{});
+		_pIntermediateVariable->renderingDescriptorSets.fill(vk::DescriptorSet{});
 	}
 
 	void RenderSystem::CollectRenderingContext()
@@ -120,11 +120,38 @@ namespace Ailurus
 				UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 				UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 
+				// Get swap chain for image layout transitions
+				auto pSwapChain = VulkanContext::GetSwapChain();
+				const auto& swapChainImages = pSwapChain->GetSwapChainImages();
+				vk::Image currentImage = swapChainImages[swapChainImageIndex];
+
+				// Transition image to color attachment optimal before rendering
+				pCommandBuffer->ImageMemoryBarrier(
+					currentImage,
+					vk::ImageLayout::eUndefined,
+					vk::ImageLayout::eColorAttachmentOptimal,
+					vk::AccessFlags{},
+					vk::AccessFlagBits::eColorAttachmentWrite,
+					vk::PipelineStageFlagBits::eTopOfPipe,
+					vk::PipelineStageFlagBits::eColorAttachmentOutput);
+
 				// Forward pass
-				RenderSpecificPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
+				if (_enable3D)
+					RenderPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
 
 				// ImGui pass
-				RenderImGuiPass(swapChainImageIndex, pCommandBuffer);
+				if (_enableImGui)
+					RenderImGuiPass(swapChainImageIndex, pCommandBuffer);
+
+				// Transition image to present layout after rendering
+				pCommandBuffer->ImageMemoryBarrier(
+					currentImage,
+					vk::ImageLayout::eColorAttachmentOptimal,
+					vk::ImageLayout::ePresentSrcKHR,
+					vk::AccessFlagBits::eColorAttachmentWrite,
+					vk::AccessFlags{},
+					vk::PipelineStageFlagBits::eColorAttachmentOutput,
+					vk::PipelineStageFlagBits::eBottomOfPipe);
 			});
 	}
 
@@ -138,14 +165,20 @@ namespace Ailurus
 			{ 0, GetGlobalUniformAccessNameCameraPos() },
 			_pMainCamera->GetEntity()->GetPosition());
 
-		// Allocate descriptor set
+		// Use cache to get or allocate descriptor set
+		// Key: layout only (global uniform always uses same layout)
 		auto globalUniformSetLayout = _pGlobalUniformSet->GetDescriptorSetLayout();
-		auto globalDescriptorSet = pDescriptorAllocator->AllocateDescriptorSet(globalUniformSetLayout);
+		
+		VulkanDescriptorAllocator::CacheKey key;
+		key.layout = globalUniformSetLayout->GetDescriptorSetLayout();
+		key.bindingHash = 1; // Fixed hash for global uniform (to distinguish from material)
+		
+		auto globalDescriptorSet = pDescriptorAllocator->AllocateDescriptorSet(globalUniformSetLayout, &key);
 
 		// Save set
 		_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::General)] = globalDescriptorSet;
 
-		// Write the descriptor set
+		// IMPORTANT: Always update descriptor set data (buffer content changes each frame)
 		_pGlobalUniformMemory->UpdateToDescriptorSet(pCommandBuffer, globalDescriptorSet);
 	}
 
@@ -163,12 +196,18 @@ namespace Ailurus
 				if (mapInstDescriptorSetMap.contains(pMaterialInstance))
 					continue;
 
-				// Allocate a set by layout.
+				// Use cache to get or allocate descriptor set
 				auto* pDescriptorLayout = pMaterial->GetUniformSet(pass)->GetDescriptorSetLayout();
-				auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(pDescriptorLayout);
+				
+				// Create cache key based on layout and material instance
+				VulkanDescriptorAllocator::CacheKey key;
+				key.layout = pDescriptorLayout->GetDescriptorSetLayout();
+				key.bindingHash = reinterpret_cast<size_t>(pMaterialInstance); // Use material instance pointer as hash
+				
+				auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(pDescriptorLayout, &key);
 
-				// Update material data to descriptor set
-				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(pCommandBuffer, descriptorSet);
+				// Update material data to descriptor set (pass material instance for texture binding)
+				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(pCommandBuffer, descriptorSet, pMaterialInstance);
 
 				// Record material instance descriptor set
 				mapInstDescriptorSetMap[pMaterialInstance] = descriptorSet;
@@ -176,20 +215,52 @@ namespace Ailurus
 		}
 	}
 
-	void RenderSystem::RenderSpecificPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
+	void RenderSystem::RenderPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
 	{
 		if (_pIntermediateVariable->renderingMeshes.empty())
 			return;
 
-		const auto pVkRenderPass = GetRenderPass(pass);
-		if (pVkRenderPass == nullptr)
+		// Get swap chain image view and depth image view
+		auto pSwapChain = VulkanContext::GetSwapChain();
+		if (pSwapChain == nullptr)
 		{
-			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(pass));
+			Logger::LogError("SwapChain not found");
 			return;
 		}
 
-		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pVkRenderPass, swapChainImageIndex);
-		pCommandBuffer->BeginRenderPass(pVkRenderPass, pBackBuffer);
+		const auto& imageViews = pSwapChain->GetSwapChainImageViews();
+		if (swapChainImageIndex >= imageViews.size())
+		{
+			Logger::LogError("Invalid swap chain image index");
+			return;
+		}
+
+		vk::Extent2D extent = pSwapChain->GetConfig().extent;
+
+		// Check if MSAA is enabled
+		bool useMSAA = VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1;
+		auto* pRenderTargetManager = VulkanContext::GetRenderTargetManager();
+
+		if (useMSAA)
+		{
+			// With MSAA: render to MSAA attachments and resolve to swapchain image
+			vk::ImageView msaaColorView = pRenderTargetManager->GetMSAAColorImageView();
+			vk::ImageView msaaDepthView = pRenderTargetManager->GetMSAADepthImageView();
+			vk::ImageView resolveView = imageViews[swapChainImageIndex];
+			
+			// For Forward pass, clear and use depth
+			bool clearColor = (pass == RenderPassType::Forward);
+			pCommandBuffer->BeginRendering(msaaColorView, msaaDepthView, resolveView, extent, clearColor, true);
+		}
+		else
+		{
+			// Without MSAA: render directly to swapchain image
+			vk::ImageView colorImageView = imageViews[swapChainImageIndex];
+			vk::ImageView depthImageView = pRenderTargetManager->GetDepthImageView();
+			
+			bool clearColor = (pass == RenderPassType::Forward);
+			pCommandBuffer->BeginRendering(colorImageView, depthImageView, nullptr, extent, clearColor, true);
+		}
 
 		// Intermediate variables
 		const Material* pCurrentMaterial = nullptr;
@@ -233,9 +304,8 @@ namespace Ailurus
 				pCommandBuffer->BindPipeline(pCurrentVkPipeline);
 				pCommandBuffer->SetViewportAndScissor();
 
-				std::vector<vk::DescriptorSet> descriptorSets;
-				for (const auto& descriptorSet : _pIntermediateVariable->renderingDescriptorSets)
-					descriptorSets.push_back(descriptorSet.descriptorSet);
+				std::vector<vk::DescriptorSet> descriptorSets(_pIntermediateVariable->renderingDescriptorSets.begin(),
+				                                               _pIntermediateVariable->renderingDescriptorSets.end());
 
 				pCommandBuffer->BindDescriptorSet(pCurrentVkPipeline->GetPipelineLayout(), descriptorSets);
 			}
@@ -260,30 +330,35 @@ namespace Ailurus
 			}
 		}
 
-		pCommandBuffer->EndRenderPass();
+		pCommandBuffer->EndRendering();
 	}
 
 	void RenderSystem::RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
 	{
 		auto pImGui = Application::Get<ImGuiSystem>();
-		auto* pImGuiPass = GetRenderPass(RenderPassType::ImGui);
-		if (pImGuiPass == nullptr)
-			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(RenderPassType::ImGui));
 
-		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pImGuiPass, swapChainImageIndex);
-		pCommandBuffer->BeginRenderPass(pImGuiPass, pBackBuffer);
+		// Get swap chain image view and depth image view
+		auto pSwapChain = VulkanContext::GetSwapChain();
+		if (pSwapChain == nullptr)
+		{
+			Logger::LogError("SwapChain not found");
+			return;
+		}
+
+		const auto& imageViews = pSwapChain->GetSwapChainImageViews();
+		if (swapChainImageIndex >= imageViews.size())
+		{
+			Logger::LogError("Invalid swap chain image index");
+			return;
+		}
+
+		vk::ImageView colorImageView = imageViews[swapChainImageIndex];
+		vk::Extent2D extent = pSwapChain->GetConfig().extent;
+
+		// ImGui doesn't need depth or MSAA, and should load existing content (clearColor=false)
+		// Always render directly to swapchain image (no resolve needed)
+		pCommandBuffer->BeginRendering(colorImageView, nullptr, nullptr, extent, false, false);
 		pImGui->Render(pCommandBuffer);
-		pCommandBuffer->EndRenderPass();
-	}
-
-	void RenderSystem::RenderPresentPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
-	{
-		auto* pPresentPass = GetRenderPass(RenderPassType::Present);
-		if (pPresentPass == nullptr)
-			Logger::LogError("Render pass not found: {}", EnumReflection<RenderPassType>::ToString(RenderPassType::Present));
-
-		const auto pBackBuffer = VulkanContext::GetFrameBufferManager()->GetBackBuffer(pPresentPass, swapChainImageIndex);
-		pCommandBuffer->BeginRenderPass(pPresentPass, pBackBuffer);
-		pCommandBuffer->EndRenderPass();
+		pCommandBuffer->EndRendering();
 	}
 } // namespace Ailurus

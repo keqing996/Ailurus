@@ -1,11 +1,11 @@
 #include "VulkanCommandBuffer.h"
 #include "Ailurus/Utility/Logger.h"
 #include "VulkanContext/VulkanContext.h"
-#include "VulkanContext/RenderPass/VulkanRenderPass.h"
 #include "VulkanContext/Pipeline/VulkanPipeline.h"
 #include "VulkanContext/DataBuffer/VulkanVertexBuffer.h"
 #include "VulkanContext/DataBuffer/VulkanIndexBuffer.h"
-#include "VulkanContext/Resource/VulkanResourceManager.h"
+#include "VulkanContext/Resource/DataBuffer/VulkanDataBuffer.h"
+#include "VulkanContext/Resource/DataBuffer/VulkanDeviceBuffer.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
 #include "VulkanContext/Descriptor/VulkanDescriptorAllocator.h"
 
@@ -152,17 +152,71 @@ namespace Ailurus
 		_buffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, barrier, nullptr);
 	}
 
-	void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* pRenderPass, VulkanFrameBuffer* pTargetFrameBuffer)
+	void VulkanCommandBuffer::ImageMemoryBarrier(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, 
+		vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, 
+		vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask)
 	{
-		if (pRenderPass == nullptr)
-			return;
+		vk::ImageMemoryBarrier barrier;
+		barrier.setOldLayout(oldLayout)
+			.setNewLayout(newLayout)
+			.setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+			.setImage(image)
+			.setSubresourceRange(vk::ImageSubresourceRange()
+			.setAspectMask(vk::ImageAspectFlagBits::eColor)
+			.setBaseMipLevel(0)
+			.setLevelCount(1)
+			.setBaseArrayLayer(0)
+			.setLayerCount(1))
+			.setSrcAccessMask(srcAccessMask)
+			.setDstAccessMask(dstAccessMask);
 
-		_buffer.beginRenderPass(pRenderPass->GetRenderPassBeginInfo(pTargetFrameBuffer), {});
+		_buffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, nullptr, barrier);
 	}
 
-	void VulkanCommandBuffer::EndRenderPass()
+	void VulkanCommandBuffer::BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor, bool useDepth)
 	{
-		_buffer.endRenderPass();
+		// Color attachment
+		vk::RenderingAttachmentInfo colorAttachment;
+		colorAttachment.setImageView(colorImageView)
+			.setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
+			.setLoadOp(clearColor ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
+			.setStoreOp(vk::AttachmentStoreOp::eStore)
+			.setClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
+
+		// If resolve image is provided, set up MSAA resolve
+		if (resolveImageView)
+		{
+			colorAttachment.setResolveMode(vk::ResolveModeFlagBits::eAverage)
+				.setResolveImageView(resolveImageView)
+				.setResolveImageLayout(vk::ImageLayout::eColorAttachmentOptimal);
+		}
+
+		// Rendering info
+		vk::RenderingInfo renderingInfo;
+		renderingInfo.setRenderArea(vk::Rect2D{{0, 0}, extent})
+			.setLayerCount(1)
+			.setColorAttachments(colorAttachment);
+
+		// Only add depth attachment if requested
+		if (useDepth && depthImageView)
+		{
+			vk::RenderingAttachmentInfo depthAttachment;
+			depthAttachment.setImageView(depthImageView)
+				.setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+				.setLoadOp(vk::AttachmentLoadOp::eClear)
+				.setStoreOp(vk::AttachmentStoreOp::eDontCare)
+				.setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
+
+			renderingInfo.setPDepthAttachment(&depthAttachment);
+		}
+
+		_buffer.beginRenderingKHR(renderingInfo);
+	}
+
+	void VulkanCommandBuffer::EndRendering()
+	{
+		_buffer.endRenderingKHR();
 	}
 
 	void VulkanCommandBuffer::SetViewportAndScissor()

@@ -4,7 +4,6 @@
 #include "Ailurus/Application/RenderSystem/Shader/Shader.h"
 #include "Ailurus/Application/RenderSystem/Uniform/UniformSet.h"
 #include "VulkanContext/VulkanContext.h"
-#include "VulkanContext/RenderPass/VulkanRenderPass.h"
 #include "VulkanContext/Shader/VulkanShader.h"
 #include "VulkanContext/Vertex/VulkanVertexLayout.h"
 #include "VulkanContext/Descriptor/VulkanDescriptorSetLayout.h"
@@ -12,7 +11,8 @@
 namespace Ailurus
 {
 	VulkanPipeline::VulkanPipeline(
-		const VulkanRenderPass* pRenderPass,
+		vk::Format colorFormat,
+		vk::Format depthFormat,
 		const StageShaderArray& shaderArray,
 		const VulkanVertexLayout* pVertexLayout,
 		const std::vector<const UniformSet*>& uniformSets)
@@ -93,7 +93,7 @@ namespace Ailurus
 			.setAlphaToOneEnable(false)
 			.setPSampleMask(nullptr)
 			.setAlphaToCoverageEnable(false) // todo may true ?
-			.setRasterizationSamples(vk::SampleCountFlagBits::e1);
+			.setRasterizationSamples(VulkanContext::GetMSAASamples());
 
 		// Color blend
 		vk::PipelineColorBlendAttachmentState colorBlendAttachment;
@@ -126,6 +126,12 @@ namespace Ailurus
 		vk::PipelineDynamicStateCreateInfo dynamicState;
 		dynamicState.setDynamicStates(dynamicStates);
 
+		// Pipeline rendering create info for dynamic rendering
+		vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
+		pipelineRenderingCreateInfo.setColorAttachmentFormats(colorFormat)
+			.setDepthAttachmentFormat(depthFormat)
+			.setStencilAttachmentFormat(vk::Format::eUndefined);
+
 		// Create the pipeline
 		vk::GraphicsPipelineCreateInfo pipelineInfo;
 		pipelineInfo.setStages(shaderStages)
@@ -138,7 +144,7 @@ namespace Ailurus
 			.setPDepthStencilState(&depthStencil)
 			.setPDynamicState(&dynamicState)
 			.setLayout(_vkPipelineLayout)
-			.setRenderPass(pRenderPass->GetRenderPass())
+			.setPNext(&pipelineRenderingCreateInfo)
 			.setSubpass(0)
 			.setBasePipelineHandle(nullptr);
 

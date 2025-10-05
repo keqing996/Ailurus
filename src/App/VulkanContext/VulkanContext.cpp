@@ -1,20 +1,18 @@
 #include <cstdlib>
 #include <memory>
 #include <optional>
-#include <array>
-#include "Ailurus/PlatformDefine.h"
 #include "VulkanContext.h"
 #include "VulkanFunctionLoader.h"
 #include "Platform/VulkanPlatform.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Application/Application.h"
 #include "SwapChain/VulkanSwapChain.h"
+#include "RenderTarget/RenderTargetManager.h"
 #include "Helper/VulkanHelper.h"
 #include "Resource/VulkanResourceManager.h"
 #include "Vertex/VulkanVertexLayoutManager.h"
 #include "Pipeline/VulkanPipelineManager.h"
 #include "Fence/VulkanFence.h"
-#include "FrameBuffer/VulkanFrameBufferManager.h"
 #include "Descriptor/VulkanDescriptorAllocator.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -39,11 +37,13 @@ namespace Ailurus
 	vk::CommandPool 							VulkanContext::_vkGraphicCommandPool = nullptr;
 
 	std::unique_ptr<VulkanSwapChain> 			VulkanContext::_pSwapChain = nullptr;
+	bool 										VulkanContext::_vsyncEnabled = true;
+	vk::SampleCountFlagBits 					VulkanContext::_msaaSamples = vk::SampleCountFlagBits::e4;
 
+	std::unique_ptr<RenderTargetManager>		VulkanContext::_pRenderTargetManager = nullptr;
 	std::unique_ptr<VulkanResourceManager> 		VulkanContext::_resourceManager = nullptr;
 	std::unique_ptr<VulkanVertexLayoutManager> 	VulkanContext::_vertexLayoutManager = nullptr;
 	std::unique_ptr<VulkanPipelineManager> 		VulkanContext::_pipelineManager = nullptr;
-	std::unique_ptr<VulkanFrameBufferManager> 	VulkanContext::_frameBufferManager = nullptr;
 
 	uint32_t									VulkanContext::_currentFrameIndex = 0;
 	std::vector<VulkanContext::FrameContext>	VulkanContext::_frameContext;
@@ -107,13 +107,13 @@ namespace Ailurus
 		}
 
 		// Create swap chain
-		_pSwapChain = std::make_unique<VulkanSwapChain>();
+		_pSwapChain = std::make_unique<VulkanSwapChain>(_vsyncEnabled);
 
 		// Create managers
 		_resourceManager = std::make_unique<VulkanResourceManager>();
 		_vertexLayoutManager = std::make_unique<VulkanVertexLayoutManager>();
+		_pRenderTargetManager = std::make_unique<RenderTargetManager>();
 		_pipelineManager = std::make_unique<VulkanPipelineManager>();
-		_frameBufferManager = std::make_unique<VulkanFrameBufferManager>();
 
 		// Create frame context
 		_currentFrameIndex = 0;
@@ -151,8 +151,8 @@ namespace Ailurus
 		_currentFrameIndex = 0;
 
 		// Destroy managers
-		_frameBufferManager.reset();
 		_pipelineManager.reset();
+		_pRenderTargetManager.reset();
 		_vertexLayoutManager.reset();
 		_resourceManager.reset();
 
@@ -259,11 +259,6 @@ namespace Ailurus
 		return _vertexLayoutManager.get();
 	}
 
-	VulkanFrameBufferManager* VulkanContext::GetFrameBufferManager()
-	{
-		return _frameBufferManager.get();
-	}
-
 	uint32_t VulkanContext::GetParallelFrameCount()
 	{
 		return _parallelFrameCount;
@@ -277,14 +272,38 @@ namespace Ailurus
 		// Wait GPU finishing all tasks
 		WaitDeviceIdle();
 
-		// Clear all back buffers
-		_frameBufferManager->ClearBackBuffers();
-
 		// Release old swap chian fist
 		_pSwapChain = nullptr;
 
-		// Create a new swap chain
-		_pSwapChain = std::make_unique<VulkanSwapChain>();
+		// Create a new swap chain with current VSync setting
+		_pSwapChain = std::make_unique<VulkanSwapChain>(_vsyncEnabled);
+		
+		// Rebuild render targets with new swapchain dimensions
+		_pRenderTargetManager->Rebuild();
+	}
+
+	void VulkanContext::SetVSyncEnabled(bool enabled)
+	{
+		// Must be called by RenderSystem, which will rebuild the swap chain
+		// to apply the new VSync setting
+		_vsyncEnabled = enabled;
+	}
+
+	bool VulkanContext::IsVSyncEnabled()
+	{
+		return _vsyncEnabled;
+	}
+
+	void VulkanContext::SetMSAASamples(vk::SampleCountFlagBits samples)
+	{
+		// Must be called by RenderSystem, which will rebuild the swap chain
+		// to apply the new MSAA setting
+		_msaaSamples = samples;
+	}
+
+	vk::SampleCountFlagBits VulkanContext::GetMSAASamples()
+	{
+		return _msaaSamples;
 	}
 
 	void VulkanContext::RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction)
@@ -419,6 +438,11 @@ namespace Ailurus
 	VulkanSwapChain* VulkanContext::GetSwapChain()
 	{
 		return _pSwapChain.get();
+	}
+
+	RenderTargetManager* VulkanContext::GetRenderTargetManager()
+	{
+		return _pRenderTargetManager.get();
 	}
 
 	bool VulkanContext::CreateInstance(const GetWindowInstanceExtension& getWindowRequiredExtension, bool enableValidation)
@@ -603,16 +627,36 @@ namespace Ailurus
 				.setQueueFamilyIndex(_computeQueueIndex);
 		}
 
+		// Check dynamic rendering support
+		vk::PhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures;
+		vk::PhysicalDeviceFeatures2 features2;
+		features2.setPNext(&dynamicRenderingFeatures);
+		_vkPhysicalDevice.getFeatures2(&features2);
+
+		if (!dynamicRenderingFeatures.dynamicRendering)
+		{
+			Logger::LogError("Dynamic rendering is not supported by this device. Aborting.");
+			std::abort();
+		}
+
 		// Features
 		vk::PhysicalDeviceFeatures physicalDeviceFeatures;
 		physicalDeviceFeatures.setSamplerAnisotropy(true);
+
+		// Enable dynamic rendering
+		vk::PhysicalDeviceDynamicRenderingFeatures enableDynamicRendering;
+		enableDynamicRendering.setDynamicRendering(true);
+
+		vk::PhysicalDeviceFeatures2 features2Chain;
+		features2Chain.setFeatures(physicalDeviceFeatures)
+			.setPNext(&enableDynamicRendering);
 
 		// Create device
 		vk::DeviceCreateInfo deviceCreateInfo;
 		deviceCreateInfo
 			.setPEnabledExtensionNames(VulkanPlatform::GetRequiredDeviceExtensions())
 			.setQueueCreateInfos(queueCreateInfoList)
-			.setPEnabledFeatures(&physicalDeviceFeatures);
+			.setPNext(&features2Chain);
 
 		try
 		{
@@ -672,7 +716,9 @@ namespace Ailurus
 		// Reset frame resource
 		context.renderFinishFence->Reset();
 		context.pRenderingCommandBuffer->ClearResourceReferences();
-		context.pFrameDescriptorAllocator->ResetPool();
+		
+		// Reset pools
+		context.pFrameDescriptorAllocator->ResetPools();
 
 		// Recycle secondary command buffers
 		if (!context.onAirInfo->secondaryCommandBuffers.empty())

@@ -3,6 +3,7 @@
 #include "VulkanContext/VulkanPch.h"
 #include <cstdint>
 #include <unordered_set>
+#include <functional>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "VulkanContext/Helper/HashHelper.hpp"
@@ -11,8 +12,8 @@ namespace Ailurus
 {
 	class VulkanResource: public NonCopyable, public NonMovable
 	{
-		friend class VulkanResourceManager;
 	public:
+		VulkanResource();
 		virtual ~VulkanResource();
 
 	public:
@@ -22,11 +23,10 @@ namespace Ailurus
 		void MarkDelete();
 		bool IsMarkDeleted() const;
 
-	protected:
-		VulkanResource();
-
 	private:
 		bool _markDeleted = false;
 		VkObjectSet<vk::CommandBuffer> _referencedCommandBuffer;
 	};
+
+	using VulkanResourcePtr = std::unique_ptr<VulkanResource, std::function<void(VulkanResource*)>>;
 } // namespace Ailurus

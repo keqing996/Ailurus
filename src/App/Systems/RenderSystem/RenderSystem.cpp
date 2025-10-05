@@ -4,9 +4,6 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformVariable.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <VulkanContext/VulkanContext.h>
-#include <VulkanContext/RenderPass/VulkanRenderPassForward.h>
-#include <VulkanContext/RenderPass/VulkanRenderPassImGui.h>
-#include <VulkanContext/RenderPass/VulkanRenderPassPresent.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include "Ailurus/Utility/Logger.h"
 #include "Detail/RenderIntermediateVariable.h"
@@ -25,7 +22,6 @@ namespace Ailurus
 
 		CreateIntermediateVariable();
 		BuildGlobalUniform();
-		BuildRenderPass();
 	}
 
 	RenderSystem::~RenderSystem()
@@ -53,6 +49,35 @@ namespace Ailurus
 	CompCamera* RenderSystem::GetMainCamera() const
 	{
 		return _pMainCamera;
+	}
+
+	void RenderSystem::SetVSyncEnabled(bool enabled)
+	{
+		if (IsVSyncEnabled() == enabled)
+			return;
+
+		VulkanContext::SetVSyncEnabled(enabled);
+		RequestRebuildSwapChain();
+	}
+
+	bool RenderSystem::IsVSyncEnabled() const
+	{
+		return VulkanContext::IsVSyncEnabled();
+	}
+
+	void RenderSystem::SetMSAAEnabled(bool enabled)
+	{
+		const bool isCurrentlyEnabled = IsMSAAEnabled();
+		if (isCurrentlyEnabled == enabled)
+			return;
+
+		VulkanContext::SetMSAASamples(enabled ? vk::SampleCountFlagBits::e4 : vk::SampleCountFlagBits::e1);
+		RequestRebuildSwapChain();
+	}
+
+	bool RenderSystem::IsMSAAEnabled() const
+	{
+		return VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1;
 	}
 
 	void RenderSystem::AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback)
@@ -96,11 +121,7 @@ namespace Ailurus
 				preRebuildCallback();
 		}
 
-		_renderPassMap.clear();
-
 		VulkanContext::RebuildSwapChain();
-
-		BuildRenderPass();
 
 		_needRebuildSwapChain = false;
 
@@ -109,25 +130,6 @@ namespace Ailurus
 			if (postRebuildCallback)
 				postRebuildCallback();
 		}
-	}
-
-	void RenderSystem::BuildRenderPass()
-	{
-		// Forward RenderPass
-		if (_enable3D)
-		{
-			std::vector<vk::ClearValue> clearValues = { vk::ClearValue{ std::array<float,4>{0.0f, 0.0f, 0.0f, 1.0f} } };
-			_renderPassMap[RenderPassType::Forward] = std::make_unique<VulkanRenderPassForward>(clearValues);
-		}
-
-		// ImGui RenderPass
-		if (_enableImGui)
-		{
-			_renderPassMap[RenderPassType::ImGui] = std::make_unique<VulkanRenderPassImGui>();
-		}
-
-		// Present pass
-		_renderPassMap[RenderPassType::Present] = std::make_unique<VulkanRenderPassPresent>();
 	}
 
 	void RenderSystem::BuildGlobalUniform()
@@ -175,14 +177,6 @@ namespace Ailurus
 	{
 		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_CAMERA_POS;
 		return value;
-	}
-
-	auto RenderSystem::GetRenderPass(RenderPassType pass) const -> VulkanRenderPass*
-	{
-		auto it = _renderPassMap.find(pass);
-		if (it == _renderPassMap.end())
-			return nullptr;
-		return it->second.get();
 	}
 
 } // namespace Ailurus

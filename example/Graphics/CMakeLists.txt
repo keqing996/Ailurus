@@ -62,17 +62,4 @@ else()
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         VERBATIM
     )
-    
-    # Windows-specific Vulkan DLL copying
-    if(WIN32)
-        add_custom_command  (TARGET ailurus_example_render POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E echo "[Render] Copy Vulkan DLLs"
-            # Copy main Vulkan DLL
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "$ENV{VULKAN_SDK}/Bin/vulkan-1.dll" "$<TARGET_FILE_DIR:ailurus_example_render>/"
-            # Copy additional DLLs that might be needed (using shell expansion only if needed)
-            COMMAND powershell -Command "if (Test-Path '$ENV{VULKAN_SDK}/Bin/VkLayer*.dll') { Copy-Item '$ENV{VULKAN_SDK}/Bin/VkLayer*.dll' '$<TARGET_FILE_DIR:ailurus_example_render>/' }"
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            VERBATIM
-        )
-    endif()
 endif()

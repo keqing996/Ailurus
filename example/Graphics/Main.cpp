@@ -26,7 +26,12 @@ int Main(int argc, char* argv[])
 	*/
 
 	// Create the application instance
-	Application::Create(800, 800, "Test", Application::Style{ });
+	Application::Create(800, 800, "Test", Application::Style{ 
+		.canResize = true,
+		.haveBorder = true,
+		.enableRenderImGui = true,
+		.enableRender3D = true
+	});
 
 	// Load assets and set up the scene
 	auto modelRef = Application::Get<AssetsSystem>()->LoadModel("./Assets/Model/Cube.fbx");
@@ -55,13 +60,13 @@ int Main(int argc, char* argv[])
 	// Render
 	Application::Loop([pEntityWeak]() -> void {
 		auto deltaTime = Application::Get<TimeSystem>()->DeltaTime() / 1000.0f;
-		Logger::LogInfo("Frame Time: {} ms", Application::Get<TimeSystem>()->DeltaTime());
 
 		// Rotate the cube
 		if (auto pEntity = pEntityWeak.lock())
 		{
 			static float rotationAngle = 0.0f;
 			rotationAngle += 90.0f * deltaTime;  // 90 degrees per second
+			rotationAngle = std::fmod(rotationAngle, 360.0f);
 			
 			// Create rotation quaternion around Y axis
 			pEntity->SetRotation(Math::RotateAxis(Vector3f{ 0.0f, 1.0f, 0.0f }, rotationAngle));

@@ -7,6 +7,7 @@
 #include "Ailurus/Application/RenderSystem/Uniform/UniformAccess.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/AssetsSystem/AssetRef.h"
+#include "Ailurus/Application/AssetsSystem/Texture/Texture.h"
 #include "Material.h"
 
 namespace Ailurus
@@ -35,6 +36,7 @@ namespace Ailurus
 		auto SetUniformValue(RenderPassType pass, const UniformAccess& entry, const UniformValue& value) -> void;
 		auto GetUniformSetMemory(RenderPassType pass) const -> UniformSetMemory*;
 		auto GetRenderPassUniformBufferOffset(RenderPassType pass) const -> std::optional<RenderPassUniformBufferOffsetInfo>;
+		auto GetTextures(RenderPassType pass) const -> const std::unordered_map<std::string, AssetRef<Texture>>*;
 
 	private:
 		// Target material

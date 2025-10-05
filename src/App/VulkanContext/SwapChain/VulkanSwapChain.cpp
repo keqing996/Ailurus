@@ -7,18 +7,30 @@
 
 namespace Ailurus
 {
-	VulkanSwapChain::VulkanSwapChain()
+	VulkanSwapChain::VulkanSwapChain(bool vsyncEnabled)
 	{
 		// Present mode
+		// VSync: eFifo (always available, guaranteed VSync)
+		// No VSync: eMailbox (triple buffering) or eImmediate (no buffering)
 		try
 		{
-			auto allPresentMode = VulkanContext::GetPhysicalDevice().getSurfacePresentModesKHR(VulkanContext::GetSurface());
-			for (const vk::PresentModeKHR& mode : allPresentMode)
+			_swapChainConfig.presentMode = vk::PresentModeKHR::eFifo; // Default to VSync
+			
+			if (!vsyncEnabled)
 			{
-				if (mode == vk::PresentModeKHR::eMailbox)
+				auto allPresentMode = VulkanContext::GetPhysicalDevice().getSurfacePresentModesKHR(VulkanContext::GetSurface());
+				for (const vk::PresentModeKHR& mode : allPresentMode)
 				{
-					_swapChainConfig.presentMode = mode;
-					break;
+					// Prefer mailbox (triple buffering) over immediate
+					if (mode == vk::PresentModeKHR::eMailbox)
+					{
+						_swapChainConfig.presentMode = mode;
+						break;
+					}
+					else if (mode == vk::PresentModeKHR::eImmediate)
+					{
+						_swapChainConfig.presentMode = mode;
+					}
 				}
 			}
 		}
@@ -153,6 +165,7 @@ namespace Ailurus
 	{
 		try
 		{
+			// Destroy swap chain image views
 			for (const auto& view : _vkSwapChainImageViews)
 				VulkanContext::GetDevice().destroyImageView(view);
 

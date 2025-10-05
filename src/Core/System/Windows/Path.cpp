@@ -17,6 +17,7 @@ namespace Ailurus
 
         // For relative paths, resolve against the resource root
         std::filesystem::path resourceRoot = GetResourceRootPath();
+        resourceRoot = resourceRoot.remove_filename(); // Get directory of executable
         std::filesystem::path relativePath = path;
         std::filesystem::path resolved = resourceRoot / relativePath;
         

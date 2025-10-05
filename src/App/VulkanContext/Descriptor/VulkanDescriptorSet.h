@@ -1,11 +1,10 @@
 #pragma once
 
-#include "VulkanContext/VulkanPch.h"
+#include <vulkan/vulkan.hpp>
 
 namespace Ailurus
 {
-    struct VulkanDescriptorSet
-    {
-        vk::DescriptorSet descriptorSet;
-    };
+    // Simplified: Just use the Vulkan type directly as an alias
+    using VulkanDescriptorSet = vk::DescriptorSet;
+    
 } // namespace Ailurus

@@ -4,7 +4,6 @@
 
 namespace Ailurus
 {
-	class VulkanRenderPass;
 	struct StageShaderArray;
 	class VulkanVertexLayout;
 	class UniformSet;
@@ -12,7 +11,7 @@ namespace Ailurus
 	class VulkanPipeline
 	{
 	public:
-		VulkanPipeline(const VulkanRenderPass* pRenderPass, const StageShaderArray& shaderArray, 
+		VulkanPipeline(vk::Format colorFormat, vk::Format depthFormat, const StageShaderArray& shaderArray, 
 			const VulkanVertexLayout* pVertexLayout, const std::vector<const UniformSet*>& uniformSets);
 		~VulkanPipeline();
 

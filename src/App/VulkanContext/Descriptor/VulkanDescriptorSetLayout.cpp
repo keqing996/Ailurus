@@ -7,14 +7,14 @@
 
 namespace Ailurus
 {
-	VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(UniformSet* pUniformSet)
+	VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(UniformSet* pUniformSet, const std::vector<TextureBindingInfo>& textureBindings)
 	{
 		std::vector<vk::DescriptorSetLayoutBinding> layoutBindings;
 
+		// Add uniform buffer bindings
 		const auto& allBindingPoints = pUniformSet->GetAllBindingPoints();
 		for (const auto& [bindingId, pBindingPoint]: allBindingPoints)
 		{
-			// Todo: for now we only support uniform buffers, but in the future we can add support for other types
 			_requirement[vk::DescriptorType::eUniformBuffer]++;
 
 			vk::ShaderStageFlags usedShaderStage;
@@ -27,6 +27,20 @@ namespace Ailurus
 				.setStageFlags(usedShaderStage)
 				.setDescriptorCount(1)	// Uniform buffers count (always one because we use dynamic offset)
 				.setDescriptorType(vk::DescriptorType::eUniformBuffer);
+
+			layoutBindings.push_back(bindingInfo);
+		}
+
+		// Add texture bindings (combined image samplers)
+		for (const auto& textureBinding : textureBindings)
+		{
+			_requirement[vk::DescriptorType::eCombinedImageSampler]++;
+
+			vk::DescriptorSetLayoutBinding bindingInfo;
+			bindingInfo.setBinding(textureBinding.bindingId)
+				.setStageFlags(textureBinding.shaderStages)
+				.setDescriptorCount(1)
+				.setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
 
 			layoutBindings.push_back(bindingInfo);
 		}
