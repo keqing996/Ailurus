@@ -114,12 +114,6 @@ namespace Ailurus
 	{
 		VulkanContext::RenderFrame(&_needRebuildSwapChain,
 			[this](uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void {
-				RenderPrepare();
-
-				CollectRenderingContext();
-				UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
-				UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
-
 				// Get swap chain for image layout transitions
 				auto pSwapChain = VulkanContext::GetSwapChain();
 				const auto& swapChainImages = pSwapChain->GetSwapChainImages();
@@ -137,7 +131,15 @@ namespace Ailurus
 
 				// Forward pass
 				if (_enable3D)
+				{
+					RenderPrepare();
+
+					CollectRenderingContext();
+					UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
+					UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
+
 					RenderPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
+				}
 
 				// ImGui pass
 				if (_enableImGui)
