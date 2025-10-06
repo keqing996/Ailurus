@@ -9,5 +9,9 @@ namespace Ailurus
 		Render,
 		StaticMeshRender,
 		Light,
+		DirectionalLight,
+		PointLight,
+		SpotLight,
+		AreaLight,
 		Camera)
 }
