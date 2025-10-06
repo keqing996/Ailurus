@@ -54,7 +54,7 @@ int Main(int argc, char* argv[])
 	std::uniform_real_distribution<float> speedDist(30.0f, 120.0f);
 
 	// Create multiple cubes with random properties
-	const int numCubes = 2;
+	const int numCubes = 5;
 	cubes.reserve(numCubes);
 
 	for (int i = 0; i < numCubes; ++i)

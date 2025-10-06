@@ -84,18 +84,16 @@ namespace Ailurus
 			return;
 		}
 
-		const void* pWriteData = nullptr;
 		if (value.GetType() == UniformValueType::Mat4)
 		{
-			UniformValue newMat4(value.GetData().matrix4x4Value.Transpose());
-			pWriteData = newMat4.GetDataPointer();
+			// Transpose matrix and write directly to avoid dangling pointer
+			auto transposedMat4 = value.GetData().matrix4x4Value.Transpose();
+			std::memcpy(static_cast<void*>(pBeginPos), &transposedMat4, writeSize);
 		}
 		else
 		{
-			pWriteData = value.GetDataPointer();
+			std::memcpy(static_cast<void*>(pBeginPos), value.GetDataPointer(), writeSize);
 		}
-
-		std::memcpy(static_cast<void*>(pBeginPos), pWriteData, writeSize);
 	}
 
 	uint32_t VulkanUniformBuffer::GetBufferSize() const

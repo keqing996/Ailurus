@@ -174,6 +174,15 @@ TEST_SUITE("Matrix3x3")
 		// Compare to glm
 		glm::quat glmQuatX = angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		MathTestHelper::CheckQuaternionEqual(quatX, glmQuatX);
+
+		// Test with non-normalized axis - should auto-normalize
+		Quaternionf quatNonNorm = RotateAxis(Vector3f(2.0f, 0.0f, 0.0f), 90);
+		MathTestHelper::CheckQuaternionEqual(quatNonNorm, glmQuatX);
+		
+		// Test with diagonal axis (non-normalized)
+		Quaternionf quatDiag = RotateAxis(Vector3f(1.0f, 1.0f, 1.0f), 90);
+		glm::quat glmQuatDiag = angleAxis(glm::radians(90.0f), glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f)));
+		MathTestHelper::CheckQuaternionEqual(quatDiag, glmQuatDiag);
 	}
 
 	TEST_CASE("LookAt function")

@@ -295,12 +295,15 @@ namespace Ailurus
 			return;
 		}
 
+		// Change to column-major order for Vulkan
+		auto columnMajorMatrix = modelMatrix.Transpose();
+
 		// Record command
 		_buffer.pushConstants(pPipeline->GetPipelineLayout(), 
 			vk::ShaderStageFlagBits::eVertex, 
 			0, 
 			sizeof(Matrix4x4f), 
-			&modelMatrix);
+			&columnMajorMatrix);
 	}
 
 	void VulkanCommandBuffer::ExecuteSecondaryCommandBuffer(const VulkanCommandBuffer* pSecondaryCommandBuffer)
