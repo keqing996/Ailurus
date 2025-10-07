@@ -73,6 +73,13 @@ namespace Ailurus
 		/// @param useDepth If true, use depth attachment; if false, render without depth
 		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true);
 		
+		/// @brief Begin dynamic rendering with multiple color attachments (for G-Buffer)
+		/// @param colorImageViews Vector of color attachment image views
+		/// @param depthImageView Depth attachment image view
+		/// @param extent Rendering area extent
+		/// @param clearColor If true, clear color attachments; if false, load existing content
+		void BeginRenderingMultipleAttachments(const std::vector<vk::ImageView>& colorImageViews, vk::ImageView depthImageView, vk::Extent2D extent, bool clearColor = true);
+		
 		/// @brief End dynamic rendering
 		void EndRendering();
 		

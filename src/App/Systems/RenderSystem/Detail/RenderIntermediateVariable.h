@@ -3,7 +3,9 @@
 #include <array>
 #include <vector>
 #include <Ailurus/Math/Matrix4x4.hpp>
+#include <Ailurus/Math/Vector3.hpp>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
+#include <Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorSet.h>
 
 namespace Ailurus

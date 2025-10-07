@@ -108,13 +108,13 @@ int Main(int argc, char* argv[])
 	pCameraEntity = pCameraEntityLocal;
 	if (auto pCamera = pCameraEntityLocal.lock())
 	{
-		// Create camera with FOV and aspect ratio
-		// 90 degree horizontal FOV, aspect ratio 1.0 (square), near 0.1, far 10.0
-		auto pCam = pCamera->AddComponent<CompCamera>(0.2f, 0.2f, 0.1f, 10.0f);
-
 		auto size = Application::GetSize();
 		float aspectRatio = static_cast<float>(size.x) / static_cast<float>(size.y);
-		pCam->Set(90.0f, aspectRatio, 0.1f, 10.0f); // fovHorizontal, aspect, near, far
+
+		// Create camera with FOV and aspect ratio
+		// 90 degree horizontal FOV, aspect ratio 1.0 (square), near 0.1, far 100.0
+		auto pCam = pCamera->AddComponent<CompCamera>(0.2f, 0.2f, 0.1f, 100.0f);
+		pCam->Set(90.0f, aspectRatio, 0.1f, 100.0f); // fovHorizontal, aspect, near, far
 		Application::Get<RenderSystem>()->SetMainCamera(pCam);
 
 		pCamera->SetPosition({ 0.0f, 0.0f, 4.0f }); // Move camera back to see the cube better
@@ -277,6 +277,6 @@ void OnScreenResize(Vector2i size)
 	{
 		float aspectRatio = static_cast<float>(size.x) / static_cast<float>(size.y);
 		float fov = pCamera->GetHorizontalFOV();
-		pCamera->Set(fov, aspectRatio, 0.1f, 10.0f);
+		pCamera->Set(fov, aspectRatio, 0.1f, 100.0f);
 	}
 }

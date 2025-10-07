@@ -214,6 +214,42 @@ namespace Ailurus
 		_buffer.beginRenderingKHR(renderingInfo);
 	}
 
+	void VulkanCommandBuffer::BeginRenderingMultipleAttachments(const std::vector<vk::ImageView>& colorImageViews, vk::ImageView depthImageView, vk::Extent2D extent, bool clearColor)
+	{
+		// Create color attachments for all G-Buffer targets
+		std::vector<vk::RenderingAttachmentInfo> colorAttachments;
+		colorAttachments.reserve(colorImageViews.size());
+
+		for (const auto& imageView : colorImageViews)
+		{
+			vk::RenderingAttachmentInfo colorAttachment;
+			colorAttachment.setImageView(imageView)
+				.setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
+				.setLoadOp(clearColor ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
+				.setStoreOp(vk::AttachmentStoreOp::eStore)
+				.setClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
+
+			colorAttachments.push_back(colorAttachment);
+		}
+
+		// Depth attachment
+		vk::RenderingAttachmentInfo depthAttachment;
+		depthAttachment.setImageView(depthImageView)
+			.setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+			.setLoadOp(vk::AttachmentLoadOp::eClear)
+			.setStoreOp(vk::AttachmentStoreOp::eStore) // Store depth for later use
+			.setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
+
+		// Rendering info
+		vk::RenderingInfo renderingInfo;
+		renderingInfo.setRenderArea(vk::Rect2D{{0, 0}, extent})
+			.setLayerCount(1)
+			.setColorAttachments(colorAttachments)
+			.setPDepthAttachment(&depthAttachment);
+
+		_buffer.beginRenderingKHR(renderingInfo);
+	}
+
 	void VulkanCommandBuffer::EndRendering()
 	{
 		_buffer.endRenderingKHR();
