@@ -156,8 +156,8 @@ namespace Ailurus
 				const float outerCutoff = pLight->GetOuterCutoff();
 				
 				// Convert degrees to radians and then to cosine
-				const float innerRadians = innerCutoff * 3.14159265359f / 180.0f;
-				const float outerRadians = outerCutoff * 3.14159265359f / 180.0f;
+				const float innerRadians = innerCutoff * static_cast<float>(M_PI) / 180.0f;
+				const float outerRadians = outerCutoff * static_cast<float>(M_PI) / 180.0f;
 				const float cosInner = std::cos(innerRadians);
 				const float cosOuter = std::cos(outerRadians);
 
@@ -279,54 +279,54 @@ namespace Ailurus
 			var->numSpotLights);
 
 		// Set directional light arrays
-		for (int i = 0; i < MAX_DIRECTIONAL_LIGHTS; i++)
+		for (uint32_t i = 0; i < MAX_DIRECTIONAL_LIGHTS; i++)
 		{
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameDirLightDirections(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNameDirLightDirections(), i },
 				var->dirLightDirections[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameDirLightColors(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNameDirLightColors(), i },
 				var->dirLightColors[i]);
 		}
 
 		// Set point light arrays
-		for (int i = 0; i < MAX_POINT_LIGHTS; i++)
+		for (uint32_t i = 0; i < MAX_POINT_LIGHTS; i++)
 		{
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNamePointLightPositions(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNamePointLightPositions(), i },
 				var->pointLightPositions[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNamePointLightColors(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNamePointLightColors(), i },
 				var->pointLightColors[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNamePointLightAttenuations(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNamePointLightAttenuations(), i },
 				var->pointLightAttenuations[i]);
 		}
 
 		// Set spot light arrays
-		for (int i = 0; i < MAX_SPOT_LIGHTS; i++)
+		for (uint32_t i = 0; i < MAX_SPOT_LIGHTS; i++)
 		{
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightPositions(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNameSpotLightPositions(), i },
 				var->spotLightPositions[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightDirections(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNameSpotLightDirections(), i },
 				var->spotLightDirections[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightColors(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNameSpotLightColors(), i },
 				var->spotLightColors[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightAttenuations(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNameSpotLightAttenuations(), i },
 				var->spotLightAttenuations[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightCutoffs(), static_cast<uint32_t>(i) },
+				{ 0, GetGlobalUniformAccessNameSpotLightCutoffs(), i },
 				var->spotLightCutoffs[i]);
 		}
 
