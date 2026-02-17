@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <array>
+#include <cmath>
 #include <Ailurus/Utility/EnumReflection.h>
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/Application/Application.h>
@@ -12,6 +13,7 @@
 #include <Ailurus/Application/AssetsSystem/Model/Model.h>
 #include <Ailurus/Application/SceneSystem/SceneSystem.h>
 #include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
+#include <Ailurus/Application/SceneSystem/Component/CompLight.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/RenderTarget/RenderTargetManager.h>
@@ -99,6 +101,90 @@ namespace Ailurus
 			});
 	}
 
+	void RenderSystem::CollectLights()
+	{
+		// Clear previous light data
+		auto& var = _pIntermediateVariable;
+		var->numDirectionalLights = 0;
+		var->numPointLights = 0;
+		var->numSpotLights = 0;
+		var->dirLightDirections.clear();
+		var->dirLightColors.clear();
+		var->pointLightPositions.clear();
+		var->pointLightColors.clear();
+		var->pointLightAttenuations.clear();
+		var->spotLightPositions.clear();
+		var->spotLightDirections.clear();
+		var->spotLightColors.clear();
+		var->spotLightAttenuations.clear();
+		var->spotLightCutoffs.clear();
+
+		// Collect lights from all entities
+		const auto allEntities = Application::Get<SceneSystem>()->GetAllRawEntities();
+		for (const auto pEntity : allEntities)
+		{
+			const auto pLight = pEntity->GetComponent<CompLight>();
+			if (pLight == nullptr)
+				continue;
+
+			const LightType lightType = pLight->GetLightType();
+			const Vector3f color = pLight->GetColor();
+			const float intensity = pLight->GetIntensity();
+
+			if (lightType == LightType::Directional && var->numDirectionalLights < MAX_DIRECTIONAL_LIGHTS)
+			{
+				const Vector3f direction = pLight->GetDirection();
+				var->dirLightDirections.push_back(Vector4f(direction.x, direction.y, direction.z, 0.0f));
+				var->dirLightColors.push_back(Vector4f(color.x, color.y, color.z, intensity));
+				var->numDirectionalLights++;
+			}
+			else if (lightType == LightType::Point && var->numPointLights < MAX_POINT_LIGHTS)
+			{
+				const Vector3f position = pEntity->GetPosition();
+				const Vector3f attenuation = pLight->GetAttenuation();
+				var->pointLightPositions.push_back(Vector4f(position.x, position.y, position.z, 0.0f));
+				var->pointLightColors.push_back(Vector4f(color.x, color.y, color.z, intensity));
+				var->pointLightAttenuations.push_back(Vector4f(attenuation.x, attenuation.y, attenuation.z, 0.0f));
+				var->numPointLights++;
+			}
+			else if (lightType == LightType::Spot && var->numSpotLights < MAX_SPOT_LIGHTS)
+			{
+				const Vector3f position = pEntity->GetPosition();
+				const Vector3f direction = pLight->GetDirection();
+				const Vector3f attenuation = pLight->GetAttenuation();
+				const float innerCutoff = pLight->GetInnerCutoff();
+				const float outerCutoff = pLight->GetOuterCutoff();
+				
+				// Convert degrees to radians and then to cosine
+				const float innerRadians = innerCutoff * static_cast<float>(M_PI) / 180.0f;
+				const float outerRadians = outerCutoff * static_cast<float>(M_PI) / 180.0f;
+				const float cosInner = std::cos(innerRadians);
+				const float cosOuter = std::cos(outerRadians);
+
+				var->spotLightPositions.push_back(Vector4f(position.x, position.y, position.z, 0.0f));
+				var->spotLightDirections.push_back(Vector4f(direction.x, direction.y, direction.z, 0.0f));
+				var->spotLightColors.push_back(Vector4f(color.x, color.y, color.z, intensity));
+				var->spotLightAttenuations.push_back(Vector4f(attenuation.x, attenuation.y, attenuation.z, 0.0f));
+				var->spotLightCutoffs.push_back(Vector4f(cosInner, cosOuter, 0.0f, 0.0f));
+				var->numSpotLights++;
+			}
+		}
+
+		// Pad arrays to max size with zeros
+		var->dirLightDirections.resize(MAX_DIRECTIONAL_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->dirLightColors.resize(MAX_DIRECTIONAL_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+
+		var->pointLightPositions.resize(MAX_POINT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->pointLightColors.resize(MAX_POINT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->pointLightAttenuations.resize(MAX_POINT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+
+		var->spotLightPositions.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->spotLightDirections.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->spotLightColors.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->spotLightAttenuations.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->spotLightCutoffs.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+	}
+
 	void RenderSystem::CreateIntermediateVariable()
 	{
 		_pIntermediateVariable = std::make_unique<RenderIntermediateVariable>();
@@ -135,6 +221,7 @@ namespace Ailurus
 					RenderPrepare();
 
 					CollectRenderingContext();
+					CollectLights();
 					UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 					UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 
@@ -159,13 +246,80 @@ namespace Ailurus
 
 	void RenderSystem::UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator)
 	{
+		auto& var = _pIntermediateVariable;
+
 		_pGlobalUniformMemory->SetUniformValue(
 			{ 0, GetGlobalUniformAccessNameViewProjMat() },
-			_pIntermediateVariable->viewProjectionMatrix);
+			var->viewProjectionMatrix);
 
 		_pGlobalUniformMemory->SetUniformValue(
 			{ 0, GetGlobalUniformAccessNameCameraPos() },
 			_pMainCamera->GetEntity()->GetPosition());
+
+		// Set light counts
+		_pGlobalUniformMemory->SetUniformValue(
+			{ 0, GetGlobalUniformAccessNameNumDirLights() },
+			var->numDirectionalLights);
+
+		_pGlobalUniformMemory->SetUniformValue(
+			{ 0, GetGlobalUniformAccessNameNumPointLights() },
+			var->numPointLights);
+
+		_pGlobalUniformMemory->SetUniformValue(
+			{ 0, GetGlobalUniformAccessNameNumSpotLights() },
+			var->numSpotLights);
+
+		// Set directional light arrays
+		for (uint32_t i = 0; i < MAX_DIRECTIONAL_LIGHTS; i++)
+		{
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNameDirLightDirections(), i },
+				var->dirLightDirections[i]);
+
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNameDirLightColors(), i },
+				var->dirLightColors[i]);
+		}
+
+		// Set point light arrays
+		for (uint32_t i = 0; i < MAX_POINT_LIGHTS; i++)
+		{
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNamePointLightPositions(), i },
+				var->pointLightPositions[i]);
+
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNamePointLightColors(), i },
+				var->pointLightColors[i]);
+
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNamePointLightAttenuations(), i },
+				var->pointLightAttenuations[i]);
+		}
+
+		// Set spot light arrays
+		for (uint32_t i = 0; i < MAX_SPOT_LIGHTS; i++)
+		{
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNameSpotLightPositions(), i },
+				var->spotLightPositions[i]);
+
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNameSpotLightDirections(), i },
+				var->spotLightDirections[i]);
+
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNameSpotLightColors(), i },
+				var->spotLightColors[i]);
+
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNameSpotLightAttenuations(), i },
+				var->spotLightAttenuations[i]);
+
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNameSpotLightCutoffs(), i },
+				var->spotLightCutoffs[i]);
+		}
 
 		// Use cache to get or allocate descriptor set
 		// Key: layout only (global uniform always uses same layout)

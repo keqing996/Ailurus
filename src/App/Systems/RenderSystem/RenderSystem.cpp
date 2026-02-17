@@ -13,6 +13,19 @@ namespace Ailurus
 	const char* RenderSystem::GLOBAL_UNIFORM_SET_NAME = "globalUniform";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_VIEW_PROJ_MAT = "viewProjectionMatrix";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_CAMERA_POS = "cameraPosition";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_NUM_DIR_LIGHTS = "numDirectionalLights";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_NUM_POINT_LIGHTS = "numPointLights";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_NUM_SPOT_LIGHTS = "numSpotLights";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_DIR_LIGHT_DIRECTIONS = "dirLightDirections";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_DIR_LIGHT_COLORS = "dirLightColors";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_POINT_LIGHT_POSITIONS = "pointLightPositions";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_POINT_LIGHT_COLORS = "pointLightColors";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_POINT_LIGHT_ATTENUATIONS = "pointLightAttenuations";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_POSITIONS = "spotLightPositions";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_DIRECTIONS = "spotLightDirections";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_COLORS = "spotLightColors";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_ATTENUATIONS = "spotLightAttenuations";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_CUTOFFS = "spotLightCutoffs";
 
 	RenderSystem::RenderSystem(bool enableImGui, bool enable3D)
 		: _enable3D(enable3D)
@@ -149,9 +162,76 @@ namespace Ailurus
 			"cameraPosition",
 			std::make_unique<UniformVariableNumeric>(UniformValueType::Vector3));
 
+		// Add light counts
+		pGlobalUniformStructure->AddMember(
+			"numDirectionalLights",
+			std::make_unique<UniformVariableNumeric>(UniformValueType::Int));
+		pGlobalUniformStructure->AddMember(
+			"numPointLights",
+			std::make_unique<UniformVariableNumeric>(UniformValueType::Int));
+		pGlobalUniformStructure->AddMember(
+			"numSpotLights",
+			std::make_unique<UniformVariableNumeric>(UniformValueType::Int));
+
+		// Add directional light arrays
+		pGlobalUniformStructure->AddMember(
+			"dirLightDirections",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_DIRECTIONAL_LIGHTS));
+		pGlobalUniformStructure->AddMember(
+			"dirLightColors",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_DIRECTIONAL_LIGHTS));
+
+		// Add point light arrays
+		pGlobalUniformStructure->AddMember(
+			"pointLightPositions",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_POINT_LIGHTS));
+		pGlobalUniformStructure->AddMember(
+			"pointLightColors",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_POINT_LIGHTS));
+		pGlobalUniformStructure->AddMember(
+			"pointLightAttenuations",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_POINT_LIGHTS));
+
+		// Add spot light arrays
+		pGlobalUniformStructure->AddMember(
+			"spotLightPositions",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_SPOT_LIGHTS));
+		pGlobalUniformStructure->AddMember(
+			"spotLightDirections",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_SPOT_LIGHTS));
+		pGlobalUniformStructure->AddMember(
+			"spotLightColors",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_SPOT_LIGHTS));
+		pGlobalUniformStructure->AddMember(
+			"spotLightAttenuations",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_SPOT_LIGHTS));
+		pGlobalUniformStructure->AddMember(
+			"spotLightCutoffs",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
+				MAX_SPOT_LIGHTS));
+
 		auto pBindingPoint = std::make_unique<UniformBindingPoint>(
 			0,
-			std::vector<ShaderStage>{ ShaderStage::Vertex },
+			std::vector<ShaderStage>{ ShaderStage::Vertex, ShaderStage::Fragment },
 			"globalUniform",
 			std::move(pGlobalUniformStructure));
 
@@ -176,6 +256,84 @@ namespace Ailurus
 	auto RenderSystem::GetGlobalUniformAccessNameCameraPos() -> const std::string&
 	{
 		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_CAMERA_POS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameNumDirLights() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_NUM_DIR_LIGHTS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameNumPointLights() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_NUM_POINT_LIGHTS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameNumSpotLights() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_NUM_SPOT_LIGHTS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameDirLightDirections() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_DIR_LIGHT_DIRECTIONS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameDirLightColors() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_DIR_LIGHT_COLORS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNamePointLightPositions() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_POINT_LIGHT_POSITIONS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNamePointLightColors() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_POINT_LIGHT_COLORS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNamePointLightAttenuations() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_POINT_LIGHT_ATTENUATIONS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameSpotLightPositions() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_POSITIONS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameSpotLightDirections() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_DIRECTIONS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameSpotLightColors() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_COLORS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameSpotLightAttenuations() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_ATTENUATIONS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameSpotLightCutoffs() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_CUTOFFS;
 		return value;
 	}
 
