@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 #include <Ailurus/Math/Matrix4x4.hpp>
+#include <Ailurus/Math/Vector4.hpp>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSet.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorSet.h>
 
@@ -40,5 +41,20 @@ namespace Ailurus
 
 		// Rendering descriptor sets
 		std::array<VulkanDescriptorSet, EnumReflection<UniformSetUsage>::Size()> renderingDescriptorSets;
+
+		// Light data (packed as Vector4f for GPU upload)
+		int numDirectionalLights = 0;
+		int numPointLights = 0;
+		int numSpotLights = 0;
+		std::vector<Vector4f> dirLightDirections;  // xyz = direction, w = unused
+		std::vector<Vector4f> dirLightColors;      // xyz = color, w = intensity
+		std::vector<Vector4f> pointLightPositions; // xyz = position, w = unused
+		std::vector<Vector4f> pointLightColors;    // xyz = color, w = intensity
+		std::vector<Vector4f> pointLightAttenuations; // xyz = attenuation, w = unused
+		std::vector<Vector4f> spotLightPositions;  // xyz = position, w = unused
+		std::vector<Vector4f> spotLightDirections; // xyz = direction, w = unused
+		std::vector<Vector4f> spotLightColors;     // xyz = color, w = intensity
+		std::vector<Vector4f> spotLightAttenuations; // xyz = attenuation, w = unused
+		std::vector<Vector4f> spotLightCutoffs;    // x = cos(inner), y = cos(outer), zw = unused
 	};
 }

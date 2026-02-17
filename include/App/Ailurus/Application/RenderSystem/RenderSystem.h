@@ -69,6 +69,7 @@ namespace Ailurus
 		// Render
 		void RenderPrepare();
 		void CollectRenderingContext();
+		void CollectLights();
 		void UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
@@ -78,6 +79,19 @@ namespace Ailurus
 		// Global uniform
 		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;
 		static auto GetGlobalUniformAccessNameCameraPos() -> const std::string&;
+		static auto GetGlobalUniformAccessNameNumDirLights() -> const std::string&;
+		static auto GetGlobalUniformAccessNameNumPointLights() -> const std::string&;
+		static auto GetGlobalUniformAccessNameNumSpotLights() -> const std::string&;
+		static auto GetGlobalUniformAccessNameDirLightDirections() -> const std::string&;
+		static auto GetGlobalUniformAccessNameDirLightColors() -> const std::string&;
+		static auto GetGlobalUniformAccessNamePointLightPositions() -> const std::string&;
+		static auto GetGlobalUniformAccessNamePointLightColors() -> const std::string&;
+		static auto GetGlobalUniformAccessNamePointLightAttenuations() -> const std::string&;
+		static auto GetGlobalUniformAccessNameSpotLightPositions() -> const std::string&;
+		static auto GetGlobalUniformAccessNameSpotLightDirections() -> const std::string&;
+		static auto GetGlobalUniformAccessNameSpotLightColors() -> const std::string&;
+		static auto GetGlobalUniformAccessNameSpotLightAttenuations() -> const std::string&;
+		static auto GetGlobalUniformAccessNameSpotLightCutoffs() -> const std::string&;
 
 	private:
 		bool _needRebuildSwapChain = false;
@@ -97,6 +111,22 @@ namespace Ailurus
 		static const char* GLOBAL_UNIFORM_SET_NAME;
 		static const char* GLOBAL_UNIFORM_ACCESS_VIEW_PROJ_MAT;
 		static const char* GLOBAL_UNIFORM_ACCESS_CAMERA_POS;
+		static const char* GLOBAL_UNIFORM_ACCESS_NUM_DIR_LIGHTS;
+		static const char* GLOBAL_UNIFORM_ACCESS_NUM_POINT_LIGHTS;
+		static const char* GLOBAL_UNIFORM_ACCESS_NUM_SPOT_LIGHTS;
+		static const char* GLOBAL_UNIFORM_ACCESS_DIR_LIGHT_DIRECTIONS;
+		static const char* GLOBAL_UNIFORM_ACCESS_DIR_LIGHT_COLORS;
+		static const char* GLOBAL_UNIFORM_ACCESS_POINT_LIGHT_POSITIONS;
+		static const char* GLOBAL_UNIFORM_ACCESS_POINT_LIGHT_COLORS;
+		static const char* GLOBAL_UNIFORM_ACCESS_POINT_LIGHT_ATTENUATIONS;
+		static const char* GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_POSITIONS;
+		static const char* GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_DIRECTIONS;
+		static const char* GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_COLORS;
+		static const char* GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_ATTENUATIONS;
+		static const char* GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_CUTOFFS;
+		static constexpr int MAX_DIRECTIONAL_LIGHTS = 4;
+		static constexpr int MAX_POINT_LIGHTS = 8;
+		static constexpr int MAX_SPOT_LIGHTS = 4;
 		std::unique_ptr<UniformSet> _pGlobalUniformSet;
 		std::unique_ptr<UniformSetMemory> _pGlobalUniformMemory;
 

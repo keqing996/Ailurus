@@ -2,6 +2,7 @@
 #include <Ailurus/Application/Application.h>
 #include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
 #include <Ailurus/Application/SceneSystem/Component/CompCamera.h>
+#include <Ailurus/Application/SceneSystem/Component/CompLight.h>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
 #include <Ailurus/Application/AssetsSystem/Model/Model.h>
 #include <Ailurus/Application/TimeSystem/TimeSystem.h>
@@ -55,6 +56,17 @@ int Main(int argc, char* argv[])
 		Application::Get<RenderSystem>()->SetMainCamera(pCam);
 
 		pCameraEntity->SetPosition({ 0.0f, 0.0f, 3.0f });  // Move camera back to see the cube better
+	}
+
+	// Create a directional light
+	auto pLightEntity = Application::Get<SceneSystem>()->CreateEntity();
+	if (auto pLight = pLightEntity.lock())
+	{
+		auto pLightComp = pLight->AddComponent<CompLight>();
+		pLightComp->SetLightType(LightType::Directional);
+		pLightComp->SetDirection({ -0.5f, -1.0f, -0.3f });
+		pLightComp->SetColor({ 1.0f, 1.0f, 1.0f });
+		pLightComp->SetIntensity(1.0f);
 	}
 
 	// Render
