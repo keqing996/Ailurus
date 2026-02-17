@@ -52,7 +52,7 @@ namespace Ailurus
 		Vector3f _color = { 1.0f, 1.0f, 1.0f };
 		float _intensity = 1.0f;
 		Vector3f _direction = { 0.0f, -1.0f, 0.0f };
-		Vector3f _attenuation = { 1.0f, 0.09f, 0.032f }; // constant, linear, quadratic
+		Vector3f _attenuation = { 1.0f, 0.09f, 0.032f }; // constant, linear, quadratic (typical values for ~50 unit range)
 		float _innerCutoff = 12.5f;  // degrees
 		float _outerCutoff = 17.5f;  // degrees
 	};

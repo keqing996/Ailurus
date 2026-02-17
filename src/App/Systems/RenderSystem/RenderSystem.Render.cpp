@@ -171,27 +171,18 @@ namespace Ailurus
 		}
 
 		// Pad arrays to max size with zeros
-		while (var->dirLightDirections.size() < MAX_DIRECTIONAL_LIGHTS)
-		{
-			var->dirLightDirections.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-			var->dirLightColors.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-		}
+		var->dirLightDirections.resize(MAX_DIRECTIONAL_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->dirLightColors.resize(MAX_DIRECTIONAL_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
 
-		while (var->pointLightPositions.size() < MAX_POINT_LIGHTS)
-		{
-			var->pointLightPositions.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-			var->pointLightColors.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-			var->pointLightAttenuations.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-		}
+		var->pointLightPositions.resize(MAX_POINT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->pointLightColors.resize(MAX_POINT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->pointLightAttenuations.resize(MAX_POINT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
 
-		while (var->spotLightPositions.size() < MAX_SPOT_LIGHTS)
-		{
-			var->spotLightPositions.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-			var->spotLightDirections.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-			var->spotLightColors.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-			var->spotLightAttenuations.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-			var->spotLightCutoffs.push_back(Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
-		}
+		var->spotLightPositions.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->spotLightDirections.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->spotLightColors.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->spotLightAttenuations.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
+		var->spotLightCutoffs.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
 	}
 
 	void RenderSystem::CreateIntermediateVariable()
