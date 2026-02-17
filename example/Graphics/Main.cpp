@@ -36,7 +36,7 @@ int Main(int argc, char* argv[])
 
 	// Load assets and set up the scene
 	auto modelRef = Application::Get<AssetsSystem>()->LoadModel("./Assets/Model/Cube.fbx");
-	auto materialRef = Application::Get<AssetsSystem>()->LoadMaterial("./Assets/Material/DefaultMaterial.json");
+	auto materialRef = Application::Get<AssetsSystem>()->LoadMaterial("./Assets/Material/PBRMaterial.json");
 
 	auto pEntityWeak = Application::Get<SceneSystem>()->CreateEntity();
 	if (auto pEntity = pEntityWeak.lock())
@@ -66,7 +66,7 @@ int Main(int argc, char* argv[])
 		pLightComp->SetLightType(LightType::Directional);
 		pLightComp->SetDirection({ -0.5f, -1.0f, -0.3f });
 		pLightComp->SetColor({ 1.0f, 1.0f, 1.0f });
-		pLightComp->SetIntensity(1.0f);
+		pLightComp->SetIntensity(2.0f);
 	}
 
 	// Render

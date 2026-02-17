@@ -1,0 +1,76 @@
+[
+    {
+        "pass": "Forward",
+        "shader": [
+            {
+                "stage": "Vertex",
+                "source": "Assets/Shader/pbr.vert"
+            },
+            {
+                "stage": "Fragment",
+                "source": "Assets/Shader/pbr.frag"
+            }
+        ],
+        "uniforms": [
+            {
+                "binding": 0,
+                "shaderStage": [ "Fragment" ],
+                "name": "material",
+                "variable": {
+                    "type": "Structure",
+                    "members": [
+                        {
+                            "name": "albedo",
+                            "variable": {
+                                "type": "Numeric",
+                                "value": {
+                                    "type": "Vector3",
+                                    "x": 1.0,
+                                    "y": 1.0,
+                                    "z": 1.0
+                                }
+                            }
+                        },
+                        {
+                            "name": "metallic",
+                            "variable": {
+                                "type": "Numeric",
+                                "value": {
+                                    "type": "Float",
+                                    "value": 0.0
+                                }
+                            }
+                        },
+                        {
+                            "name": "roughness",
+                            "variable": {
+                                "type": "Numeric",
+                                "value": {
+                                    "type": "Float",
+                                    "value": 0.5
+                                }
+                            }
+                        },
+                        {
+                            "name": "ao",
+                            "variable": {
+                                "type": "Numeric",
+                                "value": {
+                                    "type": "Float",
+                                    "value": 1.0
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "textures": [
+            {
+                "binding": 1,
+                "uniformVarName": "albedoTexture",
+                "path": "./Assets/Texture/wall.jpg"
+            }
+        ]
+    }
+]
