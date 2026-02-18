@@ -56,5 +56,10 @@ namespace Ailurus
 		std::vector<Vector4f> spotLightColors;     // xyz = color, w = intensity
 		std::vector<Vector4f> spotLightAttenuations; // xyz = attenuation, w = unused
 		std::vector<Vector4f> spotLightCutoffs;    // x = cos(inner), y = cos(outer), zw = unused
+
+		// CSM data
+		static constexpr uint32_t CSM_CASCADE_COUNT = 4;
+		std::array<Matrix4x4f, CSM_CASCADE_COUNT> cascadeViewProjMatrices;
+		std::array<float, CSM_CASCADE_COUNT> cascadeSplitDistances;
 	};
 }

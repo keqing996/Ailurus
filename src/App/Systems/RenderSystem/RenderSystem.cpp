@@ -26,6 +26,8 @@ namespace Ailurus
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_COLORS = "spotLightColors";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_ATTENUATIONS = "spotLightAttenuations";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_CUTOFFS = "spotLightCutoffs";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_CASCADE_VIEW_PROJ_MATRICES = "cascadeViewProjMatrices";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_CASCADE_SPLIT_DISTANCES = "cascadeSplitDistances";
 
 	RenderSystem::RenderSystem(bool enableImGui, bool enable3D)
 		: _enable3D(enable3D)
@@ -229,6 +231,18 @@ namespace Ailurus
 				std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4),
 				MAX_SPOT_LIGHTS));
 
+		// Add CSM cascade matrices and split distances
+		pGlobalUniformStructure->AddMember(
+			"cascadeViewProjMatrices",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Mat4),
+				4));  // 4 cascades
+		pGlobalUniformStructure->AddMember(
+			"cascadeSplitDistances",
+			std::make_unique<UniformVariableArray>(
+				std::make_unique<UniformVariableNumeric>(UniformValueType::Float),
+				4));  // 4 cascades
+
 		auto pBindingPoint = std::make_unique<UniformBindingPoint>(
 			0,
 			std::vector<ShaderStage>{ ShaderStage::Vertex, ShaderStage::Fragment },
@@ -334,6 +348,18 @@ namespace Ailurus
 	auto RenderSystem::GetGlobalUniformAccessNameSpotLightCutoffs() -> const std::string&
 	{
 		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_CUTOFFS;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameCascadeViewProjMatrices() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_CASCADE_VIEW_PROJ_MATRICES;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameCascadeSplitDistances() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_CASCADE_SPLIT_DISTANCES;
 		return value;
 	}
 

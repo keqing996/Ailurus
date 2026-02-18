@@ -92,6 +92,8 @@ namespace Ailurus
 		static auto GetGlobalUniformAccessNameSpotLightColors() -> const std::string&;
 		static auto GetGlobalUniformAccessNameSpotLightAttenuations() -> const std::string&;
 		static auto GetGlobalUniformAccessNameSpotLightCutoffs() -> const std::string&;
+		static auto GetGlobalUniformAccessNameCascadeViewProjMatrices() -> const std::string&;
+		static auto GetGlobalUniformAccessNameCascadeSplitDistances() -> const std::string&;
 
 	private:
 		bool _needRebuildSwapChain = false;
@@ -124,6 +126,8 @@ namespace Ailurus
 		static const char* GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_COLORS;
 		static const char* GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_ATTENUATIONS;
 		static const char* GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_CUTOFFS;
+		static const char* GLOBAL_UNIFORM_ACCESS_CASCADE_VIEW_PROJ_MATRICES;
+		static const char* GLOBAL_UNIFORM_ACCESS_CASCADE_SPLIT_DISTANCES;
 		static constexpr int MAX_DIRECTIONAL_LIGHTS = 4;
 		static constexpr int MAX_POINT_LIGHTS = 8;
 		static constexpr int MAX_SPOT_LIGHTS = 4;

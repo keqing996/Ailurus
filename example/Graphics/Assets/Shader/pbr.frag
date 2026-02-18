@@ -16,6 +16,8 @@ layout(std140, set = 0, binding = 0) uniform GlobalUniform {
     vec4 spotLightColors[4];
     vec4 spotLightAttenuations[4];
     vec4 spotLightCutoffs[4];
+    mat4 cascadeViewProjMatrices[4];
+    float cascadeSplitDistances[4];
 } globalUniform;
 
 layout(set = 1, binding = 0) uniform MaterialProperty {
@@ -26,6 +28,12 @@ layout(set = 1, binding = 0) uniform MaterialProperty {
 } material;
 
 layout(set = 1, binding = 1) uniform sampler2D albedoTexture;
+
+// CSM shadow maps - one sampler per cascade
+layout(set = 0, binding = 1) uniform sampler2D shadowMap0;
+layout(set = 0, binding = 2) uniform sampler2D shadowMap1;
+layout(set = 0, binding = 3) uniform sampler2D shadowMap2;
+layout(set = 0, binding = 4) uniform sampler2D shadowMap3;
 
 layout(location = 0) in vec3 fragWorldPos;
 layout(location = 1) in vec3 fragNormal;
@@ -98,6 +106,72 @@ vec3 calculateLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, float lightIntensit
     return (kD * albedo / PI + specular) * lightColor * lightIntensity * NdotL;
 }
 
+// Select cascade based on view-space depth
+int selectCascade(float viewDepth) {
+    for (int i = 0; i < 3; i++) {
+        if (viewDepth < globalUniform.cascadeSplitDistances[i]) {
+            return i;
+        }
+    }
+    return 3; // Last cascade
+}
+
+// PCF shadow sampling
+float sampleShadowMap(sampler2D shadowMap, vec2 uv, float compareDepth) {
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        return 1.0; // Outside shadow map bounds
+    }
+    
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    
+    // 3x3 PCF
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            vec2 offset = vec2(x, y) * texelSize;
+            float depth = texture(shadowMap, uv + offset).r;
+            shadow += (compareDepth - 0.005 > depth) ? 0.0 : 1.0;
+        }
+    }
+    
+    return shadow / 9.0;
+}
+
+// Calculate shadow factor using CSM
+float calculateShadow(vec3 worldPos, vec3 viewPos) {
+    // Calculate view-space depth
+    float viewDepth = length(viewPos);
+    
+    // Select cascade
+    int cascadeIndex = selectCascade(viewDepth);
+    
+    // Transform to light space
+    vec4 lightSpacePos = globalUniform.cascadeViewProjMatrices[cascadeIndex] * vec4(worldPos, 1.0);
+    
+    // Perspective divide
+    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    
+    // Transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    
+    // Get depth from light's perspective
+    float currentDepth = projCoords.z;
+    
+    // Sample appropriate shadow map
+    float shadow;
+    if (cascadeIndex == 0) {
+        shadow = sampleShadowMap(shadowMap0, projCoords.xy, currentDepth);
+    } else if (cascadeIndex == 1) {
+        shadow = sampleShadowMap(shadowMap1, projCoords.xy, currentDepth);
+    } else if (cascadeIndex == 2) {
+        shadow = sampleShadowMap(shadowMap2, projCoords.xy, currentDepth);
+    } else {
+        shadow = sampleShadowMap(shadowMap3, projCoords.xy, currentDepth);
+    }
+    
+    return shadow;
+}
+
 void main() {
     vec3 albedo = material.albedo * texture(albedoTexture, fragUV).rgb;
     float metallic = material.metallic;
@@ -113,12 +187,17 @@ void main() {
     
     vec3 Lo = vec3(0.0);
     
-    // Directional lights
+    // Calculate shadow factor for directional lights
+    vec3 viewPos = fragWorldPos - globalUniform.cameraPosition;
+    float shadow = calculateShadow(fragWorldPos, viewPos);
+    
+    // Directional lights (with shadows)
     for (int i = 0; i < globalUniform.numDirectionalLights; i++) {
         vec3 L = normalize(-globalUniform.dirLightDirections[i].xyz);
         vec3 lightColor = globalUniform.dirLightColors[i].rgb;
         float intensity = globalUniform.dirLightColors[i].w;
-        Lo += calculateLight(N, V, L, lightColor, intensity, albedo, metallic, roughness, F0);
+        vec3 lighting = calculateLight(N, V, L, lightColor, intensity, albedo, metallic, roughness, F0);
+        Lo += lighting * shadow; // Apply shadow to directional lights
     }
     
     // Point lights
