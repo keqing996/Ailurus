@@ -70,6 +70,7 @@ namespace Ailurus
 		void RenderPrepare();
 		void CollectRenderingContext();
 		void CollectLights();
+		void CalculateCascadeShadows();
 		void UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
