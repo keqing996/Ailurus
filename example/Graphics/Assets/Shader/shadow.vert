@@ -2,6 +2,7 @@
 
 layout(push_constant) uniform PushConstants {
     mat4 modelMatrix;
+    uint cascadeIndex;
 } pushConstants;
 
 layout(std140, set = 0, binding = 0) uniform GlobalUniform {
@@ -28,19 +29,7 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
 
-layout(location = 0) out vec3 fragWorldPos;
-layout(location = 1) out vec3 fragNormal;
-layout(location = 2) out vec2 fragUV;
-
 void main() {
     vec4 worldPos = pushConstants.modelMatrix * vec4(inPosition, 1.0);
-    fragWorldPos = worldPos.xyz;
-    
-    // Transform normal to world space (using transpose of inverse of model matrix for non-uniform scaling)
-    mat3 normalMatrix = transpose(inverse(mat3(pushConstants.modelMatrix)));
-    fragNormal = normalize(normalMatrix * inNormal);
-    
-    fragUV = inUV;
-    
-    gl_Position = globalUniform.viewProjectionMatrix * worldPos;
+    gl_Position = globalUniform.cascadeViewProjMatrices[pushConstants.cascadeIndex] * worldPos;
 }

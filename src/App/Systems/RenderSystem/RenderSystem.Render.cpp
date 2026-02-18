@@ -185,6 +185,160 @@ namespace Ailurus
 		var->spotLightCutoffs.resize(MAX_SPOT_LIGHTS, Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
 	}
 
+	void RenderSystem::CalculateCascadeShadows()
+	{
+		auto& var = _pIntermediateVariable;
+		
+		// Only calculate CSM if we have at least one directional light
+		if (var->numDirectionalLights == 0)
+		{
+			// Set identity matrices and zero distances
+			for (uint32_t i = 0; i < RenderIntermediateVariable::CSM_CASCADE_COUNT; i++)
+			{
+				var->cascadeViewProjMatrices[i] = Matrix4x4f::Identity();
+				var->cascadeSplitDistances[i] = 0.0f;
+			}
+			return;
+		}
+
+		// Get camera info
+		const float nearPlane = _pMainCamera->GetNear();
+		const float farPlane = _pMainCamera->GetFar();
+		const Vector3f cameraPos = _pMainCamera->GetEntity()->GetPosition();
+		const Quaternionf cameraRot = _pMainCamera->GetEntity()->GetRotation();
+		
+		// Use the first directional light for shadow calculation
+		const Vector3f lightDir = Vector3f(
+			var->dirLightDirections[0].x,
+			var->dirLightDirections[0].y,
+			var->dirLightDirections[0].z
+		).Normalize();
+
+		// Calculate cascade split distances using practical split scheme (blend of logarithmic and uniform)
+		const float lambda = 0.5f; // Blend factor between uniform (0) and logarithmic (1)
+		for (uint32_t i = 0; i < RenderIntermediateVariable::CSM_CASCADE_COUNT; i++)
+		{
+			float p = static_cast<float>(i + 1) / static_cast<float>(RenderIntermediateVariable::CSM_CASCADE_COUNT);
+			float log = nearPlane * std::pow(farPlane / nearPlane, p);
+			float uniform = nearPlane + (farPlane - nearPlane) * p;
+			float d = lambda * log + (1.0f - lambda) * uniform;
+			var->cascadeSplitDistances[i] = d;
+		}
+
+		// Camera forward direction
+		Matrix4x4f cameraRotMat = Math::QuaternionToRotateMatrix(cameraRot);
+		Vector3f forward = Vector3f(-cameraRotMat[0][2], -cameraRotMat[1][2], -cameraRotMat[2][2]).Normalize();
+		Vector3f right = Vector3f(cameraRotMat[0][0], cameraRotMat[1][0], cameraRotMat[2][0]).Normalize();
+		Vector3f up = Vector3f(cameraRotMat[0][1], cameraRotMat[1][1], cameraRotMat[2][1]).Normalize();
+		
+		// Get camera frustum size at near plane
+		const float tanHalfFovy = std::tan(_pMainCamera->GetHeight() / (2.0f * _pMainCamera->GetNear()));
+		const float aspectRatio = _pMainCamera->GetWidth() / _pMainCamera->GetHeight();
+		
+		// Previous cascade far plane (starts at near plane)
+		float prevSplitDist = nearPlane;
+		
+		for (uint32_t cascadeIndex = 0; cascadeIndex < RenderIntermediateVariable::CSM_CASCADE_COUNT; cascadeIndex++)
+		{
+			float splitDist = var->cascadeSplitDistances[cascadeIndex];
+			
+			// Calculate frustum corner sizes for this cascade
+			float nearHeight = tanHalfFovy * prevSplitDist;
+			float nearWidth = nearHeight * aspectRatio;
+			float farHeight = tanHalfFovy * splitDist;
+			float farWidth = farHeight * aspectRatio;
+			
+			// Calculate 8 frustum corners in world space
+			Vector3f frustumCorners[8];
+			
+			// Near plane corners
+			Vector3f nearCenter = cameraPos + forward * prevSplitDist;
+			frustumCorners[0] = nearCenter + up * nearHeight - right * nearWidth;
+			frustumCorners[1] = nearCenter + up * nearHeight + right * nearWidth;
+			frustumCorners[2] = nearCenter - up * nearHeight - right * nearWidth;
+			frustumCorners[3] = nearCenter - up * nearHeight + right * nearWidth;
+			
+			// Far plane corners
+			Vector3f farCenter = cameraPos + forward * splitDist;
+			frustumCorners[4] = farCenter + up * farHeight - right * farWidth;
+			frustumCorners[5] = farCenter + up * farHeight + right * farWidth;
+			frustumCorners[6] = farCenter - up * farHeight - right * farWidth;
+			frustumCorners[7] = farCenter - up * farHeight + right * farWidth;
+			
+			// Calculate frustum center
+			Vector3f center(0.0f, 0.0f, 0.0f);
+			for (const auto& corner : frustumCorners)
+				center = center + corner;
+			center = center / 8.0f;
+			
+			// Create light view matrix
+			// Light position is behind the frustum center
+			Vector3f lightPos = center - lightDir * 50.0f;
+			
+			// Build light view matrix manually (look at from lightPos to center)
+			Vector3f lightForward = (center - lightPos).Normalize();
+			Vector3f lightUp = Vector3f(0.0f, 1.0f, 0.0f);
+			
+			// If light direction is too close to world up, use alternative up vector
+			if (std::abs(lightForward.Dot(lightUp)) > 0.99f)
+				lightUp = Vector3f(1.0f, 0.0f, 0.0f);
+			
+			Vector3f lightRight = lightForward.Cross(lightUp).Normalize();
+			lightUp = lightRight.Cross(lightForward).Normalize();
+			
+			// Build view matrix
+			Matrix4x4f lightView{
+				{ lightRight.x,   lightRight.y,   lightRight.z,   -lightRight.Dot(lightPos) },
+				{ lightUp.x,      lightUp.y,      lightUp.z,      -lightUp.Dot(lightPos) },
+				{ -lightForward.x, -lightForward.y, -lightForward.z, lightForward.Dot(lightPos) },
+				{ 0.0f,           0.0f,           0.0f,           1.0f }
+			};
+			
+			// Transform frustum corners to light space and find min/max
+			float minX = std::numeric_limits<float>::max();
+			float maxX = std::numeric_limits<float>::lowest();
+			float minY = std::numeric_limits<float>::max();
+			float maxY = std::numeric_limits<float>::lowest();
+			float minZ = std::numeric_limits<float>::max();
+			float maxZ = std::numeric_limits<float>::lowest();
+			
+			for (const auto& corner : frustumCorners)
+			{
+				Vector4f lightSpaceCorner = lightView * Vector4f(corner.x, corner.y, corner.z, 1.0f);
+				minX = std::min(minX, lightSpaceCorner.x);
+				maxX = std::max(maxX, lightSpaceCorner.x);
+				minY = std::min(minY, lightSpaceCorner.y);
+				maxY = std::max(maxY, lightSpaceCorner.y);
+				minZ = std::min(minZ, lightSpaceCorner.z);
+				maxZ = std::max(maxZ, lightSpaceCorner.z);
+			}
+			
+			// Extend the Z range to capture objects that might cast shadows into frustum
+			const float zExtension = 50.0f;
+			minZ -= zExtension;
+			
+			// Create orthographic projection for this cascade
+			// Using the helper function from CompCamera.cpp
+			float a11 = 2.0f / (maxX - minX);
+			float a22 = 2.0f / (maxY - minY);
+			float a33 = 2.0f / (maxZ - minZ);
+			float a34 = -(maxZ + minZ) / (maxZ - minZ);
+			
+			Matrix4x4f lightProj = -1.0f * Matrix4x4f{
+				{ a11,  0.0f, 0.0f, 0.0f },
+				{ 0.0f, a22,  0.0f, 0.0f },
+				{ 0.0f, 0.0f, a33,  a34  },
+				{ 0.0f, 0.0f, 0.0f, 1.0f }
+			};
+			
+			// Store the combined light view-projection matrix
+			var->cascadeViewProjMatrices[cascadeIndex] = lightProj * lightView;
+			
+			// Update for next cascade
+			prevSplitDist = splitDist;
+		}
+	}
+
 	void RenderSystem::CreateIntermediateVariable()
 	{
 		_pIntermediateVariable = std::make_unique<RenderIntermediateVariable>();
@@ -222,6 +376,7 @@ namespace Ailurus
 
 					CollectRenderingContext();
 					CollectLights();
+					CalculateCascadeShadows();
 					UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 					UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 
@@ -319,6 +474,18 @@ namespace Ailurus
 			_pGlobalUniformMemory->SetUniformValue(
 				{ 0, GetGlobalUniformAccessNameSpotLightCutoffs(), i },
 				var->spotLightCutoffs[i]);
+		}
+
+		// Set CSM cascade matrices and split distances
+		for (uint32_t i = 0; i < RenderIntermediateVariable::CSM_CASCADE_COUNT; i++)
+		{
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNameCascadeViewProjMatrices(), i },
+				var->cascadeViewProjMatrices[i]);
+
+			_pGlobalUniformMemory->SetUniformValue(
+				{ 0, GetGlobalUniformAccessNameCascadeSplitDistances(), i },
+				var->cascadeSplitDistances[i]);
 		}
 
 		// Use cache to get or allocate descriptor set

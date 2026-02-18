@@ -27,6 +27,11 @@ namespace Ailurus
 		Matrix4x4f GetProjectionMatrix() const;
 		Matrix4x4f GetViewMatrix() const;
 
+		float GetWidth() const { return _right - _left; }
+		float GetHeight() const { return _top - _bottom; }
+		float GetNear() const { return _nearPlaneDist; }
+		float GetFar() const { return _farPlaneDist; }
+
 		void Set(float l, float r, float t, float b, float n, float f);
 		void Set(float fovHorizontal, float aspect, float n, float f);
 
