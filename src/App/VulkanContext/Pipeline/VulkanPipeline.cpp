@@ -15,8 +15,10 @@ namespace Ailurus
 		vk::Format depthFormat,
 		const StageShaderArray& shaderArray,
 		const VulkanVertexLayout* pVertexLayout,
-		const std::vector<const UniformSet*>& uniformSets)
+		const std::vector<const UniformSet*>& uniformSets,
+		uint32_t pushConstantSize)
 	{
+		const bool depthOnly = (colorFormat == vk::Format::eUndefined);
 		// Shader stages
 		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
 		for (auto i = 0; i < StageShaderArray::Size(); i++)
@@ -36,7 +38,7 @@ namespace Ailurus
 		vk::PushConstantRange pushConstantRange;
 		pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex)
 			.setOffset(0)
-			.setSize(sizeof(Matrix4x4f));	// One materix for model matrix 
+			.setSize(pushConstantSize);
 
 		// Descriptor set layouts
 		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
@@ -93,9 +95,9 @@ namespace Ailurus
 			.setAlphaToOneEnable(false)
 			.setPSampleMask(nullptr)
 			.setAlphaToCoverageEnable(false) // todo may true ?
-			.setRasterizationSamples(VulkanContext::GetMSAASamples());
+			.setRasterizationSamples(depthOnly ? vk::SampleCountFlagBits::e1 : VulkanContext::GetMSAASamples());
 
-		// Color blend
+		// Color blend (only for passes with color output)
 		vk::PipelineColorBlendAttachmentState colorBlendAttachment;
 		colorBlendAttachment.setBlendEnable(false)
 			.setColorWriteMask(vk::ColorComponentFlagBits::eR
@@ -106,8 +108,10 @@ namespace Ailurus
 		vk::PipelineColorBlendStateCreateInfo colorBlending;
 		colorBlending.setLogicOpEnable(false)
 			.setLogicOp(vk::LogicOp::eCopy)
-			.setAttachments(colorBlendAttachment)
 			.setBlendConstants(std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
+
+		if (!depthOnly)
+			colorBlending.setAttachments(colorBlendAttachment);
 
 		// Depth and stencil state
 		vk::PipelineDepthStencilStateCreateInfo depthStencil;
@@ -128,9 +132,11 @@ namespace Ailurus
 
 		// Pipeline rendering create info for dynamic rendering
 		vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
-		pipelineRenderingCreateInfo.setColorAttachmentFormats(colorFormat)
-			.setDepthAttachmentFormat(depthFormat)
+		pipelineRenderingCreateInfo.setDepthAttachmentFormat(depthFormat)
 			.setStencilAttachmentFormat(vk::Format::eUndefined);
+
+		if (!depthOnly)
+			pipelineRenderingCreateInfo.setColorAttachmentFormats(colorFormat);
 
 		// Create the pipeline
 		vk::GraphicsPipelineCreateInfo pipelineInfo;

@@ -5,6 +5,9 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
+#include <VulkanContext/Resource/VulkanResourceManager.h>
+#include <VulkanContext/Resource/Image/VulkanSampler.h>
+#include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
 #include "Ailurus/Utility/Logger.h"
 #include "Detail/RenderIntermediateVariable.h"
 
@@ -251,9 +254,22 @@ namespace Ailurus
 
 		_pGlobalUniformSet->AddBindingPoint(std::move(pBindingPoint));
 		_pGlobalUniformSet->InitUniformBufferInfo();
-		_pGlobalUniformSet->InitDescriptorSetLayout();
+
+		// Add shadow map sampler bindings (set=0, bindings 1-4) to the global descriptor layout
+		std::vector<TextureBindingInfo> shadowMapBindings;
+		for (uint32_t i = 0; i < RenderIntermediateVariable::CSM_CASCADE_COUNT; i++)
+		{
+			TextureBindingInfo bindingInfo;
+			bindingInfo.bindingId = i + 1;
+			bindingInfo.shaderStages = vk::ShaderStageFlagBits::eFragment;
+			shadowMapBindings.push_back(bindingInfo);
+		}
+		_pGlobalUniformSet->InitDescriptorSetLayout(shadowMapBindings);
 
 		_pGlobalUniformMemory = std::make_unique<UniformSetMemory>(_pGlobalUniformSet.get());
+
+		// Create shadow map sampler
+		_shadowSampler = VulkanContext::GetResourceManager()->CreateSampler();
 	}
 
 	auto RenderSystem::GetGlobalUniformSet() const -> UniformSet*

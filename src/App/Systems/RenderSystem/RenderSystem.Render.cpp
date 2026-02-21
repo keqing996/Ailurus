@@ -19,12 +19,15 @@
 #include <VulkanContext/RenderTarget/RenderTargetManager.h>
 #include <VulkanContext/CommandBuffer/VulkanCommandBuffer.h>
 #include <VulkanContext/Pipeline/VulkanPipelineManager.h>
+#include <VulkanContext/Pipeline/VulkanPipelineEntry.h>
 #include <VulkanContext/DataBuffer/VulkanVertexBuffer.h>
 #include <VulkanContext/DataBuffer/VulkanIndexBuffer.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include <VulkanContext/Vertex/VulkanVertexLayoutManager.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorAllocator.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
+#include <VulkanContext/Descriptor/VulkanDescriptorWriter.h>
+#include <VulkanContext/Resource/Image/VulkanSampler.h>
 #include "Ailurus/Application/ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Detail/RenderIntermediateVariable.h"
@@ -380,6 +383,9 @@ namespace Ailurus
 					UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 					UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 
+					// Shadow pass (renders scene from light's perspective into shadow maps)
+					RenderShadowPass(pCommandBuffer, pDescriptorAllocator);
+
 					RenderPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
 				}
 
@@ -503,6 +509,20 @@ namespace Ailurus
 
 		// IMPORTANT: Always update descriptor set data (buffer content changes each frame)
 		_pGlobalUniformMemory->UpdateToDescriptorSet(pCommandBuffer, globalDescriptorSet);
+
+		// Write shadow map image views to the global descriptor set (bindings 1-4)
+		if (_shadowSampler != nullptr)
+		{
+			auto* pRenderTargetManager = VulkanContext::GetRenderTargetManager();
+			VulkanDescriptorWriter shadowWriter;
+			for (uint32_t i = 0; i < pRenderTargetManager->GetShadowMapCascadeCount(); i++)
+			{
+				vk::ImageView shadowMapView = pRenderTargetManager->GetShadowMapImageView(i);
+				if (shadowMapView)
+					shadowWriter.WriteImage(i + 1, shadowMapView, _shadowSampler->GetSampler());
+			}
+			shadowWriter.UpdateSet(globalDescriptorSet);
+		}
 	}
 
 	void RenderSystem::UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator)
@@ -519,8 +539,13 @@ namespace Ailurus
 				if (mapInstDescriptorSetMap.contains(pMaterialInstance))
 					continue;
 
+				// Skip passes that have no material uniform set (e.g., shadow pass)
+				auto* pUniformSet = pMaterial->GetUniformSet(pass);
+				if (pUniformSet == nullptr)
+					continue;
+
 				// Use cache to get or allocate descriptor set
-				auto* pDescriptorLayout = pMaterial->GetUniformSet(pass)->GetDescriptorSetLayout();
+				auto* pDescriptorLayout = pUniformSet->GetDescriptorSetLayout();
 				
 				// Create cache key based on layout and material instance
 				VulkanDescriptorAllocator::CacheKey key;
@@ -535,6 +560,102 @@ namespace Ailurus
 				// Record material instance descriptor set
 				mapInstDescriptorSetMap[pMaterialInstance] = descriptorSet;
 			}
+		}
+	}
+
+	void RenderSystem::RenderShadowPass(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator)
+	{
+		auto* pRenderTargetManager = VulkanContext::GetRenderTargetManager();
+		const uint32_t cascadeCount = pRenderTargetManager->GetShadowMapCascadeCount();
+		const uint32_t shadowMapSize = 2048;
+
+		auto& shadowMeshes = _pIntermediateVariable->renderingMeshes[RenderPassType::Shadow];
+
+		for (uint32_t cascadeIndex = 0; cascadeIndex < cascadeCount; cascadeIndex++)
+		{
+			vk::Image shadowImage = pRenderTargetManager->GetShadowMapImage(cascadeIndex);
+			vk::ImageView shadowImageView = pRenderTargetManager->GetShadowMapImageView(cascadeIndex);
+
+			if (!shadowImage || !shadowImageView)
+				continue;
+
+			// Transition shadow map to depth attachment optimal
+			pCommandBuffer->ImageMemoryBarrier(
+				shadowImage,
+				vk::ImageLayout::eUndefined,
+				vk::ImageLayout::eDepthStencilAttachmentOptimal,
+				vk::AccessFlags{},
+				vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+				vk::PipelineStageFlagBits::eTopOfPipe,
+				vk::PipelineStageFlagBits::eEarlyFragmentTests,
+				vk::ImageAspectFlagBits::eDepth);
+
+			// Begin depth-only rendering (clears and stores depth)
+			pCommandBuffer->BeginDepthOnlyRendering(shadowImageView, vk::Extent2D{shadowMapSize, shadowMapSize});
+			pCommandBuffer->SetViewportAndScissor(shadowMapSize, shadowMapSize);
+
+			// Render shadow meshes for this cascade
+			VulkanPipeline* pCurrentVkPipeline = nullptr;
+			uint64_t currentVertexLayoutId = 0;
+
+			for (const auto& renderingMesh : shadowMeshes)
+			{
+				if (currentVertexLayoutId != renderingMesh.vertexLayoutId)
+				{
+					currentVertexLayoutId = renderingMesh.vertexLayoutId;
+
+					VulkanPipelineEntry pipelineEntry(RenderPassType::Shadow, renderingMesh.pMaterial->GetAssetId(), currentVertexLayoutId);
+					pCurrentVkPipeline = VulkanContext::GetPipelineManager()->GetPipeline(pipelineEntry);
+					if (pCurrentVkPipeline == nullptr)
+					{
+						Logger::LogError("RenderShadowPass: Shadow pipeline not found");
+						continue;
+					}
+
+					pCommandBuffer->BindPipeline(pCurrentVkPipeline);
+
+					// Shadow pass only uses the global descriptor set (no material-specific set)
+					std::vector<vk::DescriptorSet> descriptorSets{
+						_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::General)]
+					};
+					pCommandBuffer->BindDescriptorSet(pCurrentVkPipeline->GetPipelineLayout(), descriptorSets);
+				}
+
+				if (pCurrentVkPipeline == nullptr)
+					continue;
+
+				// Push model matrix and cascade index
+				pCommandBuffer->PushConstantShadowData(pCurrentVkPipeline, renderingMesh.pEntity->GetModelMatrix(), cascadeIndex);
+
+				// Bind vertex buffer
+				const auto pVertexBuffer = renderingMesh.pTargetMesh->GetVertexBuffer();
+				pCommandBuffer->BindVertexBuffer(pVertexBuffer);
+
+				// Draw
+				const auto pIndexBuffer = renderingMesh.pTargetMesh->GetIndexBuffer();
+				if (pIndexBuffer != nullptr)
+				{
+					pCommandBuffer->BindIndexBuffer(pIndexBuffer);
+					pCommandBuffer->DrawIndexed(pIndexBuffer->GetIndexCount());
+				}
+				else
+				{
+					pCommandBuffer->DrawNonIndexed(renderingMesh.pTargetMesh->GetVertexCount());
+				}
+			}
+
+			pCommandBuffer->EndRendering();
+
+			// Transition shadow map to shader read only for sampling in the forward pass
+			pCommandBuffer->ImageMemoryBarrier(
+				shadowImage,
+				vk::ImageLayout::eDepthStencilAttachmentOptimal,
+				vk::ImageLayout::eShaderReadOnlyOptimal,
+				vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+				vk::AccessFlagBits::eShaderRead,
+				vk::PipelineStageFlagBits::eLateFragmentTests,
+				vk::PipelineStageFlagBits::eFragmentShader,
+				vk::ImageAspectFlagBits::eDepth);
 		}
 	}
 

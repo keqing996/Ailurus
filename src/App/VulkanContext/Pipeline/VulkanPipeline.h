@@ -12,7 +12,8 @@ namespace Ailurus
 	{
 	public:
 		VulkanPipeline(vk::Format colorFormat, vk::Format depthFormat, const StageShaderArray& shaderArray, 
-			const VulkanVertexLayout* pVertexLayout, const std::vector<const UniformSet*>& uniformSets);
+			const VulkanVertexLayout* pVertexLayout, const std::vector<const UniformSet*>& uniformSets,
+			uint32_t pushConstantSize = sizeof(Matrix4x4f));
 		~VulkanPipeline();
 
 	public:

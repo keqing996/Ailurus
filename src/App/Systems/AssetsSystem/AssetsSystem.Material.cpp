@@ -492,29 +492,30 @@ namespace Ailurus
 		// Read shader config
 		auto shaders = JsonReadShader(path, renderPassConfig);
 
-		// Read the uniform set
+		// Read the uniform set (may be null for passes with no material uniforms, e.g. shadow pass)
 		auto pUniformSet = JsonReadUniformSet(path, *passOpt, renderPassConfig, accessValues);
-		if (pUniformSet == nullptr)
-			continue;
 
 		// Read and load textures
 		auto textures = JsonReadTextures(this, path, renderPassConfig);
-		
-		// Build texture binding information for descriptor set layout
-		std::vector<TextureBindingInfo> textureBindings;
-		for (const auto& [uniformVarName, textureRef] : textures)
-		{
-			if (auto* pTexture = textureRef.Get())
-			{
-				TextureBindingInfo bindingInfo;
-				bindingInfo.bindingId = pTexture->GetBindingId();
-				bindingInfo.shaderStages = vk::ShaderStageFlagBits::eFragment; // Textures typically used in fragment shader
-				textureBindings.push_back(bindingInfo);
-			}
-		}
 
-		// Initialize descriptor set layout with both uniform buffers and textures
-		pUniformSet->InitDescriptorSetLayout(textureBindings);
+		if (pUniformSet != nullptr)
+		{
+			// Build texture binding information for descriptor set layout
+			std::vector<TextureBindingInfo> textureBindings;
+			for (const auto& [uniformVarName, textureRef] : textures)
+			{
+				if (auto* pTexture = textureRef.Get())
+				{
+					TextureBindingInfo bindingInfo;
+					bindingInfo.bindingId = pTexture->GetBindingId();
+					bindingInfo.shaderStages = vk::ShaderStageFlagBits::eFragment; // Textures typically used in fragment shader
+					textureBindings.push_back(bindingInfo);
+				}
+			}
+
+			// Initialize descriptor set layout with both uniform buffers and textures
+			pUniformSet->InitDescriptorSetLayout(textureBindings);
+		}
 
 		// Set shader and uniform
 		pMaterialRaw->SetPassShaderAndUniform(*passOpt, shaders, std::move(pUniformSet));

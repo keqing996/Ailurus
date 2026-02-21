@@ -25,7 +25,8 @@ namespace Ailurus
 				continue;
 
 			const auto* pUniformSet = pMaterial->GetUniformSet(pass);
-			const auto renderPassUniformBufferSize = pUniformSet->GetUniformBufferSize();
+			if (pUniformSet == nullptr)
+				continue; // Pass has no material uniform set (e.g., shadow pass)
 
 			// Record current
 			_renderPassUniformBufferMap.insert({ 
