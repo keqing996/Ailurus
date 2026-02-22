@@ -59,15 +59,18 @@ namespace Ailurus
 		}
 
 		// Vertex input description
-		vk::VertexInputBindingDescription vertexInputDesc;
-		vertexInputDesc.setBinding(0)
-			.setStride(pVertexLayout->GetStride())
-			.setInputRate(vk::VertexInputRate::eVertex);
-
-		// Vertex input
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
-		vertexInputInfo.setVertexBindingDescriptions(vertexInputDesc)
-			.setVertexAttributeDescriptions(pVertexLayout->GetVulkanAttributeDescription());
+		if (pVertexLayout != nullptr)
+		{
+			vk::VertexInputBindingDescription vertexInputDesc;
+			vertexInputDesc.setBinding(0)
+				.setStride(pVertexLayout->GetStride())
+				.setInputRate(vk::VertexInputRate::eVertex);
+
+			vertexInputInfo.setVertexBindingDescriptions(vertexInputDesc)
+				.setVertexAttributeDescriptions(pVertexLayout->GetVulkanAttributeDescription());
+		}
+		// else: empty vertex input (valid for full-screen triangle using gl_VertexIndex)
 
 		// Input assemble
 		vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
@@ -178,6 +181,161 @@ namespace Ailurus
 		catch (const vk::SystemError& e)
 		{
 			Logger::LogError("Failed to destroy pipeline: {}", e.what());
+		}
+	}
+
+	VulkanPipeline::VulkanPipeline(
+		vk::Format colorFormat,
+		const StageShaderArray& shaderArray,
+		const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts,
+		uint32_t pushConstantSize,
+		bool blendEnabled)
+	{
+		// Shader stages
+		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
+		for (auto i = 0; i < StageShaderArray::Size(); i++)
+		{
+			const Shader* pShader = shaderArray[i];
+			if (pShader == nullptr)
+				continue;
+
+			const auto* pRHIShader = pShader->GetImpl();
+			if (pRHIShader == nullptr)
+				continue;
+
+			shaderStages.push_back(pRHIShader->GeneratePipelineCreateInfo(pShader->GetStage()));
+		}
+
+		// Push constant range (fragment stage for post-process)
+		vk::PushConstantRange pushConstantRange;
+		pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eFragment)
+			.setOffset(0)
+			.setSize(pushConstantSize);
+
+		// Create pipeline layout
+		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+		pipelineLayoutInfo.setSetLayouts(descriptorSetLayouts);
+		if (pushConstantSize > 0)
+			pipelineLayoutInfo.setPushConstantRanges(pushConstantRange);
+
+		try
+		{
+			_vkPipelineLayout = VulkanContext::GetDevice().createPipelineLayout(pipelineLayoutInfo);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create post-process pipeline layout: {}", e.what());
+		}
+
+		// Empty vertex input (full-screen triangle uses gl_VertexIndex)
+		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+
+		// Input assembly
+		vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
+		inputAssembly.setTopology(vk::PrimitiveTopology::eTriangleList)
+			.setPrimitiveRestartEnable(false);
+
+		// Viewport & Scissor (dynamic)
+		vk::PipelineViewportStateCreateInfo viewportState;
+		viewportState.setViewportCount(1)
+			.setScissorCount(1);
+
+		// Rasterization: no cull for full-screen triangle
+		vk::PipelineRasterizationStateCreateInfo rasterizer;
+		rasterizer.setDepthClampEnable(false)
+			.setDepthBiasEnable(false)
+			.setRasterizerDiscardEnable(false)
+			.setPolygonMode(vk::PolygonMode::eFill)
+			.setLineWidth(1.0f)
+			.setCullMode(vk::CullModeFlagBits::eNone)
+			.setFrontFace(vk::FrontFace::eClockwise);
+
+		// Multisample: single sample for post-process
+		vk::PipelineMultisampleStateCreateInfo multisampling;
+		multisampling.setSampleShadingEnable(false)
+			.setAlphaToOneEnable(false)
+			.setPSampleMask(nullptr)
+			.setAlphaToCoverageEnable(false)
+			.setRasterizationSamples(vk::SampleCountFlagBits::e1);
+
+		// Color blend
+		vk::PipelineColorBlendAttachmentState colorBlendAttachment;
+		colorBlendAttachment.setColorWriteMask(vk::ColorComponentFlagBits::eR
+			| vk::ColorComponentFlagBits::eG
+			| vk::ColorComponentFlagBits::eB
+			| vk::ColorComponentFlagBits::eA);
+
+		if (blendEnabled)
+		{
+			colorBlendAttachment.setBlendEnable(true)
+				.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
+				.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+				.setColorBlendOp(vk::BlendOp::eAdd)
+				.setSrcAlphaBlendFactor(vk::BlendFactor::eOne)
+				.setDstAlphaBlendFactor(vk::BlendFactor::eZero)
+				.setAlphaBlendOp(vk::BlendOp::eAdd);
+		}
+		else
+		{
+			colorBlendAttachment.setBlendEnable(false);
+		}
+
+		vk::PipelineColorBlendStateCreateInfo colorBlending;
+		colorBlending.setLogicOpEnable(false)
+			.setLogicOp(vk::LogicOp::eCopy)
+			.setAttachments(colorBlendAttachment)
+			.setBlendConstants(std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
+
+		// Depth stencil: no depth test for post-process
+		vk::PipelineDepthStencilStateCreateInfo depthStencil;
+		depthStencil.setDepthTestEnable(false)
+			.setDepthWriteEnable(false)
+			.setDepthCompareOp(vk::CompareOp::eAlways)
+			.setDepthBoundsTestEnable(false)
+			.setStencilTestEnable(false);
+
+		// Dynamic state
+		std::array dynamicStates = {
+			vk::DynamicState::eViewport,
+			vk::DynamicState::eScissor
+		};
+
+		vk::PipelineDynamicStateCreateInfo dynamicState;
+		dynamicState.setDynamicStates(dynamicStates);
+
+		// Pipeline rendering create info (no depth attachment)
+		vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
+		pipelineRenderingCreateInfo.setColorAttachmentFormats(colorFormat)
+			.setDepthAttachmentFormat(vk::Format::eUndefined)
+			.setStencilAttachmentFormat(vk::Format::eUndefined);
+
+		// Create the pipeline
+		vk::GraphicsPipelineCreateInfo pipelineInfo;
+		pipelineInfo.setStages(shaderStages)
+			.setPVertexInputState(&vertexInputInfo)
+			.setPInputAssemblyState(&inputAssembly)
+			.setPViewportState(&viewportState)
+			.setPRasterizationState(&rasterizer)
+			.setPMultisampleState(&multisampling)
+			.setPColorBlendState(&colorBlending)
+			.setPDepthStencilState(&depthStencil)
+			.setPDynamicState(&dynamicState)
+			.setLayout(_vkPipelineLayout)
+			.setPNext(&pipelineRenderingCreateInfo)
+			.setSubpass(0)
+			.setBasePipelineHandle(nullptr);
+
+		try
+		{
+			auto pipelineCreateResult = VulkanContext::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
+			if (pipelineCreateResult.result == vk::Result::eSuccess)
+				_vkPipeline = pipelineCreateResult.value;
+			else
+				Logger::LogError("Failed to create post-process graphics pipeline");
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create post-process graphics pipeline: {}", e.what());
 		}
 	}
 

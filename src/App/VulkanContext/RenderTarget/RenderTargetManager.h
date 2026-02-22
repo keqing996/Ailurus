@@ -22,6 +22,10 @@ namespace Ailurus
 
 		vk::ImageView GetMSAADepthImageView() const;
 
+		// Offscreen HDR color target
+		vk::Image GetOffscreenColorImage() const;
+		vk::ImageView GetOffscreenColorImageView() const;
+
 		// CSM shadow maps
 		uint32_t GetShadowMapCascadeCount() const;
 		vk::ImageView GetShadowMapImageView(uint32_t cascadeIndex) const;
@@ -30,7 +34,8 @@ namespace Ailurus
 	private:
         void Clear();
 		void CreateDepthTarget(uint32_t width, uint32_t height);
-		void CreateMSAATargets(uint32_t width, uint32_t height, vk::Format colorFormat);
+		void CreateMSAATargets(uint32_t width, uint32_t height);
+		void CreateOffscreenColorTarget(uint32_t width, uint32_t height);
 		void CreateShadowMapTargets();
 
 	private:
@@ -38,8 +43,14 @@ namespace Ailurus
 		std::unique_ptr<RenderTarget> _depthTarget = nullptr;
 
 		// MSAA attachments (only created when MSAA is enabled)
+		// Both MSAA color and resolve target use R16G16B16A16_SFLOAT to match offscreen HDR RT
 		std::unique_ptr<RenderTarget> _msaaColorTarget = nullptr;
 		std::unique_ptr<RenderTarget> _msaaDepthTarget = nullptr;
+
+		// Offscreen HDR color render target (R16G16B16A16_SFLOAT)
+		// Forward pass renders here; post-process chain reads from here
+		static constexpr vk::Format OFFSCREEN_COLOR_FORMAT = vk::Format::eR16G16B16A16Sfloat;
+		std::unique_ptr<RenderTarget> _offscreenColorTarget = nullptr;
 
 		// CSM shadow maps (one per cascade)
 		static constexpr uint32_t SHADOW_MAP_CASCADE_COUNT = 4;

@@ -26,7 +26,8 @@ namespace Ailurus
 		}
 
 		const bool isShadowPass = (entry.renderPass == RenderPassType::Shadow);
-		const vk::Format colorFormat = isShadowPass ? vk::Format::eUndefined : pSwapChain->GetConfig().surfaceFormat.format;
+		// Forward pass renders to offscreen HDR RT; shadow pass has no color attachment
+		const vk::Format colorFormat = isShadowPass ? vk::Format::eUndefined : vk::Format::eR16G16B16A16Sfloat;
 		const vk::Format depthFormat = vk::Format::eD32Sfloat;
 		const uint32_t pushConstantSize = isShadowPass
 			? static_cast<uint32_t>(sizeof(Matrix4x4f) + sizeof(uint32_t))

@@ -3,7 +3,9 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformSetMemory.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformVariable.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
+#include <Ailurus/Application/RenderSystem/PostProcess/Effects/ToneMappingEffect.h>
 #include <VulkanContext/VulkanContext.h>
+#include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
 #include <VulkanContext/Resource/VulkanResourceManager.h>
 #include <VulkanContext/Resource/Image/VulkanSampler.h>
@@ -40,10 +42,22 @@ namespace Ailurus
 
 		CreateIntermediateVariable();
 		BuildGlobalUniform();
+
+		// Initialize post-process chain
+		const auto& swapChainConfig = VulkanContext::GetSwapChain()->GetConfig();
+		_postProcessChain = std::make_unique<PostProcessChain>();
+		_postProcessChain->Init(
+			_pShaderLibrary.get(),
+			swapChainConfig.extent.width,
+			swapChainConfig.extent.height,
+			vk::Format::eR16G16B16A16Sfloat);
+		_postProcessChain->AddEffect<ToneMappingEffect>();
 	}
 
 	RenderSystem::~RenderSystem()
 	{
+		if (_postProcessChain)
+			_postProcessChain->Shutdown();
 	}
 
 	void RenderSystem::RequestRebuildSwapChain()
@@ -142,6 +156,16 @@ namespace Ailurus
 		VulkanContext::RebuildSwapChain();
 
 		_needRebuildSwapChain = false;
+
+		// Rebuild post-process chain with new swapchain dimensions
+		if (_postProcessChain)
+		{
+			const auto& swapChainConfig = VulkanContext::GetSwapChain()->GetConfig();
+			_postProcessChain->OnResize(
+				swapChainConfig.extent.width,
+				swapChainConfig.extent.height,
+				vk::Format::eR16G16B16A16Sfloat);
+		}
 
 		for (const auto& [key, postRebuildCallback] : _postSwapChainRebuildCallbacks)
 		{

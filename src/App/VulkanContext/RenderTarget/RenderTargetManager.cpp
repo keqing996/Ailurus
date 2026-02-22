@@ -22,14 +22,16 @@ namespace Ailurus
         const auto& swapChainConfig = VulkanContext::GetSwapChain()->GetConfig();
         const uint32_t width = swapChainConfig.extent.width;
         const uint32_t height = swapChainConfig.extent.height;
-        const vk::Format colorFormat = swapChainConfig.surfaceFormat.format;
+
+		// Create offscreen HDR color target (always needed for post-process)
+		CreateOffscreenColorTarget(width, height);
 
 		// Create depth target (always needed)
 		CreateDepthTarget(width, height);
 
 		// Create MSAA targets if MSAA is enabled
 		if (VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1)
-		    CreateMSAATargets(width, height, colorFormat);
+		    CreateMSAATargets(width, height);
 
 		// Create CSM shadow maps
 		CreateShadowMapTargets();
@@ -48,6 +50,16 @@ namespace Ailurus
 	vk::ImageView RenderTargetManager::GetMSAADepthImageView() const
 	{
 		return _msaaDepthTarget ? _msaaDepthTarget->GetImageView() : nullptr;
+	}
+
+	vk::Image RenderTargetManager::GetOffscreenColorImage() const
+	{
+		return _offscreenColorTarget ? _offscreenColorTarget->GetImage() : nullptr;
+	}
+
+	vk::ImageView RenderTargetManager::GetOffscreenColorImageView() const
+	{
+		return _offscreenColorTarget ? _offscreenColorTarget->GetImageView() : nullptr;
 	}
 
 	uint32_t RenderTargetManager::GetShadowMapCascadeCount() const
@@ -74,6 +86,7 @@ namespace Ailurus
         _depthTarget = nullptr;
 		_msaaColorTarget = nullptr;
 		_msaaDepthTarget = nullptr;
+		_offscreenColorTarget = nullptr;
 		_shadowMapTargets.clear();
     }
 
@@ -99,16 +112,18 @@ namespace Ailurus
 		}
 	}
 
-	void RenderTargetManager::CreateMSAATargets(uint32_t width, uint32_t height, vk::Format colorFormat)
+	void RenderTargetManager::CreateMSAATargets(uint32_t width, uint32_t height)
 	{
 		const vk::SampleCountFlagBits msaaSamples = VulkanContext::GetMSAASamples();
 
-		// Create MSAA color target
+		// Create MSAA color target: use HDR format to match offscreen RT for resolve
+		// Both MSAA color and the offscreen resolve target must share the same format
+		// (OFFSCREEN_COLOR_FORMAT = R16G16B16A16_SFLOAT for HDR rendering)
 		{
 			RenderTargetConfig config;
 			config.width = width;
 			config.height = height;
-			config.format = colorFormat;
+			config.format = OFFSCREEN_COLOR_FORMAT;
 			config.samples = msaaSamples;
 			config.usage = vk::ImageUsageFlagBits::eColorAttachment;
 			config.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -147,6 +162,29 @@ namespace Ailurus
 			{
 				Logger::LogError("Failed to create MSAA depth target: {}", e.what());
 			}
+		}
+	}
+
+	void RenderTargetManager::CreateOffscreenColorTarget(uint32_t width, uint32_t height)
+	{
+		RenderTargetConfig config;
+		config.width = width;
+		config.height = height;
+		config.format = OFFSCREEN_COLOR_FORMAT;
+		config.samples = vk::SampleCountFlagBits::e1;
+		config.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled
+			| vk::ImageUsageFlagBits::eTransferSrc;
+		config.aspectMask = vk::ImageAspectFlagBits::eColor;
+		config.transient = false;
+
+		try
+		{
+			_offscreenColorTarget = std::make_unique<RenderTarget>(config);
+			Logger::LogInfo("Created offscreen HDR color target: {}x{}", width, height);
+		}
+		catch (const std::exception& e)
+		{
+			Logger::LogError("Failed to create offscreen HDR color target: {}", e.what());
 		}
 	}
 
