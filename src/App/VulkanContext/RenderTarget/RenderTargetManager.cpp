@@ -117,6 +117,8 @@ namespace Ailurus
 		const vk::SampleCountFlagBits msaaSamples = VulkanContext::GetMSAASamples();
 
 		// Create MSAA color target: use HDR format to match offscreen RT for resolve
+		// Both MSAA color and the offscreen resolve target must share the same format
+		// (OFFSCREEN_COLOR_FORMAT = R16G16B16A16_SFLOAT for HDR rendering)
 		{
 			RenderTargetConfig config;
 			config.width = width;

@@ -76,7 +76,7 @@ namespace Ailurus
 		void UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
-		void RenderPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
+		void RenderPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer);
 		void RenderShadowPass(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 

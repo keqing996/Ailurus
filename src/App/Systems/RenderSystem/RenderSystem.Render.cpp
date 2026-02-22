@@ -402,7 +402,7 @@ namespace Ailurus
 					RenderShadowPass(pCommandBuffer, pDescriptorAllocator);
 
 					// Forward pass (renders to offscreen HDR RT)
-					RenderPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
+					RenderPass(RenderPassType::Forward, pCommandBuffer);
 
 					// Transition offscreen HDR RT to shader read only for post-process sampling
 					pCommandBuffer->ImageMemoryBarrier(
@@ -736,7 +736,7 @@ namespace Ailurus
 		}
 	}
 
-	void RenderSystem::RenderPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
+	void RenderSystem::RenderPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer)
 	{
 		if (_pIntermediateVariable->renderingMeshes.empty())
 			return;

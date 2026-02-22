@@ -16,7 +16,8 @@ void main()
     vec3 hdr = texture(inputTexture, fragUV).rgb;
     hdr *= params.exposure;
 
-    // ACES tone mapping
+    // ACES tone mapping (Stephen Hill fit approximation)
+    // Coefficients: a=2.51, b=0.03, c=2.43, d=0.59, e=0.14
     vec3 mapped = (hdr * (2.51 * hdr + 0.03)) / (hdr * (2.43 * hdr + 0.59) + 0.14);
     mapped = clamp(mapped, 0.0, 1.0);
 
