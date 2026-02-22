@@ -8,6 +8,7 @@
 #include "Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h"
 #include "Ailurus/Application/RenderSystem/Shader/ShaderLibrary.h"
 #include "Ailurus/Application/SceneSystem/Component/CompCamera.h"
+#include "Ailurus/Application/RenderSystem/PostProcess/PostProcessChain.h"
 
 namespace Ailurus
 {
@@ -139,6 +140,9 @@ namespace Ailurus
 
 		// Shadow map sampler (owned by VulkanResourceManager, valid for the duration of VulkanContext)
 		VulkanSampler* _shadowSampler = nullptr;
+
+		// Post-process chain
+		std::unique_ptr<PostProcessChain> _postProcessChain;
 
 		// Callback functions map
 		std::unordered_map<void*, PreSwapChainRebuild> _preSwapChainRebuildCallbacks;

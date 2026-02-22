@@ -70,6 +70,24 @@ namespace Ailurus
 		}
 	}
 
+	VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(const std::vector<vk::DescriptorSetLayoutBinding>& bindings)
+	{
+		for (const auto& binding : bindings)
+			_requirement[binding.descriptorType]++;
+
+		vk::DescriptorSetLayoutCreateInfo layoutInfo;
+		layoutInfo.setBindings(bindings);
+
+		try
+		{
+			_descriptorSetLayout = VulkanContext::GetDevice().createDescriptorSetLayout(layoutInfo);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create descriptor set layout: {}", e.what());
+		}
+	}
+
 	vk::DescriptorSetLayout VulkanDescriptorSetLayout::GetDescriptorSetLayout() const
 	{
 		return _descriptorSetLayout;

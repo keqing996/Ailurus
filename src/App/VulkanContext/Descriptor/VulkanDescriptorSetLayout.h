@@ -19,6 +19,7 @@ namespace Ailurus
 	{
 	public:
 		explicit VulkanDescriptorSetLayout(class UniformSet* pUniformSet, const std::vector<TextureBindingInfo>& textureBindings = {});
+		explicit VulkanDescriptorSetLayout(const std::vector<vk::DescriptorSetLayoutBinding>& bindings);
 		~VulkanDescriptorSetLayout();
 
 	public:

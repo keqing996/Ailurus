@@ -361,8 +361,11 @@ namespace Ailurus
 				auto pSwapChain = VulkanContext::GetSwapChain();
 				const auto& swapChainImages = pSwapChain->GetSwapChainImages();
 				vk::Image currentImage = swapChainImages[swapChainImageIndex];
+				const auto& swapChainImageViews = pSwapChain->GetSwapChainImageViews();
+				vk::ImageView currentImageView = swapChainImageViews[swapChainImageIndex];
+				vk::Extent2D extent = pSwapChain->GetConfig().extent;
 
-				// Transition image to color attachment optimal before rendering
+				// Transition swapchain image to color attachment optimal
 				pCommandBuffer->ImageMemoryBarrier(
 					currentImage,
 					vk::ImageLayout::eUndefined,
@@ -372,24 +375,98 @@ namespace Ailurus
 					vk::PipelineStageFlagBits::eTopOfPipe,
 					vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
-				// Forward pass
 				if (_enable3D)
 				{
-					RenderPrepare();
+					auto* pRenderTargetManager = VulkanContext::GetRenderTargetManager();
+					vk::Image offscreenImage = pRenderTargetManager->GetOffscreenColorImage();
+					vk::ImageView offscreenImageView = pRenderTargetManager->GetOffscreenColorImageView();
 
+					// Transition offscreen HDR RT to color attachment optimal
+					pCommandBuffer->ImageMemoryBarrier(
+						offscreenImage,
+						vk::ImageLayout::eUndefined,
+						vk::ImageLayout::eColorAttachmentOptimal,
+						vk::AccessFlags{},
+						vk::AccessFlagBits::eColorAttachmentWrite,
+						vk::PipelineStageFlagBits::eTopOfPipe,
+						vk::PipelineStageFlagBits::eColorAttachmentOutput);
+
+					RenderPrepare();
 					CollectRenderingContext();
 					CollectLights();
 					CalculateCascadeShadows();
 					UpdateGlobalUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 					UpdateMaterialInstanceUniformBuffer(pCommandBuffer, pDescriptorAllocator);
 
-					// Shadow pass (renders scene from light's perspective into shadow maps)
+					// Shadow pass
 					RenderShadowPass(pCommandBuffer, pDescriptorAllocator);
 
+					// Forward pass (renders to offscreen HDR RT)
 					RenderPass(RenderPassType::Forward, swapChainImageIndex, pCommandBuffer);
+
+					// Transition offscreen HDR RT to shader read only for post-process sampling
+					pCommandBuffer->ImageMemoryBarrier(
+						offscreenImage,
+						vk::ImageLayout::eColorAttachmentOptimal,
+						vk::ImageLayout::eShaderReadOnlyOptimal,
+						vk::AccessFlagBits::eColorAttachmentWrite,
+						vk::AccessFlagBits::eShaderRead,
+						vk::PipelineStageFlagBits::eColorAttachmentOutput,
+						vk::PipelineStageFlagBits::eFragmentShader);
+
+					if (_postProcessChain && _postProcessChain->HasEnabledEffects())
+					{
+						// Execute post-process chain: offscreen RT → swapchain
+						_postProcessChain->Execute(
+							pCommandBuffer,
+							offscreenImage, offscreenImageView,
+							currentImage, currentImageView,
+							extent, pDescriptorAllocator);
+					}
+					else
+					{
+						// No post-process: blit offscreen RT to swapchain
+						pCommandBuffer->ImageMemoryBarrier(
+							offscreenImage,
+							vk::ImageLayout::eShaderReadOnlyOptimal,
+							vk::ImageLayout::eTransferSrcOptimal,
+							vk::AccessFlagBits::eShaderRead,
+							vk::AccessFlagBits::eTransferRead,
+							vk::PipelineStageFlagBits::eFragmentShader,
+							vk::PipelineStageFlagBits::eTransfer);
+
+						pCommandBuffer->ImageMemoryBarrier(
+							currentImage,
+							vk::ImageLayout::eColorAttachmentOptimal,
+							vk::ImageLayout::eTransferDstOptimal,
+							vk::AccessFlagBits::eColorAttachmentWrite,
+							vk::AccessFlagBits::eTransferWrite,
+							vk::PipelineStageFlagBits::eColorAttachmentOutput,
+							vk::PipelineStageFlagBits::eTransfer);
+
+						vk::ImageBlit blitRegion;
+						blitRegion.setSrcSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1))
+							.setSrcOffsets({ vk::Offset3D{0, 0, 0}, vk::Offset3D{static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height), 1} })
+							.setDstSubresource(vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1))
+							.setDstOffsets({ vk::Offset3D{0, 0, 0}, vk::Offset3D{static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height), 1} });
+
+						pCommandBuffer->GetBuffer().blitImage(
+							offscreenImage, vk::ImageLayout::eTransferSrcOptimal,
+							currentImage, vk::ImageLayout::eTransferDstOptimal,
+							blitRegion, vk::Filter::eLinear);
+
+						pCommandBuffer->ImageMemoryBarrier(
+							currentImage,
+							vk::ImageLayout::eTransferDstOptimal,
+							vk::ImageLayout::eColorAttachmentOptimal,
+							vk::AccessFlagBits::eTransferWrite,
+							vk::AccessFlagBits::eColorAttachmentWrite,
+							vk::PipelineStageFlagBits::eTransfer,
+							vk::PipelineStageFlagBits::eColorAttachmentOutput);
+					}
 				}
 
-				// ImGui pass
+				// ImGui pass (renders on top of swapchain, which is in ColorAttachment layout)
 				if (_enableImGui)
 					RenderImGuiPass(swapChainImageIndex, pCommandBuffer);
 
@@ -664,18 +741,11 @@ namespace Ailurus
 		if (_pIntermediateVariable->renderingMeshes.empty())
 			return;
 
-		// Get swap chain image view and depth image view
+		// Get swap chain extent
 		auto pSwapChain = VulkanContext::GetSwapChain();
 		if (pSwapChain == nullptr)
 		{
 			Logger::LogError("SwapChain not found");
-			return;
-		}
-
-		const auto& imageViews = pSwapChain->GetSwapChainImageViews();
-		if (swapChainImageIndex >= imageViews.size())
-		{
-			Logger::LogError("Invalid swap chain image index");
 			return;
 		}
 
@@ -685,25 +755,25 @@ namespace Ailurus
 		bool useMSAA = VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1;
 		auto* pRenderTargetManager = VulkanContext::GetRenderTargetManager();
 
+		// Offscreen HDR RT is the render target for the forward pass
+		vk::ImageView offscreenColorView = pRenderTargetManager->GetOffscreenColorImageView();
+
 		if (useMSAA)
 		{
-			// With MSAA: render to MSAA attachments and resolve to swapchain image
+			// With MSAA: render to MSAA color attachment and resolve to offscreen HDR RT
 			vk::ImageView msaaColorView = pRenderTargetManager->GetMSAAColorImageView();
 			vk::ImageView msaaDepthView = pRenderTargetManager->GetMSAADepthImageView();
-			vk::ImageView resolveView = imageViews[swapChainImageIndex];
-			
-			// For Forward pass, clear and use depth
+
 			bool clearColor = (pass == RenderPassType::Forward);
-			pCommandBuffer->BeginRendering(msaaColorView, msaaDepthView, resolveView, extent, clearColor, true);
+			pCommandBuffer->BeginRendering(msaaColorView, msaaDepthView, offscreenColorView, extent, clearColor, true);
 		}
 		else
 		{
-			// Without MSAA: render directly to swapchain image
-			vk::ImageView colorImageView = imageViews[swapChainImageIndex];
+			// Without MSAA: render directly to offscreen HDR RT
 			vk::ImageView depthImageView = pRenderTargetManager->GetDepthImageView();
-			
+
 			bool clearColor = (pass == RenderPassType::Forward);
-			pCommandBuffer->BeginRendering(colorImageView, depthImageView, nullptr, extent, clearColor, true);
+			pCommandBuffer->BeginRendering(offscreenColorView, depthImageView, nullptr, extent, clearColor, true);
 		}
 
 		// Intermediate variables

@@ -7,6 +7,7 @@ namespace Ailurus
     REFLECTION_ENUM(RenderPassType,
         Shadow,
         Forward,
+        PostProcess,
         ImGui
     );
 }
