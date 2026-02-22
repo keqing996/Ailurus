@@ -17,6 +17,7 @@ namespace Ailurus
 	class VulkanCommandBuffer;
 	class VulkanDescriptorAllocator;
 	class VulkanUniformBuffer;
+	class VulkanSampler;
 	class UniformSet;
 	class UniformSetMemory;
 	struct RenderIntermediateVariable;
@@ -75,6 +76,7 @@ namespace Ailurus
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
 		void RenderPass(RenderPassType pass, uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
+		void RenderShadowPass(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
@@ -134,6 +136,9 @@ namespace Ailurus
 		static constexpr int MAX_SPOT_LIGHTS = 4;
 		std::unique_ptr<UniformSet> _pGlobalUniformSet;
 		std::unique_ptr<UniformSetMemory> _pGlobalUniformMemory;
+
+		// Shadow map sampler (owned by VulkanResourceManager, valid for the duration of VulkanContext)
+		VulkanSampler* _shadowSampler = nullptr;
 
 		// Callback functions map
 		std::unordered_map<void*, PreSwapChainRebuild> _preSwapChainRebuildCallbacks;

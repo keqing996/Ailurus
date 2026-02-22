@@ -1,5 +1,18 @@
 [
     {
+        "pass": "Shadow",
+        "shader": [
+            {
+                "stage": "Vertex",
+                "source": "Assets/Shader/shadow.vert"
+            },
+            {
+                "stage": "Fragment",
+                "source": "Assets/Shader/shadow.frag"
+            }
+        ]
+    },
+    {
         "pass": "Forward",
         "shader": [
             {

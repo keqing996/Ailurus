@@ -154,7 +154,8 @@ namespace Ailurus
 
 	void VulkanCommandBuffer::ImageMemoryBarrier(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, 
 		vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, 
-		vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask)
+		vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask,
+		vk::ImageAspectFlags aspectMask)
 	{
 		vk::ImageMemoryBarrier barrier;
 		barrier.setOldLayout(oldLayout)
@@ -163,7 +164,7 @@ namespace Ailurus
 			.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
 			.setImage(image)
 			.setSubresourceRange(vk::ImageSubresourceRange()
-			.setAspectMask(vk::ImageAspectFlagBits::eColor)
+			.setAspectMask(aspectMask)
 			.setBaseMipLevel(0)
 			.setLevelCount(1)
 			.setBaseArrayLayer(0)
@@ -214,6 +215,23 @@ namespace Ailurus
 		_buffer.beginRenderingKHR(renderingInfo);
 	}
 
+	void VulkanCommandBuffer::BeginDepthOnlyRendering(vk::ImageView depthImageView, vk::Extent2D extent)
+	{
+		vk::RenderingAttachmentInfo depthAttachment;
+		depthAttachment.setImageView(depthImageView)
+			.setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+			.setLoadOp(vk::AttachmentLoadOp::eClear)
+			.setStoreOp(vk::AttachmentStoreOp::eStore)
+			.setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
+
+		vk::RenderingInfo renderingInfo;
+		renderingInfo.setRenderArea(vk::Rect2D{{0, 0}, extent})
+			.setLayerCount(1)
+			.setPDepthAttachment(&depthAttachment);
+
+		_buffer.beginRenderingKHR(renderingInfo);
+	}
+
 	void VulkanCommandBuffer::EndRendering()
 	{
 		_buffer.endRenderingKHR();
@@ -224,6 +242,14 @@ namespace Ailurus
 		const auto extent = VulkanContext::GetSwapChain()->GetConfig().extent;
 		const vk::Viewport viewport(0.0f, 0.0f, extent.width, extent.height, 0.0f, 1.0f);
 		const vk::Rect2D scissor(vk::Offset2D{ 0, 0 }, extent);
+		_buffer.setViewport(0, 1, &viewport);
+		_buffer.setScissor(0, 1, &scissor);
+	}
+
+	void VulkanCommandBuffer::SetViewportAndScissor(uint32_t width, uint32_t height)
+	{
+		const vk::Viewport viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f);
+		const vk::Rect2D scissor(vk::Offset2D{0, 0}, vk::Extent2D{width, height});
 		_buffer.setViewport(0, 1, &viewport);
 		_buffer.setScissor(0, 1, &scissor);
 	}
@@ -301,6 +327,27 @@ namespace Ailurus
 			0, 
 			sizeof(Matrix4x4f), 
 			&modelMatrix);
+	}
+
+	void VulkanCommandBuffer::PushConstantShadowData(const VulkanPipeline* pPipeline, const Matrix4x4f& modelMatrix, uint32_t cascadeIndex)
+	{
+		if (pPipeline == nullptr)
+		{
+			Logger::LogError("VulkanCommandBuffer::PushConstantShadowData: Pipeline is nullptr");
+			return;
+		}
+
+		_buffer.pushConstants(pPipeline->GetPipelineLayout(),
+			vk::ShaderStageFlagBits::eVertex,
+			0,
+			sizeof(Matrix4x4f),
+			&modelMatrix);
+
+		_buffer.pushConstants(pPipeline->GetPipelineLayout(),
+			vk::ShaderStageFlagBits::eVertex,
+			sizeof(Matrix4x4f),
+			sizeof(uint32_t),
+			&cascadeIndex);
 	}
 
 	void VulkanCommandBuffer::ExecuteSecondaryCommandBuffer(const VulkanCommandBuffer* pSecondaryCommandBuffer)

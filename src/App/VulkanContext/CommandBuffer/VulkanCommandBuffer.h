@@ -62,7 +62,8 @@ namespace Ailurus
 		/// @param dstAccessMask Destination access mask
 		/// @param srcStageMask Source pipeline stage mask
 		/// @param dstStageMask Destination pipeline stage mask
-		void ImageMemoryBarrier(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask);
+		/// @param aspectMask Image aspect mask (default: eColor; use eDepth for depth images)
+		void ImageMemoryBarrier(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask, vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor);
 		
 		/// @brief Begin dynamic rendering (VK_KHR_dynamic_rendering)
 		/// @param colorImageView Color attachment image view (MSAA or swapchain image)
@@ -73,11 +74,21 @@ namespace Ailurus
 		/// @param useDepth If true, use depth attachment; if false, render without depth
 		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true);
 		
+		/// @brief Begin dynamic rendering for depth-only pass (shadow map rendering)
+		/// @param depthImageView Depth attachment image view
+		/// @param extent Rendering area extent
+		void BeginDepthOnlyRendering(vk::ImageView depthImageView, vk::Extent2D extent);
+
 		/// @brief End dynamic rendering
 		void EndRendering();
 		
 		/// @brief Set viewport and scissor to match swap chain extent
 		void SetViewportAndScissor();
+
+		/// @brief Set viewport and scissor to custom dimensions (e.g. for shadow map rendering)
+		/// @param width Viewport/scissor width
+		/// @param height Viewport/scissor height
+		void SetViewportAndScissor(uint32_t width, uint32_t height);
 		
 		/// @brief Bind a graphics pipeline
 		/// @param pPipeline Pipeline to bind
@@ -108,6 +119,12 @@ namespace Ailurus
 		/// @param pPipeline Pipeline containing push constant layout
 		/// @param mvpMatrix Model matrix to push
 		void PushConstantModelMatrix(const VulkanPipeline* pPipeline, const Matrix4x4f& mvpMatrix);
+
+		/// @brief Push shadow pass constants (model matrix + cascade index)
+		/// @param pPipeline Shadow pipeline containing push constant layout
+		/// @param modelMatrix Model matrix to push
+		/// @param cascadeIndex CSM cascade index to push
+		void PushConstantShadowData(const VulkanPipeline* pPipeline, const Matrix4x4f& modelMatrix, uint32_t cascadeIndex);
 		
 		/// @brief Execute a secondary command buffer
 		/// @param pSecondaryCommandBuffer Secondary command buffer to execute

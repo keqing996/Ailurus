@@ -3,6 +3,7 @@
 #include <Ailurus/Application/RenderSystem/RenderSystem.h>
 #include <Ailurus/Application/AssetsSystem/AssetsSystem.h>
 #include <Ailurus/Application/AssetsSystem/Material/Material.h>
+#include <Ailurus/Math/Matrix4x4.hpp>
 #include "VulkanPipelineManager.h"
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/Vertex/VulkanVertexLayoutManager.h"
@@ -24,8 +25,12 @@ namespace Ailurus
 			return nullptr;
 		}
 
-		const vk::Format colorFormat = pSwapChain->GetConfig().surfaceFormat.format;
-		const vk::Format depthFormat = vk::Format::eD32Sfloat; // Standard depth format
+		const bool isShadowPass = (entry.renderPass == RenderPassType::Shadow);
+		const vk::Format colorFormat = isShadowPass ? vk::Format::eUndefined : pSwapChain->GetConfig().surfaceFormat.format;
+		const vk::Format depthFormat = vk::Format::eD32Sfloat;
+		const uint32_t pushConstantSize = isShadowPass
+			? static_cast<uint32_t>(sizeof(Matrix4x4f) + sizeof(uint32_t))
+			: static_cast<uint32_t>(sizeof(Matrix4x4f));
 
 		auto refMaterial = Application::Get<AssetsSystem>()->GetAsset<Material>(entry.materialAssetId);
 		if (!refMaterial)
@@ -52,14 +57,19 @@ namespace Ailurus
 		// Create the pipeline
 		std::vector<const UniformSet*> uniformSets;
 		uniformSets.push_back(Application::Get<RenderSystem>()->GetGlobalUniformSet());
-		uniformSets.push_back(refMaterial->GetUniformSet(entry.renderPass));
+
+		// Only add material uniform set if it exists (shadow pass has no material uniforms)
+		auto* materialUniformSet = refMaterial->GetUniformSet(entry.renderPass);
+		if (materialUniformSet != nullptr)
+			uniformSets.push_back(materialUniformSet);
 
 		const auto pPipeline = new VulkanPipeline(
 			colorFormat,
 			depthFormat,
 			*pShaderArray,
 			pVertexLayout, 
-			uniformSets);
+			uniformSets,
+			pushConstantSize);
 
 		_pipelinesMap[entry] = std::unique_ptr<VulkanPipeline>(pPipeline);
 
