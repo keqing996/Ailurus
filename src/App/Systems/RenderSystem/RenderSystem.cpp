@@ -4,6 +4,7 @@
 #include <Ailurus/Application/RenderSystem/Uniform/UniformVariable.h>
 #include <Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <Ailurus/Application/RenderSystem/PostProcess/Effects/ToneMappingEffect.h>
+#include <Ailurus/Application/RenderSystem/PostProcess/Effects/BloomMipChainEffect.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
@@ -51,6 +52,7 @@ namespace Ailurus
 			swapChainConfig.extent.width,
 			swapChainConfig.extent.height,
 			vk::Format::eR16G16B16A16Sfloat);
+		_postProcessChain->AddEffect<BloomMipChainEffect>();
 		_postProcessChain->AddEffect<ToneMappingEffect>();
 	}
 
