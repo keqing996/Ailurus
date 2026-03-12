@@ -1,4 +1,7 @@
 #include "Ailurus/Systems/SceneSystem/SceneSystem.h"
+#include "Ailurus/Systems/SceneSystem/SceneSerializer.h"
+#include "Ailurus/Application.h"
+#include "Ailurus/Systems/AssetsSystem/AssetsSystem.h"
 
 namespace Ailurus
 {
@@ -25,13 +28,26 @@ namespace Ailurus
 
 	bool SceneSystem::DestroyEntity(uint32_t guid)
 	{
-		if (_entityMap.contains(guid))
-		{
-			_entityMap.erase(guid);
-			return true;
-		}
+		auto it = _entityMap.find(guid);
+		if (it == _entityMap.end())
+			return false;
 
-		return false;
+		Entity* pEntity = it->second.get();
+
+		// Detach from parent
+		if (pEntity->GetParent() != nullptr)
+			pEntity->SetParent(nullptr);
+
+		// Recursively destroy children (collect guids first to avoid iterator invalidation)
+		std::vector<uint32_t> childGuids;
+		for (Entity* child : pEntity->GetChildren())
+			childGuids.push_back(child->GetGuid());
+
+		for (uint32_t childGuid : childGuids)
+			DestroyEntity(childGuid);
+
+		_entityMap.erase(it);
+		return true;
 	}
 
 	bool SceneSystem::DestroyEntity(const std::weak_ptr<Entity>& pEntity)
@@ -54,5 +70,28 @@ namespace Ailurus
 
 	SceneSystem::SceneSystem()
 	{
+	}
+
+	void SceneSystem::UpdateAllComponents(float deltaTime)
+	{
+		for (const auto& [guid, pEntity] : _entityMap)
+		{
+			for (const auto& [compType, compVec] : pEntity->_components)
+			{
+				for (const auto& pComp : compVec)
+					pComp->OnUpdate(deltaTime);
+			}
+		}
+	}
+
+	void SceneSystem::SaveToFile(const std::string& filePath) const
+	{
+		SceneSerializer::SaveToFile(*this, filePath);
+	}
+
+	void SceneSystem::LoadFromFile(const std::string& filePath)
+	{
+		auto* pAssets = Application::Get<AssetsSystem>();
+		SceneSerializer::LoadFromFile(*this, *pAssets, filePath);
 	}
 } // namespace Ailurus

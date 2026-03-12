@@ -8,7 +8,7 @@
 
 namespace Ailurus
 {
-	REFLECTION_ENUM(UniformVaribleType,
+	REFLECTION_ENUM(UniformVariableType,
 		Numeric,
 		Structure,
 		Array);
@@ -16,7 +16,7 @@ namespace Ailurus
 	class UniformVariable
 	{
 	public:
-		virtual UniformVaribleType VaribleType() const = 0;
+		virtual UniformVariableType VariableType() const = 0;
 		virtual ~UniformVariable() = default;
 	};
 
@@ -31,7 +31,7 @@ namespace Ailurus
 		~UniformVariableNumeric() override;
 
 		auto ValueType() const -> const UniformValueType&;
-		auto VaribleType() const -> UniformVaribleType override;
+		auto VariableType() const -> UniformVariableType override;
 
 	private:
 		UniformValueType _type;
@@ -52,7 +52,7 @@ namespace Ailurus
 	public:
 		auto AddMember(const std::string& name, std::unique_ptr<UniformVariable>&& pUniformVar) -> void;
 		auto GetMembers() const -> const std::vector<Member>&;
-		auto VaribleType() const -> UniformVaribleType override;
+		auto VariableType() const -> UniformVariableType override;
 
 	private:
 		std::vector<Member> _members;
@@ -61,12 +61,14 @@ namespace Ailurus
 	class UniformVariableArray : public UniformVariable
 	{
 	public:
+		UniformVariableArray() = default;
+		UniformVariableArray(std::unique_ptr<UniformVariable>&& elementType, int count);
 		~UniformVariableArray() override;
 
 	public:
 		auto AddMember(std::unique_ptr<UniformVariable>&& pUniformVar) -> void;
 		auto GetMembers() const -> const std::vector<std::unique_ptr<UniformVariable>>&;
-		auto VaribleType() const -> UniformVaribleType override;
+		auto VariableType() const -> UniformVariableType override;
 
 	private:
 		std::vector<std::unique_ptr<UniformVariable>> _members;

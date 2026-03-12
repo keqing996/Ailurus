@@ -1,12 +1,71 @@
 #include "Ailurus/Systems/SceneSystem/Entity/Entity.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Math/Math.hpp"
+#include <algorithm>
 
 namespace Ailurus
 {
     uint32_t Entity::GetGuid() const
 	{
 		return _guid;
+	}
+
+	const std::string& Entity::GetName() const
+	{
+		return _name;
+	}
+
+	void Entity::SetName(const std::string& name)
+	{
+		_name = name;
+	}
+
+	Entity* Entity::GetParent() const
+	{
+		return _parent;
+	}
+
+	static bool IsDescendantOf(const Entity* node, const Entity* potentialAncestor)
+	{
+		const Entity* current = node;
+		while (current != nullptr)
+		{
+			if (current == potentialAncestor)
+				return true;
+			current = current->GetParent();
+		}
+		return false;
+	}
+
+	void Entity::SetParent(Entity* parent)
+	{
+		if (parent == this)
+			return;
+
+		// Prevent circular reference
+		if (parent != nullptr && IsDescendantOf(parent, this))
+		{
+			Logger::LogError("Entity::SetParent: circular reference detected");
+			return;
+		}
+
+		// Remove from old parent
+		if (_parent != nullptr)
+		{
+			auto& siblings = _parent->_children;
+			siblings.erase(std::remove(siblings.begin(), siblings.end(), this), siblings.end());
+		}
+
+		_parent = parent;
+
+		// Add to new parent
+		if (_parent != nullptr)
+			_parent->_children.push_back(this);
+	}
+
+	const std::vector<Entity*>& Entity::GetChildren() const
+	{
+		return _children;
 	}
 
 	Vector3f Entity::GetPosition() const
@@ -41,10 +100,16 @@ namespace Ailurus
 
 	Component* Entity::GetComponent(ComponentType type) const
 	{
-		for (const auto& pComp : _components)
+		// O(1) exact match
+		auto it = _components.find(type);
+		if (it != _components.end() && !it->second.empty())
+			return it->second.front().get();
+
+		// Fallback: inheritance-based lookup (e.g. GetComponent<CompRender>() finds CompStaticMeshRender)
+		for (const auto& [compType, vec] : _components)
 		{
-			if (ComponentMeta::Is(pComp->GetType(), type))
-				return pComp.get();
+			if (!vec.empty() && ComponentMeta::Is(compType, type))
+				return vec.front().get();
 		}
 
 		return nullptr;
@@ -52,40 +117,52 @@ namespace Ailurus
 
 	auto Entity::RemoveComponent(ComponentType compType) -> bool
 	{
-    	bool hasRemoved = false;
+		bool hasRemoved = false;
 
-    	size_t componentNum = _components.size();
-    	for (auto i = 0; i < _components.size(); ++i)
-    	{
-    		if (ComponentMeta::Is(_components[i]->GetType(), compType))
-    		{
-    			hasRemoved = true;
-    			_components[i] = nullptr;
-    			componentNum--;
-    		}
-    	}
+		// Exact match
+		if (auto it = _components.find(compType); it != _components.end())
+		{
+			if (!it->second.empty())
+			{
+				for (auto& pComp : it->second)
+					pComp->OnDetach();
+				hasRemoved = true;
+			}
+			_components.erase(it);
+		}
 
-    	if (hasRemoved)
-    	{
-    		std::vector<std::unique_ptr<Component>> temp;
-    		temp.reserve(componentNum);
-    		for (auto i = 0; i < _components.size(); ++i)
-    		{
-    			if (_components[i] != nullptr)
-    				temp.push_back(std::move(_components[i]));
-    		}
+		// Inheritance-based removal (e.g. RemoveComponent<CompRender>() removes CompStaticMeshRender)
+		for (auto it = _components.begin(); it != _components.end(); )
+		{
+			if (ComponentMeta::Is(it->first, compType))
+			{
+				if (!it->second.empty())
+				{
+					for (auto& pComp : it->second)
+						pComp->OnDetach();
+					hasRemoved = true;
+				}
+				it = _components.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
 
-    		std::swap(_components, temp);
-    	}
-
-    	return hasRemoved;
+		return hasRemoved;
 	}
 
 	Matrix4x4f Entity::GetModelMatrix() const
 	{
-    	return Math::TranslateMatrix(GetPosition())
-    		* Math::QuaternionToRotateMatrix(GetRotation())
-    		* Math::ScaleMatrix(GetScale());
+		Matrix4x4f localMatrix = Math::TranslateMatrix(GetPosition())
+			* Math::QuaternionToRotateMatrix(GetRotation())
+			* Math::ScaleMatrix(GetScale());
+
+		if (_parent != nullptr)
+			return _parent->GetModelMatrix() * localMatrix;
+
+		return localMatrix;
 	}
 
 	Entity::Entity(uint32_t guid)

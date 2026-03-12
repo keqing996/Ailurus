@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <memory>
+#include <string>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "Entity/Entity.h"
@@ -19,6 +20,9 @@ namespace Ailurus
 		bool DestroyEntity(uint32_t guid);
 		bool DestroyEntity(const std::weak_ptr<Entity>& pEntity);
 		std::vector<Entity*> GetAllRawEntities() const;
+		void UpdateAllComponents(float deltaTime);
+		void SaveToFile(const std::string& filePath) const;
+		void LoadFromFile(const std::string& filePath);
 
 	private:
 		friend class Application;

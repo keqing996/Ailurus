@@ -161,6 +161,8 @@ namespace Ailurus
 			if (_pImGuiSystem != nullptr)
 				_pImGuiSystem->NewFrame();
 
+			_pSceneManager->UpdateAllComponents(static_cast<float>(_pTimeSystem->DeltaTime()));
+
 			if (loopFunction != nullptr)
 				loopFunction();
 

@@ -9,6 +9,7 @@
 #include "Ailurus/Systems/RenderSystem/Shader/ShaderLibrary.h"
 #include "Ailurus/Systems/SceneSystem/Component/CompCamera.h"
 #include "Ailurus/Systems/RenderSystem/PostProcess/PostProcessChain.h"
+#include "Ailurus/Systems/RenderSystem/RenderStats.h"
 
 namespace Ailurus
 {
@@ -43,6 +44,9 @@ namespace Ailurus
 		// Camera
 		void SetMainCamera(CompCamera* pCamera);
 		CompCamera* GetMainCamera() const;
+
+		// Render stats
+		const RenderStats& GetRenderStats() const;
 
 		// VSync
 		void SetVSyncEnabled(bool enabled);
@@ -143,6 +147,9 @@ namespace Ailurus
 
 		// Post-process chain
 		std::unique_ptr<PostProcessChain> _postProcessChain;
+
+		// Render statistics
+		RenderStats _renderStats;
 
 		// Callback functions map
 		std::unordered_map<void*, PreSwapChainRebuild> _preSwapChainRebuildCallbacks;

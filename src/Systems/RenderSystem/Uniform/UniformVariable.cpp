@@ -17,9 +17,9 @@ namespace Ailurus
 		return _type;
 	}
 
-	UniformVaribleType UniformVariableNumeric::VaribleType() const
+	UniformVariableType UniformVariableNumeric::VariableType() const
 	{
-		return UniformVaribleType::Numeric;
+		return UniformVariableType::Numeric;
 	}
 
 	UniformVariableStructure::~UniformVariableStructure()
@@ -36,9 +36,23 @@ namespace Ailurus
 		return _members;
 	}
 
-	UniformVaribleType UniformVariableStructure::VaribleType() const
+	UniformVariableType UniformVariableStructure::VariableType() const
 	{
-		return UniformVaribleType::Structure;
+		return UniformVariableType::Structure;
+	}
+
+	UniformVariableArray::UniformVariableArray(std::unique_ptr<UniformVariable>&& elementType, int count)
+	{
+		_members.reserve(count);
+		if (elementType->VariableType() == UniformVariableType::Numeric)
+		{
+			const auto pNumeric = static_cast<const UniformVariableNumeric*>(elementType.get());
+			const auto valueType = pNumeric->ValueType();
+			for (int i = 0; i < count; ++i)
+			{
+				_members.push_back(std::make_unique<UniformVariableNumeric>(valueType));
+			}
+		}
 	}
 
 	UniformVariableArray::~UniformVariableArray()
@@ -55,8 +69,8 @@ namespace Ailurus
 		return _members;
 	}
 
-	UniformVaribleType UniformVariableArray::VaribleType() const
+	UniformVariableType UniformVariableArray::VariableType() const
 	{
-		return UniformVaribleType::Array;
+		return UniformVariableType::Array;
 	}
 } // namespace Ailurus

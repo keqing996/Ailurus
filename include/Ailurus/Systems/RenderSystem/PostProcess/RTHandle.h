@@ -15,6 +15,8 @@ namespace Ailurus
     class RTHandle
     {
     public:
+        ~RTHandle();
+
         vk::Image GetImage() const;
         vk::ImageView GetImageView() const;
         uint32_t GetWidth() const;

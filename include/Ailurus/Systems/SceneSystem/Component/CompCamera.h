@@ -35,6 +35,8 @@ namespace Ailurus
 		void Set(float l, float r, float t, float b, float n, float f);
 		void Set(float fovHorizontal, float aspect, float n, float f);
 
+		nlohmann::json Serialize() const override;
+
 	private:
 		// bool
 		bool _isPerspective;

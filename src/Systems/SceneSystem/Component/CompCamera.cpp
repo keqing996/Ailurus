@@ -1,6 +1,7 @@
 #include "Ailurus/Systems/SceneSystem/Component/CompCamera.h"
 #include "Ailurus/Systems/SceneSystem/Entity/Entity.h"
 #include "Ailurus/Assert.h"
+#include <nlohmann/json.hpp>
 
 /*
  * Before projective transformation, world coordinate is right-hand, so the eye locates
@@ -142,5 +143,17 @@ namespace Ailurus
 		_left = -_right;
 		_top = _aspect * _right;
 		_bottom = -_top;
+	}
+
+	nlohmann::json CompCamera::Serialize() const
+	{
+		nlohmann::json j;
+		j["type"] = "Camera";
+		j["isPerspective"] = _isPerspective;
+		j["fovHorizontal"] = Math::RadianToDegree(_fovHorizontal);
+		j["aspect"] = _aspect;
+		j["near"] = _nearPlaneDist;
+		j["far"] = _farPlaneDist;
+		return j;
 	}
 }

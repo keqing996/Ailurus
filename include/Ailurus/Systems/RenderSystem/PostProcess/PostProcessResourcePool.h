@@ -33,5 +33,8 @@ namespace Ailurus
 
     private:
         std::vector<std::unique_ptr<RTHandle>> _handles;
+        uint32_t _baseWidth = 0;
+        uint32_t _baseHeight = 0;
+        bool _built = false;
     };
 } // namespace Ailurus

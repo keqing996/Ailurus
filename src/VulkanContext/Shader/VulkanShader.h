@@ -14,6 +14,7 @@ namespace Ailurus
 
     public:
         vk::ShaderModule GetShaderModule() const;
+        bool IsValid() const;
         vk::PipelineShaderStageCreateInfo GeneratePipelineCreateInfo(ShaderStage stage) const;
 
     private:

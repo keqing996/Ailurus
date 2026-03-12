@@ -85,6 +85,11 @@ namespace Ailurus
 		return _pMainCamera;
 	}
 
+	const RenderStats& RenderSystem::GetRenderStats() const
+	{
+		return _renderStats;
+	}
+
 	void RenderSystem::SetVSyncEnabled(bool enabled)
 	{
 		if (IsVSyncEnabled() == enabled)

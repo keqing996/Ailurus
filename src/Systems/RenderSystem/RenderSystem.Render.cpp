@@ -14,6 +14,7 @@
 #include <Ailurus/Systems/SceneSystem/SceneSystem.h>
 #include <Ailurus/Systems/SceneSystem/Component/CompStaticMeshRender.h>
 #include <Ailurus/Systems/SceneSystem/Component/CompLight.h>
+#include <Ailurus/Math/AABB.hpp>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/RenderTarget/RenderTargetManager.h>
@@ -36,9 +37,12 @@ namespace Ailurus
 {
 	void RenderSystem::RenderPrepare()
 	{
+		_renderStats.Reset();
+
 		const Matrix4x4f projMat = _pMainCamera->GetProjectionMatrix();
 		const Matrix4x4f viewMat = _pMainCamera->GetViewMatrix();
 		_pIntermediateVariable->viewProjectionMatrix = projMat * viewMat;
+		_pIntermediateVariable->cameraFrustum = Frustum::FromViewProjection(_pIntermediateVariable->viewProjectionMatrix);
 		_pIntermediateVariable->renderingMeshes.clear();
 		_pIntermediateVariable->materialInstanceDescriptorsMap.clear();
 		_pIntermediateVariable->renderingDescriptorSets.fill(vk::DescriptorSet{});
@@ -64,6 +68,16 @@ namespace Ailurus
 			if (!materialInstRef)
 				continue;
 
+			// Frustum culling
+			AABBf worldAABB = pMeshRender->GetWorldAABB();
+			if (!_pIntermediateVariable->cameraFrustum.Intersects(worldAABB))
+			{
+				_renderStats.culledEntityCount++;
+				continue;
+			}
+
+			_renderStats.entityCount++;
+
 			const auto* pMaterial = materialInstRef->GetTargetMaterial();
 			const auto* pMaterialInstance = materialInstRef.Get();
 			for (auto i = 0; i < EnumReflection<RenderPassType>::Size(); i++)
@@ -83,6 +97,8 @@ namespace Ailurus
 						vertexLayoutId,
 						pMesh.get(),
 						pEntity });
+
+					_renderStats.meshCount++;
 				}
 			}
 		}
@@ -198,7 +214,7 @@ namespace Ailurus
 			// Set identity matrices and zero distances
 			for (uint32_t i = 0; i < RenderIntermediateVariable::CSM_CASCADE_COUNT; i++)
 			{
-				var->cascadeViewProjMatrices[i] = Matrix4x4f::Identity();
+				var->cascadeViewProjMatrices[i] = Matrix4x4f::Identity;
 				var->cascadeSplitDistances[i] = 0.0f;
 			}
 			return;
@@ -350,11 +366,25 @@ namespace Ailurus
 	void RenderSystem::CheckRebuildSwapChain()
 	{
 		if (_needRebuildSwapChain)
-			RebuildSwapChain();
+		{
+			// Skip rebuild if window is minimized (0 size) - will retry next frame
+			Vector2i drawableSize = Application::GetDrawableSize();
+			if (drawableSize.x > 0 && drawableSize.y > 0)
+				RebuildSwapChain();
+		}
 	}
 
 	void RenderSystem::RenderScene()
 	{
+		// Skip rendering when swap chain extent is zero (e.g. window minimized)
+		auto pSwapChain = VulkanContext::GetSwapChain();
+		if (!pSwapChain)
+			return;
+
+		vk::Extent2D extent = pSwapChain->GetConfig().extent;
+		if (extent.width == 0 || extent.height == 0)
+			return;
+
 		VulkanContext::RenderFrame(&_needRebuildSwapChain,
 			[this](uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void {
 				// Get swap chain for image layout transitions
@@ -511,11 +541,11 @@ namespace Ailurus
 		for (uint32_t i = 0; i < MAX_DIRECTIONAL_LIGHTS; i++)
 		{
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameDirLightDirections(), i },
+				0, GetGlobalUniformAccessNameDirLightDirections() + "[" + std::to_string(i) + "]",
 				var->dirLightDirections[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameDirLightColors(), i },
+				0, GetGlobalUniformAccessNameDirLightColors() + "[" + std::to_string(i) + "]",
 				var->dirLightColors[i]);
 		}
 
@@ -523,15 +553,15 @@ namespace Ailurus
 		for (uint32_t i = 0; i < MAX_POINT_LIGHTS; i++)
 		{
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNamePointLightPositions(), i },
+				0, GetGlobalUniformAccessNamePointLightPositions() + "[" + std::to_string(i) + "]",
 				var->pointLightPositions[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNamePointLightColors(), i },
+				0, GetGlobalUniformAccessNamePointLightColors() + "[" + std::to_string(i) + "]",
 				var->pointLightColors[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNamePointLightAttenuations(), i },
+				0, GetGlobalUniformAccessNamePointLightAttenuations() + "[" + std::to_string(i) + "]",
 				var->pointLightAttenuations[i]);
 		}
 
@@ -539,23 +569,23 @@ namespace Ailurus
 		for (uint32_t i = 0; i < MAX_SPOT_LIGHTS; i++)
 		{
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightPositions(), i },
+				0, GetGlobalUniformAccessNameSpotLightPositions() + "[" + std::to_string(i) + "]",
 				var->spotLightPositions[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightDirections(), i },
+				0, GetGlobalUniformAccessNameSpotLightDirections() + "[" + std::to_string(i) + "]",
 				var->spotLightDirections[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightColors(), i },
+				0, GetGlobalUniformAccessNameSpotLightColors() + "[" + std::to_string(i) + "]",
 				var->spotLightColors[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightAttenuations(), i },
+				0, GetGlobalUniformAccessNameSpotLightAttenuations() + "[" + std::to_string(i) + "]",
 				var->spotLightAttenuations[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameSpotLightCutoffs(), i },
+				0, GetGlobalUniformAccessNameSpotLightCutoffs() + "[" + std::to_string(i) + "]",
 				var->spotLightCutoffs[i]);
 		}
 
@@ -563,11 +593,11 @@ namespace Ailurus
 		for (uint32_t i = 0; i < RenderIntermediateVariable::CSM_CASCADE_COUNT; i++)
 		{
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameCascadeViewProjMatrices(), i },
+				0, GetGlobalUniformAccessNameCascadeViewProjMatrices() + "[" + std::to_string(i) + "]",
 				var->cascadeViewProjMatrices[i]);
 
 			_pGlobalUniformMemory->SetUniformValue(
-				{ 0, GetGlobalUniformAccessNameCascadeSplitDistances(), i },
+				0, GetGlobalUniformAccessNameCascadeSplitDistances() + "[" + std::to_string(i) + "]",
 				var->cascadeSplitDistances[i]);
 		}
 
@@ -837,10 +867,14 @@ namespace Ailurus
 			{
 				pCommandBuffer->BindIndexBuffer(pIndexBuffer);
 				pCommandBuffer->DrawIndexed(pIndexBuffer->GetIndexCount());
+				_renderStats.drawCalls++;
+				_renderStats.triangleCount += static_cast<uint32_t>(pIndexBuffer->GetIndexCount() / 3);
 			}
 			else
 			{
 				pCommandBuffer->DrawNonIndexed(renderingMesh.pTargetMesh->GetVertexCount());
+				_renderStats.drawCalls++;
+				_renderStats.triangleCount += renderingMesh.pTargetMesh->GetVertexCount() / 3;
 			}
 		}
 

@@ -12,6 +12,8 @@ namespace Ailurus
         auto binaryFile = File::LoadBinary(path);
         if (binaryFile.has_value())
             CreateShaderModule(binaryFile.value().data(), binaryFile.value().size());
+        else
+            Logger::LogError("Failed to load shader binary: {}", path);
     }
 
     VulkanShader::VulkanShader(const char* binaryData, size_t size)
@@ -34,6 +36,11 @@ namespace Ailurus
     vk::ShaderModule VulkanShader::GetShaderModule() const
     {
         return _vkShaderModule;
+    }
+
+    bool VulkanShader::IsValid() const
+    {
+        return _vkShaderModule != vk::ShaderModule{};
     }
 
     vk::PipelineShaderStageCreateInfo VulkanShader::GeneratePipelineCreateInfo(ShaderStage stage) const

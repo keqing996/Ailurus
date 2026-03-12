@@ -1,4 +1,5 @@
 #include <Ailurus/Systems/RenderSystem/Uniform/UniformValue.h>
+#include <Ailurus/Assert.h>
 
 namespace Ailurus
 {
@@ -170,5 +171,41 @@ namespace Ailurus
 	const UniformValue::Data& UniformValue::GetData() const
 	{
 		return data;
+	}
+
+	int32_t UniformValue::GetInt() const
+	{
+		ASSERT_MSG(type == UniformValueType::Int, "UniformValue type mismatch: expected Int");
+		return data.intValue;
+	}
+
+	float UniformValue::GetFloat() const
+	{
+		ASSERT_MSG(type == UniformValueType::Float, "UniformValue type mismatch: expected Float");
+		return data.floatValue;
+	}
+
+	const Vector2f& UniformValue::GetVector2() const
+	{
+		ASSERT_MSG(type == UniformValueType::Vector2, "UniformValue type mismatch: expected Vector2");
+		return data.vector2Value;
+	}
+
+	const Vector3f& UniformValue::GetVector3() const
+	{
+		ASSERT_MSG(type == UniformValueType::Vector3, "UniformValue type mismatch: expected Vector3");
+		return data.vector3Value;
+	}
+
+	const Vector4f& UniformValue::GetVector4() const
+	{
+		ASSERT_MSG(type == UniformValueType::Vector4, "UniformValue type mismatch: expected Vector4");
+		return data.vector4Value;
+	}
+
+	const Matrix4x4f& UniformValue::GetMatrix4x4() const
+	{
+		ASSERT_MSG(type == UniformValueType::Mat4, "UniformValue type mismatch: expected Mat4");
+		return data.matrix4x4Value;
 	}
 } // namespace Ailurus

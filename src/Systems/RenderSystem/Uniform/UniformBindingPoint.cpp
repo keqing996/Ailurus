@@ -7,14 +7,14 @@ namespace Ailurus
 {
 	static uint32_t GetStd140BaseAlignment(const UniformVariable* pUniform)
 	{
-		switch (pUniform->VaribleType())
+		switch (pUniform->VariableType())
 		{
-			case UniformVaribleType::Numeric:
+			case UniformVariableType::Numeric:
 			{
 				const auto pNumericUniform = static_cast<const UniformVariableNumeric*>(pUniform);
 				return UniformLayoutHelper::GetStd140BaseAlignment(pNumericUniform->ValueType());
 			}
-			case UniformVaribleType::Structure:
+			case UniformVariableType::Structure:
 			{
 				uint32_t maxAlignment = 0;
 				const auto pStructureUniform = static_cast<const UniformVariableStructure*>(pUniform);
@@ -22,7 +22,7 @@ namespace Ailurus
 					maxAlignment = std::max(maxAlignment, GetStd140BaseAlignment(member.get()));
 				return UniformLayoutHelper::AlignOffset(maxAlignment, 16);
 			}
-			case UniformVaribleType::Array:
+			case UniformVariableType::Array:
 			{
 				const auto pArrayUniform = static_cast<const UniformVariableArray*>(pUniform);
 				const auto& members = pArrayUniform->GetMembers();
@@ -37,9 +37,9 @@ namespace Ailurus
 	static void PopulateUniformOffsets(UniformVariable* pUniform, const std::string& prefix,
 		uint32_t& currentOffset, std::unordered_map<std::string, uint32_t>& offsetMap, bool isTopLevel = true)
 	{
-		switch (pUniform->VaribleType())
+		switch (pUniform->VariableType())
 		{
-			case UniformVaribleType::Numeric:
+			case UniformVariableType::Numeric:
 			{
 				// Align to the proper boundary before placing the value
 				const auto pNumericUniform = static_cast<const UniformVariableNumeric*>(pUniform);
@@ -50,7 +50,7 @@ namespace Ailurus
 				currentOffset += UniformValue::GetSize(pNumericUniform->ValueType());
 				break;
 			}
-			case UniformVaribleType::Structure:
+			case UniformVariableType::Structure:
 			{
 				const auto pStructureUniform = static_cast<const UniformVariableStructure*>(pUniform);
 				// Align structure to its base alignment before starting
@@ -74,7 +74,7 @@ namespace Ailurus
 				}
 				break;
 			}
-			case UniformVaribleType::Array:
+			case UniformVariableType::Array:
 			{
 				const auto pArrayUniform = static_cast<const UniformVariableArray*>(pUniform);
 				const auto& members = pArrayUniform->GetMembers();
@@ -83,7 +83,7 @@ namespace Ailurus
 				{
 					// Get the array stride according to std140 rules
 					UniformValueType elementType = UniformValueType::Int; // Default, will be overridden
-					if (members.front()->VaribleType() == UniformVaribleType::Numeric)
+					if (members.front()->VariableType() == UniformVariableType::Numeric)
 					{
 						const auto pFirstElement = static_cast<const UniformVariableNumeric*>(members.front().get());
 						elementType = pFirstElement->ValueType();

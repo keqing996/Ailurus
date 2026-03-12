@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <deque>
 #include <Ailurus/Utility/NonCopyable.h>
 
 namespace Ailurus
@@ -53,8 +54,8 @@ namespace Ailurus
 
 	private:
 		std::vector<vk::WriteDescriptorSet> _writes;
-		std::vector<vk::DescriptorBufferInfo> _bufferInfos;
-		std::vector<vk::DescriptorImageInfo> _imageInfos;
+		std::deque<vk::DescriptorBufferInfo> _bufferInfos;
+		std::deque<vk::DescriptorImageInfo> _imageInfos;
 	};
 
 } // namespace Ailurus

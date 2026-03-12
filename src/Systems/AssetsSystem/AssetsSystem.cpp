@@ -40,4 +40,14 @@ namespace Ailurus
 	{
 		_assetsMap[assetId] = std::move(pAsset);
 	}
+
+	std::string AssetsSystem::GetAssetPath(uint64_t assetId) const
+	{
+		for (const auto& [path, id] : _fileAssetToIdMap)
+		{
+			if (id == assetId)
+				return path;
+		}
+		return {};
+	}
 } // namespace Ailurus

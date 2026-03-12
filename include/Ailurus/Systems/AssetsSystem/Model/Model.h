@@ -4,6 +4,7 @@
 #include <memory>
 #include "Ailurus/Systems/AssetsSystem/Asset.h"
 #include "Ailurus/Systems/AssetsSystem/Mesh/Mesh.h"
+#include "Ailurus/Math/AABB.hpp"
 
 namespace Ailurus
 {
@@ -11,6 +12,7 @@ namespace Ailurus
 	{
 	public:
 		const std::vector<std::unique_ptr<Mesh>>& GetMeshes() const;
+		const AABBf& GetLocalAABB() const;
 
 	private:
 		friend class AssetsSystem;
@@ -18,5 +20,6 @@ namespace Ailurus
 
 	private:
 		std::vector<std::unique_ptr<Mesh>> _meshes;
+		AABBf _localAABB;
 	};
 }

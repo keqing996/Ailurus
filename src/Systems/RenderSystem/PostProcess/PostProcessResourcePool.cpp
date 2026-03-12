@@ -10,18 +10,25 @@ namespace Ailurus
         auto handle = std::make_unique<RTHandle>();
         handle->_spec = spec;
         RTHandle* pRaw = handle.get();
+        if (_built)
+            BuildHandle(*handle, _baseWidth, _baseHeight);
         _handles.push_back(std::move(handle));
         return pRaw;
     }
 
     void PostProcessResourcePool::Build(uint32_t baseWidth, uint32_t baseHeight)
     {
+        _baseWidth = baseWidth;
+        _baseHeight = baseHeight;
+        _built = true;
         for (auto& handle : _handles)
             BuildHandle(*handle, baseWidth, baseHeight);
     }
 
     void PostProcessResourcePool::Rebuild(uint32_t baseWidth, uint32_t baseHeight)
     {
+        _baseWidth = baseWidth;
+        _baseHeight = baseHeight;
         for (auto& handle : _handles)
         {
             handle->_rt = nullptr; // Destroy old RT

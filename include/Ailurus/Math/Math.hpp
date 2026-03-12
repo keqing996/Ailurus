@@ -5,6 +5,8 @@
 #include "Matrix4x4.hpp"
 #include "Quaternion.hpp"
 #include "EulerAngle.hpp"
+#include "AABB.hpp"
+#include "Frustum.hpp"
 
 namespace Ailurus::Math
 {

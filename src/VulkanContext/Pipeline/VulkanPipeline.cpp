@@ -28,8 +28,11 @@ namespace Ailurus
 				continue;
 
 			const auto* pRHIShader = pShader->GetImpl();
-			if (pRHIShader == nullptr)
+			if (pRHIShader == nullptr || !pRHIShader->IsValid())
+			{
+				Logger::LogError("Invalid shader module for stage {}", i);
 				continue;
+			}
 
 			shaderStages.push_back(pRHIShader->GeneratePipelineCreateInfo(pShader->GetStage()));
 		}
@@ -200,8 +203,11 @@ namespace Ailurus
 				continue;
 
 			const auto* pRHIShader = pShader->GetImpl();
-			if (pRHIShader == nullptr)
+			if (pRHIShader == nullptr || !pRHIShader->IsValid())
+			{
+				Logger::LogError("Invalid shader module for stage {}", i);
 				continue;
+			}
 
 			shaderStages.push_back(pRHIShader->GeneratePipelineCreateInfo(pShader->GetStage()));
 		}

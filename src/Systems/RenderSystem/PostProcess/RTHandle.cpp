@@ -3,6 +3,8 @@
 
 namespace Ailurus
 {
+    RTHandle::~RTHandle() = default;
+
     vk::Image RTHandle::GetImage() const
     {
         return _rt ? _rt->GetImage() : nullptr;

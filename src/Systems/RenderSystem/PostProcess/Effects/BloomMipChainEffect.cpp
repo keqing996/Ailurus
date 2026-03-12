@@ -18,6 +18,8 @@ namespace Ailurus
     const char* BloomMipChainEffect::UPSAMPLE_SHADER_PATH   = "./Assets/ShaderBin/PostProcess/bloom_upsample.frag.spv";
     const char* BloomMipChainEffect::COMPOSITE_SHADER_PATH  = "./Assets/ShaderBin/PostProcess/bloom_composite.frag.spv";
 
+    BloomMipChainEffect::BloomMipChainEffect() = default;
+
     BloomMipChainEffect::~BloomMipChainEffect()
     {
         Shutdown();

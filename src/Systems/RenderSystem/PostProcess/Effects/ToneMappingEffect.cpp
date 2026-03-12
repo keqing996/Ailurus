@@ -17,6 +17,8 @@ namespace Ailurus
     const std::string ToneMappingEffect::EFFECT_NAME = "ToneMapping";
     const char* ToneMappingEffect::FRAG_SHADER_PATH = "./Assets/ShaderBin/PostProcess/tonemapping.frag.spv";
 
+    ToneMappingEffect::ToneMappingEffect() = default;
+
     ToneMappingEffect::~ToneMappingEffect()
     {
         Shutdown();

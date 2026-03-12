@@ -18,7 +18,7 @@ namespace Ailurus
     class BloomMipChainEffect : public PostProcessEffect
     {
     public:
-        BloomMipChainEffect() = default;
+        BloomMipChainEffect();
         ~BloomMipChainEffect() override;
 
     public:

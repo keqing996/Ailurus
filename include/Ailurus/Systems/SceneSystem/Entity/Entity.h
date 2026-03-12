@@ -1,8 +1,10 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
 #include "Ailurus/Math/Vector3.hpp"
 #include "Ailurus/Math/Quaternion.hpp"
 #include "Ailurus/Math/Matrix4x4.hpp"
@@ -20,6 +22,21 @@ namespace Ailurus
 	public:
 		/// Get the unique identifier of the entity
 		auto GetGuid() const -> uint32_t;
+
+		/// Get entity name
+		auto GetName() const -> const std::string&;
+
+		/// Set entity name
+		auto SetName(const std::string& name) -> void;
+
+		/// Get parent entity
+		auto GetParent() const -> Entity*;
+
+		/// Set parent entity (nullptr to unparent)
+		auto SetParent(Entity* parent) -> void;
+
+		/// Get children entities
+		auto GetChildren() const -> const std::vector<Entity*>&;
 
 		/// Get the position of the entity in 3D space
 		auto GetPosition() const -> Vector3f;
@@ -65,8 +82,17 @@ namespace Ailurus
 		auto GetModelMatrix() const -> Matrix4x4f;
 
 	private:
+		friend class SceneSystem;
+
 		// Global uid
 		uint32_t _guid;
+
+		// Name
+		std::string _name;
+
+		// Hierarchy
+		Entity* _parent = nullptr;
+		std::vector<Entity*> _children;
 
 		// Transform
 		Vector3f _position = Vector3f::Zero;
@@ -74,7 +100,7 @@ namespace Ailurus
 		Vector3f _scale = Vector3f::One;
 
 		// Components
-		std::vector<std::unique_ptr<Component>> _components;
+		std::unordered_map<ComponentType, std::vector<std::unique_ptr<Component>>> _components;
 	};
 
 	template <typename T, typename... Types>
@@ -86,8 +112,11 @@ namespace Ailurus
 		std::unique_ptr<T> pComp = std::make_unique<T>(std::forward<Types>(Args)...);
 		pComp->_parentEntity = this;
 
-		_components.push_back(std::move(pComp));
-		return reinterpret_cast<T*>(_components.back().get());
+		auto& vec = _components[T::StaticType];
+		vec.push_back(std::move(pComp));
+		T* result = static_cast<T*>(vec.back().get());
+		result->OnAttach();
+		return result;
 	}
 
 	template <typename T>
@@ -99,8 +128,11 @@ namespace Ailurus
 		std::unique_ptr<T> pComp = std::make_unique<T>();
 		pComp->_parentEntity = this;
 
-		_components.push_back(std::move(pComp));
-		return reinterpret_cast<T*>(_components.back().get());
+		auto& vec = _components[T::StaticType];
+		vec.push_back(std::move(pComp));
+		T* result = static_cast<T*>(vec.back().get());
+		result->OnAttach();
+		return result;
 	}
 
 	template <typename T>

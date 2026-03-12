@@ -4,6 +4,7 @@
 #include "Ailurus/Systems/AssetsSystem/Model/Model.h"
 #include "Ailurus/Systems/AssetsSystem/Material/MaterialInstance.h"
 #include "Ailurus/Systems/AssetsSystem/AssetRef.h"
+#include "Ailurus/Math/AABB.hpp"
 
 namespace Ailurus
 {
@@ -18,6 +19,9 @@ namespace Ailurus
 	public:
 		const AssetRef<Model>& GetModelAsset() const;
 		const AssetRef<MaterialInstance>& GetMaterialInstanceAsset() const;
+		AABBf GetWorldAABB() const;
+
+		nlohmann::json Serialize() const override;
 
 	private:
 		AssetRef<Model> _modelAsset;

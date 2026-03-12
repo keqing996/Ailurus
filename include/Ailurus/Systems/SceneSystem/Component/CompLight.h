@@ -47,6 +47,8 @@ namespace Ailurus
 		float GetOuterCutoff() const;  // outer cone angle
 		void SetOuterCutoff(float degrees);
 
+		nlohmann::json Serialize() const override;
+
 	private:
 		LightType _lightType = LightType::Directional;
 		Vector3f _color = { 1.0f, 1.0f, 1.0f };

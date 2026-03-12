@@ -50,6 +50,13 @@ namespace Ailurus
 		auto GetSize() const -> uint32_t;
 		auto GetData() const -> const Data&;
 
+		auto GetInt() const -> int32_t;
+		auto GetFloat() const -> float;
+		auto GetVector2() const -> const Vector2f&;
+		auto GetVector3() const -> const Vector3f&;
+		auto GetVector4() const -> const Vector4f&;
+		auto GetMatrix4x4() const -> const Matrix4x4f&;
+
 		void SetInt(int32_t value);
 		void SetFloat(float value);
 		void SetVector2(const Vector2f& value);

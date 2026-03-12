@@ -225,9 +225,9 @@ namespace Ailurus
 			return nullptr;
 		}
 
-		UniformVaribleType varType;
+		UniformVariableType varType;
 		const std::string& accessType = uniformVarConfig["type"].get<std::string>();
-		if (!EnumReflection<UniformVaribleType>::TryFromString(accessType, &varType))
+		if (!EnumReflection<UniformVariableType>::TryFromString(accessType, &varType))
 		{
 			Logger::LogError("Material render pass uniform config access type error, {}", accessType);
 			return nullptr;
@@ -235,7 +235,7 @@ namespace Ailurus
 
 		switch (varType)
 		{
-			case UniformVaribleType::Numeric:
+			case UniformVariableType::Numeric:
 			{
 				auto [valueType, value] = JsonReadUniformNumericValue(uniformVarConfig["value"]);
 				auto pUniformVar = std::make_unique<UniformVariableNumeric>(valueType);
@@ -244,7 +244,7 @@ namespace Ailurus
 
 				return std::move(pUniformVar);
 			}
-			case UniformVaribleType::Structure:
+			case UniformVariableType::Structure:
 			{
 				auto pUniformVar = std::make_unique<UniformVariableStructure>();
 				for (const auto& memberConfig : uniformVarConfig["members"])
@@ -277,7 +277,7 @@ namespace Ailurus
 
 				return std::move(pUniformVar);
 			}
-			case UniformVaribleType::Array:
+			case UniformVariableType::Array:
 			{
 				auto pUniformVar = std::make_unique<UniformVariableArray>();
 				size_t index = 0;

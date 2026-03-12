@@ -15,7 +15,7 @@ namespace Ailurus
     class ToneMappingEffect : public PostProcessEffect
     {
     public:
-        ToneMappingEffect() = default;
+        ToneMappingEffect();
         ~ToneMappingEffect() override;
 
     public:

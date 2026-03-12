@@ -7,6 +7,7 @@
 #include <Ailurus/Utility/Logger.h>
 #include <Ailurus/OS/Path.h>
 #include <Ailurus/Assert.h>
+#include <Ailurus/Math/AABB.hpp>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/Vertex/VulkanVertexLayout.h>
 #include <VulkanContext/Helper/VulkanHelper.h>
@@ -154,6 +155,21 @@ namespace Ailurus
 
 		std::vector<uint8_t> vertexData = ReadVertex(pAssimpMesh, layout);
 
+		// Compute local AABB from vertex positions
+		AABBf localAABB;
+		if (pAssimpMesh->HasPositions() && pAssimpMesh->mNumVertices > 0)
+		{
+			Vector3f minPos(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+			Vector3f maxPos(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
+			for (unsigned int i = 0; i < pAssimpMesh->mNumVertices; i++)
+			{
+				Vector3f pos(pAssimpMesh->mVertices[i].x, pAssimpMesh->mVertices[i].y, pAssimpMesh->mVertices[i].z);
+				minPos = Vector3f::Min(minPos, pos);
+				maxPos = Vector3f::Max(maxPos, pos);
+			}
+			localAABB = AABBf(minPos, maxPos);
+		}
+
 		if (pAssimpMesh->HasFaces())
 		{
 			IndexBufferFormat indexFormat = ReadIndexFormat(pAssimpMesh);
@@ -164,13 +180,15 @@ namespace Ailurus
 				layoutId,
 				indexFormat,
 				indexData.data(),
-				indexData.size());
+				indexData.size(),
+				localAABB);
 		}
 
 		return std::make_unique<Mesh>(
 			vertexData.data(),
 			vertexData.size(),
-			layoutId);
+			layoutId,
+			localAABB);
 	}
 
 	static void AssimpProcessNode(const aiNode* pAssimpNode, const aiScene* pAssimpScene,

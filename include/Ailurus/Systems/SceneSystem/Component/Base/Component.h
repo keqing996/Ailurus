@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ComponentMeta.h"
+#include <nlohmann/json_fwd.hpp>
 
 namespace Ailurus
 {
@@ -19,6 +20,12 @@ namespace Ailurus
 			return _parentEntity;
 		}
 
+		virtual void OnAttach() {}
+		virtual void OnDetach() {}
+		virtual void OnUpdate(float deltaTime) {}
+
+		virtual nlohmann::json Serialize() const;
+
 		static constexpr ComponentType StaticType = ComponentType::Component;
 
 	protected:
@@ -30,7 +37,7 @@ namespace Ailurus
 	class TComponent : public BaseType
 	{
 	public:
-		static const ComponentType StaticType = Type;
+		static constexpr ComponentType StaticType = Type;
 
 		ComponentType GetType() const override
 		{

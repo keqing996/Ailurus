@@ -4,6 +4,7 @@
 #include <vector>
 #include <Ailurus/Math/Matrix4x4.hpp>
 #include <Ailurus/Math/Vector4.hpp>
+#include <Ailurus/Math/Frustum.hpp>
 #include <Ailurus/Systems/RenderSystem/Uniform/UniformSet.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorSet.h>
 
@@ -56,6 +57,9 @@ namespace Ailurus
 		std::vector<Vector4f> spotLightColors;     // xyz = color, w = intensity
 		std::vector<Vector4f> spotLightAttenuations; // xyz = attenuation, w = unused
 		std::vector<Vector4f> spotLightCutoffs;    // x = cos(inner), y = cos(outer), zw = unused
+
+		// Camera frustum for culling
+		Frustum cameraFrustum;
 
 		// CSM data
 		static constexpr uint32_t CSM_CASCADE_COUNT = 4;

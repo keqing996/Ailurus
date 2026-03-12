@@ -1,4 +1,5 @@
 #include "Ailurus/Systems/RenderSystem/Shader/ShaderLibrary.h"
+#include "Ailurus/OS/Path.h"
 
 namespace Ailurus
 {
@@ -22,7 +23,8 @@ namespace Ailurus
 
     Shader* ShaderLibrary::LoadShader(ShaderStage stage, const std::string& path)
     {
-        _library[stage][path] = std::make_unique<Shader>(stage, path);
+        auto resolvedPath = Path::ResolvePath(path);
+        _library[stage][path] = std::make_unique<Shader>(stage, resolvedPath);
         return _library[stage][path].get();
     }
 }
