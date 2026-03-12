@@ -1,5 +1,5 @@
 #include <iostream>
-#include <Ailurus/Application/Application.h>
+#include <Ailurus/Application.h>
 
 using namespace Ailurus;
 

@@ -1,5 +1,5 @@
 
-#include <Ailurus/Application/Application.h>
+#include <Ailurus/Application.h>
 
 int Main(int argc, char *argv[])
 {

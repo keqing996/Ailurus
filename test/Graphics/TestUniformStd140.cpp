@@ -5,11 +5,11 @@
 #include <Ailurus/Math/Vector3.hpp>
 #include <Ailurus/Math/Vector4.hpp>
 #include <Ailurus/Math/Matrix4x4.hpp>
-#include "Ailurus/Application/RenderSystem/Uniform/UniformLayoutHelper.h"
-#include "Ailurus/Application/RenderSystem/Uniform/UniformValue.h"
-#include "Ailurus/Application/RenderSystem/Uniform/UniformBindingPoint.h"
-#include "Ailurus/Application/RenderSystem/Uniform/UniformVariable.h"
-#include "Ailurus/Application/RenderSystem/Shader/ShaderStage.h"
+#include "Ailurus/Systems/RenderSystem/Uniform/UniformLayoutHelper.h"
+#include "Ailurus/Systems/RenderSystem/Uniform/UniformValue.h"
+#include "Ailurus/Systems/RenderSystem/Uniform/UniformBindingPoint.h"
+#include "Ailurus/Systems/RenderSystem/Uniform/UniformVariable.h"
+#include "Ailurus/Systems/RenderSystem/Shader/ShaderStage.h"
 
 using namespace Ailurus;
 
@@ -308,9 +308,9 @@ TEST_SUITE("Std140LayoutRules")
             // Note: In actual std140 buffer layout, there would be 4 bytes of padding after data[2]
         }
 
-        SUBCASE("Matrix transpose for GPU")
+        SUBCASE("Matrix column-major GPU layout")
         {
-            // Test that matrices need to be transposed for column-major GPU layout
+            // Test that matrices are stored column-major, directly matching GPU layout
             Matrix4x4f mat;
             mat(0, 0) = 1.0f;  mat(0, 1) = 2.0f;  mat(0, 2) = 3.0f;  mat(0, 3) = 4.0f;
             mat(1, 0) = 5.0f;  mat(1, 1) = 6.0f;  mat(1, 2) = 7.0f;  mat(1, 3) = 8.0f;
@@ -322,15 +322,14 @@ TEST_SUITE("Std140LayoutRules")
             CHECK_EQ(UniformValue::GetSize(UniformValueType::Mat4), 64);
             CHECK_EQ(UniformLayoutHelper::GetStd140BaseAlignment(UniformValueType::Mat4), 16);
             
-            // Check if the matrix needs transposing for GPU upload
-            Matrix4x4f transposed = mat.Transpose();
-            const float* transposeData = reinterpret_cast<const float*>(&transposed);
+            // Column-major layout: raw data is column 0, column 1, column 2, column 3
+            const float* data = mat.GetDataPtr();
             
-            // First column of transposed matrix (was first row)
-            CHECK_EQ(transposeData[0], 1.0f);   // mat(0,0)
-            CHECK_EQ(transposeData[1], 5.0f);   // mat(1,0)
-            CHECK_EQ(transposeData[2], 9.0f);   // mat(2,0)
-            CHECK_EQ(transposeData[3], 13.0f);  // mat(3,0)
+            // Column 0: elements (0,0), (1,0), (2,0), (3,0)
+            CHECK_EQ(data[0], 1.0f);    // mat(0,0)
+            CHECK_EQ(data[1], 5.0f);    // mat(1,0)
+            CHECK_EQ(data[2], 9.0f);    // mat(2,0)
+            CHECK_EQ(data[3], 13.0f);   // mat(3,0)
         }
     }
 

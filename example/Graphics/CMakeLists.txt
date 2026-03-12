@@ -28,7 +28,7 @@ else()
     add_executable          (ailurus_example_render ${AILURUS_RENDER_EXAMPLE_SRC})
 endif()
 
-target_link_libraries   (ailurus_example_render PUBLIC ailurus-app)
+target_link_libraries   (ailurus_example_render PUBLIC ailurus)
 
 # Platform-specific post-build commands
 if(APPLE)

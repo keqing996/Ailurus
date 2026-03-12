@@ -146,22 +146,22 @@ TEST_SUITE("Matrix4x4")
 		CHECK(m(3, 2) == T(15));
 		CHECK(m(3, 3) == T(16));
 
-		// Access elements with array syntax
+		// Access elements with array syntax (column-major: m[col][row])
 		CHECK(m[0][0] == T(1));
-		CHECK(m[0][1] == T(2));
-		CHECK(m[0][2] == T(3));
-		CHECK(m[0][3] == T(4));
-		CHECK(m[1][0] == T(5));
+		CHECK(m[0][1] == T(5));
+		CHECK(m[0][2] == T(9));
+		CHECK(m[0][3] == T(13));
+		CHECK(m[1][0] == T(2));
 		CHECK(m[1][1] == T(6));
-		CHECK(m[1][2] == T(7));
-		CHECK(m[1][3] == T(8));
-		CHECK(m[2][0] == T(9));
-		CHECK(m[2][1] == T(10));
+		CHECK(m[1][2] == T(10));
+		CHECK(m[1][3] == T(14));
+		CHECK(m[2][0] == T(3));
+		CHECK(m[2][1] == T(7));
 		CHECK(m[2][2] == T(11));
-		CHECK(m[2][3] == T(12));
-		CHECK(m[3][0] == T(13));
-		CHECK(m[3][1] == T(14));
-		CHECK(m[3][2] == T(15));
+		CHECK(m[2][3] == T(15));
+		CHECK(m[3][0] == T(4));
+		CHECK(m[3][1] == T(8));
+		CHECK(m[3][2] == T(12));
 		CHECK(m[3][3] == T(16));
 
 		// Modify elements
@@ -175,16 +175,22 @@ TEST_SUITE("Matrix4x4")
 		CHECK(m(2, 2) == T(19));
 		CHECK(m(3, 3) == T(20));
 
-		// Modify with array syntax
+		// Modify with array syntax (column-major: m[col][row])
 		m[0][1] = T(21);
 		m[1][2] = T(22);
 		m[2][3] = T(23);
 		m[3][0] = T(24);
 
-		CHECK(m[0][1] == T(21));
-		CHECK(m[1][2] == T(22));
-		CHECK(m[2][3] == T(23));
-		CHECK(m[3][0] == T(24));
+		CHECK(m[0][1] == T(21));	// col 0, row 1
+		CHECK(m[1][2] == T(22));	// col 1, row 2
+		CHECK(m[2][3] == T(23));	// col 2, row 3
+		CHECK(m[3][0] == T(24));	// col 3, row 0
+
+		// Verify via operator() that the correct elements were set
+		CHECK(m(1, 0) == T(21));	// row 1, col 0
+		CHECK(m(2, 1) == T(22));	// row 2, col 1
+		CHECK(m(3, 2) == T(23));	// row 3, col 2
+		CHECK(m(0, 3) == T(24));	// row 0, col 3
 	}
 
 	TEST_CASE_TEMPLATE("Matrix4x4 get/set row and column", T, int32_t, uint32_t, float, double)

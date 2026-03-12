@@ -1,11 +1,11 @@
 
-#include <Ailurus/Application/Application.h>
-#include <Ailurus/Application/SceneSystem/Component/CompStaticMeshRender.h>
-#include <Ailurus/Application/SceneSystem/Component/CompCamera.h>
-#include <Ailurus/Application/SceneSystem/Component/CompLight.h>
-#include <Ailurus/Application/AssetsSystem/Material/Material.h>
-#include <Ailurus/Application/AssetsSystem/Model/Model.h>
-#include <Ailurus/Application/TimeSystem/TimeSystem.h>
+#include <Ailurus/Application.h>
+#include <Ailurus/Systems/SceneSystem/Component/CompStaticMeshRender.h>
+#include <Ailurus/Systems/SceneSystem/Component/CompCamera.h>
+#include <Ailurus/Systems/SceneSystem/Component/CompLight.h>
+#include <Ailurus/Systems/AssetsSystem/Material/Material.h>
+#include <Ailurus/Systems/AssetsSystem/Model/Model.h>
+#include <Ailurus/Systems/TimeSystem/TimeSystem.h>
 #include "Ailurus/Math/Math.hpp"
 #include "Ailurus/Utility/Logger.h"
 

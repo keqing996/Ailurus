@@ -6,7 +6,7 @@ add_subdirectory(spdlog)
 
 # glm
 add_subdirectory(glm)
-target_compile_definitions(glm PUBLIC GLM_FORCE_LEFT_HANDED)
+target_compile_definitions(glm PUBLIC GLM_FORCE_LEFT_HANDED GLM_FORCE_QUAT_DATA_XYZW)
 
 # nlohmann json
 add_subdirectory(nlohmann)

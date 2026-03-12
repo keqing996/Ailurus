@@ -51,10 +51,10 @@ TEST_SUITE("Matrix3x3")
 		CHECK(matrix[2][2] == 1.0f);
 		CHECK(matrix[3][3] == 1.0f);
 
-		// Check translation components
-		CHECK(matrix[0][3] == 1.0f);
-		CHECK(matrix[1][3] == 2.0f);
-		CHECK(matrix[2][3] == 3.0f);
+		// Check translation components (column-major: translation in column 3)
+		CHECK(matrix[3][0] == 1.0f);
+		CHECK(matrix[3][1] == 2.0f);
+		CHECK(matrix[3][2] == 3.0f);
 
 		// Test with vector transformation
 		Vector4f point(5.0f, 6.0f, 7.0f, 1.0f);
