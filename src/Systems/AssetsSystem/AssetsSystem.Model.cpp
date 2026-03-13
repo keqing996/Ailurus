@@ -220,7 +220,7 @@ namespace Ailurus
 		constexpr auto importFlags =
 			aiProcess_Triangulate
 			| aiProcess_FlipUVs
-			// | aiProcess_CalcTangentSpace // Auto generated tangent & bitangent
+			| aiProcess_CalcTangentSpace
 			| aiProcess_SortByPType;
 
 		const aiScene* pAssimpScene = importer.ReadFile(path, importFlags);

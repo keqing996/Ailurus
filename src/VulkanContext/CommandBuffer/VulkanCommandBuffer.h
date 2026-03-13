@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <unordered_set>
 #include <vulkan/vulkan.hpp>
 #include <Ailurus/Utility/NonCopyable.h>
@@ -72,7 +73,7 @@ namespace Ailurus
 		/// @param extent Rendering area extent
 		/// @param clearColor If true, clear color attachment; if false, load existing content
 		/// @param useDepth If true, use depth attachment; if false, render without depth
-		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true);
+		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true, std::array<float, 4> clearColorValue = {0.0f, 0.0f, 0.0f, 1.0f});
 		
 		/// @brief Begin dynamic rendering for depth-only pass (shadow map rendering)
 		/// @param depthImageView Depth attachment image view

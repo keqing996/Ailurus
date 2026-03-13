@@ -83,6 +83,11 @@
                 "binding": 1,
                 "uniformVarName": "albedoTexture",
                 "path": "./Assets/Texture/wall.jpg"
+            },
+            {
+                "binding": 2,
+                "uniformVarName": "normalTexture",
+                "path": "./Assets/Texture/default_normal.png"
             }
         ]
     }

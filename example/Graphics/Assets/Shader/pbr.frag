@@ -18,6 +18,7 @@ layout(std140, set = 0, binding = 0) uniform GlobalUniform {
     vec4 spotLightCutoffs[4];
     mat4 cascadeViewProjMatrices[4];
     float cascadeSplitDistances[4];
+    vec4 ambientColor;
 } globalUniform;
 
 layout(set = 1, binding = 0) uniform MaterialProperty {
@@ -28,6 +29,7 @@ layout(set = 1, binding = 0) uniform MaterialProperty {
 } material;
 
 layout(set = 1, binding = 1) uniform sampler2D albedoTexture;
+layout(set = 1, binding = 2) uniform sampler2D normalTexture;
 
 // CSM shadow maps - one sampler per cascade
 layout(set = 0, binding = 1) uniform sampler2D shadowMap0;
@@ -38,6 +40,7 @@ layout(set = 0, binding = 4) uniform sampler2D shadowMap3;
 layout(location = 0) in vec3 fragWorldPos;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec2 fragUV;
+layout(location = 3) in mat3 fragTBN;
 
 layout(location = 0) out vec4 outColor;
 
@@ -178,7 +181,9 @@ void main() {
     float roughness = material.roughness;
     float ao = material.ao;
     
-    vec3 N = normalize(fragNormal);
+    vec3 N = texture(normalTexture, fragUV).rgb;
+    N = N * 2.0 - 1.0;
+    N = normalize(fragTBN * N);
     vec3 V = normalize(globalUniform.cameraPosition - fragWorldPos);
     
     // Calculate base reflectivity (F0)
@@ -243,7 +248,7 @@ void main() {
     }
     
     // Ambient lighting
-    vec3 ambient = vec3(0.03) * albedo * ao;
+    vec3 ambient = globalUniform.ambientColor.rgb * globalUniform.ambientColor.w * albedo * ao;
     vec3 color = ambient + Lo;
 
     outColor = vec4(color, 1.0);

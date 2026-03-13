@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <functional>
 #include <unordered_map>
 #include <memory>
@@ -44,6 +45,17 @@ namespace Ailurus
 		// Camera
 		void SetMainCamera(CompCamera* pCamera);
 		CompCamera* GetMainCamera() const;
+
+		// Clear color
+		void SetClearColor(float r, float g, float b, float a = 1.0f);
+		std::array<float, 4> GetClearColor() const;
+
+		// Ambient light
+		void SetAmbientColor(float r, float g, float b);
+		void SetAmbientStrength(float strength);
+
+		// Post-process access
+		PostProcessChain* GetPostProcessChain() const { return _postProcessChain.get(); }
 
 		// Render stats
 		const RenderStats& GetRenderStats() const;
@@ -102,6 +114,7 @@ namespace Ailurus
 		static auto GetGlobalUniformAccessNameSpotLightCutoffs() -> const std::string&;
 		static auto GetGlobalUniformAccessNameCascadeViewProjMatrices() -> const std::string&;
 		static auto GetGlobalUniformAccessNameCascadeSplitDistances() -> const std::string&;
+		static auto GetGlobalUniformAccessNameAmbientColor() -> const std::string&;
 
 	private:
 		bool _needRebuildSwapChain = false;
@@ -136,11 +149,19 @@ namespace Ailurus
 		static const char* GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_CUTOFFS;
 		static const char* GLOBAL_UNIFORM_ACCESS_CASCADE_VIEW_PROJ_MATRICES;
 		static const char* GLOBAL_UNIFORM_ACCESS_CASCADE_SPLIT_DISTANCES;
+		static const char* GLOBAL_UNIFORM_ACCESS_AMBIENT_COLOR;
 		static constexpr int MAX_DIRECTIONAL_LIGHTS = 4;
 		static constexpr int MAX_POINT_LIGHTS = 8;
 		static constexpr int MAX_SPOT_LIGHTS = 4;
 		std::unique_ptr<UniformSet> _pGlobalUniformSet;
 		std::unique_ptr<UniformSetMemory> _pGlobalUniformMemory;
+
+		// Clear color
+		std::array<float, 4> _clearColor = {0.1f, 0.1f, 0.1f, 1.0f};
+
+		// Ambient light
+		Vector3f _ambientColor = {1.0f, 1.0f, 1.0f};
+		float _ambientStrength = 0.3f;
 
 		// Shadow map sampler (owned by VulkanResourceManager, valid for the duration of VulkanContext)
 		VulkanSampler* _shadowSampler = nullptr;

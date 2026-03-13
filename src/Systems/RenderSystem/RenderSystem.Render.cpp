@@ -601,6 +601,12 @@ namespace Ailurus
 				var->cascadeSplitDistances[i]);
 		}
 
+		// Set ambient color (xyz = color, w = strength)
+		Vector4f ambientData(_ambientColor.x, _ambientColor.y, _ambientColor.z, _ambientStrength);
+		_pGlobalUniformMemory->SetUniformValue(
+			0, GetGlobalUniformAccessNameAmbientColor(),
+			ambientData);
+
 		// Use cache to get or allocate descriptor set
 		// Key: layout only (global uniform always uses same layout)
 		auto globalUniformSetLayout = _pGlobalUniformSet->GetDescriptorSetLayout();
@@ -795,7 +801,7 @@ namespace Ailurus
 			vk::ImageView msaaDepthView = pRenderTargetManager->GetMSAADepthImageView();
 
 			bool clearColor = (pass == RenderPassType::Forward);
-			pCommandBuffer->BeginRendering(msaaColorView, msaaDepthView, offscreenColorView, extent, clearColor, true);
+			pCommandBuffer->BeginRendering(msaaColorView, msaaDepthView, offscreenColorView, extent, clearColor, true, _clearColor);
 		}
 		else
 		{
@@ -803,7 +809,7 @@ namespace Ailurus
 			vk::ImageView depthImageView = pRenderTargetManager->GetDepthImageView();
 
 			bool clearColor = (pass == RenderPassType::Forward);
-			pCommandBuffer->BeginRendering(offscreenColorView, depthImageView, nullptr, extent, clearColor, true);
+			pCommandBuffer->BeginRendering(offscreenColorView, depthImageView, nullptr, extent, clearColor, true, _clearColor);
 		}
 
 		// Intermediate variables

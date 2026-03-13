@@ -23,11 +23,13 @@ layout(std140, set = 0, binding = 0) uniform GlobalUniform {
     vec4 spotLightCutoffs[4];
     mat4 cascadeViewProjMatrices[4];
     float cascadeSplitDistances[4];
+    vec4 ambientColor;
 } globalUniform;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
+layout(location = 3) in vec3 inTangent;
 
 void main() {
     vec4 worldPos = pushConstants.modelMatrix * vec4(inPosition, 1.0);

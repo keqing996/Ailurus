@@ -22,15 +22,18 @@ layout(std140, set = 0, binding = 0) uniform GlobalUniform {
     vec4 spotLightCutoffs[4];
     mat4 cascadeViewProjMatrices[4];
     float cascadeSplitDistances[4];
+    vec4 ambientColor;
 } globalUniform;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
+layout(location = 3) in vec3 inTangent;
 
 layout(location = 0) out vec3 fragWorldPos;
 layout(location = 1) out vec3 fragNormal;
 layout(location = 2) out vec2 fragUV;
+layout(location = 3) out mat3 fragTBN;
 
 void main() {
     vec4 worldPos = pushConstants.modelMatrix * vec4(inPosition, 1.0);
@@ -39,6 +42,13 @@ void main() {
     // Transform normal to world space (using transpose of inverse of model matrix for non-uniform scaling)
     mat3 normalMatrix = transpose(inverse(mat3(pushConstants.modelMatrix)));
     fragNormal = normalize(normalMatrix * inNormal);
+    
+    // Compute TBN matrix for normal mapping
+    vec3 T = normalize(normalMatrix * inTangent);
+    vec3 N = fragNormal;
+    T = normalize(T - dot(T, N) * N); // Gram-Schmidt re-orthogonalize
+    vec3 B = cross(N, T);
+    fragTBN = mat3(T, B, N);
     
     fragUV = inUV;
     

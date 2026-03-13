@@ -34,6 +34,7 @@ namespace Ailurus
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SPOT_LIGHT_CUTOFFS = "spotLightCutoffs";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_CASCADE_VIEW_PROJ_MATRICES = "cascadeViewProjMatrices";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_CASCADE_SPLIT_DISTANCES = "cascadeSplitDistances";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_AMBIENT_COLOR = "ambientColor";
 
 	RenderSystem::RenderSystem(bool enableImGui, bool enable3D)
 		: _enable3D(enable3D)
@@ -83,6 +84,26 @@ namespace Ailurus
 	CompCamera* RenderSystem::GetMainCamera() const
 	{
 		return _pMainCamera;
+	}
+
+	void RenderSystem::SetClearColor(float r, float g, float b, float a)
+	{
+		_clearColor = {r, g, b, a};
+	}
+
+	std::array<float, 4> RenderSystem::GetClearColor() const
+	{
+		return _clearColor;
+	}
+
+	void RenderSystem::SetAmbientColor(float r, float g, float b)
+	{
+		_ambientColor = {r, g, b};
+	}
+
+	void RenderSystem::SetAmbientStrength(float strength)
+	{
+		_ambientStrength = strength;
 	}
 
 	const RenderStats& RenderSystem::GetRenderStats() const
@@ -277,6 +298,11 @@ namespace Ailurus
 				std::make_unique<UniformVariableNumeric>(UniformValueType::Float),
 				4));  // 4 cascades
 
+		// Add ambient color (xyz = color, w = strength)
+		pGlobalUniformStructure->AddMember(
+			"ambientColor",
+			std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4));
+
 		auto pBindingPoint = std::make_unique<UniformBindingPoint>(
 			0,
 			std::vector<ShaderStage>{ ShaderStage::Vertex, ShaderStage::Fragment },
@@ -407,6 +433,12 @@ namespace Ailurus
 	auto RenderSystem::GetGlobalUniformAccessNameCascadeSplitDistances() -> const std::string&
 	{
 		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_CASCADE_SPLIT_DISTANCES;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameAmbientColor() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_AMBIENT_COLOR;
 		return value;
 	}
 
