@@ -8,7 +8,7 @@
 namespace Ailurus
 {
     class VulkanPipeline;
-    class VulkanDescriptorSetLayout;
+    class SamplerSchema;
     class VulkanSampler;
     class RTHandle;
 
@@ -65,8 +65,8 @@ namespace Ailurus
         RTHandle* _upMips[MIP_COUNT - 1] = {};
 
         // Descriptor set layouts
-        std::unique_ptr<VulkanDescriptorSetLayout> _singleSamplerLayout;
-        std::unique_ptr<VulkanDescriptorSetLayout> _dualSamplerLayout;
+        std::unique_ptr<SamplerSchema> _singleSamplerLayout;
+        std::unique_ptr<SamplerSchema> _dualSamplerLayout;
 
         // Pipelines
         std::unique_ptr<VulkanPipeline> _thresholdPipeline;

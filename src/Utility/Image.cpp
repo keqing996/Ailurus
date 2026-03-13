@@ -38,6 +38,27 @@ namespace Ailurus
 
 	Image::Image(const std::string& filePath)
 	{
+		// Check if the file is HDR format
+		if (::stbi_is_hdr(filePath.c_str()))
+		{
+			_isHDR = true;
+			int width = 0;
+			int height = 0;
+			int channels = 0;
+			float* pHdrData = ::stbi_loadf(filePath.c_str(), &width, &height, &channels, 4);
+			if (pHdrData == nullptr)
+				return;
+
+			ScopeGuard guard = [&] { ::stbi_image_free(pHdrData); };
+
+			_width = width;
+			_height = height;
+			_channels = 4;
+			const size_t totalFloats = static_cast<size_t>(width) * static_cast<size_t>(height) * 4;
+			_hdrData.assign(pHdrData, pHdrData + totalFloats);
+			return;
+		}
+
 		int width = 0;
 		int height = 0;
 		int channels = 0;
@@ -123,6 +144,21 @@ namespace Ailurus
 	const std::uint32_t* Image::GetPixelsData() const
 	{
 		return reinterpret_cast<const std::uint32_t*>(_data.data());
+	}
+
+	bool Image::IsHDR() const
+	{
+		return _isHDR;
+	}
+
+	const float* Image::GetHDRData() const
+	{
+		return _hdrData.data();
+	}
+
+	int Image::GetChannels() const
+	{
+		return _channels;
 	}
 
 	void Image::CopyFromData(uint width, uint height, std::uint8_t* pData)

@@ -5,6 +5,7 @@
 #include <Ailurus/Systems/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/ToneMappingEffect.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/BloomMipChainEffect.h>
+#include <Ailurus/Systems/RenderSystem/PostProcess/Effects/SSAOEffect.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
@@ -13,6 +14,8 @@
 #include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
 #include "Ailurus/Utility/Logger.h"
 #include "Detail/RenderIntermediateVariable.h"
+#include "Skybox/Skybox.h"
+#include "IBL/IBLManager.h"
 
 namespace Ailurus
 {
@@ -35,6 +38,7 @@ namespace Ailurus
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_CASCADE_VIEW_PROJ_MATRICES = "cascadeViewProjMatrices";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_CASCADE_SPLIT_DISTANCES = "cascadeSplitDistances";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_AMBIENT_COLOR = "ambientColor";
+	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SHADOW_BIAS_PARAMS = "shadowBiasParams";
 
 	RenderSystem::RenderSystem(bool enableImGui, bool enable3D)
 		: _enable3D(enable3D)
@@ -55,10 +59,33 @@ namespace Ailurus
 			vk::Format::eR16G16B16A16Sfloat);
 		_postProcessChain->AddEffect<BloomMipChainEffect>();
 		_postProcessChain->AddEffect<ToneMappingEffect>();
+		_postProcessChain->InsertEffect<SSAOEffect>(0);
+
+		// Initialize skybox
+		if (enable3D)
+		{
+			_pSkybox = std::make_unique<Skybox>();
+			_pSkybox->Init(_pShaderLibrary.get(),
+				vk::Format::eR16G16B16A16Sfloat,
+				vk::Format::eD32Sfloat);
+
+			// Initialize IBL
+			_pIBLManager = std::make_unique<IBLManager>();
+			auto cubemapView = _pSkybox->GetCubemapImageView();
+			auto cubemapSampler = _pSkybox->GetCubemapSampler()->GetSampler();
+			if (cubemapView)
+				_pIBLManager->Precompute(cubemapView, cubemapSampler, _pShaderLibrary.get());
+		}
 	}
 
 	RenderSystem::~RenderSystem()
 	{
+		if (_pIBLManager)
+			_pIBLManager->Shutdown();
+
+		if (_pSkybox)
+			_pSkybox->Shutdown();
+
 		if (_postProcessChain)
 			_postProcessChain->Shutdown();
 	}
@@ -86,6 +113,16 @@ namespace Ailurus
 		return _pMainCamera;
 	}
 
+	void RenderSystem::SetSkyboxEnabled(bool enabled)
+	{
+		_skyboxEnabled = enabled;
+	}
+
+	bool RenderSystem::IsSkyboxEnabled() const
+	{
+		return _skyboxEnabled;
+	}
+
 	void RenderSystem::SetClearColor(float r, float g, float b, float a)
 	{
 		_clearColor = {r, g, b, a};
@@ -104,6 +141,21 @@ namespace Ailurus
 	void RenderSystem::SetAmbientStrength(float strength)
 	{
 		_ambientStrength = strength;
+	}
+
+	void RenderSystem::SetShadowConstantBias(float bias)
+	{
+		_shadowConstantBias = bias;
+	}
+
+	void RenderSystem::SetShadowSlopeScale(float scale)
+	{
+		_shadowSlopeScale = scale;
+	}
+
+	void RenderSystem::SetShadowNormalOffset(float offset)
+	{
+		_shadowNormalOffset = offset;
 	}
 
 	const RenderStats& RenderSystem::GetRenderStats() const
@@ -194,6 +246,10 @@ namespace Ailurus
 				swapChainConfig.extent.height,
 				vk::Format::eR16G16B16A16Sfloat);
 		}
+
+		// Rebuild skybox pipeline (MSAA samples may have changed)
+		if (_pSkybox)
+			_pSkybox->RebuildPipeline(vk::Format::eR16G16B16A16Sfloat, vk::Format::eD32Sfloat);
 
 		for (const auto& [key, postRebuildCallback] : _postSwapChainRebuildCallbacks)
 		{
@@ -303,6 +359,11 @@ namespace Ailurus
 			"ambientColor",
 			std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4));
 
+		// Add shadow bias parameters (x = constant bias, y = slope scale, z = normal offset, w = unused)
+		pGlobalUniformStructure->AddMember(
+			"shadowBiasParams",
+			std::make_unique<UniformVariableNumeric>(UniformValueType::Vector4));
+
 		auto pBindingPoint = std::make_unique<UniformBindingPoint>(
 			0,
 			std::vector<ShaderStage>{ ShaderStage::Vertex, ShaderStage::Fragment },
@@ -313,15 +374,24 @@ namespace Ailurus
 		_pGlobalUniformSet->InitUniformBufferInfo();
 
 		// Add shadow map sampler bindings (set=0, bindings 1-4) to the global descriptor layout
-		std::vector<TextureBindingInfo> shadowMapBindings;
+		std::vector<TextureBindingInfo> textureBindings;
+		// Shadow maps (bindings 1-4)
 		for (uint32_t i = 0; i < RenderIntermediateVariable::CSM_CASCADE_COUNT; i++)
 		{
 			TextureBindingInfo bindingInfo;
 			bindingInfo.bindingId = i + 1;
 			bindingInfo.shaderStages = vk::ShaderStageFlagBits::eFragment;
-			shadowMapBindings.push_back(bindingInfo);
+			textureBindings.push_back(bindingInfo);
 		}
-		_pGlobalUniformSet->InitDescriptorSetLayout(shadowMapBindings);
+		// IBL textures (bindings 5-7)
+		for (uint32_t binding = 5; binding <= 7; binding++)
+		{
+			TextureBindingInfo bindingInfo;
+			bindingInfo.bindingId = binding;
+			bindingInfo.shaderStages = vk::ShaderStageFlagBits::eFragment;
+			textureBindings.push_back(bindingInfo);
+		}
+		_pGlobalUniformSet->InitDescriptorSetLayout(textureBindings);
 
 		_pGlobalUniformMemory = std::make_unique<UniformSetMemory>(_pGlobalUniformSet.get());
 
@@ -439,6 +509,12 @@ namespace Ailurus
 	auto RenderSystem::GetGlobalUniformAccessNameAmbientColor() -> const std::string&
 	{
 		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_AMBIENT_COLOR;
+		return value;
+	}
+
+	auto RenderSystem::GetGlobalUniformAccessNameShadowBiasParams() -> const std::string&
+	{
+		static std::string value = std::string{ GLOBAL_UNIFORM_SET_NAME } + "." + GLOBAL_UNIFORM_ACCESS_SHADOW_BIAS_PARAMS;
 		return value;
 	}
 

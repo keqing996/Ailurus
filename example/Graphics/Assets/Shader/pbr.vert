@@ -23,6 +23,7 @@ layout(std140, set = 0, binding = 0) uniform GlobalUniform {
     mat4 cascadeViewProjMatrices[4];
     float cascadeSplitDistances[4];
     vec4 ambientColor;
+    vec4 shadowBiasParams; // x = constant bias, y = slope scale factor, z = normal offset distance, w = unused
 } globalUniform;
 
 layout(location = 0) in vec3 inPosition;

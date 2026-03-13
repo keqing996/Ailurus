@@ -9,6 +9,8 @@
 #include <Ailurus/Systems/RenderSystem/Uniform/UniformSet.h>
 #include <Ailurus/Systems/RenderSystem/Uniform/UniformBindingPoint.h>
 #include <Ailurus/Systems/RenderSystem/Uniform/UniformSetMemory.h>
+#include <Ailurus/Systems/AssetsSystem/Material/MaterialInstance.h>
+#include <Ailurus/Systems/AssetsSystem/Texture/Texture.h>
 #include <Ailurus/Systems/AssetsSystem/Mesh/Mesh.h>
 #include <Ailurus/Systems/AssetsSystem/Model/Model.h>
 #include <Ailurus/Systems/SceneSystem/SceneSystem.h>
@@ -29,9 +31,13 @@
 #include <VulkanContext/Descriptor/VulkanDescriptorSetLayout.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorWriter.h>
 #include <VulkanContext/Resource/Image/VulkanSampler.h>
+#include <VulkanContext/Resource/Image/VulkanImage.h>
 #include "Ailurus/Systems/ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Systems/RenderSystem/RenderPass/RenderPassType.h"
 #include "Detail/RenderIntermediateVariable.h"
+#include "Skybox/Skybox.h"
+#include "IBL/IBLManager.h"
+#include <Ailurus/Systems/RenderSystem/PostProcess/Effects/SSAOEffect.h>
 
 namespace Ailurus
 {
@@ -444,6 +450,14 @@ namespace Ailurus
 						vk::PipelineStageFlagBits::eColorAttachmentOutput,
 						vk::PipelineStageFlagBits::eFragmentShader);
 
+					// Update SSAO projection matrix for this frame
+					if (_postProcessChain)
+					{
+						auto* ssaoEffect = static_cast<SSAOEffect*>(_postProcessChain->GetEffect("SSAO"));
+						if (ssaoEffect && _pMainCamera)
+							ssaoEffect->SetProjectionMatrix(_pMainCamera->GetProjectionMatrix());
+					}
+
 					if (_postProcessChain && _postProcessChain->HasEnabledEffects())
 					{
 						// Execute post-process chain: offscreen RT → swapchain
@@ -607,6 +621,12 @@ namespace Ailurus
 			0, GetGlobalUniformAccessNameAmbientColor(),
 			ambientData);
 
+		// Set shadow bias params (x = constant, y = slope scale, z = normal offset, w = unused)
+		Vector4f shadowBiasData(_shadowConstantBias, _shadowSlopeScale, _shadowNormalOffset, 0.0f);
+		_pGlobalUniformMemory->SetUniformValue(
+			0, GetGlobalUniformAccessNameShadowBiasParams(),
+			shadowBiasData);
+
 		// Use cache to get or allocate descriptor set
 		// Key: layout only (global uniform always uses same layout)
 		auto globalUniformSetLayout = _pGlobalUniformSet->GetDescriptorSetLayout();
@@ -635,6 +655,19 @@ namespace Ailurus
 					shadowWriter.WriteImage(i + 1, shadowMapView, _shadowSampler->GetSampler());
 			}
 			shadowWriter.UpdateSet(globalDescriptorSet);
+		}
+
+		// Write IBL textures to global descriptor set (bindings 5-7)
+		if (_pIBLManager && _pIBLManager->IsReady())
+		{
+			VulkanDescriptorWriter iblWriter;
+			iblWriter.WriteImage(5, _pIBLManager->GetIrradianceMapView(),
+								 _pIBLManager->GetIrradianceSampler()->GetSampler());
+			iblWriter.WriteImage(6, _pIBLManager->GetPrefilteredMapView(),
+								 _pIBLManager->GetPrefilteredSampler()->GetSampler());
+			iblWriter.WriteImage(7, _pIBLManager->GetBRDFLUTView(),
+								 _pIBLManager->GetBRDFLUTSampler()->GetSampler());
+			iblWriter.UpdateSet(globalDescriptorSet);
 		}
 	}
 
@@ -667,8 +700,30 @@ namespace Ailurus
 				
 				auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(pDescriptorLayout, &key);
 
-				// Update material data to descriptor set (pass material instance for texture binding)
-				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(pCommandBuffer, descriptorSet, pMaterialInstance);
+				// Update UBO data to descriptor set
+				pMaterialInstance->GetUniformSetMemory(pass)->UpdateToDescriptorSet(pCommandBuffer, descriptorSet);
+
+				// Write material texture bindings separately
+				auto* pTexturesMap = pMaterialInstance->GetTextures(pass);
+				if (pTexturesMap != nullptr)
+				{
+					VulkanDescriptorWriter textureWriter;
+					for (const auto& [uniformVarName, textureRef] : *pTexturesMap)
+					{
+						auto* pTexture = textureRef.Get();
+						if (pTexture == nullptr)
+							continue;
+
+						auto* pImage = pTexture->GetImage();
+						auto* pSampler = pTexture->GetSampler();
+						if (pImage == nullptr || pSampler == nullptr)
+							continue;
+
+						uint32_t texBindingId = pTexture->GetBindingId();
+						textureWriter.WriteImage(texBindingId, pImage->GetImageView(), pSampler->GetSampler());
+					}
+					textureWriter.UpdateSet(descriptorSet);
+				}
 
 				// Record material instance descriptor set
 				mapInstDescriptorSetMap[pMaterialInstance] = descriptorSet;
@@ -884,7 +939,25 @@ namespace Ailurus
 			}
 		}
 
+		// Render skybox after all geometry (depth test ensures it only draws where depth = 1.0)
+		if (pass == RenderPassType::Forward)
+			RenderSkybox(pCommandBuffer);
+
 		pCommandBuffer->EndRendering();
+	}
+
+	void RenderSystem::RenderSkybox(VulkanCommandBuffer* pCommandBuffer)
+	{
+		if (!_skyboxEnabled || !_pSkybox || !_pMainCamera)
+			return;
+
+		// Compute inverse view-projection matrix
+		const Matrix4x4f projMat = _pMainCamera->GetProjectionMatrix();
+		const Matrix4x4f viewMat = _pMainCamera->GetViewMatrix();
+		const Matrix4x4f vpMat = projMat * viewMat;
+		const Matrix4x4f inverseVP = vpMat.Inverse();
+
+		_pSkybox->Render(pCommandBuffer, inverseVP);
 	}
 
 	void RenderSystem::RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)

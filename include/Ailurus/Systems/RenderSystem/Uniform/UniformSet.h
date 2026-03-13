@@ -5,8 +5,7 @@
 #include <vector>
 #include "Ailurus/Utility/EnumReflection.h"
 #include "UniformBindingPoint.h"
-#include "Ailurus/Utility/NonCopyable.h"
-#include "Ailurus/Utility/NonMovable.h"
+#include "Ailurus/Systems/RenderSystem/Descriptor/DescriptorSetSchema.h"
 
 namespace Ailurus
 {
@@ -18,7 +17,7 @@ namespace Ailurus
 		General,
 		MaterialCustom);
 
-	class UniformSet : public NonCopyable, public NonMovable
+	class UniformSet : public DescriptorSetSchema
 	{
 		using BindingPointMap = std::unordered_map<uint32_t, std::unique_ptr<UniformBindingPoint>>;
 	public:
@@ -39,7 +38,6 @@ namespace Ailurus
 		auto GetBindingPointOffsetInUniformBuffer(uint32_t bindingPoint) const -> uint32_t;
 		auto GetSetId() const -> uint32_t;
 		auto GetUniformBufferSize() const -> uint32_t;
-		auto GetDescriptorSetLayout() const -> VulkanDescriptorSetLayout*;
 
 	private:
 		// Set id in shader
@@ -51,8 +49,5 @@ namespace Ailurus
 		// Uniform buffer offset map
 		uint32_t _uniformBufferSize = 0;
 		std::unordered_map<uint32_t, uint32_t> _bindingPointOffsetInUniformBufferMap;
-
-		// Descriptor set layout
-		std::unique_ptr<VulkanDescriptorSetLayout> _pDescriptorSetLayout;
 	};
 } // namespace Ailurus

@@ -73,11 +73,6 @@ void UniformSet::InitDescriptorSetLayout(const std::vector<TextureBindingInfo>& 
 		return _setId;
 	}
 
-	VulkanDescriptorSetLayout* UniformSet::GetDescriptorSetLayout() const
-	{
-		return _pDescriptorSetLayout.get();
-	}
-
 	auto UniformSet::GetUniformBufferSize() const -> uint32_t
 	{
 		return _uniformBufferSize;

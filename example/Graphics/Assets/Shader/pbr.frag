@@ -19,6 +19,7 @@ layout(std140, set = 0, binding = 0) uniform GlobalUniform {
     mat4 cascadeViewProjMatrices[4];
     float cascadeSplitDistances[4];
     vec4 ambientColor;
+    vec4 shadowBiasParams; // x = constant bias, y = slope scale factor, z = normal offset distance, w = unused
 } globalUniform;
 
 layout(set = 1, binding = 0) uniform MaterialProperty {
@@ -36,6 +37,11 @@ layout(set = 0, binding = 1) uniform sampler2D shadowMap0;
 layout(set = 0, binding = 2) uniform sampler2D shadowMap1;
 layout(set = 0, binding = 3) uniform sampler2D shadowMap2;
 layout(set = 0, binding = 4) uniform sampler2D shadowMap3;
+
+// IBL textures
+layout(set = 0, binding = 5) uniform samplerCube irradianceMap;
+layout(set = 0, binding = 6) uniform samplerCube prefilteredMap;
+layout(set = 0, binding = 7) uniform sampler2D brdfLUT;
 
 layout(location = 0) in vec3 fragWorldPos;
 layout(location = 1) in vec3 fragNormal;
@@ -86,6 +92,11 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+// Fresnel with roughness for IBL
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
 // Calculate lighting contribution from a single light
 vec3 calculateLight(vec3 N, vec3 V, vec3 L, vec3 lightColor, float lightIntensity,
                     vec3 albedo, float metallic, float roughness, vec3 F0) {
@@ -120,7 +131,7 @@ int selectCascade(float viewDepth) {
 }
 
 // PCF shadow sampling
-float sampleShadowMap(sampler2D shadowMap, vec2 uv, float compareDepth) {
+float sampleShadowMap(sampler2D shadowMap, vec2 uv, float compareDepth, float bias) {
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
         return 1.0; // Outside shadow map bounds
     }
@@ -133,7 +144,7 @@ float sampleShadowMap(sampler2D shadowMap, vec2 uv, float compareDepth) {
         for (int y = -1; y <= 1; y++) {
             vec2 offset = vec2(x, y) * texelSize;
             float depth = texture(shadowMap, uv + offset).r;
-            shadow += (compareDepth - 0.005 > depth) ? 0.0 : 1.0;
+            shadow += (compareDepth - bias > depth) ? 0.0 : 1.0;
         }
     }
     
@@ -141,15 +152,19 @@ float sampleShadowMap(sampler2D shadowMap, vec2 uv, float compareDepth) {
 }
 
 // Calculate shadow factor using CSM
-float calculateShadow(vec3 worldPos, vec3 viewPos) {
+float calculateShadow(vec3 worldPos, vec3 viewPos, vec3 N, vec3 L) {
     // Calculate view-space depth
     float viewDepth = length(viewPos);
     
     // Select cascade
     int cascadeIndex = selectCascade(viewDepth);
     
+    // Normal offset: shift the world position along the normal to reduce shadow acne on steep surfaces
+    float normalOffsetDist = globalUniform.shadowBiasParams.z;
+    vec3 offsetPos = worldPos + N * normalOffsetDist;
+    
     // Transform to light space
-    vec4 lightSpacePos = globalUniform.cascadeViewProjMatrices[cascadeIndex] * vec4(worldPos, 1.0);
+    vec4 lightSpacePos = globalUniform.cascadeViewProjMatrices[cascadeIndex] * vec4(offsetPos, 1.0);
     
     // Perspective divide
     vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
@@ -160,16 +175,22 @@ float calculateShadow(vec3 worldPos, vec3 viewPos) {
     // Get depth from light's perspective
     float currentDepth = projCoords.z;
     
+    // Compute slope-scale bias: stronger bias for surfaces at steep angles to light
+    float cosTheta = max(dot(N, L), 0.0);
+    float slopeFactor = globalUniform.shadowBiasParams.y;
+    float constantBias = globalUniform.shadowBiasParams.x;
+    float bias = constantBias + slopeFactor * (1.0 - cosTheta);
+    
     // Sample appropriate shadow map
     float shadow;
     if (cascadeIndex == 0) {
-        shadow = sampleShadowMap(shadowMap0, projCoords.xy, currentDepth);
+        shadow = sampleShadowMap(shadowMap0, projCoords.xy, currentDepth, bias);
     } else if (cascadeIndex == 1) {
-        shadow = sampleShadowMap(shadowMap1, projCoords.xy, currentDepth);
+        shadow = sampleShadowMap(shadowMap1, projCoords.xy, currentDepth, bias);
     } else if (cascadeIndex == 2) {
-        shadow = sampleShadowMap(shadowMap2, projCoords.xy, currentDepth);
+        shadow = sampleShadowMap(shadowMap2, projCoords.xy, currentDepth, bias);
     } else {
-        shadow = sampleShadowMap(shadowMap3, projCoords.xy, currentDepth);
+        shadow = sampleShadowMap(shadowMap3, projCoords.xy, currentDepth, bias);
     }
     
     return shadow;
@@ -192,9 +213,11 @@ void main() {
     
     vec3 Lo = vec3(0.0);
     
-    // Calculate shadow factor for directional lights
+    // Shadow with parametric bias (use first directional light direction)
     vec3 viewPos = fragWorldPos - globalUniform.cameraPosition;
-    float shadow = calculateShadow(fragWorldPos, viewPos);
+    vec3 shadowL = (globalUniform.numDirectionalLights > 0)
+        ? normalize(-globalUniform.dirLightDirections[0].xyz) : vec3(0.0, 1.0, 0.0);
+    float shadow = calculateShadow(fragWorldPos, viewPos, N, shadowL);
     
     // Directional lights (with shadows)
     for (int i = 0; i < globalUniform.numDirectionalLights; i++) {
@@ -247,8 +270,26 @@ void main() {
         Lo += calculateLight(N, V, L, lightColor, intensity * attenuation * spotIntensity, albedo, metallic, roughness, F0);
     }
     
-    // Ambient lighting
-    vec3 ambient = globalUniform.ambientColor.rgb * globalUniform.ambientColor.w * albedo * ao;
+    // IBL ambient lighting
+    float NdotV = max(dot(N, V), 0.0);
+    vec3 F_ibl = fresnelSchlickRoughness(NdotV, F0, roughness);
+    vec3 kS_ibl = F_ibl;
+    vec3 kD_ibl = (1.0 - kS_ibl) * (1.0 - metallic);
+
+    // Diffuse IBL
+    vec3 irradiance = texture(irradianceMap, N).rgb;
+    vec3 diffuseIBL = kD_ibl * irradiance * albedo;
+
+    // Specular IBL
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 R = reflect(-V, N);
+    vec3 prefilteredColor = textureLod(prefilteredMap, R, roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 brdf = texture(brdfLUT, vec2(NdotV, roughness)).rg;
+    vec3 specularIBL = prefilteredColor * (F_ibl * brdf.x + brdf.y);
+
+    // Combined ambient with global ambient color modulation
+    vec3 ambient = (diffuseIBL + specularIBL) * ao;
+    ambient *= globalUniform.ambientColor.rgb * globalUniform.ambientColor.w;
     vec3 color = ambient + Lo;
 
     outColor = vec4(color, 1.0);

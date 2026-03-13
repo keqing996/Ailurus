@@ -23,6 +23,8 @@ namespace Ailurus
 	class VulkanSampler;
 	class UniformSet;
 	class UniformSetMemory;
+	class Skybox;
+	class IBLManager;
 	struct RenderIntermediateVariable;
 
 	class RenderSystem : public NonCopyable, public NonMovable
@@ -54,8 +56,17 @@ namespace Ailurus
 		void SetAmbientColor(float r, float g, float b);
 		void SetAmbientStrength(float strength);
 
+		// Shadow bias
+		void SetShadowConstantBias(float bias);
+		void SetShadowSlopeScale(float scale);
+		void SetShadowNormalOffset(float offset);
+
 		// Post-process access
 		PostProcessChain* GetPostProcessChain() const { return _postProcessChain.get(); }
+
+		// Skybox
+		void SetSkyboxEnabled(bool enabled);
+		bool IsSkyboxEnabled() const;
 
 		// Render stats
 		const RenderStats& GetRenderStats() const;
@@ -95,6 +106,7 @@ namespace Ailurus
 		void RenderPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer);
 		void RenderShadowPass(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
+		void RenderSkybox(VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
 		static auto GetGlobalUniformAccessNameViewProjMat() -> const std::string&;
@@ -115,6 +127,7 @@ namespace Ailurus
 		static auto GetGlobalUniformAccessNameCascadeViewProjMatrices() -> const std::string&;
 		static auto GetGlobalUniformAccessNameCascadeSplitDistances() -> const std::string&;
 		static auto GetGlobalUniformAccessNameAmbientColor() -> const std::string&;
+		static auto GetGlobalUniformAccessNameShadowBiasParams() -> const std::string&;
 
 	private:
 		bool _needRebuildSwapChain = false;
@@ -150,6 +163,7 @@ namespace Ailurus
 		static const char* GLOBAL_UNIFORM_ACCESS_CASCADE_VIEW_PROJ_MATRICES;
 		static const char* GLOBAL_UNIFORM_ACCESS_CASCADE_SPLIT_DISTANCES;
 		static const char* GLOBAL_UNIFORM_ACCESS_AMBIENT_COLOR;
+		static const char* GLOBAL_UNIFORM_ACCESS_SHADOW_BIAS_PARAMS;
 		static constexpr int MAX_DIRECTIONAL_LIGHTS = 4;
 		static constexpr int MAX_POINT_LIGHTS = 8;
 		static constexpr int MAX_SPOT_LIGHTS = 4;
@@ -163,11 +177,23 @@ namespace Ailurus
 		Vector3f _ambientColor = {1.0f, 1.0f, 1.0f};
 		float _ambientStrength = 0.3f;
 
+		// Shadow bias parameters
+		float _shadowConstantBias = 0.005f;
+		float _shadowSlopeScale = 0.01f;
+		float _shadowNormalOffset = 0.02f;
+
 		// Shadow map sampler (owned by VulkanResourceManager, valid for the duration of VulkanContext)
 		VulkanSampler* _shadowSampler = nullptr;
 
 		// Post-process chain
 		std::unique_ptr<PostProcessChain> _postProcessChain;
+
+		// Skybox
+		std::unique_ptr<Skybox> _pSkybox;
+		bool _skyboxEnabled = true;
+
+		// IBL
+		std::unique_ptr<IBLManager> _pIBLManager;
 
 		// Render statistics
 		RenderStats _renderStats;

@@ -53,4 +53,39 @@ namespace Ailurus
 			return nullptr;
 		}
 	}
+
+	VulkanResourcePtr VulkanSampler::CreateFromConfig(const VulkanSamplerCreateConfig& config)
+	{
+		const auto device = VulkanContext::GetDevice();
+
+		try
+		{
+			vk::SamplerCreateInfo samplerInfo;
+			samplerInfo.setMagFilter(config.magFilter)
+				.setMinFilter(config.minFilter)
+				.setMipmapMode(config.mipmapMode)
+				.setAddressModeU(config.addressModeU)
+				.setAddressModeV(config.addressModeV)
+				.setAddressModeW(config.addressModeW)
+				.setMipLodBias(0.0f)
+				.setAnisotropyEnable(config.anisotropyEnable ? VK_TRUE : VK_FALSE)
+				.setMaxAnisotropy(config.maxAnisotropy)
+				.setCompareEnable(config.compareEnable ? VK_TRUE : VK_FALSE)
+				.setCompareOp(config.compareOp)
+				.setMinLod(config.minLod)
+				.setMaxLod(config.maxLod)
+				.setBorderColor(config.borderColor)
+				.setUnnormalizedCoordinates(VK_FALSE);
+
+			vk::Sampler sampler = device.createSampler(samplerInfo);
+
+			VulkanSampler* pSamplerRaw = new VulkanSampler(sampler);
+			return VulkanResourcePtr(pSamplerRaw, &SamplerDeleter);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create vulkan sampler from config: {}", e.what());
+			return nullptr;
+		}
+	}
 } // namespace Ailurus

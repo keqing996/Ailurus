@@ -82,12 +82,14 @@
             {
                 "binding": 1,
                 "uniformVarName": "albedoTexture",
-                "path": "./Assets/Texture/wall.jpg"
+                "path": "./Assets/Texture/wall.jpg",
+                "colorSpace": "srgb"
             },
             {
                 "binding": 2,
                 "uniformVarName": "normalTexture",
-                "path": "./Assets/Texture/default_normal.png"
+                "path": "./Assets/Texture/default_normal.png",
+                "colorSpace": "linear"
             }
         ]
     }

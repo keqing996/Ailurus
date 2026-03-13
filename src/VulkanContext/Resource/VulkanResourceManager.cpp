@@ -49,9 +49,34 @@ namespace Ailurus
 		return pImageRaw;
 	}
 
+	VulkanImage* VulkanResourceManager::CreateImageFromConfig(const VulkanImageCreateConfig& config,
+		const void* pixelData, size_t dataSize)
+	{
+		auto ptr = VulkanImage::CreateFromConfig(config, pixelData, dataSize);
+		if (ptr == nullptr)
+			return nullptr;
+
+		VulkanImage* pImageRaw = static_cast<VulkanImage*>(ptr.get());
+		_resources.push_back(std::move(ptr));
+
+		return pImageRaw;
+	}
+
 	VulkanSampler* VulkanResourceManager::CreateSampler()
 	{
 		auto ptr = VulkanSampler::Create();
+		if (ptr == nullptr)
+			return nullptr;
+
+		VulkanSampler* pSamplerRaw = static_cast<VulkanSampler*>(ptr.get());
+		_resources.push_back(std::move(ptr));
+
+		return pSamplerRaw;
+	}
+
+	VulkanSampler* VulkanResourceManager::CreateSampler(const VulkanSamplerCreateConfig& config)
+	{
+		auto ptr = VulkanSampler::CreateFromConfig(config);
 		if (ptr == nullptr)
 			return nullptr;
 

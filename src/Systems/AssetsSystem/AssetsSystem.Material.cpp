@@ -420,8 +420,29 @@ namespace Ailurus
 				continue;
 			}
 
-			// Create Vulkan image
-			VulkanImage* pVulkanImage = pResourceManager->CreateImage(image);
+			// Determine Vulkan format based on colorSpace setting
+			vk::Format imageFormat = vk::Format::eR8G8B8A8Srgb; // default: sRGB
+			if (textureConfig.contains("colorSpace"))
+			{
+				const std::string& colorSpace = textureConfig["colorSpace"].get<std::string>();
+				if (colorSpace == "linear")
+					imageFormat = vk::Format::eR8G8B8A8Unorm;
+				else if (colorSpace == "srgb")
+					imageFormat = vk::Format::eR8G8B8A8Srgb;
+				else
+					Logger::LogWarn("Unknown colorSpace '{}' for texture {}, using sRGB", colorSpace, texturePath);
+			}
+
+			// Create Vulkan image with explicit format
+			const auto [imgWidth, imgHeight] = image.GetPixelSize();
+			const size_t imageDataSize = static_cast<size_t>(imgWidth) * imgHeight * 4;
+
+			VulkanImageCreateConfig imageConfig;
+			imageConfig.width = static_cast<uint32_t>(imgWidth);
+			imageConfig.height = static_cast<uint32_t>(imgHeight);
+			imageConfig.format = imageFormat;
+			VulkanImage* pVulkanImage = pResourceManager->CreateImageFromConfig(
+				imageConfig, image.GetBytesData(), imageDataSize);
 			if (pVulkanImage == nullptr)
 			{
 				Logger::LogError("Failed to create vulkan image for texture: {}", textureFullPath);

@@ -8,7 +8,7 @@
 namespace Ailurus
 {
     class VulkanPipeline;
-    class VulkanDescriptorSetLayout;
+    class SamplerSchema;
     class VulkanSampler;
 
     /// @brief Post-process effect that applies HDR Tone Mapping (ACES) and Gamma Correction.
@@ -51,7 +51,7 @@ namespace Ailurus
         float _exposure = 1.0f;
         float _gamma = 2.2f;
 
-        std::unique_ptr<VulkanDescriptorSetLayout> _descriptorSetLayout;
+        std::unique_ptr<SamplerSchema> _descriptorSetLayout;
         std::unique_ptr<VulkanPipeline> _pipeline;
         VulkanSampler* _sampler = nullptr;
     };

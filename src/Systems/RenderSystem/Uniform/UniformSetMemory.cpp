@@ -74,13 +74,22 @@ namespace Ailurus
 		_uniformValueMap[entry] = value;
 	}
 
-	void UniformSetMemory::UpdateToDescriptorSet(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorSet descriptorSet,
-		const MaterialInstance* pMaterialInstance) const
+	void UniformSetMemory::UpdateToDescriptorSet(VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorSet descriptorSet) const
 	{
 		TransitionDataToGpu(pCommandBuffer);
 
 		VulkanDescriptorWriter writer;
+		WriteBindings(writer);
+		writer.UpdateSet(descriptorSet);
+	}
 
+	void UniformSetMemory::PrepareGpuData(VulkanCommandBuffer* pCmdBuffer)
+	{
+		TransitionDataToGpu(pCmdBuffer);
+	}
+
+	void UniformSetMemory::WriteBindings(VulkanDescriptorWriter& writer) const
+	{
 		auto& allBindingPoints = _pTargetUniformSet->GetAllBindingPoints();
 		for (auto& [bindingId, pBindingPoint] : allBindingPoints)
 		{
@@ -88,35 +97,13 @@ namespace Ailurus
 			auto range = pBindingPoint->GetTotalSize();
 			auto buffer = _pUniformBuffer->GetThisFrameDeviceBuffer()->buffer;
 
-			// Chain buffer writes using the builder pattern
 			writer.WriteBuffer(bindingId, buffer, offset, range);
 		}
+	}
 
-		// Add texture bindings if material instance is provided
-		if (pMaterialInstance != nullptr)
-		{
-			auto* pTexturesMap = pMaterialInstance->GetTextures(RenderPassType::Forward); // Assuming Forward pass
-			if (pTexturesMap != nullptr)
-			{
-				for (const auto& [uniformVarName, textureRef] : *pTexturesMap)
-				{
-					auto* pTexture = textureRef.Get();
-					if (pTexture == nullptr)
-						continue;
-
-					auto* pImage = pTexture->GetImage();
-					auto* pSampler = pTexture->GetSampler();
-					if (pImage == nullptr || pSampler == nullptr)
-						continue;
-
-					uint32_t bindingId = pTexture->GetBindingId();
-					writer.WriteImage(bindingId, pImage->GetImageView(), pSampler->GetSampler());
-				}
-			}
-		}
-
-		// Single batched update for all bindings
-		writer.UpdateSet(descriptorSet);
+	auto UniformSetMemory::ComputeBindingHash() const -> size_t
+	{
+		return reinterpret_cast<size_t>(this);
 	}
 
 	auto UniformSetMemory::TransitionDataToGpu(VulkanCommandBuffer* pCommandBuffer) const -> void

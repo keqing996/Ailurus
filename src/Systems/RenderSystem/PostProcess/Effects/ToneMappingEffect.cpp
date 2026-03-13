@@ -2,9 +2,8 @@
 #include "Ailurus/Systems/RenderSystem/PostProcess/PostProcessResourcePool.h"
 #include "Ailurus/Systems/RenderSystem/PostProcess/PostProcessPipelineFactory.h"
 #include "VulkanContext/Pipeline/VulkanPipeline.h"
-#include "VulkanContext/Descriptor/VulkanDescriptorSetLayout.h"
-#include "VulkanContext/Descriptor/VulkanDescriptorAllocator.h"
-#include "VulkanContext/Descriptor/VulkanDescriptorWriter.h"
+#include "Ailurus/Systems/RenderSystem/Descriptor/SamplerSchema.h"
+#include "Ailurus/Systems/RenderSystem/Descriptor/SamplerSetData.h"
 #include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
 #include "VulkanContext/Resource/Image/VulkanSampler.h"
@@ -33,14 +32,8 @@ namespace Ailurus
         uint32_t width, uint32_t height, vk::Format format)
     {
         // Create descriptor set layout: binding 0 = combined image sampler (fragment stage)
-        vk::DescriptorSetLayoutBinding samplerBinding;
-        samplerBinding.setBinding(0)
-            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-            .setDescriptorCount(1)
-            .setStageFlags(vk::ShaderStageFlagBits::eFragment);
-
-        _descriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
-            std::vector<vk::DescriptorSetLayoutBinding>{ samplerBinding });
+        _descriptorSetLayout = std::make_unique<SamplerSchema>(
+            std::vector<SamplerBindingDesc>{ {0} });
 
         // Determine output format: swapchain format (the final output is the swapchain image)
         const auto& swapChainConfig = VulkanContext::GetSwapChain()->GetConfig();
@@ -50,7 +43,7 @@ namespace Ailurus
         PostProcessPipelineDesc pipelineDesc;
         pipelineDesc.outputFormat = outputFormat;
         pipelineDesc.fragShaderPath = FRAG_SHADER_PATH;
-        pipelineDesc.pDescriptorSetLayout = _descriptorSetLayout.get();
+        pipelineDesc.pSchema = _descriptorSetLayout.get();
         pipelineDesc.pushConstantSize = static_cast<uint32_t>(sizeof(PushConstants));
         pipelineDesc.blendEnabled = false;
 
@@ -77,15 +70,9 @@ namespace Ailurus
         pCmdBuffer->SetViewportAndScissor(extent.width, extent.height);
 
         // Allocate and write descriptor set
-        VulkanDescriptorAllocator::CacheKey key;
-        key.layout = _descriptorSetLayout->GetDescriptorSetLayout();
-        key.bindingHash = reinterpret_cast<size_t>(static_cast<VkImageView>(inputImageView));
-
-        auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(_descriptorSetLayout.get(), &key);
-
-        VulkanDescriptorWriter writer;
-        writer.WriteImage(0, inputImageView, _sampler->GetSampler());
-        writer.UpdateSet(descriptorSet);
+        SamplerSetData samplerData;
+        samplerData.SetImage(0, inputImageView, _sampler->GetSampler());
+        auto descriptorSet = samplerData.AllocateAndWrite(pDescriptorAllocator, _descriptorSetLayout.get());
 
         // Bind descriptor set
         std::vector<vk::DescriptorSet> sets{ descriptorSet };
@@ -93,8 +80,7 @@ namespace Ailurus
 
         // Push exposure/gamma constants
         PushConstants pushConstants{ _exposure, _gamma };
-        pCmdBuffer->GetBuffer().pushConstants(
-            _pipeline->GetPipelineLayout(),
+        pCmdBuffer->PushConstants(_pipeline.get(),
             vk::ShaderStageFlagBits::eFragment,
             0,
             static_cast<uint32_t>(sizeof(PushConstants)),
@@ -118,7 +104,7 @@ namespace Ailurus
             PostProcessPipelineDesc pipelineDesc;
             pipelineDesc.outputFormat = outputFormat;
             pipelineDesc.fragShaderPath = FRAG_SHADER_PATH;
-            pipelineDesc.pDescriptorSetLayout = _descriptorSetLayout.get();
+            pipelineDesc.pSchema = _descriptorSetLayout.get();
             pipelineDesc.pushConstantSize = static_cast<uint32_t>(sizeof(PushConstants));
             pipelineDesc.blendEnabled = false;
 

@@ -34,12 +34,20 @@ namespace Ailurus
         const std::uint8_t* GetBytesData() const;
         const std::uint32_t* GetPixelsData() const;
 
+        // HDR support
+        bool IsHDR() const;
+        const float* GetHDRData() const;
+        int GetChannels() const;
+
     private:
         void CopyFromData(uint width, uint height, std::uint8_t* pData);
 
     private:
         std::vector<std::uint8_t> _data;
+        std::vector<float> _hdrData;
         uint _width = 0; // pixels
         uint _height = 0; // pixels
+        bool _isHDR = false;
+        int _channels = 4;
     };
 }

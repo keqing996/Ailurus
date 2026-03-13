@@ -9,7 +9,7 @@
 namespace Ailurus
 {
     class VulkanPipeline;
-    class VulkanDescriptorSetLayout;
+    class DescriptorSetSchema;
     class Shader;
     class ShaderLibrary;
 
@@ -17,7 +17,7 @@ namespace Ailurus
     {
         vk::Format outputFormat = vk::Format::eUndefined;
         std::string fragShaderPath;
-        const VulkanDescriptorSetLayout* pDescriptorSetLayout = nullptr;
+        const DescriptorSetSchema* pSchema = nullptr;
         uint32_t pushConstantSize = 0;
         bool blendEnabled = false;
     };

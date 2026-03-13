@@ -1,4 +1,5 @@
 #include "Ailurus/Systems/RenderSystem/PostProcess/PostProcessPipelineFactory.h"
+#include "Ailurus/Systems/RenderSystem/Descriptor/DescriptorSetSchema.h"
 #include "Ailurus/Systems/RenderSystem/Shader/ShaderLibrary.h"
 #include "Ailurus/Systems/RenderSystem/Shader/ShaderStage.h"
 #include "Ailurus/Systems/RenderSystem/Shader/Shader.h"
@@ -33,9 +34,9 @@ namespace Ailurus
             return nullptr;
         }
 
-        if (desc.pDescriptorSetLayout == nullptr)
+        if (desc.pSchema == nullptr)
         {
-            Logger::LogError("PostProcessPipelineFactory::CreatePipeline: Descriptor set layout is null");
+            Logger::LogError("PostProcessPipelineFactory::CreatePipeline: Descriptor set schema is null");
             return nullptr;
         }
 
@@ -60,7 +61,7 @@ namespace Ailurus
 
         // Build descriptor set layout vector
         std::vector<vk::DescriptorSetLayout> layouts;
-        layouts.push_back(desc.pDescriptorSetLayout->GetDescriptorSetLayout());
+        layouts.push_back(desc.pSchema->GetDescriptorSetLayout()->GetDescriptorSetLayout());
 
         return std::make_unique<VulkanPipeline>(
             desc.outputFormat,

@@ -22,6 +22,12 @@ namespace Ailurus
 			const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts,
 			uint32_t pushConstantSize = 0, bool blendEnabled = false);
 
+		// Skybox pipeline constructor: no vertex input, depth test (read-only), MSAA-aware, vertex push constants
+		VulkanPipeline(vk::Format colorFormat, vk::Format depthFormat,
+			const StageShaderArray& shaderArray,
+			const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts,
+			uint32_t pushConstantSize = sizeof(Matrix4x4f));
+
 		~VulkanPipeline();
 
 	public:

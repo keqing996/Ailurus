@@ -2,9 +2,8 @@
 #include "Ailurus/Systems/RenderSystem/PostProcess/PostProcessResourcePool.h"
 #include "Ailurus/Systems/RenderSystem/PostProcess/PostProcessPipelineFactory.h"
 #include "VulkanContext/Pipeline/VulkanPipeline.h"
-#include "VulkanContext/Descriptor/VulkanDescriptorSetLayout.h"
-#include "VulkanContext/Descriptor/VulkanDescriptorAllocator.h"
-#include "VulkanContext/Descriptor/VulkanDescriptorWriter.h"
+#include "Ailurus/Systems/RenderSystem/Descriptor/SamplerSchema.h"
+#include "Ailurus/Systems/RenderSystem/Descriptor/SamplerSetData.h"
 #include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 #include "VulkanContext/Resource/VulkanResourceManager.h"
 #include "VulkanContext/Resource/Image/VulkanSampler.h"
@@ -34,30 +33,12 @@ namespace Ailurus
         uint32_t width, uint32_t height, vk::Format format)
     {
         // Single-sampler descriptor set layout (binding 0)
-        vk::DescriptorSetLayoutBinding singleBinding;
-        singleBinding.setBinding(0)
-            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-            .setDescriptorCount(1)
-            .setStageFlags(vk::ShaderStageFlagBits::eFragment);
-
-        _singleSamplerLayout = std::make_unique<VulkanDescriptorSetLayout>(
-            std::vector<vk::DescriptorSetLayoutBinding>{ singleBinding });
+        _singleSamplerLayout = std::make_unique<SamplerSchema>(
+            std::vector<SamplerBindingDesc>{ {0} });
 
         // Dual-sampler descriptor set layout (bindings 0 and 1)
-        vk::DescriptorSetLayoutBinding dualBinding0;
-        dualBinding0.setBinding(0)
-            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-            .setDescriptorCount(1)
-            .setStageFlags(vk::ShaderStageFlagBits::eFragment);
-
-        vk::DescriptorSetLayoutBinding dualBinding1;
-        dualBinding1.setBinding(1)
-            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-            .setDescriptorCount(1)
-            .setStageFlags(vk::ShaderStageFlagBits::eFragment);
-
-        _dualSamplerLayout = std::make_unique<VulkanDescriptorSetLayout>(
-            std::vector<vk::DescriptorSetLayoutBinding>{ dualBinding0, dualBinding1 });
+        _dualSamplerLayout = std::make_unique<SamplerSchema>(
+            std::vector<SamplerBindingDesc>{ {0}, {1} });
 
         // Register mip RT handles with the pool
         // widthScale/heightScale: 1/2, 1/4, 1/8, 1/16, 1/32
@@ -85,7 +66,7 @@ namespace Ailurus
         PostProcessPipelineDesc thresholdDesc;
         thresholdDesc.outputFormat = HDR_FORMAT;
         thresholdDesc.fragShaderPath = THRESHOLD_SHADER_PATH;
-        thresholdDesc.pDescriptorSetLayout = _singleSamplerLayout.get();
+        thresholdDesc.pSchema = _singleSamplerLayout.get();
         thresholdDesc.pushConstantSize = sizeof(float) * 2; // threshold + softKnee
         thresholdDesc.blendEnabled = false;
         _thresholdPipeline = factory.CreatePipeline(thresholdDesc);
@@ -93,7 +74,7 @@ namespace Ailurus
         PostProcessPipelineDesc downsampleDesc;
         downsampleDesc.outputFormat = HDR_FORMAT;
         downsampleDesc.fragShaderPath = DOWNSAMPLE_SHADER_PATH;
-        downsampleDesc.pDescriptorSetLayout = _singleSamplerLayout.get();
+        downsampleDesc.pSchema = _singleSamplerLayout.get();
         downsampleDesc.pushConstantSize = sizeof(float) * 2; // vec2 texelSize
         downsampleDesc.blendEnabled = false;
         _downsamplePipeline = factory.CreatePipeline(downsampleDesc);
@@ -101,7 +82,7 @@ namespace Ailurus
         PostProcessPipelineDesc upsampleDesc;
         upsampleDesc.outputFormat = HDR_FORMAT;
         upsampleDesc.fragShaderPath = UPSAMPLE_SHADER_PATH;
-        upsampleDesc.pDescriptorSetLayout = _dualSamplerLayout.get();
+        upsampleDesc.pSchema = _dualSamplerLayout.get();
         upsampleDesc.pushConstantSize = sizeof(float) * 3; // vec2 texelSize + float blendFactor
         upsampleDesc.blendEnabled = false;
         _upsamplePipeline = factory.CreatePipeline(upsampleDesc);
@@ -109,7 +90,7 @@ namespace Ailurus
         PostProcessPipelineDesc compositeDesc;
         compositeDesc.outputFormat = HDR_FORMAT;
         compositeDesc.fragShaderPath = COMPOSITE_SHADER_PATH;
-        compositeDesc.pDescriptorSetLayout = _dualSamplerLayout.get();
+        compositeDesc.pSchema = _dualSamplerLayout.get();
         compositeDesc.pushConstantSize = sizeof(float); // bloomIntensity
         compositeDesc.blendEnabled = false;
         _compositePipeline = factory.CreatePipeline(compositeDesc);
@@ -142,22 +123,16 @@ namespace Ailurus
             pCmdBuffer->BindPipeline(_thresholdPipeline.get());
             pCmdBuffer->SetViewportAndScissor(mipExtent.width, mipExtent.height);
 
-            VulkanDescriptorAllocator::CacheKey key;
-            key.layout = _singleSamplerLayout->GetDescriptorSetLayout();
-            key.bindingHash = reinterpret_cast<size_t>(static_cast<VkImageView>(inputImageView));
-            auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(_singleSamplerLayout.get(), &key);
-
-            VulkanDescriptorWriter writer;
-            writer.WriteImage(0, inputImageView, _sampler->GetSampler());
-            writer.UpdateSet(descriptorSet);
+            SamplerSetData samplerData;
+            samplerData.SetImage(0, inputImageView, _sampler->GetSampler());
+            auto descriptorSet = samplerData.AllocateAndWrite(pDescriptorAllocator, _singleSamplerLayout.get());
 
             std::vector<vk::DescriptorSet> sets{ descriptorSet };
             pCmdBuffer->BindDescriptorSet(_thresholdPipeline->GetPipelineLayout(), sets);
 
             struct ThresholdPushConstants { float threshold; float softKnee; };
             ThresholdPushConstants pc{ _threshold, _softKnee };
-            pCmdBuffer->GetBuffer().pushConstants(
-                _thresholdPipeline->GetPipelineLayout(),
+            pCmdBuffer->PushConstants(_thresholdPipeline.get(),
                 vk::ShaderStageFlagBits::eFragment,
                 0, sizeof(pc), &pc);
 
@@ -194,14 +169,9 @@ namespace Ailurus
             pCmdBuffer->BindPipeline(_downsamplePipeline.get());
             pCmdBuffer->SetViewportAndScissor(mipExtent.width, mipExtent.height);
 
-            VulkanDescriptorAllocator::CacheKey key;
-            key.layout = _singleSamplerLayout->GetDescriptorSetLayout();
-            key.bindingHash = reinterpret_cast<size_t>(static_cast<VkImageView>(src->GetImageView()));
-            auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(_singleSamplerLayout.get(), &key);
-
-            VulkanDescriptorWriter writer;
-            writer.WriteImage(0, src->GetImageView(), _sampler->GetSampler());
-            writer.UpdateSet(descriptorSet);
+            SamplerSetData samplerData;
+            samplerData.SetImage(0, src->GetImageView(), _sampler->GetSampler());
+            auto descriptorSet = samplerData.AllocateAndWrite(pDescriptorAllocator, _singleSamplerLayout.get());
 
             std::vector<vk::DescriptorSet> sets{ descriptorSet };
             pCmdBuffer->BindDescriptorSet(_downsamplePipeline->GetPipelineLayout(), sets);
@@ -211,8 +181,7 @@ namespace Ailurus
                 1.0f / static_cast<float>(src->GetWidth()),
                 1.0f / static_cast<float>(src->GetHeight())
             };
-            pCmdBuffer->GetBuffer().pushConstants(
-                _downsamplePipeline->GetPipelineLayout(),
+            pCmdBuffer->PushConstants(_downsamplePipeline.get(),
                 vk::ShaderStageFlagBits::eFragment,
                 0, sizeof(pc), &pc);
 
@@ -254,16 +223,10 @@ namespace Ailurus
             pCmdBuffer->BindPipeline(_upsamplePipeline.get());
             pCmdBuffer->SetViewportAndScissor(mipExtent.width, mipExtent.height);
 
-            VulkanDescriptorAllocator::CacheKey key;
-            key.layout = _dualSamplerLayout->GetDescriptorSetLayout();
-            key.bindingHash = reinterpret_cast<size_t>(static_cast<VkImageView>(coarser->GetImageView()))
-                ^ (reinterpret_cast<size_t>(static_cast<VkImageView>(current->GetImageView())) << 1);
-            auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(_dualSamplerLayout.get(), &key);
-
-            VulkanDescriptorWriter writer;
-            writer.WriteImage(0, coarser->GetImageView(), _sampler->GetSampler());
-            writer.WriteImage(1, current->GetImageView(), _sampler->GetSampler());
-            writer.UpdateSet(descriptorSet);
+            SamplerSetData samplerData;
+            samplerData.SetImage(0, coarser->GetImageView(), _sampler->GetSampler());
+            samplerData.SetImage(1, current->GetImageView(), _sampler->GetSampler());
+            auto descriptorSet = samplerData.AllocateAndWrite(pDescriptorAllocator, _dualSamplerLayout.get());
 
             std::vector<vk::DescriptorSet> sets{ descriptorSet };
             pCmdBuffer->BindDescriptorSet(_upsamplePipeline->GetPipelineLayout(), sets);
@@ -274,8 +237,7 @@ namespace Ailurus
                 1.0f / static_cast<float>(coarser->GetHeight()),
                 _blendFactor
             };
-            pCmdBuffer->GetBuffer().pushConstants(
-                _upsamplePipeline->GetPipelineLayout(),
+            pCmdBuffer->PushConstants(_upsamplePipeline.get(),
                 vk::ShaderStageFlagBits::eFragment,
                 0, sizeof(pc), &pc);
 
@@ -302,22 +264,15 @@ namespace Ailurus
             pCmdBuffer->BindPipeline(_compositePipeline.get());
             pCmdBuffer->SetViewportAndScissor(extent.width, extent.height);
 
-            VulkanDescriptorAllocator::CacheKey key;
-            key.layout = _dualSamplerLayout->GetDescriptorSetLayout();
-            key.bindingHash = reinterpret_cast<size_t>(static_cast<VkImageView>(bloomResult->GetImageView()))
-                ^ (reinterpret_cast<size_t>(static_cast<VkImageView>(inputImageView)) << 1);
-            auto descriptorSet = pDescriptorAllocator->AllocateDescriptorSet(_dualSamplerLayout.get(), &key);
-
-            VulkanDescriptorWriter writer;
-            writer.WriteImage(0, bloomResult->GetImageView(), _sampler->GetSampler());
-            writer.WriteImage(1, inputImageView, _sampler->GetSampler());
-            writer.UpdateSet(descriptorSet);
+            SamplerSetData samplerData;
+            samplerData.SetImage(0, bloomResult->GetImageView(), _sampler->GetSampler());
+            samplerData.SetImage(1, inputImageView, _sampler->GetSampler());
+            auto descriptorSet = samplerData.AllocateAndWrite(pDescriptorAllocator, _dualSamplerLayout.get());
 
             std::vector<vk::DescriptorSet> sets{ descriptorSet };
             pCmdBuffer->BindDescriptorSet(_compositePipeline->GetPipelineLayout(), sets);
 
-            pCmdBuffer->GetBuffer().pushConstants(
-                _compositePipeline->GetPipelineLayout(),
+            pCmdBuffer->PushConstants(_compositePipeline.get(),
                 vk::ShaderStageFlagBits::eFragment,
                 0, sizeof(float), &_bloomIntensity);
 

@@ -157,6 +157,15 @@ namespace Ailurus
 		vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask,
 		vk::ImageAspectFlags aspectMask)
 	{
+		ImageMemoryBarrier(image, oldLayout, newLayout, srcAccessMask, dstAccessMask, srcStageMask, dstStageMask, aspectMask, 0, 1, 0, 1);
+	}
+
+	void VulkanCommandBuffer::ImageMemoryBarrier(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, 
+		vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, 
+		vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask,
+		vk::ImageAspectFlags aspectMask,
+		uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount)
+	{
 		vk::ImageMemoryBarrier barrier;
 		barrier.setOldLayout(oldLayout)
 			.setNewLayout(newLayout)
@@ -165,10 +174,10 @@ namespace Ailurus
 			.setImage(image)
 			.setSubresourceRange(vk::ImageSubresourceRange()
 			.setAspectMask(aspectMask)
-			.setBaseMipLevel(0)
-			.setLevelCount(1)
-			.setBaseArrayLayer(0)
-			.setLayerCount(1))
+			.setBaseMipLevel(baseMipLevel)
+			.setLevelCount(levelCount)
+			.setBaseArrayLayer(baseArrayLayer)
+			.setLayerCount(layerCount))
 			.setSrcAccessMask(srcAccessMask)
 			.setDstAccessMask(dstAccessMask);
 
@@ -348,6 +357,17 @@ namespace Ailurus
 			sizeof(Matrix4x4f),
 			sizeof(uint32_t),
 			&cascadeIndex);
+	}
+
+	void VulkanCommandBuffer::PushConstants(const VulkanPipeline* pPipeline, vk::ShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void* pData)
+	{
+		if (pPipeline == nullptr)
+		{
+			Logger::LogError("VulkanCommandBuffer::PushConstants: Pipeline is nullptr");
+			return;
+		}
+
+		_buffer.pushConstants(pPipeline->GetPipelineLayout(), stageFlags, offset, size, pData);
 	}
 
 	void VulkanCommandBuffer::ExecuteSecondaryCommandBuffer(const VulkanCommandBuffer* pSecondaryCommandBuffer)

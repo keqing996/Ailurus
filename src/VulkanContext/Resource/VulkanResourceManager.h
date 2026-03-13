@@ -8,11 +8,12 @@
 #include "VulkanResource.h"
 #include "DataBuffer/HostBufferUsage.h"
 #include "DataBuffer/DeviceBufferUsage.h"
+#include "Image/VulkanImage.h"
+#include "Image/VulkanSampler.h"
 
 namespace Ailurus
 {
 	class VulkanDescriptorAllocator;
-	class VulkanImage;
 	class VulkanSampler;
 	class Image;
 	class VulkanDeviceBuffer;
@@ -27,7 +28,10 @@ namespace Ailurus
 		VulkanDeviceBuffer* CreateDeviceBuffer(vk::DeviceSize size, DeviceBufferUsage usage);
 		VulkanHostBuffer* CreateHostBuffer(vk::DeviceSize size, HostBufferUsage usage, bool coherentWithGpu = true);
 		VulkanImage* CreateImage(const Image& image);
+		VulkanImage* CreateImageFromConfig(const VulkanImageCreateConfig& config,
+			const void* pixelData, size_t dataSize);
 		VulkanSampler* CreateSampler();
+		VulkanSampler* CreateSampler(const VulkanSamplerCreateConfig& config);
 		void GarbageCollect();
 
 	private:

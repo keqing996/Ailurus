@@ -53,9 +53,10 @@ namespace Ailurus
 		vk::ImageCreateInfo imageInfo;
 		imageInfo.setImageType(vk::ImageType::e2D)
 			.setExtent(vk::Extent3D(_config.width, _config.height, 1))
-			.setMipLevels(1)
-			.setArrayLayers(1)
+			.setMipLevels(_config.mipLevels)
+			.setArrayLayers(_config.arrayLayers)
 			.setFormat(_config.format)
+			.setFlags(_config.flags)
 			.setTiling(vk::ImageTiling::eOptimal)
 			.setInitialLayout(vk::ImageLayout::eUndefined)
 			.setUsage(usage)
@@ -124,14 +125,14 @@ namespace Ailurus
 
 		vk::ImageViewCreateInfo viewInfo;
 		viewInfo.setImage(_image)
-			.setViewType(vk::ImageViewType::e2D)
+			.setViewType(_config.viewType)
 			.setFormat(_config.format)
 			.setSubresourceRange(vk::ImageSubresourceRange()
 				.setAspectMask(_config.aspectMask)
 				.setBaseMipLevel(0)
-				.setLevelCount(1)
+				.setLevelCount(_config.mipLevels)
 				.setBaseArrayLayer(0)
-				.setLayerCount(1));
+				.setLayerCount(_config.arrayLayers));
 
 		try
 		{
@@ -177,5 +178,21 @@ namespace Ailurus
 	bool RenderTarget::IsValid() const
 	{
 		return _image != nullptr && _imageView != nullptr;
+	}
+
+	vk::ImageView RenderTarget::CreateSingleLayerMipView(uint32_t arrayLayer, uint32_t mipLevel) const
+	{
+		vk::ImageViewCreateInfo viewInfo;
+		viewInfo.setImage(_image)
+			.setViewType(vk::ImageViewType::e2D)
+			.setFormat(_config.format)
+			.setSubresourceRange(vk::ImageSubresourceRange()
+				.setAspectMask(_config.aspectMask)
+				.setBaseMipLevel(mipLevel)
+				.setLevelCount(1)
+				.setBaseArrayLayer(arrayLayer)
+				.setLayerCount(1));
+
+		return VulkanContext::GetDevice().createImageView(viewInfo);
 	}
 } // namespace Ailurus

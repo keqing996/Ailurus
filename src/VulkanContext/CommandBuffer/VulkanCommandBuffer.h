@@ -65,6 +65,21 @@ namespace Ailurus
 		/// @param dstStageMask Destination pipeline stage mask
 		/// @param aspectMask Image aspect mask (default: eColor; use eDepth for depth images)
 		void ImageMemoryBarrier(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask, vk::ImageAspectFlags aspectMask = vk::ImageAspectFlagBits::eColor);
+
+		/// @brief Insert an image memory barrier with explicit subresource range
+		/// @param image Image to apply barrier to
+		/// @param oldLayout Current image layout
+		/// @param newLayout Target image layout
+		/// @param srcAccessMask Source access mask
+		/// @param dstAccessMask Destination access mask
+		/// @param srcStageMask Source pipeline stage mask
+		/// @param dstStageMask Destination pipeline stage mask
+		/// @param aspectMask Image aspect mask
+		/// @param baseMipLevel Base mip level
+		/// @param levelCount Number of mip levels
+		/// @param baseArrayLayer Base array layer
+		/// @param layerCount Number of array layers
+		void ImageMemoryBarrier(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer, uint32_t layerCount);
 		
 		/// @brief Begin dynamic rendering (VK_KHR_dynamic_rendering)
 		/// @param colorImageView Color attachment image view (MSAA or swapchain image)
@@ -126,6 +141,14 @@ namespace Ailurus
 		/// @param modelMatrix Model matrix to push
 		/// @param cascadeIndex CSM cascade index to push
 		void PushConstantShadowData(const VulkanPipeline* pPipeline, const Matrix4x4f& modelMatrix, uint32_t cascadeIndex);
+
+		/// @brief Push arbitrary constants to shader stages
+		/// @param pPipeline Pipeline containing push constant layout
+		/// @param stageFlags Shader stage flags the push constant is accessible from
+		/// @param offset Offset in bytes into the push constant range
+		/// @param size Size in bytes of the push constant data
+		/// @param pData Pointer to the push constant data
+		void PushConstants(const VulkanPipeline* pPipeline, vk::ShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void* pData);
 		
 		/// @brief Execute a secondary command buffer
 		/// @param pSecondaryCommandBuffer Secondary command buffer to execute
