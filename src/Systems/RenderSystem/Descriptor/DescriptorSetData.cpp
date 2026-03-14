@@ -17,9 +17,13 @@ namespace Ailurus
 		key.layout = pLayout->GetDescriptorSetLayout();
 		key.bindingHash = ComputeBindingHash();
 
-		auto descriptorSet = pAllocator->AllocateDescriptorSet(pLayout, &key);
+		bool wasCacheHit = false;
+		auto descriptorSet = pAllocator->AllocateDescriptorSet(pLayout, &key, &wasCacheHit);
 
 		PrepareGpuData(pCmdBuffer);
+
+		if (wasCacheHit)
+			return descriptorSet;
 
 		VulkanDescriptorWriter writer;
 		WriteBindings(writer);

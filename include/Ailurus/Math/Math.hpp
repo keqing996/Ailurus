@@ -78,6 +78,29 @@ namespace Ailurus::Math
 	template <typename T>
 	Quaternion<T> LookAtQuaternion(const Vector3<T>& forward, const Vector3<T>& up);
 
+	/**
+	 * @brief Creates a left-handed view matrix for a camera (equivalent to glm::lookAt).
+	 *
+	 * @param eye The camera's world-space position.
+	 * @param center The point the camera looks at.
+	 * @param up The world up direction.
+	 * @return Matrix4x4 representing the view transform.
+	 */
+	template <typename T>
+	Matrix4x4<T> ViewMatrix(const Vector3<T>& eye, const Vector3<T>& center, const Vector3<T>& up);
+
+	/**
+	 * @brief Creates a left-handed perspective projection matrix with depth range [-1, 1].
+	 *
+	 * @param fovYDegrees Vertical field of view in degrees.
+	 * @param aspect Aspect ratio (width / height).
+	 * @param nearPlane Near clipping plane distance.
+	 * @param farPlane Far clipping plane distance.
+	 * @return Matrix4x4 representing the perspective projection.
+	 */
+	template <typename T>
+	Matrix4x4<T> PerspectiveMatrix(T fovYDegrees, T aspect, T nearPlane, T farPlane);
+
 #pragma endregion
 
 #pragma region[Rotation Conversion]

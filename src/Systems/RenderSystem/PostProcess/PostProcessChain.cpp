@@ -1,5 +1,6 @@
 #include "Ailurus/Systems/RenderSystem/PostProcess/PostProcessChain.h"
 #include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
+#include "VulkanContext/VulkanContext.h"
 #include "Ailurus/Utility/Logger.h"
 #include <algorithm>
 
@@ -41,7 +42,7 @@ namespace Ailurus
         std::vector<PostProcessEffect*> enabledEffects;
         for (auto& pEffect : _effects)
         {
-            if (pEffect->IsEnabled())
+            if (ShouldExecuteEffect(*pEffect))
                 enabledEffects.push_back(pEffect.get());
         }
 
@@ -162,8 +163,21 @@ namespace Ailurus
     bool PostProcessChain::HasEnabledEffects() const
     {
         return std::any_of(_effects.begin(), _effects.end(),
-            [](const std::unique_ptr<PostProcessEffect>& pEffect) {
-                return pEffect->IsEnabled();
+            [this](const std::unique_ptr<PostProcessEffect>& pEffect) {
+                return ShouldExecuteEffect(*pEffect);
             });
+    }
+
+    bool PostProcessChain::ShouldExecuteEffect(const PostProcessEffect& effect) const
+    {
+        if (!effect.IsEnabled())
+            return false;
+
+        // SSAO currently depends on a single-sampled readable depth target.
+        // The renderer does not produce a resolved single-sample depth texture when MSAA is enabled.
+        if (effect.GetName() == "SSAO" && VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1)
+            return false;
+
+        return true;
     }
 } // namespace Ailurus

@@ -17,9 +17,12 @@ namespace Ailurus
 	public:
         void Rebuild();
 
+		vk::Image GetDepthImage() const;
 		vk::ImageView GetDepthImageView() const;
+		vk::Image GetMSAAColorImage() const;
 		vk::ImageView GetMSAAColorImageView() const;
 
+		vk::Image GetMSAADepthImage() const;
 		vk::ImageView GetMSAADepthImageView() const;
 
 		// Offscreen HDR color target

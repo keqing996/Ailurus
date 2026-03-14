@@ -32,7 +32,15 @@ namespace Ailurus
 	{
 		size_t hash = 0;
 		for (const auto& b : _bindings)
-			hash ^= reinterpret_cast<size_t>(static_cast<VkImageView>(b.imageView));
+		{
+			size_t bindingHash = std::hash<uint32_t>{}(b.binding);
+			size_t imageHash = std::hash<VkImageView>{}(static_cast<VkImageView>(b.imageView));
+			size_t samplerHash = std::hash<VkSampler>{}(static_cast<VkSampler>(b.sampler));
+
+			hash ^= bindingHash + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+			hash ^= imageHash + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+			hash ^= samplerHash + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		}
 		return hash;
 	}
 } // namespace Ailurus

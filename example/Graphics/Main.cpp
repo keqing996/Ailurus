@@ -18,19 +18,6 @@ using namespace Ailurus;
 
 int Main(int argc, char* argv[])
 {
-	/* Backup
-	static std::array<float, 20> vertices = {
-		-0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-		0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-		-0.5f, 0.5f, 1.0f, 1.0f, 1.0f
-	};
-
-	const std::vector<uint16_t> indices = {
-		0, 1, 2, 2, 3, 0
-	};
-	*/
-
 	// Create the application instance
 	Application::Create(800, 800, "Test", Application::Style{ 
 		.canResize = true,
@@ -84,15 +71,6 @@ int Main(int argc, char* argv[])
 			pEntity->SetScale({ info.scale, info.scale, info.scale });
 		}
 		cubeEntities.push_back(entity);
-	}
-
-	// Ground plane (flattened cube) to receive shadows
-	auto pGround = Application::Get<SceneSystem>()->CreateEntity();
-	if (auto pGroundEntity = pGround.lock())
-	{
-		pGroundEntity->AddComponent<CompStaticMeshRender>(modelRef, materialRef);
-		pGroundEntity->SetPosition({ 0.0f, -3.0f, 0.0f });
-		pGroundEntity->SetScale({ 8.0f, 0.1f, 8.0f });
 	}
 
 	auto pCamera = Application::Get<SceneSystem>()->CreateEntity();

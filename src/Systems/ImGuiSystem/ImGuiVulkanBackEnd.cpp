@@ -66,18 +66,18 @@ namespace Ailurus
 		imGuiVkInitInfo.QueueFamily = VulkanContext::GetGraphicQueueIndex();
 		imGuiVkInitInfo.Queue = VulkanContext::GetGraphicQueue();
 		imGuiVkInitInfo.DescriptorPool = _descriptorPool;
-		imGuiVkInitInfo.RenderPass = VK_NULL_HANDLE; // Dynamic rendering, no render pass
-		imGuiVkInitInfo.Subpass = 0;
 		imGuiVkInitInfo.MinImageCount = 2;
 		imGuiVkInitInfo.ImageCount = pSwapChain->GetConfig().imageCount;
-		imGuiVkInitInfo.MSAASamples = static_cast<VkSampleCountFlagBits>(vk::SampleCountFlagBits::e1);
 		imGuiVkInitInfo.UseDynamicRendering = true;
-		
-		// For dynamic rendering, we need to specify the color attachment format
-		imGuiVkInitInfo.PipelineRenderingCreateInfo = {};
-		imGuiVkInitInfo.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-		imGuiVkInitInfo.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-		imGuiVkInitInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = reinterpret_cast<VkFormat*>(&colorFormat);
+
+		// For dynamic rendering, specify pipeline info with color attachment format
+		imGuiVkInitInfo.PipelineInfoMain.RenderPass = VK_NULL_HANDLE;
+		imGuiVkInitInfo.PipelineInfoMain.Subpass = 0;
+		imGuiVkInitInfo.PipelineInfoMain.MSAASamples = static_cast<VkSampleCountFlagBits>(vk::SampleCountFlagBits::e1);
+		imGuiVkInitInfo.PipelineInfoMain.PipelineRenderingCreateInfo = {};
+		imGuiVkInitInfo.PipelineInfoMain.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+		imGuiVkInitInfo.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+		imGuiVkInitInfo.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = reinterpret_cast<VkFormat*>(&colorFormat);
 		
 		ImGui_ImplVulkan_Init(&imGuiVkInitInfo);
 	}

@@ -416,6 +416,12 @@ namespace Ailurus
 					auto* pRenderTargetManager = VulkanContext::GetRenderTargetManager();
 					vk::Image offscreenImage = pRenderTargetManager->GetOffscreenColorImage();
 					vk::ImageView offscreenImageView = pRenderTargetManager->GetOffscreenColorImageView();
+					const bool useMSAA = VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1;
+					const bool canSampleSceneDepth = !useMSAA;
+					const auto* pSsaoEffect = _postProcessChain
+						? static_cast<SSAOEffect*>(_postProcessChain->GetEffect("SSAO"))
+						: nullptr;
+					const bool useSSAO = pSsaoEffect != nullptr && pSsaoEffect->IsEnabled() && canSampleSceneDepth;
 
 					// Transition offscreen HDR RT to color attachment optimal
 					pCommandBuffer->ImageMemoryBarrier(
@@ -426,6 +432,53 @@ namespace Ailurus
 						vk::AccessFlagBits::eColorAttachmentWrite,
 						vk::PipelineStageFlagBits::eTopOfPipe,
 						vk::PipelineStageFlagBits::eColorAttachmentOutput);
+
+					if (useMSAA)
+					{
+						vk::Image msaaColorImage = pRenderTargetManager->GetMSAAColorImage();
+						vk::Image msaaDepthImage = pRenderTargetManager->GetMSAADepthImage();
+
+						if (msaaColorImage)
+						{
+							pCommandBuffer->ImageMemoryBarrier(
+								msaaColorImage,
+								vk::ImageLayout::eUndefined,
+								vk::ImageLayout::eColorAttachmentOptimal,
+								vk::AccessFlags{},
+								vk::AccessFlagBits::eColorAttachmentWrite,
+								vk::PipelineStageFlagBits::eTopOfPipe,
+								vk::PipelineStageFlagBits::eColorAttachmentOutput);
+						}
+
+						if (msaaDepthImage)
+						{
+							pCommandBuffer->ImageMemoryBarrier(
+								msaaDepthImage,
+								vk::ImageLayout::eUndefined,
+								vk::ImageLayout::eDepthStencilAttachmentOptimal,
+								vk::AccessFlags{},
+								vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+								vk::PipelineStageFlagBits::eTopOfPipe,
+								vk::PipelineStageFlagBits::eEarlyFragmentTests,
+								vk::ImageAspectFlagBits::eDepth);
+						}
+					}
+					else
+					{
+						vk::Image depthImage = pRenderTargetManager->GetDepthImage();
+						if (depthImage)
+						{
+							pCommandBuffer->ImageMemoryBarrier(
+								depthImage,
+								vk::ImageLayout::eUndefined,
+								vk::ImageLayout::eDepthStencilAttachmentOptimal,
+								vk::AccessFlags{},
+								vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+								vk::PipelineStageFlagBits::eTopOfPipe,
+								vk::PipelineStageFlagBits::eEarlyFragmentTests,
+								vk::ImageAspectFlagBits::eDepth);
+						}
+					}
 
 					RenderPrepare();
 					CollectRenderingContext();
@@ -439,6 +492,23 @@ namespace Ailurus
 
 					// Forward pass (renders to offscreen HDR RT)
 					RenderPass(RenderPassType::Forward, pCommandBuffer);
+
+					if (useSSAO)
+					{
+						vk::Image depthImage = pRenderTargetManager->GetDepthImage();
+						if (depthImage)
+						{
+							pCommandBuffer->ImageMemoryBarrier(
+								depthImage,
+								vk::ImageLayout::eDepthStencilAttachmentOptimal,
+								vk::ImageLayout::eShaderReadOnlyOptimal,
+								vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+								vk::AccessFlagBits::eShaderRead,
+								vk::PipelineStageFlagBits::eLateFragmentTests,
+								vk::PipelineStageFlagBits::eFragmentShader,
+								vk::ImageAspectFlagBits::eDepth);
+						}
+					}
 
 					// Transition offscreen HDR RT to shader read only for post-process sampling
 					pCommandBuffer->ImageMemoryBarrier(

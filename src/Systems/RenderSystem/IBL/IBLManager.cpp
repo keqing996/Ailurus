@@ -9,8 +9,7 @@
 #include <VulkanContext/RenderTarget/RenderTarget.h>
 #include <VulkanContext/Descriptor/VulkanDescriptorWriter.h>
 #include <VulkanContext/CommandBuffer/VulkanCommandBuffer.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <Ailurus/Math/Math.hpp>
 
 namespace Ailurus
 {
@@ -21,17 +20,18 @@ namespace Ailurus
 	static const char* BRDF_LUT_FRAG_PATH = "./Assets/ShaderBin/ibl_brdf_lut.frag.spv";
 
 	// 6 cubemap face view matrices (from origin looking at each face)
-	static glm::mat4 GetCubemapFaceViewMatrix(uint32_t face)
+	static Matrix4x4f GetCubemapFaceViewMatrix(uint32_t face)
 	{
+		static const Vector3f origin(0.0f, 0.0f, 0.0f);
 		switch (face)
 		{
-			case 0: return glm::lookAt(glm::vec3(0), glm::vec3( 1, 0, 0), glm::vec3(0,-1, 0)); // +X
-			case 1: return glm::lookAt(glm::vec3(0), glm::vec3(-1, 0, 0), glm::vec3(0,-1, 0)); // -X
-			case 2: return glm::lookAt(glm::vec3(0), glm::vec3( 0, 1, 0), glm::vec3(0, 0, 1)); // +Y
-			case 3: return glm::lookAt(glm::vec3(0), glm::vec3( 0,-1, 0), glm::vec3(0, 0,-1)); // -Y
-			case 4: return glm::lookAt(glm::vec3(0), glm::vec3( 0, 0, 1), glm::vec3(0,-1, 0)); // +Z
-			case 5: return glm::lookAt(glm::vec3(0), glm::vec3( 0, 0,-1), glm::vec3(0,-1, 0)); // -Z
-			default: return glm::mat4(1.0f);
+			case 0: return Math::ViewMatrix(origin, Vector3f( 1, 0, 0), Vector3f(0,-1, 0)); // +X
+			case 1: return Math::ViewMatrix(origin, Vector3f(-1, 0, 0), Vector3f(0,-1, 0)); // -X
+			case 2: return Math::ViewMatrix(origin, Vector3f( 0, 1, 0), Vector3f(0, 0, 1)); // +Y
+			case 3: return Math::ViewMatrix(origin, Vector3f( 0,-1, 0), Vector3f(0, 0,-1)); // -Y
+			case 4: return Math::ViewMatrix(origin, Vector3f( 0, 0, 1), Vector3f(0,-1, 0)); // +Z
+			case 5: return Math::ViewMatrix(origin, Vector3f( 0, 0,-1), Vector3f(0,-1, 0)); // -Z
+			default: return Matrix4x4f::Identity;
 		}
 	}
 
@@ -146,11 +146,13 @@ namespace Ailurus
 		std::vector<vk::DescriptorSetLayout> layouts = { _envMapDescriptorSetLayout };
 		_irradiancePipeline = std::make_unique<VulkanPipeline>(
 			vk::Format::eR16G16B16A16Sfloat, shaderArray, layouts,
-			static_cast<uint32_t>(sizeof(glm::mat4)), false);
+			static_cast<uint32_t>(sizeof(Matrix4x4f)), false);
 
 		// Record all 6 cubemap faces into one command buffer
 		VulkanCommandBuffer cmd(true);
 		cmd.Begin();
+		std::vector<vk::ImageView> faceViews;
+		faceViews.reserve(6);
 
 		// Transition cubemap to color attachment optimal (all 6 layers)
 		cmd.ImageMemoryBarrier(_irradianceMap->GetImage(),
@@ -159,18 +161,17 @@ namespace Ailurus
 			vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eColorAttachmentOutput,
 			vk::ImageAspectFlagBits::eColor, 0, 1, 0, 6);
 
-		glm::mat4 proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+		Matrix4x4f proj = Math::PerspectiveMatrix(90.0f, 1.0f, 0.1f, 10.0f);
 
 		for (uint32_t face = 0; face < 6; face++)
 		{
 			vk::ImageView faceView = _irradianceMap->CreateSingleLayerMipView(face, 0);
-			glm::mat4 faceVP = proj * GetCubemapFaceViewMatrix(face);
+			faceViews.push_back(faceView);
+			Matrix4x4f faceVP = proj * GetCubemapFaceViewMatrix(face);
 
 			RenderFullscreenPass(&cmd, faceView, IRRADIANCE_SIZE, IRRADIANCE_SIZE,
 				_irradiancePipeline.get(), _envMapDescriptorSet,
-				&faceVP, sizeof(glm::mat4));
-
-			device.destroyImageView(faceView);
+				&faceVP, sizeof(Matrix4x4f));
 		}
 
 		// Transition to shader read optimal (all 6 layers)
@@ -186,6 +187,9 @@ namespace Ailurus
 		submitInfo.setCommandBuffers(cmd.GetBuffer());
 		VulkanContext::GetGraphicQueue().submit(submitInfo);
 		VulkanContext::GetGraphicQueue().waitIdle();
+
+		for (auto faceView : faceViews)
+			device.destroyImageView(faceView);
 
 		Logger::LogInfo("IBLManager: Irradiance map computed ({}x{} per face)", IRRADIANCE_SIZE, IRRADIANCE_SIZE);
 	}
@@ -227,7 +231,7 @@ namespace Ailurus
 		// Push constant struct for prefilter shader
 		struct PrefilterPushConstants
 		{
-			glm::mat4 faceVP;
+			Matrix4x4f faceVP;
 			float roughness;
 		};
 
@@ -247,6 +251,8 @@ namespace Ailurus
 		// Record all mip levels and faces into one command buffer
 		VulkanCommandBuffer cmd(true);
 		cmd.Begin();
+		std::vector<vk::ImageView> faceViews;
+		faceViews.reserve(PREFILTER_MIP_LEVELS * 6);
 
 		// Transition all layers and mips to color attachment optimal
 		cmd.ImageMemoryBarrier(_prefilteredMap->GetImage(),
@@ -255,7 +261,7 @@ namespace Ailurus
 			vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eColorAttachmentOutput,
 			vk::ImageAspectFlagBits::eColor, 0, PREFILTER_MIP_LEVELS, 0, 6);
 
-		glm::mat4 proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+		Matrix4x4f proj = Math::PerspectiveMatrix(90.0f, 1.0f, 0.1f, 10.0f);
 
 		// Render each mip level and face
 		for (uint32_t mip = 0; mip < PREFILTER_MIP_LEVELS; mip++)
@@ -267,6 +273,7 @@ namespace Ailurus
 			for (uint32_t face = 0; face < 6; face++)
 			{
 				vk::ImageView faceView = _prefilteredMap->CreateSingleLayerMipView(face, mip);
+				faceViews.push_back(faceView);
 
 				PrefilterPushConstants pc;
 				pc.faceVP = proj * GetCubemapFaceViewMatrix(face);
@@ -275,8 +282,6 @@ namespace Ailurus
 				RenderFullscreenPass(&cmd, faceView, mipWidth, mipHeight,
 									 _prefilterPipeline.get(), _envMapDescriptorSet,
 									 &pc, sizeof(PrefilterPushConstants));
-
-				device.destroyImageView(faceView);
 			}
 		}
 
@@ -293,6 +298,9 @@ namespace Ailurus
 		submitInfo.setCommandBuffers(cmd.GetBuffer());
 		VulkanContext::GetGraphicQueue().submit(submitInfo);
 		VulkanContext::GetGraphicQueue().waitIdle();
+
+		for (auto faceView : faceViews)
+			device.destroyImageView(faceView);
 
 		Logger::LogInfo("IBLManager: Pre-filtered map computed ({}x{}, {} mip levels)",
 						PREFILTER_SIZE, PREFILTER_SIZE, PREFILTER_MIP_LEVELS);

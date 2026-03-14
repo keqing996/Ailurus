@@ -30,9 +30,6 @@ namespace Ailurus
 		if (pAssimpMesh->HasPositions())
 			vertexAttrVec.push_back(AttributeType::Position);
 
-		if (pAssimpMesh->HasVertexColors(0))
-			vertexAttrVec.push_back(AttributeType::Color);
-
 		if (pAssimpMesh->HasNormals())
 			vertexAttrVec.push_back(AttributeType::Normal);
 
@@ -40,10 +37,7 @@ namespace Ailurus
 			vertexAttrVec.push_back(AttributeType::TexCoord);
 
 		if (pAssimpMesh->HasTangentsAndBitangents())
-		{
 			vertexAttrVec.push_back(AttributeType::Tangent);
-			vertexAttrVec.push_back(AttributeType::Bitangent);
-		}
 
 		return vertexAttrVec;
 	}

@@ -109,7 +109,9 @@ namespace Ailurus
 		/// @brief Allocate or retrieve cached descriptor set
 		/// @param pSetLayout Layout for the descriptor set
 		/// @param cacheKey Optional cache key for reuse (if not provided, always allocates new)
-		auto AllocateDescriptorSet(const class VulkanDescriptorSetLayout* pSetLayout, const CacheKey* cacheKey = nullptr) -> VulkanDescriptorSet;
+		/// @param pWasCacheHit Optional output flag set to true when a cached set is returned
+		auto AllocateDescriptorSet(const class VulkanDescriptorSetLayout* pSetLayout, const CacheKey* cacheKey = nullptr,
+			bool* pWasCacheHit = nullptr) -> VulkanDescriptorSet;
 		
 		/// @brief Create a hash for buffer bindings (for cache key)
 		static auto HashBuffers(const std::vector<vk::Buffer>& buffers) -> size_t;

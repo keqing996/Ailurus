@@ -4,34 +4,67 @@
 
 #include "VulkanPlatform.h"
 #include <mach-o/dyld.h>
+#include <filesystem>
+#include <vector>
+#include "Ailurus/OS/System.h"
 #include "Ailurus/Utility/Logger.h"
 
 namespace Ailurus
 {
+    namespace
+    {
+        std::optional<std::filesystem::path> GetBundleContentsPath()
+        {
+            std::vector<char> executablePath(1024, '\0');
+            uint32_t size = static_cast<uint32_t>(executablePath.size());
+            if (_NSGetExecutablePath(executablePath.data(), &size) != 0)
+            {
+                executablePath.resize(size);
+                if (_NSGetExecutablePath(executablePath.data(), &size) != 0)
+                    return std::nullopt;
+            }
+
+            std::filesystem::path execPath = std::filesystem::path(executablePath.data()).lexically_normal();
+            if (execPath.string().find(".app/Contents/MacOS") == std::string::npos)
+                return std::nullopt;
+
+            auto macOSDir = execPath.parent_path();
+            auto contentsDir = macOSDir.parent_path();
+            if (macOSDir.filename() != "MacOS" || contentsDir.filename() != "Contents")
+                return std::nullopt;
+
+            return contentsDir;
+        }
+
+        void ConfigureBundledDriverEnvironment(const std::filesystem::path& bundleContentsPath)
+        {
+            auto bundledIcdPath = bundleContentsPath / "Resources" / "vulkan" / "icd.d" / "MoltenVK_icd.json";
+            if (!std::filesystem::exists(bundledIcdPath))
+            {
+                Logger::LogWarn("VulkanLoadLibrary: Bundled MoltenVK ICD manifest not found: {}", bundledIcdPath.string());
+                return;
+            }
+
+            System::SetEnvironmentVariable("VK_DRIVER_FILES", bundledIcdPath.string());
+            System::SetEnvironmentVariable("VK_ICD_FILENAMES", bundledIcdPath.string());
+            System::SetEnvironmentVariable("VK_ADD_DRIVER_FILES", "");
+            Logger::LogInfo("VulkanLoadLibrary: Forced bundled MoltenVK ICD: {}", bundledIcdPath.string());
+        }
+    }
+
     std::optional<std::string> VulkanPlatform::GetVulkanLibraryPath()
     {
-        // macOS: Detect if we're running from an app bundle
-		char executablePath[1024];
-		uint32_t size = sizeof(executablePath);
-		if (_NSGetExecutablePath(executablePath, &size) == 0)
-		{
-			std::string execPath(executablePath);
-			
-			// Check if we're in an app bundle (path contains .app/Contents/MacOS)
-			if (execPath.find(".app/Contents/MacOS") != std::string::npos)
-			{
-				Logger::LogInfo("VulkanLoadLibrary: Running in macOS app bundle");
-				return "@executable_path/../Frameworks/libvulkan.1.dylib";
-			}
-			else
-			{
-				Logger::LogInfo("VulkanLoadLibrary: Running as Unix executable on macOS");
-				// For development builds or command-line tools
-				return "libvulkan.1.dylib";
-			}
-		}
+        if (auto bundleContentsPath = GetBundleContentsPath(); bundleContentsPath.has_value())
+        {
+            ConfigureBundledDriverEnvironment(*bundleContentsPath);
+            Logger::LogInfo("VulkanLoadLibrary: Running in macOS app bundle");
+            return "@executable_path/../Frameworks/libvulkan.1.dylib";
+        }
+
+        Logger::LogInfo("VulkanLoadLibrary: Running as Unix executable on macOS");
+        // For development builds or command-line tools
+        return "libvulkan.1.dylib";
 		
-        return std::nullopt;
     }
     
     std::vector<std::string> VulkanPlatform::GetFallbackPaths()

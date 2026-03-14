@@ -75,6 +75,8 @@ namespace Ailurus
         bool HasEnabledEffects() const;
 
     private:
+        bool ShouldExecuteEffect(const PostProcessEffect& effect) const;
+
         std::vector<std::unique_ptr<PostProcessEffect>> _effects;
         PostProcessResourcePool _resourcePool;
         PostProcessPipelineFactory _factory;

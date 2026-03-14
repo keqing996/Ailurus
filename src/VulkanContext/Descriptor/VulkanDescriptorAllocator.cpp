@@ -63,8 +63,12 @@ namespace Ailurus
 		}
 	}
 
-	VulkanDescriptorSet VulkanDescriptorAllocator::AllocateDescriptorSet(const VulkanDescriptorSetLayout* pSetLayout, const CacheKey* cacheKey)
+	VulkanDescriptorSet VulkanDescriptorAllocator::AllocateDescriptorSet(const VulkanDescriptorSetLayout* pSetLayout,
+		const CacheKey* cacheKey, bool* pWasCacheHit)
 	{
+		if (pWasCacheHit != nullptr)
+			*pWasCacheHit = false;
+
 		_cacheStats.totalRequests++;
 		
 		// Check cache if key is provided
@@ -74,6 +78,8 @@ namespace Ailurus
 			if (it != _cache.end())
 			{
 				_cacheStats.cacheHits++;
+				if (pWasCacheHit != nullptr)
+					*pWasCacheHit = true;
 				return it->second;
 			}
 			_cacheStats.cacheMisses++;

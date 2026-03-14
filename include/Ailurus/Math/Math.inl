@@ -143,4 +143,32 @@ namespace Ailurus::Math
 	{
 		return Quaternion<T>(glm::slerp(q1.Glm(), q2.Glm(), t));
 	}
+
+	template <typename T>
+	Matrix4x4<T> ViewMatrix(const Vector3<T>& eye, const Vector3<T>& center, const Vector3<T>& up)
+	{
+		Vector3<T> f = (center - eye).Normalized();
+		Vector3<T> s = up.Cross(f).Normalized(); // left-handed: cross(up, forward)
+		Vector3<T> u = f.Cross(s);
+
+		return Matrix4x4<T>{
+			Vector4<T>{ s.x,    s.y,    s.z,   -s.Dot(eye) },
+			Vector4<T>{ u.x,    u.y,    u.z,   -u.Dot(eye) },
+			Vector4<T>{ f.x,    f.y,    f.z,   -f.Dot(eye) },
+			Vector4<T>{ T(0),   T(0),   T(0),   T(1)       }
+		};
+	}
+
+	template <typename T>
+	Matrix4x4<T> PerspectiveMatrix(T fovYDegrees, T aspect, T nearPlane, T farPlane)
+	{
+		T tanHalfFov = std::tan(DegreeToRadian(fovYDegrees) / T(2));
+		Matrix4x4<T> result;
+		result(0, 0) = T(1) / (aspect * tanHalfFov);
+		result(1, 1) = T(1) / tanHalfFov;
+		result(2, 2) = (farPlane + nearPlane) / (farPlane - nearPlane);
+		result(3, 2) = T(1);
+		result(2, 3) = -(T(2) * farPlane * nearPlane) / (farPlane - nearPlane);
+		return result;
+	}
 } // namespace Ailurus::Math

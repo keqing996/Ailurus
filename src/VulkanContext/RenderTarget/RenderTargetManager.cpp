@@ -37,14 +37,29 @@ namespace Ailurus
 		CreateShadowMapTargets();
     }
 
+	vk::Image RenderTargetManager::GetDepthImage() const
+	{
+		return _depthTarget ? _depthTarget->GetImage() : nullptr;
+	}
+
 	vk::ImageView RenderTargetManager::GetDepthImageView() const
 	{
 		return _depthTarget ? _depthTarget->GetImageView() : nullptr;
 	}
 
+	vk::Image RenderTargetManager::GetMSAAColorImage() const
+	{
+		return _msaaColorTarget ? _msaaColorTarget->GetImage() : nullptr;
+	}
+
 	vk::ImageView RenderTargetManager::GetMSAAColorImageView() const
 	{
 		return _msaaColorTarget ? _msaaColorTarget->GetImageView() : nullptr;
+	}
+
+	vk::Image RenderTargetManager::GetMSAADepthImage() const
+	{
+		return _msaaDepthTarget ? _msaaDepthTarget->GetImage() : nullptr;
 	}
 
 	vk::ImageView RenderTargetManager::GetMSAADepthImageView() const
@@ -97,7 +112,7 @@ namespace Ailurus
 		config.height = height;
 		config.format = vk::Format::eD32Sfloat;
 		config.samples = vk::SampleCountFlagBits::e1; // Non-MSAA depth
-		config.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+		config.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
 		config.aspectMask = vk::ImageAspectFlagBits::eDepth;
 		config.transient = false;
 
