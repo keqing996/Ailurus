@@ -109,7 +109,7 @@ namespace Ailurus
 
         // Get depth image view from render target manager
         auto* pRenderTargetManager = VulkanContext::GetRenderTargetManager();
-        vk::ImageView depthImageView = pRenderTargetManager->GetDepthImageView();
+        vk::ImageView depthImageView = _depthImageViewOverride ? _depthImageViewOverride : pRenderTargetManager->GetDepthImageView();
         if (!depthImageView)
             return;
 
@@ -258,5 +258,6 @@ namespace Ailurus
         _depthSampler = nullptr;
         _ssaoRT = nullptr;
         _blurRT = nullptr;
+        _depthImageViewOverride = nullptr;
     }
 } // namespace Ailurus

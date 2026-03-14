@@ -8,8 +8,6 @@
 #include <Ailurus/Systems/TimeSystem/TimeSystem.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/ToneMappingEffect.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/BloomMipChainEffect.h>
-#include "Ailurus/Math/Math.hpp"
-#include "Ailurus/Utility/Logger.h"
 
 #include <vector>
 #include <cmath>
@@ -23,7 +21,8 @@ int Main(int argc, char* argv[])
 		.canResize = true,
 		.haveBorder = true,
 		.enableRenderImGui = true,
-		.enableRender3D = true
+		.enableRender3D = true,
+		.skyboxHDRTexturePath = "./Assets/Texture/skybox_2k.hdr"
 	});
 
 	// Load assets and set up the scene
@@ -87,20 +86,21 @@ int Main(int argc, char* argv[])
 	// Sky-blue clear color (similar to Unity's default sky gradient)
 	Application::Get<RenderSystem>()->SetClearColor(0.4f, 0.6f, 0.85f);
 
-	// Bright ambient light (white, strength 0.5)
+	// HDR skybox already contributes significant IBL, so keep ambient modest for SDR output.
 	Application::Get<RenderSystem>()->SetAmbientColor(1.0f, 1.0f, 1.0f);
-	Application::Get<RenderSystem>()->SetAmbientStrength(0.5f);
+	Application::Get<RenderSystem>()->SetAmbientStrength(0.22f);
 
-	// Post-process: higher exposure and lower bloom threshold
+	// Tone mapping tuned for an SDR display. The HDR skybox still provides high range input,
+	// but the output needs lower exposure than the earlier bright-gradient setup.
 	auto* pPostProcess = Application::Get<RenderSystem>()->GetPostProcessChain();
 	if (auto* pToneMap = dynamic_cast<ToneMappingEffect*>(pPostProcess->GetEffect("ToneMapping")))
 	{
-		pToneMap->SetExposure(1.5f);
+		pToneMap->SetExposure(0.95f);
 	}
 	if (auto* pBloom = dynamic_cast<BloomMipChainEffect*>(pPostProcess->GetEffect("BloomMipChain")))
 	{
-		pBloom->SetThreshold(0.8f);
-		pBloom->SetBloomIntensity(0.3f);
+		pBloom->SetThreshold(1.1f);
+		pBloom->SetBloomIntensity(0.12f);
 	}
 
 	// Create a strong directional light (main sun) - steep angle for visible shadows

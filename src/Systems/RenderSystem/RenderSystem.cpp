@@ -40,7 +40,7 @@ namespace Ailurus
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_AMBIENT_COLOR = "ambientColor";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SHADOW_BIAS_PARAMS = "shadowBiasParams";
 
-	RenderSystem::RenderSystem(bool enableImGui, bool enable3D)
+	RenderSystem::RenderSystem(bool enableImGui, bool enable3D, const std::string& skyboxHDRTexturePath)
 		: _enable3D(enable3D)
 		, _enableImGui(enableImGui)
 	{
@@ -67,27 +67,43 @@ namespace Ailurus
 			_pSkybox = std::make_unique<Skybox>();
 			_pSkybox->Init(_pShaderLibrary.get(),
 				vk::Format::eR16G16B16A16Sfloat,
-				vk::Format::eD32Sfloat);
+				vk::Format::eD32Sfloat,
+				skyboxHDRTexturePath);
 
 			// Initialize IBL
 			_pIBLManager = std::make_unique<IBLManager>();
 			auto cubemapView = _pSkybox->GetCubemapImageView();
-			auto cubemapSampler = _pSkybox->GetCubemapSampler()->GetSampler();
-			if (cubemapView)
+			auto* pCubemapSampler = _pSkybox->GetCubemapSampler();
+			if (cubemapView && pCubemapSampler)
+			{
+				auto cubemapSampler = pCubemapSampler->GetSampler();
 				_pIBLManager->Precompute(cubemapView, cubemapSampler, _pShaderLibrary.get());
+			}
 		}
 	}
 
 	RenderSystem::~RenderSystem()
 	{
-		if (_pIBLManager)
-			_pIBLManager->Shutdown();
-
-		if (_pSkybox)
-			_pSkybox->Shutdown();
+		if (VulkanContext::Initialized())
+			VulkanContext::WaitDeviceIdle();
 
 		if (_postProcessChain)
+		{
 			_postProcessChain->Shutdown();
+			_postProcessChain.reset();
+		}
+
+		if (_pSkybox)
+		{
+			_pSkybox->Shutdown();
+			_pSkybox.reset();
+		}
+
+		if (_pIBLManager)
+		{
+			_pIBLManager->Shutdown();
+			_pIBLManager.reset();
+		}
 	}
 
 	void RenderSystem::RequestRebuildSwapChain()

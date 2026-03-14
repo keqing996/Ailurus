@@ -39,6 +39,8 @@ namespace Ailurus
 	std::unique_ptr<VulkanSwapChain> 			VulkanContext::_pSwapChain = nullptr;
 	bool 										VulkanContext::_vsyncEnabled = true;
 	vk::SampleCountFlagBits 					VulkanContext::_msaaSamples = vk::SampleCountFlagBits::e4;
+	bool 										VulkanContext::_supportsMSAADepthResolve = false;
+	vk::ResolveModeFlagBits 					VulkanContext::_msaaDepthResolveMode = vk::ResolveModeFlagBits::eNone;
 
 	std::unique_ptr<RenderTargetManager>		VulkanContext::_pRenderTargetManager = nullptr;
 	std::unique_ptr<VulkanResourceManager> 		VulkanContext::_resourceManager = nullptr;
@@ -304,6 +306,16 @@ namespace Ailurus
 	vk::SampleCountFlagBits VulkanContext::GetMSAASamples()
 	{
 		return _msaaSamples;
+	}
+
+	bool VulkanContext::SupportsMSAADepthResolve()
+	{
+		return _supportsMSAADepthResolve;
+	}
+
+	vk::ResolveModeFlagBits VulkanContext::GetMSAADepthResolveMode()
+	{
+		return _msaaDepthResolveMode;
 	}
 
 	void VulkanContext::RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction)
@@ -572,6 +584,9 @@ namespace Ailurus
 
 	bool VulkanContext::CreateLogicalDevice()
 	{
+		_supportsMSAADepthResolve = false;
+		_msaaDepthResolveMode = vk::ResolveModeFlagBits::eNone;
+
 		// Find graphic queue and present queue.
 		std::optional<uint32_t> optPresentQueue = std::nullopt;
 		std::optional<uint32_t> optGraphicQueue = std::nullopt;
@@ -632,6 +647,38 @@ namespace Ailurus
 		vk::PhysicalDeviceFeatures2 features2;
 		features2.setPNext(&dynamicRenderingFeatures);
 		_vkPhysicalDevice.getFeatures2(&features2);
+
+		vk::PhysicalDeviceDepthStencilResolveProperties depthResolveProperties;
+		vk::PhysicalDeviceProperties2 properties2;
+		properties2.pNext = &depthResolveProperties;
+		_vkPhysicalDevice.getProperties2(&properties2);
+
+		const vk::ResolveModeFlags supportedDepthResolveModes = depthResolveProperties.supportedDepthResolveModes;
+		if ((supportedDepthResolveModes & vk::ResolveModeFlagBits::eSampleZero) == vk::ResolveModeFlagBits::eSampleZero)
+		{
+			_supportsMSAADepthResolve = true;
+			_msaaDepthResolveMode = vk::ResolveModeFlagBits::eSampleZero;
+		}
+		else if ((supportedDepthResolveModes & vk::ResolveModeFlagBits::eMin) == vk::ResolveModeFlagBits::eMin)
+		{
+			_supportsMSAADepthResolve = true;
+			_msaaDepthResolveMode = vk::ResolveModeFlagBits::eMin;
+		}
+		else if ((supportedDepthResolveModes & vk::ResolveModeFlagBits::eMax) == vk::ResolveModeFlagBits::eMax)
+		{
+			_supportsMSAADepthResolve = true;
+			_msaaDepthResolveMode = vk::ResolveModeFlagBits::eMax;
+		}
+
+		if (_supportsMSAADepthResolve)
+		{
+			Logger::LogInfo("MSAA depth resolve supported, selected resolve mode = {}",
+				static_cast<uint32_t>(_msaaDepthResolveMode));
+		}
+		else
+		{
+			Logger::LogWarn("MSAA depth resolve is not supported by the selected device/runtime");
+		}
 
 		if (!dynamicRenderingFeatures.dynamicRendering)
 		{

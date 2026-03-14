@@ -417,8 +417,10 @@ namespace Ailurus
 					vk::Image offscreenImage = pRenderTargetManager->GetOffscreenColorImage();
 					vk::ImageView offscreenImageView = pRenderTargetManager->GetOffscreenColorImageView();
 					const bool useMSAA = VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1;
-					const bool canSampleSceneDepth = !useMSAA;
-					const auto* pSsaoEffect = _postProcessChain
+					const bool canResolveSceneDepth = useMSAA && VulkanContext::SupportsMSAADepthResolve()
+						&& pRenderTargetManager->GetResolvedMSAADepthImageView();
+					const bool canSampleSceneDepth = !useMSAA || canResolveSceneDepth;
+					auto* pSsaoEffect = _postProcessChain
 						? static_cast<SSAOEffect*>(_postProcessChain->GetEffect("SSAO"))
 						: nullptr;
 					const bool useSSAO = pSsaoEffect != nullptr && pSsaoEffect->IsEnabled() && canSampleSceneDepth;
@@ -437,6 +439,7 @@ namespace Ailurus
 					{
 						vk::Image msaaColorImage = pRenderTargetManager->GetMSAAColorImage();
 						vk::Image msaaDepthImage = pRenderTargetManager->GetMSAADepthImage();
+						vk::Image resolvedDepthImage = pRenderTargetManager->GetResolvedMSAADepthImage();
 
 						if (msaaColorImage)
 						{
@@ -454,6 +457,19 @@ namespace Ailurus
 						{
 							pCommandBuffer->ImageMemoryBarrier(
 								msaaDepthImage,
+								vk::ImageLayout::eUndefined,
+								vk::ImageLayout::eDepthStencilAttachmentOptimal,
+								vk::AccessFlags{},
+								vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+								vk::PipelineStageFlagBits::eTopOfPipe,
+								vk::PipelineStageFlagBits::eEarlyFragmentTests,
+								vk::ImageAspectFlagBits::eDepth);
+						}
+
+						if (resolvedDepthImage && canResolveSceneDepth)
+						{
+							pCommandBuffer->ImageMemoryBarrier(
+								resolvedDepthImage,
 								vk::ImageLayout::eUndefined,
 								vk::ImageLayout::eDepthStencilAttachmentOptimal,
 								vk::AccessFlags{},
@@ -495,7 +511,9 @@ namespace Ailurus
 
 					if (useSSAO)
 					{
-						vk::Image depthImage = pRenderTargetManager->GetDepthImage();
+						vk::Image depthImage = useMSAA
+							? pRenderTargetManager->GetResolvedMSAADepthImage()
+							: pRenderTargetManager->GetDepthImage();
 						if (depthImage)
 						{
 							pCommandBuffer->ImageMemoryBarrier(
@@ -524,8 +542,15 @@ namespace Ailurus
 					if (_postProcessChain)
 					{
 						auto* ssaoEffect = static_cast<SSAOEffect*>(_postProcessChain->GetEffect("SSAO"));
-						if (ssaoEffect && _pMainCamera)
-							ssaoEffect->SetProjectionMatrix(_pMainCamera->GetProjectionMatrix());
+						if (ssaoEffect)
+						{
+							if (_pMainCamera)
+								ssaoEffect->SetProjectionMatrix(_pMainCamera->GetProjectionMatrix());
+
+							ssaoEffect->SetDepthImageViewOverride(useMSAA
+								? pRenderTargetManager->GetResolvedMSAADepthImageView()
+								: nullptr);
+						}
 					}
 
 					if (_postProcessChain && _postProcessChain->HasEnabledEffects())
@@ -924,9 +949,12 @@ namespace Ailurus
 			// With MSAA: render to MSAA color attachment and resolve to offscreen HDR RT
 			vk::ImageView msaaColorView = pRenderTargetManager->GetMSAAColorImageView();
 			vk::ImageView msaaDepthView = pRenderTargetManager->GetMSAADepthImageView();
+			vk::ImageView resolvedDepthView = VulkanContext::SupportsMSAADepthResolve()
+				? pRenderTargetManager->GetResolvedMSAADepthImageView()
+				: nullptr;
 
 			bool clearColor = (pass == RenderPassType::Forward);
-			pCommandBuffer->BeginRendering(msaaColorView, msaaDepthView, offscreenColorView, extent, clearColor, true, _clearColor);
+			pCommandBuffer->BeginRendering(msaaColorView, msaaDepthView, offscreenColorView, extent, clearColor, true, _clearColor, resolvedDepthView);
 		}
 		else
 		{

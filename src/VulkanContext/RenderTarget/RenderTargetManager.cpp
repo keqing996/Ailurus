@@ -67,6 +67,16 @@ namespace Ailurus
 		return _msaaDepthTarget ? _msaaDepthTarget->GetImageView() : nullptr;
 	}
 
+	vk::Image RenderTargetManager::GetResolvedMSAADepthImage() const
+	{
+		return _resolvedMSAADepthTarget ? _resolvedMSAADepthTarget->GetImage() : nullptr;
+	}
+
+	vk::ImageView RenderTargetManager::GetResolvedMSAADepthImageView() const
+	{
+		return _resolvedMSAADepthTarget ? _resolvedMSAADepthTarget->GetImageView() : nullptr;
+	}
+
 	vk::Image RenderTargetManager::GetOffscreenColorImage() const
 	{
 		return _offscreenColorTarget ? _offscreenColorTarget->GetImage() : nullptr;
@@ -101,6 +111,7 @@ namespace Ailurus
         _depthTarget = nullptr;
 		_msaaColorTarget = nullptr;
 		_msaaDepthTarget = nullptr;
+		_resolvedMSAADepthTarget = nullptr;
 		_offscreenColorTarget = nullptr;
 		_shadowMapTargets.clear();
     }
@@ -176,6 +187,29 @@ namespace Ailurus
 			catch (const std::exception& e)
 			{
 				Logger::LogError("Failed to create MSAA depth target: {}", e.what());
+			}
+		}
+
+		// Create single-sampled resolved depth target for SSAO sampling under MSAA.
+		// This target is also suitable for a later explicit fallback resolve path.
+		{
+			RenderTargetConfig config;
+			config.width = width;
+			config.height = height;
+			config.format = vk::Format::eD32Sfloat;
+			config.samples = vk::SampleCountFlagBits::e1;
+			config.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
+			config.aspectMask = vk::ImageAspectFlagBits::eDepth;
+			config.transient = false;
+
+			try
+			{
+				_resolvedMSAADepthTarget = std::make_unique<RenderTarget>(config);
+				Logger::LogInfo("Created resolved MSAA depth target: {}x{}", width, height);
+			}
+			catch (const std::exception& e)
+			{
+				Logger::LogError("Failed to create resolved MSAA depth target: {}", e.what());
 			}
 		}
 	}

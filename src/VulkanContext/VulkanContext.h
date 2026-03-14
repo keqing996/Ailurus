@@ -66,6 +66,8 @@ namespace Ailurus
 		// MSAA
 		static void SetMSAASamples(vk::SampleCountFlagBits samples);
 		static vk::SampleCountFlagBits GetMSAASamples();
+		static bool SupportsMSAADepthResolve();
+		static vk::ResolveModeFlagBits GetMSAADepthResolveMode();
 
 		// Render
 		static void RecordSecondaryCommandBuffer(const RecordSecondaryCommandBufferFunction& recordFunction);
@@ -128,6 +130,8 @@ namespace Ailurus
 		static std::unique_ptr<VulkanSwapChain> _pSwapChain;
 		static bool _vsyncEnabled;
 		static vk::SampleCountFlagBits _msaaSamples;
+		static bool _supportsMSAADepthResolve;
+		static vk::ResolveModeFlagBits _msaaDepthResolveMode;
 
 		// Managers
 		static std::unique_ptr<RenderTargetManager> _pRenderTargetManager;

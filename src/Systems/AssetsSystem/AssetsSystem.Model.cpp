@@ -26,6 +26,11 @@ namespace Ailurus
 	static std::vector<AttributeType> ReadLayout(const aiMesh* pAssimpMesh)
 	{
 		std::vector<AttributeType> vertexAttrVec;
+		vertexAttrVec.reserve(4);
+
+		// Import only the semantics currently consumed by the mesh shaders.
+		// VulkanVertexLayout assigns fixed locations per semantic, so omitted optional
+		// attributes no longer shift the later shader locations.
 
 		if (pAssimpMesh->HasPositions())
 			vertexAttrVec.push_back(AttributeType::Position);

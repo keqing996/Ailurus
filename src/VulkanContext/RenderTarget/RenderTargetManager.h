@@ -24,6 +24,8 @@ namespace Ailurus
 
 		vk::Image GetMSAADepthImage() const;
 		vk::ImageView GetMSAADepthImageView() const;
+		vk::Image GetResolvedMSAADepthImage() const;
+		vk::ImageView GetResolvedMSAADepthImageView() const;
 
 		// Offscreen HDR color target
 		vk::Image GetOffscreenColorImage() const;
@@ -49,6 +51,7 @@ namespace Ailurus
 		// Both MSAA color and resolve target use R16G16B16A16_SFLOAT to match offscreen HDR RT
 		std::unique_ptr<RenderTarget> _msaaColorTarget = nullptr;
 		std::unique_ptr<RenderTarget> _msaaDepthTarget = nullptr;
+		std::unique_ptr<RenderTarget> _resolvedMSAADepthTarget = nullptr;
 
 		// Offscreen HDR color render target (R16G16B16A16_SFLOAT)
 		// Forward pass renders here; post-process chain reads from here

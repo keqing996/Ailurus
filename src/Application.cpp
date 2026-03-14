@@ -101,7 +101,7 @@ namespace Ailurus
 
 		_pTimeSystem.reset(new TimeSystem());
 		_pInputManager.reset(new InputSystem());
-		_pRenderSystem.reset(new RenderSystem(style.enableRenderImGui, style.enableRender3D));
+		_pRenderSystem.reset(new RenderSystem(style.enableRenderImGui, style.enableRender3D, style.skyboxHDRTexturePath));
 		_pAssetsSystem.reset(new AssetsSystem());
 		_pSceneManager.reset(new SceneSystem());
 

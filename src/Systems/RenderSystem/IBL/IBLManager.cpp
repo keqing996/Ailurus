@@ -431,21 +431,22 @@ namespace Ailurus
 
 	void IBLManager::Shutdown()
 	{
+		if (VulkanContext::Initialized())
+			VulkanContext::WaitDeviceIdle();
+
 		auto device = VulkanContext::GetDevice();
+		_ready = false;
 
 		_irradiancePipeline.reset();
 		_prefilterPipeline.reset();
 		_brdfLUTPipeline.reset();
-
-		_irradianceMap.reset();
-		_prefilteredMap.reset();
-		_brdfLUT.reset();
 
 		if (_envMapDescriptorPool)
 		{
 			device.destroyDescriptorPool(_envMapDescriptorPool);
 			_envMapDescriptorPool = nullptr;
 		}
+		_envMapDescriptorSet = nullptr;
 
 		if (_envMapDescriptorSetLayout)
 		{
@@ -458,6 +459,7 @@ namespace Ailurus
 			device.destroyDescriptorPool(_emptyDescriptorPool);
 			_emptyDescriptorPool = nullptr;
 		}
+		_emptyDescriptorSet = nullptr;
 
 		if (_emptyDescriptorSetLayout)
 		{
@@ -465,11 +467,13 @@ namespace Ailurus
 			_emptyDescriptorSetLayout = nullptr;
 		}
 
+		_irradianceMap.reset();
+		_prefilteredMap.reset();
+		_brdfLUT.reset();
+
 		// Samplers are owned by VulkanResourceManager
 		_irradianceSampler = nullptr;
 		_prefilteredSampler = nullptr;
 		_brdfLUTSampler = nullptr;
-
-		_ready = false;
 	}
 } // namespace Ailurus

@@ -3,6 +3,30 @@
 
 namespace Ailurus
 {
+	namespace
+	{
+		uint32_t GetAttributeLocation(AttributeType attribute)
+		{
+			switch (attribute)
+			{
+				case AttributeType::Position:
+					return 0;
+				case AttributeType::Normal:
+					return 1;
+				case AttributeType::TexCoord:
+					return 2;
+				case AttributeType::Tangent:
+					return 3;
+				case AttributeType::Bitangent:
+					return 4;
+				case AttributeType::Color:
+					return 5;
+			}
+
+			return 0;
+		}
+	}
+
 	VulkanVertexLayout::VulkanVertexLayout(const std::initializer_list<AttributeType>& attributes)
 	{
 		_attribute.insert(_attribute.end(), attributes.begin(), attributes.end());
@@ -36,7 +60,7 @@ namespace Ailurus
 
 			vk::VertexInputAttributeDescription attributeDescriptions;
 			attributeDescriptions.setBinding(0)
-				.setLocation(i)
+				.setLocation(GetAttributeLocation(attr))
 				.setFormat(VulkanHelper::GetFormat(attr))
 				.setOffset(offset);
 

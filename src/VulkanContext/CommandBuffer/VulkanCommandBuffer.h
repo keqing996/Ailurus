@@ -88,7 +88,8 @@ namespace Ailurus
 		/// @param extent Rendering area extent
 		/// @param clearColor If true, clear color attachment; if false, load existing content
 		/// @param useDepth If true, use depth attachment; if false, render without depth
-		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true, std::array<float, 4> clearColorValue = {0.0f, 0.0f, 0.0f, 1.0f});
+		/// @param depthResolveImageView Optional single-sampled depth resolve target for MSAA depth
+		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true, std::array<float, 4> clearColorValue = {0.0f, 0.0f, 0.0f, 1.0f}, vk::ImageView depthResolveImageView = nullptr);
 		
 		/// @brief Begin dynamic rendering for depth-only pass (shadow map rendering)
 		/// @param depthImageView Depth attachment image view

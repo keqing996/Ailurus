@@ -1,7 +1,6 @@
 #include "Ailurus/Systems/RenderSystem/PostProcess/PostProcessChain.h"
 #include "VulkanContext/CommandBuffer/VulkanCommandBuffer.h"
 #include "VulkanContext/VulkanContext.h"
-#include "Ailurus/Utility/Logger.h"
 #include <algorithm>
 
 namespace Ailurus
@@ -173,9 +172,9 @@ namespace Ailurus
         if (!effect.IsEnabled())
             return false;
 
-        // SSAO currently depends on a single-sampled readable depth target.
-        // The renderer does not produce a resolved single-sample depth texture when MSAA is enabled.
-        if (effect.GetName() == "SSAO" && VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1)
+        if (effect.GetName() == "SSAO"
+            && VulkanContext::GetMSAASamples() != vk::SampleCountFlagBits::e1
+            && !VulkanContext::SupportsMSAADepthResolve())
             return false;
 
         return true;

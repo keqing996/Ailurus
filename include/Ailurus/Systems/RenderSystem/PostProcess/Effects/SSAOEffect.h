@@ -36,6 +36,7 @@ namespace Ailurus
 
         // Camera parameters needed for depth reconstruction
         void SetProjectionMatrix(const Matrix4x4f& projMatrix);
+        void SetDepthImageViewOverride(vk::ImageView depthImageView) { _depthImageViewOverride = depthImageView; }
 
         void SetRadius(float radius) { _radius = radius; }
         void SetBias(float bias) { _bias = bias; }
@@ -64,6 +65,7 @@ namespace Ailurus
 
         // Camera projection matrix
         Matrix4x4f _projectionMatrix;
+        vk::ImageView _depthImageViewOverride = nullptr;
 
         // Intermediate render targets
         RTHandle* _ssaoRT = nullptr;

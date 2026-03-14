@@ -4,6 +4,7 @@
 #include <functional>
 #include <unordered_map>
 #include <memory>
+#include <string>
 #include "Ailurus/Utility/NonCopyable.h"
 #include "Ailurus/Utility/NonMovable.h"
 #include "Ailurus/Systems/RenderSystem/RenderPass/RenderPassType.h"
@@ -34,7 +35,7 @@ namespace Ailurus
 		using PostSwapChainRebuild = std::function<void()>;
 		
 	public:
-		RenderSystem(bool enableImGui, bool enable3D);
+		RenderSystem(bool enableImGui, bool enable3D, const std::string& skyboxHDRTexturePath = {});
 		~RenderSystem();
 
 	public:

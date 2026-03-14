@@ -25,6 +25,7 @@ namespace Ailurus
             bool haveBorder = true;
         	bool enableRenderImGui = true;
         	bool enableRender3D = true;
+			std::string skyboxHDRTexturePath;
         };
 
     public:

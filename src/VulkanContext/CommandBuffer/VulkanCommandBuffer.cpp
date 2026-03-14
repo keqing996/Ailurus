@@ -7,7 +7,6 @@
 #include "VulkanContext/Resource/DataBuffer/VulkanDataBuffer.h"
 #include "VulkanContext/Resource/DataBuffer/VulkanDeviceBuffer.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
-#include "VulkanContext/Descriptor/VulkanDescriptorAllocator.h"
 
 namespace Ailurus
 {
@@ -184,7 +183,8 @@ namespace Ailurus
 		_buffer.pipelineBarrier(srcStageMask, dstStageMask, {}, nullptr, nullptr, barrier);
 	}
 
-	void VulkanCommandBuffer::BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor, bool useDepth, std::array<float, 4> clearColorValue)
+	void VulkanCommandBuffer::BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView,
+		vk::Extent2D extent, bool clearColor, bool useDepth, std::array<float, 4> clearColorValue, vk::ImageView depthResolveImageView)
 	{
 		// Color attachment
 		vk::RenderingAttachmentInfo colorAttachment;
@@ -215,8 +215,15 @@ namespace Ailurus
 			depthAttachment.setImageView(depthImageView)
 				.setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 				.setLoadOp(vk::AttachmentLoadOp::eClear)
-				.setStoreOp(vk::AttachmentStoreOp::eDontCare)
+				.setStoreOp(vk::AttachmentStoreOp::eStore)
 				.setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
+
+			if (depthResolveImageView && VulkanContext::SupportsMSAADepthResolve())
+			{
+				depthAttachment.setResolveMode(VulkanContext::GetMSAADepthResolveMode())
+					.setResolveImageView(depthResolveImageView)
+					.setResolveImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+			}
 
 			renderingInfo.setPDepthAttachment(&depthAttachment);
 		}
