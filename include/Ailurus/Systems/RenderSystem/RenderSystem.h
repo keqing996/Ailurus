@@ -55,12 +55,17 @@ namespace Ailurus
 
 		// Ambient light
 		void SetAmbientColor(float r, float g, float b);
+		Vector3f GetAmbientColor() const { return _ambientColor; }
 		void SetAmbientStrength(float strength);
+		float GetAmbientStrength() const { return _ambientStrength; }
 
 		// Shadow bias
 		void SetShadowConstantBias(float bias);
 		void SetShadowSlopeScale(float scale);
 		void SetShadowNormalOffset(float offset);
+		float GetShadowConstantBias() const { return _shadowConstantBias; }
+		float GetShadowSlopeScale() const { return _shadowSlopeScale; }
+		float GetShadowNormalOffset() const { return _shadowNormalOffset; }
 
 		// Post-process access
 		PostProcessChain* GetPostProcessChain() const { return _postProcessChain.get(); }

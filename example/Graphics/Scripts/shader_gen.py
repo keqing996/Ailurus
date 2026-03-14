@@ -1,6 +1,7 @@
 """Compile GLSL shaders to SPIR-V binaries using the Vulkan SDK.
 
 Usage:
+    python shader_gen.py --glslc <glslc_path> --src_directory <src_directory> --dst_directory <dst_directory>
     python shader_gen.py --vulkan_sdk <vulkan_sdk_path> --src_directory <src_directory> --dst_directory <dst_directory>
 """
 
@@ -41,8 +42,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         description="Compile GLSL shaders to SPIR-V using Vulkan SDK's glslc executable."
     )
     parser.add_argument(
+        "--glslc",
+        required=False,
+        help="Absolute path to the glslc executable. Overrides --vulkan_sdk when provided."
+    )
+    parser.add_argument(
         "--vulkan_sdk",
-        required=True,
+        required=False,
         help="Path to the Vulkan SDK root directory."
     )
     parser.add_argument(
@@ -61,15 +67,23 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
 
-    vulkan_sdk_path = os.path.abspath(args.vulkan_sdk)
     src_path = os.path.abspath(args.src_directory)
     dst_path = os.path.abspath(args.dst_directory)
 
-    if not os.path.isdir(vulkan_sdk_path):
-        log.red(f"Error: Vulkan SDK directory '{vulkan_sdk_path}' does not exist.")
-        sys.exit(1)
+    glslc_path = ""
+    if args.glslc:
+        glslc_path = os.path.abspath(args.glslc)
+    elif args.vulkan_sdk:
+        vulkan_sdk_path = os.path.abspath(args.vulkan_sdk)
 
-    glslc_path = path_miscs.get_glslc_path(vulkan_sdk_path)
+        if not os.path.isdir(vulkan_sdk_path):
+            log.red(f"Error: Vulkan SDK directory '{vulkan_sdk_path}' does not exist.")
+            sys.exit(1)
+
+        glslc_path = path_miscs.get_glslc_path(vulkan_sdk_path)
+    else:
+        log.red("Error: either --glslc or --vulkan_sdk must be provided.")
+        sys.exit(1)
 
     if not os.path.exists(glslc_path):
         log.red(f"Error: glslc not found at {glslc_path}")

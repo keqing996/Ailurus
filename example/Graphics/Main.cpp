@@ -5,6 +5,8 @@
 #include <Ailurus/Systems/SceneSystem/Component/CompLight.h>
 #include <Ailurus/Systems/AssetsSystem/Material/Material.h>
 #include <Ailurus/Systems/AssetsSystem/Model/Model.h>
+#include <Ailurus/Systems/ImGuiSystem/EditorLayout.h>
+#include <Ailurus/Systems/ImGuiSystem/Widgets/Toast.h>
 #include <Ailurus/Systems/TimeSystem/TimeSystem.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/ToneMappingEffect.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/BloomMipChainEffect.h>
@@ -17,7 +19,7 @@ using namespace Ailurus;
 int Main(int argc, char* argv[])
 {
 	// Create the application instance
-	Application::Create(800, 800, "Test", Application::Style{ 
+	Application::Create(1600, 1200, "Test", Application::Style{ 
 		.canResize = true,
 		.haveBorder = true,
 		.enableRenderImGui = true,
@@ -32,31 +34,42 @@ int Main(int argc, char* argv[])
 	// Create multiple cubes to verify lighting from different angles
 	struct CubeInfo
 	{
+		const char* name;
 		Vector3f position;
 		Vector3f rotationAxis;
 		float rotationSpeed; // degrees per second
 		float scale;
+		Entity* parent = nullptr;
 	};
+
+	auto centerGroup = Application::Get<SceneSystem>()->CreateEntity();
+	auto accentGroup = Application::Get<SceneSystem>()->CreateEntity();
+	Entity* pCenterGroup = centerGroup.lock().get();
+	Entity* pAccentGroup = accentGroup.lock().get();
+	if (pCenterGroup != nullptr)
+		pCenterGroup->SetName("Center Cluster");
+	if (pAccentGroup != nullptr)
+		pAccentGroup->SetName("Accent Cluster");
 
 	std::vector<CubeInfo> cubeInfos = {
 		// Center cube
-		{{ 0.0f,  0.0f,  0.0f}, {0.0f, 1.0f, 0.0f},  90.0f, 1.0f},
+		{"Center Cube", { 0.0f,  0.0f,  0.0f}, {0.0f, 1.0f, 0.0f},  90.0f, 1.0f, pCenterGroup},
 		// Left - near red point light
-		{{-2.5f,  0.0f,  0.0f}, {1.0f, 1.0f, 0.0f},  60.0f, 0.7f},
+		{"Left Cube", {-2.5f,  0.0f,  0.0f}, {1.0f, 1.0f, 0.0f},  60.0f, 0.7f, pCenterGroup},
 		// Right - near green point light
-		{{ 2.5f,  0.0f,  0.0f}, {1.0f, 0.0f, 1.0f},  75.0f, 0.7f},
+		{"Right Cube", { 2.5f,  0.0f,  0.0f}, {1.0f, 0.0f, 1.0f},  75.0f, 0.7f, pCenterGroup},
 		// Top - near blue point light
-		{{ 0.0f,  2.0f,  0.0f}, {0.0f, 0.0f, 1.0f}, 120.0f, 0.6f},
+		{"Top Cube", { 0.0f,  2.0f,  0.0f}, {0.0f, 0.0f, 1.0f}, 120.0f, 0.6f, pCenterGroup},
 		// Bottom
-		{{ 0.0f, -2.0f,  0.0f}, {1.0f, 0.0f, 0.0f},  45.0f, 0.6f},
+		{"Bottom Cube", { 0.0f, -2.0f,  0.0f}, {1.0f, 0.0f, 0.0f},  45.0f, 0.6f, pCenterGroup},
 		// Front-left
-		{{-1.8f,  1.0f,  1.5f}, {1.0f, 1.0f, 1.0f}, 100.0f, 0.5f},
+		{"Front Left Cube", {-1.8f,  1.0f,  1.5f}, {1.0f, 1.0f, 1.0f}, 100.0f, 0.5f, pAccentGroup},
 		// Front-right
-		{{ 1.8f,  1.0f,  1.5f}, {0.0f, 1.0f, 1.0f},  80.0f, 0.5f},
+		{"Front Right Cube", { 1.8f,  1.0f,  1.5f}, {0.0f, 1.0f, 1.0f},  80.0f, 0.5f, pAccentGroup},
 		// Back-left
-		{{-1.8f, -1.0f, -1.5f}, {1.0f, 0.5f, 0.0f},  55.0f, 0.5f},
+		{"Back Left Cube", {-1.8f, -1.0f, -1.5f}, {1.0f, 0.5f, 0.0f},  55.0f, 0.5f, pAccentGroup},
 		// Back-right
-		{{ 1.8f, -1.0f, -1.5f}, {0.5f, 1.0f, 0.5f},  65.0f, 0.5f},
+		{"Back Right Cube", { 1.8f, -1.0f, -1.5f}, {0.5f, 1.0f, 0.5f},  65.0f, 0.5f, pAccentGroup},
 	};
 
 	std::vector<std::weak_ptr<Entity>> cubeEntities;
@@ -65,7 +78,9 @@ int Main(int argc, char* argv[])
 		auto entity = Application::Get<SceneSystem>()->CreateEntity();
 		if (auto pEntity = entity.lock())
 		{
+			pEntity->SetName(info.name);
 			pEntity->AddComponent<CompStaticMeshRender>(modelRef, materialRef);
+			pEntity->SetParent(info.parent);
 			pEntity->SetPosition(info.position);
 			pEntity->SetScale({ info.scale, info.scale, info.scale });
 		}
@@ -75,6 +90,7 @@ int Main(int argc, char* argv[])
 	auto pCamera = Application::Get<SceneSystem>()->CreateEntity();
 	if (auto pCameraEntity = pCamera.lock())
 	{
+		pCameraEntity->SetName("Main Camera");
 		auto pCam = pCameraEntity->AddComponent<CompCamera>(0.2f, 0.2f, 0.1f, 50.0f);
 		Application::Get<RenderSystem>()->SetMainCamera(pCam);
 
@@ -107,6 +123,7 @@ int Main(int argc, char* argv[])
 	auto pLightEntity = Application::Get<SceneSystem>()->CreateEntity();
 	if (auto pLight = pLightEntity.lock())
 	{
+		pLight->SetName("Sun Light");
 		auto pLightComp = pLight->AddComponent<CompLight>();
 		pLightComp->SetLightType(LightType::Directional);
 		pLightComp->SetDirection({ -0.4f, -0.8f, -0.3f });
@@ -118,6 +135,7 @@ int Main(int argc, char* argv[])
 	auto pFillLight = Application::Get<SceneSystem>()->CreateEntity();
 	if (auto pFill = pFillLight.lock())
 	{
+		pFill->SetName("Fill Light");
 		auto pLightComp = pFill->AddComponent<CompLight>();
 		pLightComp->SetLightType(LightType::Directional);
 		pLightComp->SetDirection({ 0.5f, -0.3f, 0.5f });
@@ -141,32 +159,25 @@ int Main(int argc, char* argv[])
 			}
 		}
 
-		static float f = 0.0f;
-		static int counter = 0;
-		static bool show_demo_window = true;
-		static bool show_another_window = false;
-		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+		auto* imgui = Application::Get<ImGuiSystem>();
+		const ImGuiID dockspaceId = imgui->BeginDockSpace("AilurusEditorDockSpace", ImGuiDockNodeFlags_PassthruCentralNode);
+		EditorLayout::SetupDefaultLayout(dockspaceId);
 
-		ImGuiIO& io = ImGui::GetIO();
-		ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+		static bool showWelcomeToast = true;
+		if (showWelcomeToast)
+		{
+			Widgets::PushToast("Graphics example upgraded to the docked Material editor shell.", Widgets::ToastType::Success, 4.0f);
+			showWelcomeToast = false;
+		}
 
-		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-		ImGui::Checkbox("Another Window", &show_another_window);
-
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-			counter++;
-		ImGui::SameLine();
-		ImGui::Text("counter = %d", counter);
-
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-		ImGui::End();
+		EditorLayout::DrawHierarchy();
+		EditorLayout::DrawSceneView();
+		EditorLayout::DrawInspector();
+		EditorLayout::DrawConsole();
+		EditorLayout::DrawAssetBrowser();
+		Widgets::RenderToasts();
+		imgui->EndDockSpace();
 	});
-
-	Application::Destroy();
 
 	return 0;
 }
