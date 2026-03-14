@@ -5,8 +5,6 @@
 #include <Ailurus/Systems/SceneSystem/Component/CompLight.h>
 #include <Ailurus/Systems/AssetsSystem/Material/Material.h>
 #include <Ailurus/Systems/AssetsSystem/Model/Model.h>
-#include <Ailurus/Systems/ImGuiSystem/EditorLayout.h>
-#include <Ailurus/Systems/ImGuiSystem/Widgets/Toast.h>
 #include <Ailurus/Systems/TimeSystem/TimeSystem.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/ToneMappingEffect.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/BloomMipChainEffect.h>
@@ -22,7 +20,6 @@ int Main(int argc, char* argv[])
 	Application::Create(1600, 1200, "Test", Application::Style{ 
 		.canResize = true,
 		.haveBorder = true,
-		.enableRenderImGui = true,
 		.enableRender3D = true,
 		.skyboxHDRTexturePath = "./Assets/Texture/skybox_2k.hdr"
 	});
@@ -158,25 +155,6 @@ int Main(int argc, char* argv[])
 				pEntity->SetRotation(Math::RotateAxis(cubeInfos[i].rotationAxis, rotationAngles[i]));
 			}
 		}
-
-		auto* imgui = Application::Get<ImGuiSystem>();
-		const ImGuiID dockspaceId = imgui->BeginDockSpace("AilurusEditorDockSpace", ImGuiDockNodeFlags_PassthruCentralNode);
-		EditorLayout::SetupDefaultLayout(dockspaceId);
-
-		static bool showWelcomeToast = true;
-		if (showWelcomeToast)
-		{
-			Widgets::PushToast("Graphics example upgraded to the docked Material editor shell.", Widgets::ToastType::Success, 4.0f);
-			showWelcomeToast = false;
-		}
-
-		EditorLayout::DrawHierarchy();
-		EditorLayout::DrawSceneView();
-		EditorLayout::DrawInspector();
-		EditorLayout::DrawConsole();
-		EditorLayout::DrawAssetBrowser();
-		Widgets::RenderToasts();
-		imgui->EndDockSpace();
 	});
 
 	return 0;

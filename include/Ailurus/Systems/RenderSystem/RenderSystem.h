@@ -35,7 +35,7 @@ namespace Ailurus
 		using PostSwapChainRebuild = std::function<void()>;
 		
 	public:
-		RenderSystem(bool enableImGui, bool enable3D, const std::string& skyboxHDRTexturePath = {});
+		RenderSystem(bool enable3D, const std::string& skyboxHDRTexturePath = {});
 		~RenderSystem();
 
 	public:
@@ -109,9 +109,9 @@ namespace Ailurus
 		void UpdateGlobalUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
+		void SyncMainCameraAspectToSwapChain();
 		void RenderPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer);
 		void RenderShadowPass(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
-		void RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer);
 		void RenderSkybox(VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
@@ -138,7 +138,6 @@ namespace Ailurus
 	private:
 		bool _needRebuildSwapChain = false;
 		bool _enable3D = false;
-		bool _enableImGui = false;
 
 		// Current main camera
 		CompCamera* _pMainCamera = nullptr;

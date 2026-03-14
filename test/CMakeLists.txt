@@ -17,3 +17,4 @@ create_ailurus_test (ailurus_test_string                   TestString.cpp)
 create_ailurus_test (ailurus_test_enum_reflection          TestEnumReflection.cpp)
 
 create_ailurus_test (ailurus_test_uniform_std140           Graphics/TestUniformStd140.cpp)
+create_ailurus_test (ailurus_test_camera_projection        Graphics/TestCamera.cpp)

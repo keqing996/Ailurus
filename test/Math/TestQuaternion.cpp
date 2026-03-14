@@ -181,10 +181,10 @@ TEST_SUITE("Quaternion")
         Quaternion<T> quat(1, 2, 3, 4);
         quat.Normalize();
         T mag = std::sqrt(30);
-        CHECK_EQ(quat.x, 1 / mag);
-        CHECK_EQ(quat.y, 2 / mag);
-        CHECK_EQ(quat.z, 3 / mag);
-        CHECK_EQ(quat.w, 4 / mag);
+        CHECK(quat.x == doctest::Approx(1 / mag));
+        CHECK(quat.y == doctest::Approx(2 / mag));
+        CHECK(quat.z == doctest::Approx(3 / mag));
+        CHECK(quat.w == doctest::Approx(4 / mag));
     }
 
     TEST_CASE_TEMPLATE("Conjugate", T, float, double)

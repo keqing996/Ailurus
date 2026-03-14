@@ -14,7 +14,7 @@ Central rendering orchestrator: forward rendering pipeline, shadow mapping, ligh
 ### RenderSystem Class
 Central orchestrator managing shader library, render passes, lighting, uniform buffers, post-processing, and statistics.
 
-**Constructor:** `RenderSystem(bool enableImGui, bool enable3D)`
+**Constructor:** `RenderSystem(bool enable3D, const std::string& skyboxHDRTexturePath = {})`
 - Initializes ShaderLibrary
 - Creates PostProcessChain with Bloom + ToneMapping effects
 
@@ -45,13 +45,12 @@ RenderScene()
 ├─ UpdateMaterialInstanceUniformBuffer() — Per-material uniforms
 ├─ RenderShadowPass() — Depth-only per cascade
 ├─ RenderPass(Forward) — HDR offscreen color+depth
-├─ PostProcessChain::Execute() — Bloom → ToneMapping → swapchain
-└─ RenderImGuiPass() — UI overlay (if enabled)
+└─ PostProcessChain::Execute() — Bloom → ToneMapping → swapchain
 ```
 
 ### RenderPassType Enum
 ```cpp
-REFLECTION_ENUM(RenderPassType, Shadow, Forward, PostProcess, ImGui)
+REFLECTION_ENUM(RenderPassType, Shadow, Forward, PostProcess)
 ```
 
 ### Global Uniform Buffer Layout (std140)

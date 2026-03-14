@@ -32,7 +32,6 @@
 #include <VulkanContext/Descriptor/VulkanDescriptorWriter.h>
 #include <VulkanContext/Resource/Image/VulkanSampler.h>
 #include <VulkanContext/Resource/Image/VulkanImage.h>
-#include "Ailurus/Systems/ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Systems/RenderSystem/RenderPass/RenderPassType.h"
 #include "Detail/RenderIntermediateVariable.h"
 #include "Skybox/Skybox.h"
@@ -391,6 +390,8 @@ namespace Ailurus
 		if (extent.width == 0 || extent.height == 0)
 			return;
 
+		SyncMainCameraAspectToSwapChain();
+
 		VulkanContext::RenderFrame(&_needRebuildSwapChain,
 			[this](uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer, VulkanDescriptorAllocator* pDescriptorAllocator) -> void {
 				// Get swap chain for image layout transitions
@@ -604,10 +605,6 @@ namespace Ailurus
 							vk::PipelineStageFlagBits::eColorAttachmentOutput);
 					}
 				}
-
-				// ImGui pass (renders on top of swapchain, which is in ColorAttachment layout)
-				if (_enableImGui)
-					RenderImGuiPass(swapChainImageIndex, pCommandBuffer);
 
 				// Transition image to present layout after rendering
 				pCommandBuffer->ImageMemoryBarrier(
@@ -1056,34 +1053,5 @@ namespace Ailurus
 		const Matrix4x4f inverseVP = vpMat.Inverse();
 
 		_pSkybox->Render(pCommandBuffer, inverseVP);
-	}
-
-	void RenderSystem::RenderImGuiPass(uint32_t swapChainImageIndex, VulkanCommandBuffer* pCommandBuffer)
-	{
-		auto pImGui = Application::Get<ImGuiSystem>();
-
-		// Get swap chain image view and depth image view
-		auto pSwapChain = VulkanContext::GetSwapChain();
-		if (pSwapChain == nullptr)
-		{
-			Logger::LogError("SwapChain not found");
-			return;
-		}
-
-		const auto& imageViews = pSwapChain->GetSwapChainImageViews();
-		if (swapChainImageIndex >= imageViews.size())
-		{
-			Logger::LogError("Invalid swap chain image index");
-			return;
-		}
-
-		vk::ImageView colorImageView = imageViews[swapChainImageIndex];
-		vk::Extent2D extent = pSwapChain->GetConfig().extent;
-
-		// ImGui doesn't need depth or MSAA, and should load existing content (clearColor=false)
-		// Always render directly to swapchain image (no resolve needed)
-		pCommandBuffer->BeginRendering(colorImageView, nullptr, nullptr, extent, false, false);
-		pImGui->Render(pCommandBuffer);
-		pCommandBuffer->EndRendering();
 	}
 } // namespace Ailurus

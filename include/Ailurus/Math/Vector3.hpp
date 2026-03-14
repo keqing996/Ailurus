@@ -58,32 +58,21 @@ namespace Ailurus
 
 		Vector3& Normalize()
 		{
-			if constexpr (std::is_floating_point_v<ElementType>)
+			ElementType mag = Magnitude();
+			if (mag > 0)
 			{
-				auto n = glm::normalize(Glm());
-				x = n.x; y = n.y; z = n.z;
-			}
-			else
-			{
-				ElementType mag = Magnitude();
-				if (mag > 0) { x /= mag; y /= mag; z /= mag; }
+				x /= mag;
+				y /= mag;
+				z /= mag;
 			}
 			return *this;
 		}
 
 		Vector3 Normalized() const
 		{
-			if constexpr (std::is_floating_point_v<ElementType>)
-			{
-				auto n = glm::normalize(Glm());
-				return Vector3(n.x, n.y, n.z);
-			}
-			else
-			{
-				Vector3 result(*this);
-				result.Normalize();
-				return result;
-			}
+			Vector3 result(*this);
+			result.Normalize();
+			return result;
 		}
 
 		ElementType Dot(const Vector3& other) const

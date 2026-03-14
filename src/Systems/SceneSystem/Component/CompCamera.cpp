@@ -134,14 +134,15 @@ namespace Ailurus
 
 	void CompCamera::Set(float fovHorizontal, float aspect, float n, float f)
 	{
-		_fovHorizontal = Math::DegreeToRadian(fovHorizontal) / 2;
+		_fovHorizontal = Math::DegreeToRadian(fovHorizontal);
 		_aspect = aspect;
 		_nearPlaneDist = n;
 		_farPlaneDist = f;
 
-		_right = n * std::tan(_fovHorizontal);
+		const float halfHorizontalFov = _fovHorizontal / 2.0f;
+		_right = n * std::tan(halfHorizontalFov);
 		_left = -_right;
-		_top = _aspect * _right;
+		_top = _right / _aspect;
 		_bottom = -_top;
 	}
 

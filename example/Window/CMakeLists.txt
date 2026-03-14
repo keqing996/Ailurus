@@ -1,9 +1,6 @@
 add_executable          (ailurus_example_window_create ./ExampleWindowCreate.cpp)
 target_link_libraries   (ailurus_example_window_create PUBLIC ailurus)
 
-add_executable          (ailurus_example_window_imgui ./ExampleWindowImGui.cpp ../../submodule/imgui/imgui_demo.cpp)
-target_link_libraries   (ailurus_example_window_imgui PUBLIC ailurus)
-
 add_executable          (ailurus_example_window_callback ./ExampleWindowCallback.cpp)
 target_link_libraries   (ailurus_example_window_callback PUBLIC ailurus)
 

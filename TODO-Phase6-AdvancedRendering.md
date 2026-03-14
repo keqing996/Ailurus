@@ -19,8 +19,7 @@ RenderSystem::RenderScene()
  ├─ RenderShadowPass()             → 深度渲染到 4 张 2048² shadow map
  ├─ RenderPass(Forward)            → PBR 前向渲染到 offscreen HDR RT (R16G16B16A16Sfloat)
  │   └─ BeginRendering() → 清屏, 渲染所有 mesh → RenderSkybox(深度≤1.0, 仅填充空像素)
- ├─ PostProcessChain::Execute()    → Bloom(mip chain) → ToneMapping(ACES) → swapchain
- └─ RenderImGuiPass()              → ImGui 叠加
+ └─ PostProcessChain::Execute()    → Bloom(mip chain) → ToneMapping(ACES) → swapchain
 ```
 
 ### 关键架构约束

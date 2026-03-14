@@ -14,7 +14,7 @@ file (GLOB_RECURSE AILURUS_SRC ./src/*.cpp)
 add_library                 (ailurus STATIC ${AILURUS_SRC})
 target_include_directories  (ailurus PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_include_directories  (ailurus PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/)
-target_link_libraries       (ailurus PUBLIC imgui nlohmann_json assimp stb_image spdlog glm)
+target_link_libraries       (ailurus PUBLIC nlohmann_json assimp stb_image spdlog glm)
 target_link_libraries       (ailurus PRIVATE SDL3-static vulkan_custom)
 
 if (WIN32)

@@ -54,7 +54,6 @@ namespace Ailurus
 	std::unique_ptr<RenderSystem> 	Application::_pRenderSystem = nullptr;
 	std::unique_ptr<AssetsSystem> 	Application::_pAssetsSystem = nullptr;
 	std::unique_ptr<SceneSystem> 	Application::_pSceneManager = nullptr;
-	std::unique_ptr<ImGuiSystem> 	Application::_pImGuiSystem = nullptr;
 
 	uint32_t						Application::_targetFrameRate = 60;
 	double							Application::_targetFrameTime = 1.0 / 60.0;
@@ -101,12 +100,9 @@ namespace Ailurus
 
 		_pTimeSystem.reset(new TimeSystem());
 		_pInputManager.reset(new InputSystem());
-		_pRenderSystem.reset(new RenderSystem(style.enableRenderImGui, style.enableRender3D, style.skyboxHDRTexturePath));
+		_pRenderSystem.reset(new RenderSystem(style.enableRender3D, style.skyboxHDRTexturePath));
 		_pAssetsSystem.reset(new AssetsSystem());
 		_pSceneManager.reset(new SceneSystem());
-
-		if (style.enableRenderImGui)
-			_pImGuiSystem.reset(new ImGuiSystem());
 
 		if (_onWindowCreated != nullptr)
 			_onWindowCreated();
@@ -121,7 +117,6 @@ namespace Ailurus
 			if (_onWindowPreDestroyed)
 				_onWindowPreDestroyed();
 
-			_pImGuiSystem = nullptr;
 			_pSceneManager = nullptr;
 			_pAssetsSystem = nullptr;
 			_pRenderSystem = nullptr;
@@ -157,9 +152,6 @@ namespace Ailurus
 				break;
 
 			_pRenderSystem->CheckRebuildSwapChain();
-
-			if (_pImGuiSystem != nullptr)
-				_pImGuiSystem->NewFrame();
 
 			_pSceneManager->UpdateAllComponents(static_cast<float>(_pTimeSystem->DeltaTime()));
 
@@ -409,12 +401,6 @@ namespace Ailurus
 		return _pAssetsSystem.get();
 	}
 
-	template<>
-	ImGuiSystem* Application::Get<ImGuiSystem>()
-	{
-		return _pImGuiSystem.get();
-	}
-
 	void Application::EventLoop(bool* quitLoop)
 	{
 		if (_pInputManager != nullptr)
@@ -428,9 +414,6 @@ namespace Ailurus
 
 			bool closeWindow = false;
 			HandleEvent(&event, &closeWindow);
-
-			if (_pImGuiSystem != nullptr)
-				_pImGuiSystem->HandleEvent(&event);
 
 			if (_pInputManager != nullptr)
 				_pInputManager->HandleEvent(_pWindow, &event);

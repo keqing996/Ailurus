@@ -9,7 +9,6 @@
 #include "Ailurus/Systems/InputSystem/InputSystem.h"
 #include "Ailurus/Systems/RenderSystem/RenderSystem.h"
 #include "Ailurus/Systems/SceneSystem/SceneSystem.h"
-#include "Ailurus/Systems/ImGuiSystem/ImGuiSystem.h"
 #include "Ailurus/Systems/AssetsSystem/AssetsSystem.h"
 #include "Ailurus/Math/Vector2.hpp"
 #include "Ailurus/Utility/NonCopyable.h"
@@ -23,7 +22,6 @@ namespace Ailurus
         {
             bool canResize = true;
             bool haveBorder = true;
-        	bool enableRenderImGui = true;
         	bool enableRender3D = true;
 			std::string skyboxHDRTexturePath;
         };
@@ -186,7 +184,6 @@ namespace Ailurus
         static std::unique_ptr<RenderSystem> _pRenderSystem;
     	static std::unique_ptr<AssetsSystem> _pAssetsSystem;
         static std::unique_ptr<SceneSystem> _pSceneManager;
-    	static std::unique_ptr<ImGuiSystem> _pImGuiSystem;
 
     	// Frame rate limit
     	static uint32_t _targetFrameRate;

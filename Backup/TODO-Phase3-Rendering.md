@@ -211,7 +211,7 @@ for (const auto pEntity : allEntities)
 
 ### 现状
 
-没有任何渲染统计 API。无法知道每帧绘制了多少 draw call、多少三角形、裁剪了多少物体。对性能优化和调试工具（ImGui 面板）都是刚需。
+没有任何渲染统计 API。无法知道每帧绘制了多少 draw call、多少三角形、裁剪了多少物体。对性能优化和调试工具都是刚需。
 
 ### 改造方案
 
@@ -276,7 +276,7 @@ private:
    - 累加三角形数：`_renderStats.triangleCount += indexCount / 3;`
 
 **使用场景**：
-- ImGui 调试面板显示实时统计
+- 外置调试工具或日志面板显示实时统计
 - 帧率分析和性能瓶颈定位
 - 视锥裁剪效果验证
 
@@ -288,7 +288,7 @@ private:
 
 `RenderPassType` 枚举（`include/App/Ailurus/Application/RenderSystem/RenderPass/RenderPassType.h`）是硬编码的：
 ```cpp
-REFLECTION_ENUM(RenderPassType, Shadow, Forward, PostProcess, ImGui);
+REFLECTION_ENUM(RenderPassType, Shadow, Forward, PostProcess);
 ```
 
 用户无法插入自定义的 render pass（如 wireframe overlay、outline pass、depth prepass 等）。

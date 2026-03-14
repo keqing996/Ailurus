@@ -20,8 +20,7 @@ Application::Loop(callback)
      ├─ RenderShadowPass()           → 阴影深度渲染
      ├─ RenderPass(Forward)          → PBR 前向渲染到 offscreen HDR RT
      │   └─ VulkanCommandBuffer::BeginRendering()  → 清屏 + 开始渲染
-     ├─ PostProcess Chain            → Bloom → ToneMapping → 输出到 swapchain
-     └─ RenderImGuiPass()            → ImGui 叠加渲染
+    └─ PostProcess Chain            → Bloom → ToneMapping → 输出到 swapchain
 ```
 
 ### 关键文件清单

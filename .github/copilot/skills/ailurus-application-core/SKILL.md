@@ -28,8 +28,8 @@ All members and methods are static. Non-copyable. Manages the entire framework l
 struct Style {
     bool canResize;           // SDL_WINDOW_RESIZABLE
     bool haveBorder;          // !SDL_WINDOW_BORDERLESS
-    bool enableRenderImGui;   // Optional ImGui overlay
     bool enableRender3D;      // Optional 3D rendering
+    std::string skyboxHDRTexturePath;
 };
 ```
 
@@ -40,25 +40,23 @@ Application::Get<InputSystem>()
 Application::Get<RenderSystem>()
 Application::Get<AssetsSystem>()
 Application::Get<SceneSystem>()
-Application::Get<ImGuiSystem>()  // nullptr if not enabled
 ```
 
 ### Subsystem Initialization Order (Critical)
 ```
-TimeSystem → InputSystem → RenderSystem → AssetsSystem → SceneSystem → ImGuiSystem
+TimeSystem → InputSystem → RenderSystem → AssetsSystem → SceneSystem
 ```
 Destruction is reverse order.
 
 ### Main Loop Flow
 ```
 1. TimeSystem::Update() — delta time
-2. EventLoop() — SDL events → Input + ImGui + window handling
+2. EventLoop() — SDL events → Input + window handling
 3. RenderSystem::CheckRebuildSwapChain()
-4. ImGuiSystem::NewFrame() (if enabled)
-5. SceneSystem::UpdateAllComponents(deltaTime)
-6. User loop function (lambda)
-7. RenderSystem::RenderScene()
-8. Frame rate limiting (SDL_DelayNS)
+4. SceneSystem::UpdateAllComponents(deltaTime)
+5. User loop function (lambda)
+6. RenderSystem::RenderScene()
+7. Frame rate limiting (SDL_DelayNS)
 ```
 
 ### SDL3 Integration
@@ -84,7 +82,7 @@ SetCallbackOnWindowCursorEnteredOrLeaved(void(bool))
 ### Build System (CMake)
 - C++20 required
 - Main target: `ailurus` (static library)
-- Public deps: imgui, nlohmann_json, assimp, stb_image, spdlog, glm
+- Public deps: nlohmann_json, assimp, stb_image, spdlog, glm
 - Private deps: SDL3-static, vulkan_custom
 - PCH: `src/VulkanContext/VulkanPch.h`
 - Options: `AILURUS_ENABLE_TEST`, `AILURUS_ENABLE_EXAMPLE`
@@ -94,7 +92,11 @@ SetCallbackOnWindowCursorEnteredOrLeaved(void(bool))
 ### Example App Pattern
 ```cpp
 int Main(int argc, char* argv[]) {
-    Application::Create(800, 800, "Test", Style{true, true, true, true});
+    Application::Create(800, 800, "Test", Style{
+        .canResize = true,
+        .haveBorder = true,
+        .enableRender3D = true,
+    });
     
     auto model = Application::Get<AssetsSystem>()->LoadModel("path");
     auto material = Application::Get<AssetsSystem>()->LoadMaterial("path");

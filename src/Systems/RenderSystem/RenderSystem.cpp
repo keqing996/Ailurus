@@ -17,6 +17,8 @@
 #include "Skybox/Skybox.h"
 #include "IBL/IBLManager.h"
 
+#include <cmath>
+
 namespace Ailurus
 {
 	const char* RenderSystem::GLOBAL_UNIFORM_SET_NAME = "globalUniform";
@@ -40,9 +42,8 @@ namespace Ailurus
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_AMBIENT_COLOR = "ambientColor";
 	const char* RenderSystem::GLOBAL_UNIFORM_ACCESS_SHADOW_BIAS_PARAMS = "shadowBiasParams";
 
-	RenderSystem::RenderSystem(bool enableImGui, bool enable3D, const std::string& skyboxHDRTexturePath)
+	RenderSystem::RenderSystem(bool enable3D, const std::string& skyboxHDRTexturePath)
 		: _enable3D(enable3D)
-		, _enableImGui(enableImGui)
 	{
 		_pShaderLibrary.reset(new ShaderLibrary());
 
@@ -118,10 +119,32 @@ namespace Ailurus
 
 	void RenderSystem::SetMainCamera(CompCamera* pCamera)
 	{
-		if (pCamera == nullptr)
+		_pMainCamera = pCamera;
+		SyncMainCameraAspectToSwapChain();
+	}
+
+	void RenderSystem::SyncMainCameraAspectToSwapChain()
+	{
+		if (_pMainCamera == nullptr || !_pMainCamera->IsPerspective())
 			return;
 
-		_pMainCamera = pCamera;
+		auto* pSwapChain = VulkanContext::GetSwapChain();
+		if (pSwapChain == nullptr)
+			return;
+
+		const auto& extent = pSwapChain->GetConfig().extent;
+		if (extent.width == 0 || extent.height == 0)
+			return;
+
+		const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+		if (std::abs(_pMainCamera->GetAspectRatio() - aspect) < 0.0001f)
+			return;
+
+		_pMainCamera->Set(
+			_pMainCamera->GetHorizontalFOV(),
+			aspect,
+			_pMainCamera->GetNear(),
+			_pMainCamera->GetFar());
 	}
 
 	CompCamera* RenderSystem::GetMainCamera() const
@@ -266,6 +289,8 @@ namespace Ailurus
 		// Rebuild skybox pipeline (MSAA samples may have changed)
 		if (_pSkybox)
 			_pSkybox->RebuildPipeline(vk::Format::eR16G16B16A16Sfloat, vk::Format::eD32Sfloat);
+
+		SyncMainCameraAspectToSwapChain();
 
 		for (const auto& [key, postRebuildCallback] : _postSwapChainRebuildCallbacks)
 		{
