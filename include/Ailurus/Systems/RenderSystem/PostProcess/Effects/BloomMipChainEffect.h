@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <memory>
 #include <vulkan/vulkan.hpp>
@@ -36,10 +37,39 @@ namespace Ailurus
 
         void Shutdown() override;
 
-        void SetThreshold(float threshold) { _threshold = threshold; }
-        void SetSoftKnee(float softKnee) { _softKnee = softKnee; }
-        void SetBloomIntensity(float intensity) { _bloomIntensity = intensity; }
-        void SetBlendFactor(float factor) { _blendFactor = factor; }
+        void SetChangeCallback(const std::function<void()>& callback) { _onChanged = callback; }
+        void SetThreshold(float threshold)
+        {
+            if (_threshold == threshold)
+                return;
+
+            _threshold = threshold;
+            NotifyChanged();
+        }
+        void SetSoftKnee(float softKnee)
+        {
+            if (_softKnee == softKnee)
+                return;
+
+            _softKnee = softKnee;
+            NotifyChanged();
+        }
+        void SetBloomIntensity(float intensity)
+        {
+            if (_bloomIntensity == intensity)
+                return;
+
+            _bloomIntensity = intensity;
+            NotifyChanged();
+        }
+        void SetBlendFactor(float factor)
+        {
+            if (_blendFactor == factor)
+                return;
+
+            _blendFactor = factor;
+            NotifyChanged();
+        }
 
         float GetThreshold() const { return _threshold; }
         float GetSoftKnee() const { return _softKnee; }
@@ -59,6 +89,7 @@ namespace Ailurus
         float _softKnee = 0.5f;
         float _bloomIntensity = 0.5f;
         float _blendFactor = 0.7f;
+        std::function<void()> _onChanged;
 
         // Render target handles (stable pointers into the resource pool)
         RTHandle* _downMips[MIP_COUNT] = {};
@@ -75,5 +106,11 @@ namespace Ailurus
         std::unique_ptr<VulkanPipeline> _compositePipeline;
 
         VulkanSampler* _sampler = nullptr;
+
+        void NotifyChanged() const
+        {
+            if (_onChanged)
+                _onChanged();
+        }
     };
 } // namespace Ailurus

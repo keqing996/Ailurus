@@ -1,4 +1,5 @@
 #include "Ailurus/Systems/SceneSystem/Entity/Entity.h"
+#include "Ailurus/Systems/SceneSystem/SceneSystem.h"
 #include "Ailurus/Utility/Logger.h"
 #include "Ailurus/Math/Math.hpp"
 #include <algorithm>
@@ -17,7 +18,12 @@ namespace Ailurus
 
 	void Entity::SetName(const std::string& name)
 	{
+		if (_name == name)
+			return;
+
 		_name = name;
+		if (_sceneSystem != nullptr)
+			_sceneSystem->NotifyEntityNameChanged(*this);
 	}
 
 	Entity* Entity::GetParent() const
@@ -39,6 +45,9 @@ namespace Ailurus
 
 	void Entity::SetParent(Entity* parent)
 	{
+		if (_parent == parent)
+			return;
+
 		if (parent == this)
 			return;
 
@@ -61,6 +70,9 @@ namespace Ailurus
 		// Add to new parent
 		if (_parent != nullptr)
 			_parent->_children.push_back(this);
+
+		if (_sceneSystem != nullptr)
+			_sceneSystem->NotifyEntityParentChanged(*this);
 	}
 
 	const std::vector<Entity*>& Entity::GetChildren() const
@@ -75,7 +87,12 @@ namespace Ailurus
 
 	void Entity::SetPosition(const Vector3f& position)
 	{
+		if (_position == position)
+			return;
+
 		_position = position;
+		if (_sceneSystem != nullptr)
+			_sceneSystem->NotifyEntityTransformChanged(*this);
 	}
 
 	Quaternionf Entity::GetRotation() const
@@ -85,7 +102,12 @@ namespace Ailurus
 
 	void Entity::SetRotation(const Quaternionf& rotation)
 	{
+		if (_rotation == rotation)
+			return;
+
 		_rotation = rotation;
+		if (_sceneSystem != nullptr)
+			_sceneSystem->NotifyEntityTransformChanged(*this);
 	}
 
 	Vector3f Entity::GetScale() const
@@ -95,7 +117,12 @@ namespace Ailurus
 
 	void Entity::SetScale(const Vector3f& scale)
 	{
+		if (_scale == scale)
+			return;
+
     	_scale = scale;
+		if (_sceneSystem != nullptr)
+			_sceneSystem->NotifyEntityTransformChanged(*this);
 	}
 
 	Component* Entity::GetComponent(ComponentType type) const

@@ -10,11 +10,23 @@ namespace Ailurus
 	{
 	}
 
+	void SceneSystem::AddObserver(void* key, SceneObserver* observer)
+	{
+		_observers[key] = observer;
+	}
+
+	void SceneSystem::RemoveObserver(void* key)
+	{
+		_observers.erase(key);
+	}
+
 	std::weak_ptr<Entity> SceneSystem::CreateEntity()
 	{
 		_entityIdCounter++;
 		auto pEntity = std::make_shared<Entity>(_entityIdCounter);
+		pEntity->_sceneSystem = this;
 		_entityMap[_entityIdCounter] = pEntity;
+		NotifyEntityCreated(*pEntity);
 		return pEntity;
 	}
 
@@ -46,6 +58,9 @@ namespace Ailurus
 		for (uint32_t childGuid : childGuids)
 			DestroyEntity(childGuid);
 
+		NotifyEntityDestroyed(*pEntity);
+		pEntity->_sceneSystem = nullptr;
+
 		_entityMap.erase(it);
 		return true;
 	}
@@ -70,6 +85,56 @@ namespace Ailurus
 
 	SceneSystem::SceneSystem()
 	{
+	}
+
+	void SceneSystem::NotifyEntityCreated(const Entity& entity)
+	{
+		for (const auto& [key, observer] : _observers)
+		{
+			(void)key;
+			if (observer != nullptr)
+				observer->OnEntityCreated(entity);
+		}
+	}
+
+	void SceneSystem::NotifyEntityDestroyed(const Entity& entity)
+	{
+		for (const auto& [key, observer] : _observers)
+		{
+			(void)key;
+			if (observer != nullptr)
+				observer->OnEntityDestroyed(entity);
+		}
+	}
+
+	void SceneSystem::NotifyEntityNameChanged(const Entity& entity)
+	{
+		for (const auto& [key, observer] : _observers)
+		{
+			(void)key;
+			if (observer != nullptr)
+				observer->OnEntityNameChanged(entity);
+		}
+	}
+
+	void SceneSystem::NotifyEntityParentChanged(const Entity& entity)
+	{
+		for (const auto& [key, observer] : _observers)
+		{
+			(void)key;
+			if (observer != nullptr)
+				observer->OnEntityParentChanged(entity);
+		}
+	}
+
+	void SceneSystem::NotifyEntityTransformChanged(const Entity& entity)
+	{
+		for (const auto& [key, observer] : _observers)
+		{
+			(void)key;
+			if (observer != nullptr)
+				observer->OnEntityTransformChanged(entity);
+		}
 	}
 
 	void SceneSystem::UpdateAllComponents(float deltaTime)

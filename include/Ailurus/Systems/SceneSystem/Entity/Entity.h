@@ -12,6 +12,8 @@
 
 namespace Ailurus
 {
+	class SceneSystem;
+
 	class Entity
 	{
 	public:
@@ -86,6 +88,7 @@ namespace Ailurus
 
 		// Global uid
 		uint32_t _guid;
+		SceneSystem* _sceneSystem = nullptr;
 
 		// Name
 		std::string _name;

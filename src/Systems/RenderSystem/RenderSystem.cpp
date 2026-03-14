@@ -58,9 +58,23 @@ namespace Ailurus
 			swapChainConfig.extent.width,
 			swapChainConfig.extent.height,
 			vk::Format::eR16G16B16A16Sfloat);
-		_postProcessChain->AddEffect<BloomMipChainEffect>();
-		_postProcessChain->AddEffect<ToneMappingEffect>();
+		_pBloomMipChainEffect = _postProcessChain->AddEffect<BloomMipChainEffect>();
+		_pToneMappingEffect = _postProcessChain->AddEffect<ToneMappingEffect>();
 		_postProcessChain->InsertEffect<SSAOEffect>(0);
+
+		if (_pBloomMipChainEffect != nullptr)
+		{
+			_pBloomMipChainEffect->SetChangeCallback([this]() {
+				NotifyRenderSettingsChanged();
+			});
+		}
+
+		if (_pToneMappingEffect != nullptr)
+		{
+			_pToneMappingEffect->SetChangeCallback([this]() {
+				NotifyRenderSettingsChanged();
+			});
+		}
 
 		// Initialize skybox
 		if (enable3D)
@@ -152,9 +166,23 @@ namespace Ailurus
 		return _pMainCamera;
 	}
 
+	ToneMappingEffect* RenderSystem::GetToneMappingEffect() const
+	{
+		return _pToneMappingEffect;
+	}
+
+	BloomMipChainEffect* RenderSystem::GetBloomMipChainEffect() const
+	{
+		return _pBloomMipChainEffect;
+	}
+
 	void RenderSystem::SetSkyboxEnabled(bool enabled)
 	{
+		if (_skyboxEnabled == enabled)
+			return;
+
 		_skyboxEnabled = enabled;
+		NotifyRenderSettingsChanged();
 	}
 
 	bool RenderSystem::IsSkyboxEnabled() const
@@ -164,7 +192,12 @@ namespace Ailurus
 
 	void RenderSystem::SetClearColor(float r, float g, float b, float a)
 	{
-		_clearColor = {r, g, b, a};
+		const std::array<float, 4> newColor = {r, g, b, a};
+		if (_clearColor == newColor)
+			return;
+
+		_clearColor = newColor;
+		NotifyRenderSettingsChanged();
 	}
 
 	std::array<float, 4> RenderSystem::GetClearColor() const
@@ -174,27 +207,48 @@ namespace Ailurus
 
 	void RenderSystem::SetAmbientColor(float r, float g, float b)
 	{
-		_ambientColor = {r, g, b};
+		const Vector3f newColor = {r, g, b};
+		if (_ambientColor == newColor)
+			return;
+
+		_ambientColor = newColor;
+		NotifyRenderSettingsChanged();
 	}
 
 	void RenderSystem::SetAmbientStrength(float strength)
 	{
+		if (_ambientStrength == strength)
+			return;
+
 		_ambientStrength = strength;
+		NotifyRenderSettingsChanged();
 	}
 
 	void RenderSystem::SetShadowConstantBias(float bias)
 	{
+		if (_shadowConstantBias == bias)
+			return;
+
 		_shadowConstantBias = bias;
+		NotifyRenderSettingsChanged();
 	}
 
 	void RenderSystem::SetShadowSlopeScale(float scale)
 	{
+		if (_shadowSlopeScale == scale)
+			return;
+
 		_shadowSlopeScale = scale;
+		NotifyRenderSettingsChanged();
 	}
 
 	void RenderSystem::SetShadowNormalOffset(float offset)
 	{
+		if (_shadowNormalOffset == offset)
+			return;
+
 		_shadowNormalOffset = offset;
+		NotifyRenderSettingsChanged();
 	}
 
 	const RenderStats& RenderSystem::GetRenderStats() const
@@ -209,6 +263,7 @@ namespace Ailurus
 
 		VulkanContext::SetVSyncEnabled(enabled);
 		RequestRebuildSwapChain();
+		NotifyRenderSettingsChanged();
 	}
 
 	bool RenderSystem::IsVSyncEnabled() const
@@ -224,6 +279,17 @@ namespace Ailurus
 
 		VulkanContext::SetMSAASamples(enabled ? vk::SampleCountFlagBits::e4 : vk::SampleCountFlagBits::e1);
 		RequestRebuildSwapChain();
+		NotifyRenderSettingsChanged();
+	}
+
+	void RenderSystem::AddSettingsObserver(void* key, RenderSettingsObserver* observer)
+	{
+		_settingsObservers[key] = observer;
+	}
+
+	void RenderSystem::RemoveSettingsObserver(void* key)
+	{
+		_settingsObservers.erase(key);
 	}
 
 	bool RenderSystem::IsMSAAEnabled() const
@@ -255,6 +321,16 @@ namespace Ailurus
 	void RenderSystem::RemoveCallbackPostSwapChainRebuild(void* key)
 	{
 		_postSwapChainRebuildCallbacks.erase(key);
+	}
+
+	void RenderSystem::NotifyRenderSettingsChanged()
+	{
+		for (const auto& [key, observer] : _settingsObservers)
+		{
+			(void)key;
+			if (observer != nullptr)
+				observer->OnRenderSettingsChanged();
+		}
 	}
 
 	void RenderSystem::GraphicsWaitIdle() const

@@ -13,3 +13,6 @@
 [submodule "submodule/assimp"]
 	path = submodule/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "submodule/libwebsockets"]
+	path = submodule/libwebsockets
+	url = https://github.com/warmcat/libwebsockets.git

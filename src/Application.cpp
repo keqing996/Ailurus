@@ -48,6 +48,8 @@ namespace Ailurus
 	std::function<void(bool)> 		Application::_onWindowFocusChanged = nullptr;
 	std::function<void(bool)> 		Application::_onWindowCursorEnteredOrLeaved = nullptr;
 	std::function<void(bool)> 		Application::_onWindowCursorVisibleChanged = nullptr;
+	std::function<void()> 			Application::_onMainLoopPostEvent = nullptr;
+	std::function<void()> 			Application::_onMainLoopPreRender = nullptr;
 
 	std::unique_ptr<TimeSystem> 	Application::_pTimeSystem = nullptr;
 	std::unique_ptr<InputSystem> 	Application::_pInputManager = nullptr;
@@ -151,12 +153,18 @@ namespace Ailurus
 			if (shouldBreakLoop)
 				break;
 
+			if (_onMainLoopPostEvent != nullptr)
+				_onMainLoopPostEvent();
+
 			_pRenderSystem->CheckRebuildSwapChain();
 
 			_pSceneManager->UpdateAllComponents(static_cast<float>(_pTimeSystem->DeltaTime()));
 
 			if (loopFunction != nullptr)
 				loopFunction();
+
+			if (_onMainLoopPreRender != nullptr)
+				_onMainLoopPreRender();
 
 			_pRenderSystem->RenderScene();
 
@@ -364,6 +372,16 @@ namespace Ailurus
 	void Application::SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback)
 	{
 		_onWindowCursorVisibleChanged = callback;
+	}
+
+	void Application::SetCallbackOnMainLoopPostEvent(const std::function<void()>& callback)
+	{
+		_onMainLoopPostEvent = callback;
+	}
+
+	void Application::SetCallbackOnMainLoopPreRender(const std::function<void()>& callback)
+	{
+		_onMainLoopPreRender = callback;
 	}
 
 	void* Application::GetSDLWindowPtr()

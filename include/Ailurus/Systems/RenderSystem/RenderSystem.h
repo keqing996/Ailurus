@@ -17,6 +17,8 @@ namespace Ailurus
 {
 	class MaterialInstance;
 	class Mesh;
+	class ToneMappingEffect;
+	class BloomMipChainEffect;
 	class CompStaticMeshRender;
 	class VulkanCommandBuffer;
 	class VulkanDescriptorAllocator;
@@ -27,6 +29,13 @@ namespace Ailurus
 	class Skybox;
 	class IBLManager;
 	struct RenderIntermediateVariable;
+
+	class RenderSettingsObserver
+	{
+	public:
+		virtual ~RenderSettingsObserver() = default;
+		virtual void OnRenderSettingsChanged() {}
+	};
 
 	class RenderSystem : public NonCopyable, public NonMovable
 	{
@@ -69,6 +78,8 @@ namespace Ailurus
 
 		// Post-process access
 		PostProcessChain* GetPostProcessChain() const { return _postProcessChain.get(); }
+		ToneMappingEffect* GetToneMappingEffect() const;
+		BloomMipChainEffect* GetBloomMipChainEffect() const;
 
 		// Skybox
 		void SetSkyboxEnabled(bool enabled);
@@ -86,6 +97,8 @@ namespace Ailurus
 		bool IsMSAAEnabled() const;
 
 		// Callbacks
+		void AddSettingsObserver(void* key, RenderSettingsObserver* observer);
+		void RemoveSettingsObserver(void* key);
 		void AddCallbackPreSwapChainRebuild(void* key, const PreSwapChainRebuild& callback);
 		void AddCallbackPostSwapChainRebuild(void* key, const PostSwapChainRebuild& callback);
 		void RemoveCallbackPreSwapChainRebuild(void* key);
@@ -110,6 +123,7 @@ namespace Ailurus
 		void UpdateMaterialInstanceUniformBuffer(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RebuildSwapChain();
 		void SyncMainCameraAspectToSwapChain();
+		void NotifyRenderSettingsChanged();
 		void RenderPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer);
 		void RenderShadowPass(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
 		void RenderSkybox(VulkanCommandBuffer* pCommandBuffer);
@@ -192,6 +206,8 @@ namespace Ailurus
 
 		// Post-process chain
 		std::unique_ptr<PostProcessChain> _postProcessChain;
+		BloomMipChainEffect* _pBloomMipChainEffect = nullptr;
+		ToneMappingEffect* _pToneMappingEffect = nullptr;
 
 		// Skybox
 		std::unique_ptr<Skybox> _pSkybox;
@@ -204,6 +220,7 @@ namespace Ailurus
 		RenderStats _renderStats;
 
 		// Callback functions map
+		std::unordered_map<void*, RenderSettingsObserver*> _settingsObservers;
 		std::unordered_map<void*, PreSwapChainRebuild> _preSwapChainRebuildCallbacks;
 		std::unordered_map<void*, PostSwapChainRebuild> _postSwapChainRebuildCallbacks;
 	};

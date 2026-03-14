@@ -140,6 +140,12 @@ namespace Ailurus
         /// Called when cursor's visibility changes, true for shown and false for hided.
         static void SetCallbackOnWindowCursorVisibleChanged(const std::function<void(bool)>& callback);
 
+        /// Called once per frame after SDL events are processed and before the swapchain rebuild check.
+        static void SetCallbackOnMainLoopPostEvent(const std::function<void()>& callback);
+
+        /// Called once per frame after user logic and before rendering.
+        static void SetCallbackOnMainLoopPreRender(const std::function<void()>& callback);
+
     	/// Get native window handle (SDL_Window*).
         static void* GetSDLWindowPtr();
 
@@ -177,6 +183,8 @@ namespace Ailurus
         static std::function<void(bool)> _onWindowFocusChanged;
         static std::function<void(bool)> _onWindowCursorEnteredOrLeaved;
         static std::function<void(bool)> _onWindowCursorVisibleChanged;
+        static std::function<void()> _onMainLoopPostEvent;
+        static std::function<void()> _onMainLoopPreRender;
 
         // System
         static std::unique_ptr<TimeSystem> _pTimeSystem;

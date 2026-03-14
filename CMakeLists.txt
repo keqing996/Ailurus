@@ -15,7 +15,7 @@ add_library                 (ailurus STATIC ${AILURUS_SRC})
 target_include_directories  (ailurus PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 target_include_directories  (ailurus PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 target_link_libraries       (ailurus PUBLIC nlohmann_json assimp stb_image spdlog glm)
-target_link_libraries       (ailurus PRIVATE SDL3-static vulkan_custom)
+target_link_libraries       (ailurus PRIVATE SDL3-static vulkan_custom websockets)
 
 if (WIN32)
     target_link_libraries   (ailurus PRIVATE dwmapi) # to fix some 'DwmXXX' link errors under mingw

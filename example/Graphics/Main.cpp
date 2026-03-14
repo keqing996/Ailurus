@@ -1,5 +1,6 @@
 
 #include <Ailurus/Application.h>
+#include <Ailurus/ExternalEditor/ExternalEditorBridge.h>
 #include <Ailurus/Systems/SceneSystem/Component/CompStaticMeshRender.h>
 #include <Ailurus/Systems/SceneSystem/Component/CompCamera.h>
 #include <Ailurus/Systems/SceneSystem/Component/CompLight.h>
@@ -8,6 +9,7 @@
 #include <Ailurus/Systems/TimeSystem/TimeSystem.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/ToneMappingEffect.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/BloomMipChainEffect.h>
+#include <Ailurus/Utility/Logger.h>
 
 #include <vector>
 #include <cmath>
@@ -17,11 +19,24 @@ using namespace Ailurus;
 int Main(int argc, char* argv[])
 {
 	// Create the application instance
-	Application::Create(1600, 1200, "Test", Application::Style{ 
+	if (!Application::Create(1600, 1200, "Test", Application::Style{
 		.canResize = true,
 		.haveBorder = true,
 		.enableRender3D = true,
 		.skyboxHDRTexturePath = "./Assets/Texture/skybox_2k.hdr"
+	}))
+		return 1;
+
+	ExternalEditorBridge editorBridge;
+	Application::SetCallbackOnMainLoopPostEvent([&editorBridge]() {
+		editorBridge.PumpMainThreadPostEvent();
+	});
+	Application::SetCallbackOnMainLoopPreRender([&editorBridge]() {
+		editorBridge.PumpMainThreadPreRender();
+	});
+	Application::SetCallbackOnWindowPreDestroyed([&editorBridge]() {
+		editorBridge.RequestStop();
+		editorBridge.Join();
 	});
 
 	// Load assets and set up the scene
@@ -140,9 +155,20 @@ int Main(int argc, char* argv[])
 		pLightComp->SetIntensity(0.8f);
 	}
 
+	if (!editorBridge.Start())
+	{
+		Application::Destroy();
+		return 1;
+	}
+
+	Logger::LogInfo("Graphics renderer editor bridge: connect your browser UI to ws://127.0.0.1:{}", editorBridge.GetPort());
+
 	// Render
-	Application::Loop([cubeEntities, cubeInfos]() -> void {
+	Application::Loop([cubeEntities, cubeInfos, &editorBridge]() -> void {
 		auto deltaTime = Application::Get<TimeSystem>()->DeltaTime() / 1000.0f;
+
+		if (editorBridge.IsClientConnected())
+			return;
 
 		// Rotate all cubes with different axes and speeds
 		static std::vector<float> rotationAngles(cubeEntities.size(), 0.0f);

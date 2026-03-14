@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <memory>
 #include <vulkan/vulkan.hpp>
@@ -33,8 +34,23 @@ namespace Ailurus
 
         void Shutdown() override;
 
-        void SetExposure(float exposure) { _exposure = exposure; }
-        void SetGamma(float gamma) { _gamma = gamma; }
+        void SetChangeCallback(const std::function<void()>& callback) { _onChanged = callback; }
+        void SetExposure(float exposure)
+        {
+            if (_exposure == exposure)
+                return;
+
+            _exposure = exposure;
+            NotifyChanged();
+        }
+        void SetGamma(float gamma)
+        {
+            if (_gamma == gamma)
+                return;
+
+            _gamma = gamma;
+            NotifyChanged();
+        }
         float GetExposure() const { return _exposure; }
         float GetGamma() const { return _gamma; }
 
@@ -50,9 +66,16 @@ namespace Ailurus
 
         float _exposure = 1.0f;
         float _gamma = 2.2f;
+        std::function<void()> _onChanged;
 
         std::unique_ptr<SamplerSchema> _descriptorSetLayout;
         std::unique_ptr<VulkanPipeline> _pipeline;
         VulkanSampler* _sampler = nullptr;
+
+        void NotifyChanged() const
+        {
+            if (_onChanged)
+                _onChanged();
+        }
     };
 } // namespace Ailurus
