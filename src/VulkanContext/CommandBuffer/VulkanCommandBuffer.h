@@ -88,13 +88,21 @@ namespace Ailurus
 		/// @param extent Rendering area extent
 		/// @param clearColor If true, clear color attachment; if false, load existing content
 		/// @param useDepth If true, use depth attachment; if false, render without depth
+		/// @param clearDepth If true, clear the depth attachment; if false, load existing depth
 		/// @param depthResolveImageView Optional single-sampled depth resolve target for MSAA depth
-		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true, std::array<float, 4> clearColorValue = {0.0f, 0.0f, 0.0f, 1.0f}, vk::ImageView depthResolveImageView = nullptr);
+		void BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView, vk::Extent2D extent, bool clearColor = true, bool useDepth = true, std::array<float, 4> clearColorValue = {0.0f, 0.0f, 0.0f, 1.0f}, vk::ImageView depthResolveImageView = nullptr, bool clearDepth = true);
 		
 		/// @brief Begin dynamic rendering for depth-only pass (shadow map rendering)
 		/// @param depthImageView Depth attachment image view
 		/// @param extent Rendering area extent
 		void BeginDepthOnlyRendering(vk::ImageView depthImageView, vk::Extent2D extent);
+
+		/// @brief Begin dynamic rendering for the G-Buffer pass (multiple color attachments + depth)
+		/// @param colorImageViews List of color attachment image views (one per G-Buffer output)
+		/// @param depthImageView Depth attachment image view
+		/// @param extent Rendering area extent
+		/// @param clearColor If true, clear all color attachments
+		void BeginGBufferRendering(const std::vector<vk::ImageView>& colorImageViews, vk::ImageView depthImageView, vk::Extent2D extent, bool clearColor = true);
 
 		/// @brief End dynamic rendering
 		void EndRendering();

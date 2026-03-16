@@ -6,6 +6,7 @@
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/ToneMappingEffect.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/BloomMipChainEffect.h>
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/SSAOEffect.h>
+#include <Ailurus/Systems/RenderSystem/PostProcess/Effects/DeferredLightingEffect.h>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/DataBuffer/VulkanUniformBuffer.h>
@@ -94,6 +95,15 @@ namespace Ailurus
 				auto cubemapSampler = pCubemapSampler->GetSampler();
 				_pIBLManager->Precompute(cubemapView, cubemapSampler, _pShaderLibrary.get());
 			}
+
+			// Initialize deferred lighting effect
+			_pDeferredLightingEffect = std::make_unique<DeferredLightingEffect>();
+			const vk::DescriptorSetLayout globalLayout =
+				_pGlobalUniformSet->GetDescriptorSetLayout()->GetDescriptorSetLayout();
+			_pDeferredLightingEffect->InitDeferred(
+				_pShaderLibrary.get(),
+				globalLayout,
+				vk::Format::eR16G16B16A16Sfloat);
 		}
 	}
 
@@ -365,6 +375,17 @@ namespace Ailurus
 		// Rebuild skybox pipeline (MSAA samples may have changed)
 		if (_pSkybox)
 			_pSkybox->RebuildPipeline(vk::Format::eR16G16B16A16Sfloat, vk::Format::eD32Sfloat);
+
+		// Rebuild deferred lighting pipeline (output format may have changed)
+		if (_pDeferredLightingEffect)
+		{
+			const vk::DescriptorSetLayout globalLayout =
+				_pGlobalUniformSet->GetDescriptorSetLayout()->GetDescriptorSetLayout();
+			_pDeferredLightingEffect->RebuildPipeline(
+				_pShaderLibrary.get(),
+				globalLayout,
+				vk::Format::eR16G16B16A16Sfloat);
+		}
 
 		SyncMainCameraAspectToSwapChain();
 

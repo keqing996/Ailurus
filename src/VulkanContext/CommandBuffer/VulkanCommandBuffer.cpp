@@ -184,7 +184,7 @@ namespace Ailurus
 	}
 
 	void VulkanCommandBuffer::BeginRendering(vk::ImageView colorImageView, vk::ImageView depthImageView, vk::ImageView resolveImageView,
-		vk::Extent2D extent, bool clearColor, bool useDepth, std::array<float, 4> clearColorValue, vk::ImageView depthResolveImageView)
+		vk::Extent2D extent, bool clearColor, bool useDepth, std::array<float, 4> clearColorValue, vk::ImageView depthResolveImageView, bool clearDepth)
 	{
 		// Color attachment
 		vk::RenderingAttachmentInfo colorAttachment;
@@ -214,7 +214,7 @@ namespace Ailurus
 			vk::RenderingAttachmentInfo depthAttachment;
 			depthAttachment.setImageView(depthImageView)
 				.setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
-				.setLoadOp(vk::AttachmentLoadOp::eClear)
+				.setLoadOp(clearDepth ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
 				.setStoreOp(vk::AttachmentStoreOp::eStore)
 				.setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
@@ -243,6 +243,38 @@ namespace Ailurus
 		vk::RenderingInfo renderingInfo;
 		renderingInfo.setRenderArea(vk::Rect2D{{0, 0}, extent})
 			.setLayerCount(1)
+			.setPDepthAttachment(&depthAttachment);
+
+		_buffer.beginRenderingKHR(renderingInfo);
+	}
+
+	void VulkanCommandBuffer::BeginGBufferRendering(const std::vector<vk::ImageView>& colorImageViews, vk::ImageView depthImageView, vk::Extent2D extent, bool clearColor)
+	{
+		std::vector<vk::RenderingAttachmentInfo> colorAttachments;
+		colorAttachments.reserve(colorImageViews.size());
+
+		for (const auto& view : colorImageViews)
+		{
+			vk::RenderingAttachmentInfo att;
+			att.setImageView(view)
+				.setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
+				.setLoadOp(clearColor ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad)
+				.setStoreOp(vk::AttachmentStoreOp::eStore)
+				.setClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f}));
+			colorAttachments.push_back(att);
+		}
+
+		vk::RenderingAttachmentInfo depthAttachment;
+		depthAttachment.setImageView(depthImageView)
+			.setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+			.setLoadOp(vk::AttachmentLoadOp::eClear)
+			.setStoreOp(vk::AttachmentStoreOp::eStore)
+			.setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
+
+		vk::RenderingInfo renderingInfo;
+		renderingInfo.setRenderArea(vk::Rect2D{{0, 0}, extent})
+			.setLayerCount(1)
+			.setColorAttachments(colorAttachments)
 			.setPDepthAttachment(&depthAttachment);
 
 		_buffer.beginRenderingKHR(renderingInfo);

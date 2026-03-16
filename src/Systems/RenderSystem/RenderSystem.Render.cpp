@@ -16,7 +16,9 @@
 #include <Ailurus/Systems/SceneSystem/SceneSystem.h>
 #include <Ailurus/Systems/SceneSystem/Component/CompStaticMeshRender.h>
 #include <Ailurus/Systems/SceneSystem/Component/CompLight.h>
+#include <Ailurus/Systems/SceneSystem/Entity/Entity.h>
 #include <Ailurus/Math/AABB.hpp>
+#include <Ailurus/Math/Vector3.hpp>
 #include <VulkanContext/VulkanContext.h>
 #include <VulkanContext/SwapChain/VulkanSwapChain.h>
 #include <VulkanContext/RenderTarget/RenderTargetManager.h>
@@ -37,6 +39,7 @@
 #include "Skybox/Skybox.h"
 #include "IBL/IBLManager.h"
 #include <Ailurus/Systems/RenderSystem/PostProcess/Effects/SSAOEffect.h>
+#include <Ailurus/Systems/RenderSystem/PostProcess/Effects/DeferredLightingEffect.h>
 
 namespace Ailurus
 {
@@ -123,6 +126,33 @@ namespace Ailurus
 				// Compare by vertexLayoutId
 				return lhs.vertexLayoutId < rhs.vertexLayoutId;
 			});
+
+		// G-Buffer meshes sorted the same way as forward meshes (front-to-back is optimal for deferred)
+		auto& gBufferPassMeshes = renderingMeshesMap[RenderPassType::GBuffer];
+		std::sort(gBufferPassMeshes.begin(), gBufferPassMeshes.end(),
+			[](const RenderingMesh& lhs, const RenderingMesh& rhs) -> bool {
+				if (lhs.pMaterial != rhs.pMaterial)
+					return lhs.pMaterial < rhs.pMaterial;
+				if (lhs.pMaterialInstance != rhs.pMaterialInstance)
+					return lhs.pMaterialInstance < rhs.pMaterialInstance;
+				return lhs.vertexLayoutId < rhs.vertexLayoutId;
+			});
+
+		// Transparent meshes must be sorted back-to-front for correct alpha blending
+		auto& transparentPassMeshes = renderingMeshesMap[RenderPassType::Transparent];
+		if (!transparentPassMeshes.empty() && _pMainCamera)
+		{
+			const Vector3f cameraPos = _pMainCamera->GetEntity()->GetPosition();
+			std::sort(transparentPassMeshes.begin(), transparentPassMeshes.end(),
+				[&cameraPos](const RenderingMesh& lhs, const RenderingMesh& rhs) -> bool {
+					const Vector3f lhsPos = lhs.pEntity->GetPosition();
+					const Vector3f rhsPos = rhs.pEntity->GetPosition();
+					const float lhsDist = (lhsPos - cameraPos).SquareMagnitude();
+					const float rhsDist = (rhsPos - cameraPos).SquareMagnitude();
+					// Back-to-front: larger distance drawn first
+					return lhsDist > rhsDist;
+				});
+		}
 	}
 
 	void RenderSystem::CollectLights()
@@ -507,8 +537,96 @@ namespace Ailurus
 					// Shadow pass
 					RenderShadowPass(pCommandBuffer, pDescriptorAllocator);
 
+					// --- Deferred rendering pipeline ---
+					const bool hasGBufferMeshes = !_pIntermediateVariable->renderingMeshes[RenderPassType::GBuffer].empty();
+					if (hasGBufferMeshes)
+					{
+						auto* pRTMgr = VulkanContext::GetRenderTargetManager();
+
+						// Transition G-Buffer RTs to color attachment optimal
+						for (auto* gbImage : {
+								pRTMgr->GetGBufferNormalImage(),
+								pRTMgr->GetGBufferAlbedoImage(),
+								pRTMgr->GetGBufferMetallicImage() })
+						{
+							if (gbImage)
+							{
+								pCommandBuffer->ImageMemoryBarrier(
+									gbImage,
+									vk::ImageLayout::eUndefined,
+									vk::ImageLayout::eColorAttachmentOptimal,
+									vk::AccessFlags{},
+									vk::AccessFlagBits::eColorAttachmentWrite,
+									vk::PipelineStageFlagBits::eTopOfPipe,
+									vk::PipelineStageFlagBits::eColorAttachmentOutput);
+							}
+						}
+
+						// G-Buffer pass: renders geometry into the G-Buffer RTs + depth
+						RenderGBufferPass(pCommandBuffer);
+
+						// Transition G-Buffer RTs to shader read only for deferred lighting sampling
+						for (auto* gbImage : {
+								pRTMgr->GetGBufferNormalImage(),
+								pRTMgr->GetGBufferAlbedoImage(),
+								pRTMgr->GetGBufferMetallicImage() })
+						{
+							if (gbImage)
+							{
+								pCommandBuffer->ImageMemoryBarrier(
+									gbImage,
+									vk::ImageLayout::eColorAttachmentOptimal,
+									vk::ImageLayout::eShaderReadOnlyOptimal,
+									vk::AccessFlagBits::eColorAttachmentWrite,
+									vk::AccessFlagBits::eShaderRead,
+									vk::PipelineStageFlagBits::eColorAttachmentOutput,
+									vk::PipelineStageFlagBits::eFragmentShader);
+							}
+						}
+
+						// Transition depth to shader read only for deferred lighting
+						vk::Image gbDepthImage = pRTMgr->GetDepthImage();
+						if (gbDepthImage)
+						{
+							pCommandBuffer->ImageMemoryBarrier(
+								gbDepthImage,
+								vk::ImageLayout::eDepthStencilAttachmentOptimal,
+								vk::ImageLayout::eShaderReadOnlyOptimal,
+								vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+								vk::AccessFlagBits::eShaderRead,
+								vk::PipelineStageFlagBits::eLateFragmentTests,
+								vk::PipelineStageFlagBits::eFragmentShader,
+								vk::ImageAspectFlagBits::eDepth);
+						}
+
+						// Deferred lighting: fullscreen pass that computes PBR lighting from G-Buffer
+						RenderDeferredLighting(pCommandBuffer, pDescriptorAllocator, offscreenImageView, extent);
+
+						// After deferred lighting, transition depth back to attachment optimal
+						// (for transparent pass depth testing)
+						if (gbDepthImage)
+						{
+							pCommandBuffer->ImageMemoryBarrier(
+								gbDepthImage,
+								vk::ImageLayout::eShaderReadOnlyOptimal,
+								vk::ImageLayout::eDepthStencilAttachmentOptimal,
+								vk::AccessFlagBits::eShaderRead,
+								vk::AccessFlagBits::eDepthStencilAttachmentRead,
+								vk::PipelineStageFlagBits::eFragmentShader,
+								vk::PipelineStageFlagBits::eEarlyFragmentTests,
+								vk::ImageAspectFlagBits::eDepth);
+						}
+
+						// Transition offscreen HDR RT from color attachment to color attachment
+						// (it was already in color attachment layout after deferred lighting wrote to it,
+						// so no barrier needed before the next forward/transparent pass)
+					}
+
 					// Forward pass (renders to offscreen HDR RT)
 					RenderPass(RenderPassType::Forward, pCommandBuffer);
+
+					// Transparent pass (renders on top with alpha blending, depth read-only)
+					RenderTransparentPass(pCommandBuffer);
 
 					if (useSSAO)
 					{
@@ -958,7 +1076,9 @@ namespace Ailurus
 			// Without MSAA: render directly to offscreen HDR RT
 			vk::ImageView depthImageView = pRenderTargetManager->GetDepthImageView();
 
-			bool clearColor = (pass == RenderPassType::Forward);
+			// Do not clear color if deferred lighting has already written to the offscreen RT
+			const bool gBufferRendered = !_pIntermediateVariable->renderingMeshes[RenderPassType::GBuffer].empty();
+			bool clearColor = (pass == RenderPassType::Forward) && !gBufferRendered;
 			pCommandBuffer->BeginRendering(offscreenColorView, depthImageView, nullptr, extent, clearColor, true, _clearColor);
 		}
 
@@ -1053,5 +1173,215 @@ namespace Ailurus
 		const Matrix4x4f inverseVP = vpMat.Inverse();
 
 		_pSkybox->Render(pCommandBuffer, inverseVP);
+	}
+
+	void RenderSystem::RenderGBufferPass(VulkanCommandBuffer* pCommandBuffer)
+	{
+		auto& meshes = _pIntermediateVariable->renderingMeshes[RenderPassType::GBuffer];
+		if (meshes.empty())
+			return;
+
+		auto pSwapChain = VulkanContext::GetSwapChain();
+		if (pSwapChain == nullptr)
+			return;
+
+		vk::Extent2D extent = pSwapChain->GetConfig().extent;
+		auto* pRTMgr = VulkanContext::GetRenderTargetManager();
+
+		// G-Buffer pass always uses single-sample targets (deferred doesn't support MSAA directly)
+		std::vector<vk::ImageView> gBufferViews = {
+			pRTMgr->GetGBufferNormalImageView(),
+			pRTMgr->GetGBufferAlbedoImageView(),
+			pRTMgr->GetGBufferMetallicImageView()
+		};
+		vk::ImageView depthView = pRTMgr->GetDepthImageView();
+
+		pCommandBuffer->BeginGBufferRendering(gBufferViews, depthView, extent, /*clearColor=*/true);
+
+		// Intermediate tracking state
+		const Material* pCurrentMaterial = nullptr;
+		const MaterialInstance* pCurrentMaterialInstance = nullptr;
+		uint64_t currentVertexLayoutId = 0;
+		VulkanPipeline* pCurrentVkPipeline = nullptr;
+
+		for (const auto& renderingMesh : meshes)
+		{
+			if (renderingMesh.pMaterial != pCurrentMaterial)
+			{
+				pCurrentMaterial = renderingMesh.pMaterial;
+				pCurrentMaterialInstance = nullptr;
+				currentVertexLayoutId = 0;
+			}
+
+			if (renderingMesh.pMaterialInstance != pCurrentMaterialInstance)
+			{
+				pCurrentMaterialInstance = renderingMesh.pMaterialInstance;
+				_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)] =
+					_pIntermediateVariable->materialInstanceDescriptorsMap[RenderPassType::GBuffer][pCurrentMaterialInstance];
+			}
+
+			if (currentVertexLayoutId != renderingMesh.vertexLayoutId)
+			{
+				currentVertexLayoutId = renderingMesh.vertexLayoutId;
+
+				VulkanPipelineEntry pipelineEntry(RenderPassType::GBuffer, pCurrentMaterial->GetAssetId(), currentVertexLayoutId);
+				pCurrentVkPipeline = VulkanContext::GetPipelineManager()->GetPipeline(pipelineEntry);
+				if (pCurrentVkPipeline == nullptr)
+				{
+					Logger::LogError("G-Buffer pipeline not found for material {}", pCurrentMaterial->GetAssetId());
+					continue;
+				}
+
+				pCommandBuffer->BindPipeline(pCurrentVkPipeline);
+				pCommandBuffer->SetViewportAndScissor();
+
+				std::vector<vk::DescriptorSet> descriptorSets(
+					_pIntermediateVariable->renderingDescriptorSets.begin(),
+					_pIntermediateVariable->renderingDescriptorSets.end());
+				pCommandBuffer->BindDescriptorSet(pCurrentVkPipeline->GetPipelineLayout(), descriptorSets);
+			}
+
+			pCommandBuffer->PushConstantModelMatrix(pCurrentVkPipeline, renderingMesh.pEntity->GetModelMatrix());
+
+			const auto pVertexBuffer = renderingMesh.pTargetMesh->GetVertexBuffer();
+			pCommandBuffer->BindVertexBuffer(pVertexBuffer);
+
+			const auto pIndexBuffer = renderingMesh.pTargetMesh->GetIndexBuffer();
+			if (pIndexBuffer != nullptr)
+			{
+				pCommandBuffer->BindIndexBuffer(pIndexBuffer);
+				pCommandBuffer->DrawIndexed(pIndexBuffer->GetIndexCount());
+				_renderStats.drawCalls++;
+				_renderStats.triangleCount += static_cast<uint32_t>(pIndexBuffer->GetIndexCount() / 3);
+			}
+			else
+			{
+				pCommandBuffer->DrawNonIndexed(renderingMesh.pTargetMesh->GetVertexCount());
+				_renderStats.drawCalls++;
+				_renderStats.triangleCount += renderingMesh.pTargetMesh->GetVertexCount() / 3;
+			}
+		}
+
+		pCommandBuffer->EndRendering();
+	}
+
+	void RenderSystem::RenderDeferredLighting(VulkanCommandBuffer* pCommandBuffer,
+		VulkanDescriptorAllocator* pDescriptorAllocator,
+		vk::ImageView outputImageView,
+		vk::Extent2D extent)
+	{
+		if (!_pDeferredLightingEffect)
+			return;
+
+		auto* pRTMgr = VulkanContext::GetRenderTargetManager();
+
+		// Set per-frame inputs on the effect
+		_pDeferredLightingEffect->SetGBufferViews(
+			pRTMgr->GetGBufferNormalImageView(),
+			pRTMgr->GetGBufferAlbedoImageView(),
+			pRTMgr->GetGBufferMetallicImageView());
+		_pDeferredLightingEffect->SetDepthImageView(pRTMgr->GetDepthImageView());
+
+		// Pass the global descriptor set (set 0)
+		const vk::DescriptorSet globalSet =
+			_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::General)];
+		_pDeferredLightingEffect->SetGlobalDescriptorSet(globalSet);
+
+		// Compute inverse VP for world position reconstruction
+		const Matrix4x4f vpMat = _pIntermediateVariable->viewProjectionMatrix;
+		_pDeferredLightingEffect->SetInverseViewProjMatrix(vpMat.Inverse());
+
+		// Transition offscreen HDR RT to color attachment for deferred lighting output
+		// (it was already transitioned to color attachment at frame start, so it should be ready)
+		_pDeferredLightingEffect->Render(pCommandBuffer, nullptr, outputImageView, extent, pDescriptorAllocator);
+	}
+
+	void RenderSystem::RenderTransparentPass(VulkanCommandBuffer* pCommandBuffer)
+	{
+		auto& meshes = _pIntermediateVariable->renderingMeshes[RenderPassType::Transparent];
+		if (meshes.empty())
+			return;
+
+		auto pSwapChain = VulkanContext::GetSwapChain();
+		if (pSwapChain == nullptr)
+			return;
+
+		vk::Extent2D extent = pSwapChain->GetConfig().extent;
+		auto* pRTMgr = VulkanContext::GetRenderTargetManager();
+
+		// Transparent pass: render to offscreen HDR RT with depth testing (read-only)
+		// Always uses non-MSAA depth target (GBuffer depth, or regular depth if no GBuffer pass)
+		vk::ImageView offscreenColorView = pRTMgr->GetOffscreenColorImageView();
+		vk::ImageView depthView = pRTMgr->GetDepthImageView();
+
+		// Load existing color content (blend on top), depth read-only (no clear)
+		// clearDepth=false: preserve depth from GBuffer pass for correct occlusion
+		pCommandBuffer->BeginRendering(offscreenColorView, depthView, nullptr, extent,
+			/*clearColor=*/false, /*useDepth=*/true, _clearColor, /*depthResolveImageView=*/nullptr, /*clearDepth=*/false);
+
+		const Material* pCurrentMaterial = nullptr;
+		const MaterialInstance* pCurrentMaterialInstance = nullptr;
+		uint64_t currentVertexLayoutId = 0;
+		VulkanPipeline* pCurrentVkPipeline = nullptr;
+
+		for (const auto& renderingMesh : meshes)
+		{
+			if (renderingMesh.pMaterial != pCurrentMaterial)
+			{
+				pCurrentMaterial = renderingMesh.pMaterial;
+				pCurrentMaterialInstance = nullptr;
+				currentVertexLayoutId = 0;
+			}
+
+			if (renderingMesh.pMaterialInstance != pCurrentMaterialInstance)
+			{
+				pCurrentMaterialInstance = renderingMesh.pMaterialInstance;
+				_pIntermediateVariable->renderingDescriptorSets[static_cast<int>(UniformSetUsage::MaterialCustom)] =
+					_pIntermediateVariable->materialInstanceDescriptorsMap[RenderPassType::Transparent][pCurrentMaterialInstance];
+			}
+
+			if (currentVertexLayoutId != renderingMesh.vertexLayoutId)
+			{
+				currentVertexLayoutId = renderingMesh.vertexLayoutId;
+
+				VulkanPipelineEntry pipelineEntry(RenderPassType::Transparent, pCurrentMaterial->GetAssetId(), currentVertexLayoutId);
+				pCurrentVkPipeline = VulkanContext::GetPipelineManager()->GetPipeline(pipelineEntry);
+				if (pCurrentVkPipeline == nullptr)
+				{
+					Logger::LogError("Transparent pipeline not found for material {}", pCurrentMaterial->GetAssetId());
+					continue;
+				}
+
+				pCommandBuffer->BindPipeline(pCurrentVkPipeline);
+				pCommandBuffer->SetViewportAndScissor();
+
+				std::vector<vk::DescriptorSet> descriptorSets(
+					_pIntermediateVariable->renderingDescriptorSets.begin(),
+					_pIntermediateVariable->renderingDescriptorSets.end());
+				pCommandBuffer->BindDescriptorSet(pCurrentVkPipeline->GetPipelineLayout(), descriptorSets);
+			}
+
+			pCommandBuffer->PushConstantModelMatrix(pCurrentVkPipeline, renderingMesh.pEntity->GetModelMatrix());
+
+			const auto pVertexBuffer = renderingMesh.pTargetMesh->GetVertexBuffer();
+			pCommandBuffer->BindVertexBuffer(pVertexBuffer);
+
+			const auto pIndexBuffer = renderingMesh.pTargetMesh->GetIndexBuffer();
+			if (pIndexBuffer != nullptr)
+			{
+				pCommandBuffer->BindIndexBuffer(pIndexBuffer);
+				pCommandBuffer->DrawIndexed(pIndexBuffer->GetIndexCount());
+				_renderStats.drawCalls++;
+				_renderStats.triangleCount += static_cast<uint32_t>(pIndexBuffer->GetIndexCount() / 3);
+			}
+			else
+			{
+				pCommandBuffer->DrawNonIndexed(renderingMesh.pTargetMesh->GetVertexCount());
+				_renderStats.drawCalls++;
+				_renderStats.triangleCount += renderingMesh.pTargetMesh->GetVertexCount() / 3;
+			}
+		}
+
+		pCommandBuffer->EndRendering();
 	}
 } // namespace Ailurus

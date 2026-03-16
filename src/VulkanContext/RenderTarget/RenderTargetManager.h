@@ -36,12 +36,25 @@ namespace Ailurus
 		vk::ImageView GetShadowMapImageView(uint32_t cascadeIndex) const;
 		vk::Image GetShadowMapImage(uint32_t cascadeIndex) const;
 
+		// G-Buffer targets (for deferred rendering)
+		vk::Image GetGBufferNormalImage() const;
+		vk::ImageView GetGBufferNormalImageView() const;
+		vk::Image GetGBufferAlbedoImage() const;
+		vk::ImageView GetGBufferAlbedoImageView() const;
+		vk::Image GetGBufferMetallicImage() const;
+		vk::ImageView GetGBufferMetallicImageView() const;
+
+		static constexpr vk::Format GetGBufferNormalFormat()   { return GBUFFER_NORMAL_FORMAT; }
+		static constexpr vk::Format GetGBufferAlbedoFormat()   { return GBUFFER_ALBEDO_FORMAT; }
+		static constexpr vk::Format GetGBufferMetallicFormat() { return GBUFFER_METALLIC_FORMAT; }
+
 	private:
         void Clear();
 		void CreateDepthTarget(uint32_t width, uint32_t height);
 		void CreateMSAATargets(uint32_t width, uint32_t height);
 		void CreateOffscreenColorTarget(uint32_t width, uint32_t height);
 		void CreateShadowMapTargets();
+		void CreateGBufferTargets(uint32_t width, uint32_t height);
 
 	private:
 		// Standard depth buffer (for non-MSAA or as resolve target)
@@ -63,7 +76,15 @@ namespace Ailurus
 		static constexpr uint32_t SHADOW_MAP_RESOLUTION = 2048;
 		std::vector<std::unique_ptr<RenderTarget>> _shadowMapTargets;
 
-		// Future: G-Buffer targets for deferred rendering
-		// std::vector<std::unique_ptr<RenderTarget>> _gBufferTargets;
+		// G-Buffer targets for deferred rendering
+		// GBuffer0: World Normal (XYZ) + AO (W) — R16G16B16A16_SFLOAT
+		// GBuffer1: Albedo (RGB) + Roughness (A) — R8G8B8A8_UNORM
+		// GBuffer2: Metallic (R) + flags (GBA) — R8G8B8A8_UNORM
+		static constexpr vk::Format GBUFFER_NORMAL_FORMAT  = vk::Format::eR16G16B16A16Sfloat;
+		static constexpr vk::Format GBUFFER_ALBEDO_FORMAT  = vk::Format::eR8G8B8A8Unorm;
+		static constexpr vk::Format GBUFFER_METALLIC_FORMAT = vk::Format::eR8G8B8A8Unorm;
+		std::unique_ptr<RenderTarget> _gBufferNormalTarget;
+		std::unique_ptr<RenderTarget> _gBufferAlbedoTarget;
+		std::unique_ptr<RenderTarget> _gBufferMetallicTarget;
 	};
 } // namespace Ailurus

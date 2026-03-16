@@ -35,6 +35,9 @@ namespace Ailurus
 
 		// Create CSM shadow maps
 		CreateShadowMapTargets();
+
+		// Create G-Buffer targets
+		CreateGBufferTargets(width, height);
     }
 
 	vk::Image RenderTargetManager::GetDepthImage() const
@@ -114,6 +117,9 @@ namespace Ailurus
 		_resolvedMSAADepthTarget = nullptr;
 		_offscreenColorTarget = nullptr;
 		_shadowMapTargets.clear();
+		_gBufferNormalTarget = nullptr;
+		_gBufferAlbedoTarget = nullptr;
+		_gBufferMetallicTarget = nullptr;
     }
 
 	void RenderTargetManager::CreateDepthTarget(uint32_t width, uint32_t height)
@@ -262,6 +268,105 @@ namespace Ailurus
 			{
 				Logger::LogError("Failed to create shadow map cascade {}: {}", i, e.what());
 				_shadowMapTargets.push_back(nullptr);
+			}
+		}
+	}
+
+	vk::Image RenderTargetManager::GetGBufferNormalImage() const
+	{
+		return _gBufferNormalTarget ? _gBufferNormalTarget->GetImage() : nullptr;
+	}
+
+	vk::ImageView RenderTargetManager::GetGBufferNormalImageView() const
+	{
+		return _gBufferNormalTarget ? _gBufferNormalTarget->GetImageView() : nullptr;
+	}
+
+	vk::Image RenderTargetManager::GetGBufferAlbedoImage() const
+	{
+		return _gBufferAlbedoTarget ? _gBufferAlbedoTarget->GetImage() : nullptr;
+	}
+
+	vk::ImageView RenderTargetManager::GetGBufferAlbedoImageView() const
+	{
+		return _gBufferAlbedoTarget ? _gBufferAlbedoTarget->GetImageView() : nullptr;
+	}
+
+	vk::Image RenderTargetManager::GetGBufferMetallicImage() const
+	{
+		return _gBufferMetallicTarget ? _gBufferMetallicTarget->GetImage() : nullptr;
+	}
+
+	vk::ImageView RenderTargetManager::GetGBufferMetallicImageView() const
+	{
+		return _gBufferMetallicTarget ? _gBufferMetallicTarget->GetImageView() : nullptr;
+	}
+
+	void RenderTargetManager::CreateGBufferTargets(uint32_t width, uint32_t height)
+	{
+		// GBuffer0: World Normal (XYZ) + AO (W)
+		{
+			RenderTargetConfig config;
+			config.width = width;
+			config.height = height;
+			config.format = GBUFFER_NORMAL_FORMAT;
+			config.samples = vk::SampleCountFlagBits::e1;
+			config.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+			config.aspectMask = vk::ImageAspectFlagBits::eColor;
+			config.transient = false;
+
+			try
+			{
+				_gBufferNormalTarget = std::make_unique<RenderTarget>(config);
+				Logger::LogInfo("Created G-Buffer Normal target: {}x{}", width, height);
+			}
+			catch (const std::exception& e)
+			{
+				Logger::LogError("Failed to create G-Buffer Normal target: {}", e.what());
+			}
+		}
+
+		// GBuffer1: Albedo (RGB) + Roughness (A)
+		{
+			RenderTargetConfig config;
+			config.width = width;
+			config.height = height;
+			config.format = GBUFFER_ALBEDO_FORMAT;
+			config.samples = vk::SampleCountFlagBits::e1;
+			config.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+			config.aspectMask = vk::ImageAspectFlagBits::eColor;
+			config.transient = false;
+
+			try
+			{
+				_gBufferAlbedoTarget = std::make_unique<RenderTarget>(config);
+				Logger::LogInfo("Created G-Buffer Albedo target: {}x{}", width, height);
+			}
+			catch (const std::exception& e)
+			{
+				Logger::LogError("Failed to create G-Buffer Albedo target: {}", e.what());
+			}
+		}
+
+		// GBuffer2: Metallic (R) + flags (GBA)
+		{
+			RenderTargetConfig config;
+			config.width = width;
+			config.height = height;
+			config.format = GBUFFER_METALLIC_FORMAT;
+			config.samples = vk::SampleCountFlagBits::e1;
+			config.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+			config.aspectMask = vk::ImageAspectFlagBits::eColor;
+			config.transient = false;
+
+			try
+			{
+				_gBufferMetallicTarget = std::make_unique<RenderTarget>(config);
+				Logger::LogInfo("Created G-Buffer Metallic target: {}x{}", width, height);
+			}
+			catch (const std::exception& e)
+			{
+				Logger::LogError("Failed to create G-Buffer Metallic target: {}", e.what());
 			}
 		}
 	}
