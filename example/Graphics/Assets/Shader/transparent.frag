@@ -173,9 +173,9 @@ void main() {
         vec3  L        = normalize(lightPos - fragWorldPos);
         float dist     = length(lightPos - fragWorldPos);
         float c = globalUniform.pointLightAttenuations[i].x;
-        float ll = globalUniform.pointLightAttenuations[i].y;
+        float l = globalUniform.pointLightAttenuations[i].y;
         float q = globalUniform.pointLightAttenuations[i].z;
-        float attenuation = 1.0 / (c + ll * dist + q * dist * dist);
+        float attenuation = 1.0 / (c + l * dist + q * dist * dist);
         vec3  lightColor  = globalUniform.pointLightColors[i].rgb;
         float intensity   = globalUniform.pointLightColors[i].w;
         Lo += calculateLight(N, V, L, lightColor, intensity * attenuation, albedo, metallic, roughness, F0);
@@ -191,9 +191,9 @@ void main() {
         float outer     = globalUniform.spotLightCutoffs[i].y;
         float spotIntensity = clamp((theta - outer) / (inner - outer), 0.0, 1.0);
         float c = globalUniform.spotLightAttenuations[i].x;
-        float ll = globalUniform.spotLightAttenuations[i].y;
+        float l = globalUniform.spotLightAttenuations[i].y;
         float q = globalUniform.spotLightAttenuations[i].z;
-        float attenuation = 1.0 / (c + ll * dist + q * dist * dist);
+        float attenuation = 1.0 / (c + l * dist + q * dist * dist);
         vec3  lightColor  = globalUniform.spotLightColors[i].rgb;
         float intensity   = globalUniform.spotLightColors[i].w;
         Lo += calculateLight(N, V, L, lightColor, intensity * attenuation * spotIntensity, albedo, metallic, roughness, F0);

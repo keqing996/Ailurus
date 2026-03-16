@@ -616,10 +616,6 @@ namespace Ailurus
 								vk::PipelineStageFlagBits::eEarlyFragmentTests,
 								vk::ImageAspectFlagBits::eDepth);
 						}
-
-						// Transition offscreen HDR RT from color attachment to color attachment
-						// (it was already in color attachment layout after deferred lighting wrote to it,
-						// so no barrier needed before the next forward/transparent pass)
 					}
 
 					// Forward pass (renders to offscreen HDR RT)
