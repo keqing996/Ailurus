@@ -8,6 +8,7 @@
 #include "VulkanContext/VulkanContext.h"
 #include "VulkanContext/Vertex/VulkanVertexLayoutManager.h"
 #include "VulkanContext/SwapChain/VulkanSwapChain.h"
+#include "VulkanContext/RenderTarget/RenderTargetManager.h"
 
 namespace Ailurus
 {
@@ -25,13 +26,11 @@ namespace Ailurus
 			return nullptr;
 		}
 
-		const bool isShadowPass = (entry.renderPass == RenderPassType::Shadow);
-		// Forward pass renders to offscreen HDR RT; shadow pass has no color attachment
-		const vk::Format colorFormat = isShadowPass ? vk::Format::eUndefined : vk::Format::eR16G16B16A16Sfloat;
+		const bool isShadowPass   = (entry.renderPass == RenderPassType::Shadow);
+		const bool isGBufferPass  = (entry.renderPass == RenderPassType::GBuffer);
+		const bool isTransparent  = (entry.renderPass == RenderPassType::Transparent);
+
 		const vk::Format depthFormat = vk::Format::eD32Sfloat;
-		const uint32_t pushConstantSize = isShadowPass
-			? static_cast<uint32_t>(sizeof(Matrix4x4f) + sizeof(uint32_t))
-			: static_cast<uint32_t>(sizeof(Matrix4x4f));
 
 		auto refMaterial = Application::Get<AssetsSystem>()->GetAsset<Material>(entry.materialAssetId);
 		if (!refMaterial)
@@ -55,25 +54,49 @@ namespace Ailurus
 			return nullptr;
 		}
 
-		// Create the pipeline
+		// Collect uniform sets
 		std::vector<const UniformSet*> uniformSets;
 		uniformSets.push_back(Application::Get<RenderSystem>()->GetGlobalUniformSet());
 
-		// Only add material uniform set if it exists (shadow pass has no material uniforms)
 		auto* materialUniformSet = refMaterial->GetUniformSet(entry.renderPass);
 		if (materialUniformSet != nullptr)
 			uniformSets.push_back(materialUniformSet);
 
-		const auto pPipeline = new VulkanPipeline(
-			colorFormat,
-			depthFormat,
-			*pShaderArray,
-			pVertexLayout, 
-			uniformSets,
-			pushConstantSize);
+		VulkanPipeline* pPipeline = nullptr;
+
+		if (isGBufferPass)
+		{
+			// G-Buffer pipeline: 3 color attachments (Normal+AO, Albedo+Roughness, Metallic)
+			std::vector<vk::Format> colorFormats = {
+				RenderTargetManager::GetGBufferNormalFormat(),
+				RenderTargetManager::GetGBufferAlbedoFormat(),
+				RenderTargetManager::GetGBufferMetallicFormat()
+			};
+			pPipeline = new VulkanPipeline(colorFormats, depthFormat, *pShaderArray, pVertexLayout, uniformSets);
+		}
+		else if (isShadowPass)
+		{
+			// Depth-only pipeline
+			const uint32_t pushConstantSize = static_cast<uint32_t>(sizeof(Matrix4x4f) + sizeof(uint32_t));
+			pPipeline = new VulkanPipeline(vk::Format::eUndefined, depthFormat, *pShaderArray, pVertexLayout, uniformSets, pushConstantSize);
+		}
+		else if (isTransparent)
+		{
+			// Transparent pipeline: alpha blending, depth test (read-only)
+			const vk::Format colorFormat = vk::Format::eR16G16B16A16Sfloat;
+			pPipeline = new VulkanPipeline(colorFormat, depthFormat, *pShaderArray, pVertexLayout, uniformSets,
+				static_cast<uint32_t>(sizeof(Matrix4x4f)),
+				/*blendEnabled=*/true,
+				/*depthWriteEnabled=*/false);
+		}
+		else
+		{
+			// Standard forward pass pipeline
+			const vk::Format colorFormat = vk::Format::eR16G16B16A16Sfloat;
+			pPipeline = new VulkanPipeline(colorFormat, depthFormat, *pShaderArray, pVertexLayout, uniformSets);
+		}
 
 		_pipelinesMap[entry] = std::unique_ptr<VulkanPipeline>(pPipeline);
-
 		return pPipeline;
 	}
 } // namespace Ailurus

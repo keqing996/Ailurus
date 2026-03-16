@@ -16,7 +16,9 @@ namespace Ailurus
 		const StageShaderArray& shaderArray,
 		const VulkanVertexLayout* pVertexLayout,
 		const std::vector<const UniformSet*>& uniformSets,
-		uint32_t pushConstantSize)
+		uint32_t pushConstantSize,
+		bool blendEnabled,
+		bool depthWriteEnabled)
 	{
 		const bool depthOnly = (colorFormat == vk::Format::eUndefined);
 		// Shader stages
@@ -105,11 +107,25 @@ namespace Ailurus
 
 		// Color blend (only for passes with color output)
 		vk::PipelineColorBlendAttachmentState colorBlendAttachment;
-		colorBlendAttachment.setBlendEnable(false)
-			.setColorWriteMask(vk::ColorComponentFlagBits::eR
-				| vk::ColorComponentFlagBits::eG
-				| vk::ColorComponentFlagBits::eB
-				| vk::ColorComponentFlagBits::eA);
+		colorBlendAttachment.setColorWriteMask(vk::ColorComponentFlagBits::eR
+			| vk::ColorComponentFlagBits::eG
+			| vk::ColorComponentFlagBits::eB
+			| vk::ColorComponentFlagBits::eA);
+
+		if (blendEnabled)
+		{
+			colorBlendAttachment.setBlendEnable(true)
+				.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
+				.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
+				.setColorBlendOp(vk::BlendOp::eAdd)
+				.setSrcAlphaBlendFactor(vk::BlendFactor::eOne)
+				.setDstAlphaBlendFactor(vk::BlendFactor::eZero)
+				.setAlphaBlendOp(vk::BlendOp::eAdd);
+		}
+		else
+		{
+			colorBlendAttachment.setBlendEnable(false);
+		}
 
 		vk::PipelineColorBlendStateCreateInfo colorBlending;
 		colorBlending.setLogicOpEnable(false)
@@ -122,7 +138,7 @@ namespace Ailurus
 		// Depth and stencil state
 		vk::PipelineDepthStencilStateCreateInfo depthStencil;
 		depthStencil.setDepthTestEnable(true)
-			.setDepthWriteEnable(true)
+			.setDepthWriteEnable(depthWriteEnabled)
 			.setDepthCompareOp(vk::CompareOp::eLess)
 			.setDepthBoundsTestEnable(false)
 			.setStencilTestEnable(false);
@@ -188,10 +204,166 @@ namespace Ailurus
 	}
 
 	VulkanPipeline::VulkanPipeline(
-		vk::Format colorFormat,
+		const std::vector<vk::Format>& colorFormats,
+		vk::Format depthFormat,
 		const StageShaderArray& shaderArray,
-		const std::vector<vk::DescriptorSetLayout>& descriptorSetLayouts,
-		uint32_t pushConstantSize,
+		const VulkanVertexLayout* pVertexLayout,
+		const std::vector<const UniformSet*>& uniformSets,
+		uint32_t pushConstantSize)
+	{
+		// Shader stages
+		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
+		for (auto i = 0; i < StageShaderArray::Size(); i++)
+		{
+			const Shader* pShader = shaderArray[i];
+			if (pShader == nullptr)
+				continue;
+
+			const auto* pRHIShader = pShader->GetImpl();
+			if (pRHIShader == nullptr || !pRHIShader->IsValid())
+			{
+				Logger::LogError("Invalid shader module for G-Buffer stage {}", i);
+				continue;
+			}
+
+			shaderStages.push_back(pRHIShader->GeneratePipelineCreateInfo(pShader->GetStage()));
+		}
+
+		// Push constant range
+		vk::PushConstantRange pushConstantRange;
+		pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex)
+			.setOffset(0)
+			.setSize(pushConstantSize);
+
+		// Descriptor set layouts
+		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+		for (const auto* pUniformSet: uniformSets)
+			descriptorSetLayouts.push_back(pUniformSet->GetDescriptorSetLayout()->GetDescriptorSetLayout());
+
+		// Create pipeline layout
+		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+		pipelineLayoutInfo.setSetLayouts(descriptorSetLayouts)
+			.setPushConstantRanges(pushConstantRange);
+		try
+		{
+			_vkPipelineLayout = VulkanContext::GetDevice().createPipelineLayout(pipelineLayoutInfo);
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create G-Buffer pipeline layout: {}", e.what());
+		}
+
+		// Vertex input description
+		vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+		if (pVertexLayout != nullptr)
+		{
+			vk::VertexInputBindingDescription vertexInputDesc;
+			vertexInputDesc.setBinding(0)
+				.setStride(pVertexLayout->GetStride())
+				.setInputRate(vk::VertexInputRate::eVertex);
+
+			vertexInputInfo.setVertexBindingDescriptions(vertexInputDesc)
+				.setVertexAttributeDescriptions(pVertexLayout->GetVulkanAttributeDescription());
+		}
+
+		// Input assembly
+		vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
+		inputAssembly.setTopology(vk::PrimitiveTopology::eTriangleList)
+			.setPrimitiveRestartEnable(false);
+
+		// Viewport & Scissor
+		vk::PipelineViewportStateCreateInfo viewportState;
+		viewportState.setViewportCount(1)
+			.setScissorCount(1);
+
+		// Rasterization
+		vk::PipelineRasterizationStateCreateInfo rasterizer;
+		rasterizer.setDepthClampEnable(false)
+			.setDepthBiasEnable(false)
+			.setRasterizerDiscardEnable(false)
+			.setPolygonMode(vk::PolygonMode::eFill)
+			.setLineWidth(1.0f)
+			.setCullMode(vk::CullModeFlagBits::eBack)
+			.setFrontFace(vk::FrontFace::eClockwise);
+
+		// Multisample: G-Buffer always uses single-sample (no MSAA for deferred)
+		vk::PipelineMultisampleStateCreateInfo multisampling;
+		multisampling.setSampleShadingEnable(false)
+			.setAlphaToOneEnable(false)
+			.setPSampleMask(nullptr)
+			.setAlphaToCoverageEnable(false)
+			.setRasterizationSamples(vk::SampleCountFlagBits::e1);
+
+		// Color blend: one non-blending attachment per G-Buffer output
+		vk::PipelineColorBlendAttachmentState colorBlendAttachment;
+		colorBlendAttachment.setBlendEnable(false)
+			.setColorWriteMask(vk::ColorComponentFlagBits::eR
+				| vk::ColorComponentFlagBits::eG
+				| vk::ColorComponentFlagBits::eB
+				| vk::ColorComponentFlagBits::eA);
+
+		std::vector<vk::PipelineColorBlendAttachmentState> blendAttachments(colorFormats.size(), colorBlendAttachment);
+
+		vk::PipelineColorBlendStateCreateInfo colorBlending;
+		colorBlending.setLogicOpEnable(false)
+			.setLogicOp(vk::LogicOp::eCopy)
+			.setAttachments(blendAttachments)
+			.setBlendConstants(std::array{ 0.0f, 0.0f, 0.0f, 0.0f });
+
+		// Depth and stencil state: write depth
+		vk::PipelineDepthStencilStateCreateInfo depthStencil;
+		depthStencil.setDepthTestEnable(true)
+			.setDepthWriteEnable(true)
+			.setDepthCompareOp(vk::CompareOp::eLess)
+			.setDepthBoundsTestEnable(false)
+			.setStencilTestEnable(false);
+
+		// Dynamic state
+		std::array dynamicStates = {
+			vk::DynamicState::eViewport,
+			vk::DynamicState::eScissor
+		};
+
+		vk::PipelineDynamicStateCreateInfo dynamicState;
+		dynamicState.setDynamicStates(dynamicStates);
+
+		// Pipeline rendering create info for dynamic rendering with multiple color attachments
+		vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo;
+		pipelineRenderingCreateInfo.setColorAttachmentFormats(colorFormats)
+			.setDepthAttachmentFormat(depthFormat)
+			.setStencilAttachmentFormat(vk::Format::eUndefined);
+
+		// Create the pipeline
+		vk::GraphicsPipelineCreateInfo pipelineInfo;
+		pipelineInfo.setStages(shaderStages)
+			.setPVertexInputState(&vertexInputInfo)
+			.setPInputAssemblyState(&inputAssembly)
+			.setPViewportState(&viewportState)
+			.setPRasterizationState(&rasterizer)
+			.setPMultisampleState(&multisampling)
+			.setPColorBlendState(&colorBlending)
+			.setPDepthStencilState(&depthStencil)
+			.setPDynamicState(&dynamicState)
+			.setLayout(_vkPipelineLayout)
+			.setPNext(&pipelineRenderingCreateInfo)
+			.setSubpass(0)
+			.setBasePipelineHandle(nullptr);
+
+		try
+		{
+			auto pipelineCreateResult = VulkanContext::GetDevice().createGraphicsPipeline(nullptr, pipelineInfo);
+			if (pipelineCreateResult.result == vk::Result::eSuccess)
+				_vkPipeline = pipelineCreateResult.value;
+			else
+				Logger::LogError("Failed to create G-Buffer graphics pipeline");
+		}
+		catch (const vk::SystemError& e)
+		{
+			Logger::LogError("Failed to create G-Buffer graphics pipeline: {}", e.what());
+		}
+	}
+
+
 		bool blendEnabled)
 	{
 		// Shader stages

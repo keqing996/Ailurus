@@ -12,8 +12,17 @@ namespace Ailurus
 	class VulkanPipeline
 	{
 	public:
-		// Standard scene pipeline constructor
+		// Standard scene pipeline constructor (opaque geometry: depth write, no blending)
+		// Pass blendEnabled=true and depthWriteEnabled=false for transparent geometry
 		VulkanPipeline(vk::Format colorFormat, vk::Format depthFormat, const StageShaderArray& shaderArray,
+			const VulkanVertexLayout* pVertexLayout, const std::vector<const UniformSet*>& uniformSets,
+			uint32_t pushConstantSize = sizeof(Matrix4x4f),
+			bool blendEnabled = false,
+			bool depthWriteEnabled = true);
+
+		// G-Buffer pipeline constructor: multiple color attachments, depth write, no blending
+		VulkanPipeline(const std::vector<vk::Format>& colorFormats, vk::Format depthFormat,
+			const StageShaderArray& shaderArray,
 			const VulkanVertexLayout* pVertexLayout, const std::vector<const UniformSet*>& uniformSets,
 			uint32_t pushConstantSize = sizeof(Matrix4x4f));
 

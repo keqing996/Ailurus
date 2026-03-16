@@ -1,27 +1,14 @@
 [
     {
-        "pass": "Shadow",
+        "pass": "Transparent",
         "shader": [
             {
                 "stage": "Vertex",
-                "source": "Assets/Shader/shadow.vert"
+                "source": "Assets/Shader/transparent.vert"
             },
             {
                 "stage": "Fragment",
-                "source": "Assets/Shader/shadow.frag"
-            }
-        ]
-    },
-    {
-        "pass": "GBuffer",
-        "shader": [
-            {
-                "stage": "Vertex",
-                "source": "Assets/Shader/gbuffer.vert"
-            },
-            {
-                "stage": "Fragment",
-                "source": "Assets/Shader/gbuffer.frag"
+                "source": "Assets/Shader/transparent.frag"
             }
         ],
         "uniforms": [
@@ -73,85 +60,14 @@
                                     "value": 1.0
                                 }
                             }
-                        }
-                    ]
-                }
-            }
-        ],
-        "textures": [
-            {
-                "binding": 1,
-                "uniformVarName": "albedoTexture",
-                "path": "./Assets/Texture/wall.jpg",
-                "colorSpace": "srgb"
-            },
-            {
-                "binding": 2,
-                "uniformVarName": "normalTexture",
-                "path": "./Assets/Texture/default_normal.png",
-                "colorSpace": "linear"
-            }
-        ]
-    },
-    {
-        "pass": "Forward",
-        "shader": [
-            {
-                "stage": "Vertex",
-                "source": "Assets/Shader/pbr.vert"
-            },
-            {
-                "stage": "Fragment",
-                "source": "Assets/Shader/pbr.frag"
-            }
-        ],
-        "uniforms": [
-            {
-                "binding": 0,
-                "shaderStage": [ "Fragment" ],
-                "name": "material",
-                "variable": {
-                    "type": "Structure",
-                    "members": [
-                        {
-                            "name": "albedo",
-                            "variable": {
-                                "type": "Numeric",
-                                "value": {
-                                    "type": "Vector3",
-                                    "x": 1.0,
-                                    "y": 1.0,
-                                    "z": 1.0
-                                }
-                            }
                         },
                         {
-                            "name": "metallic",
-                            "variable": {
-                                "type": "Numeric",
-                                "value": {
-                                    "type": "Float",
-                                    "value": 0.0
-                                }
-                            }
-                        },
-                        {
-                            "name": "roughness",
+                            "name": "alpha",
                             "variable": {
                                 "type": "Numeric",
                                 "value": {
                                     "type": "Float",
                                     "value": 0.5
-                                }
-                            }
-                        },
-                        {
-                            "name": "ao",
-                            "variable": {
-                                "type": "Numeric",
-                                "value": {
-                                    "type": "Float",
-                                    "value": 1.0
                                 }
                             }
                         }
@@ -175,4 +91,3 @@
         ]
     }
 ]
-

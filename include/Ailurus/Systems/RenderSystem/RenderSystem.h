@@ -19,6 +19,7 @@ namespace Ailurus
 	class Mesh;
 	class ToneMappingEffect;
 	class BloomMipChainEffect;
+	class DeferredLightingEffect;
 	class CompStaticMeshRender;
 	class VulkanCommandBuffer;
 	class VulkanDescriptorAllocator;
@@ -126,6 +127,9 @@ namespace Ailurus
 		void NotifyRenderSettingsChanged();
 		void RenderPass(RenderPassType pass, VulkanCommandBuffer* pCommandBuffer);
 		void RenderShadowPass(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator);
+		void RenderGBufferPass(VulkanCommandBuffer* pCommandBuffer);
+		void RenderDeferredLighting(VulkanCommandBuffer* pCommandBuffer, class VulkanDescriptorAllocator* pDescriptorAllocator, vk::ImageView outputImageView, vk::Extent2D extent);
+		void RenderTransparentPass(VulkanCommandBuffer* pCommandBuffer);
 		void RenderSkybox(VulkanCommandBuffer* pCommandBuffer);
 
 		// Global uniform
@@ -208,6 +212,9 @@ namespace Ailurus
 		std::unique_ptr<PostProcessChain> _postProcessChain;
 		BloomMipChainEffect* _pBloomMipChainEffect = nullptr;
 		ToneMappingEffect* _pToneMappingEffect = nullptr;
+
+		// Deferred lighting effect (not in the post-process chain; invoked directly)
+		std::unique_ptr<DeferredLightingEffect> _pDeferredLightingEffect;
 
 		// Skybox
 		std::unique_ptr<Skybox> _pSkybox;
